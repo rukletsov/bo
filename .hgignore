@@ -17,4 +17,6 @@ cmake_install.cmake
 Makefile
 docs/
 _debug/
-_release_/
+_release/
+**/lib/**
+**/vs2005/**
