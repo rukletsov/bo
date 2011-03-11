@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\_$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
@@ -40,12 +40,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./include;"
+				AdditionalIncludeDirectories="./include;$(BOOST_ROOT);"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="1"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="stdafx.h"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalLibraryDirectories="$(BOOST_ROOT)\stage\lib;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -176,6 +177,10 @@
 			</File>
 			<File
 				RelativePath=".\include\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\triangle.hpp"
 				>
 			</File>
 		</Filter>

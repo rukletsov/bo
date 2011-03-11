@@ -16,3 +16,5 @@ CMakeFiles*
 cmake_install.cmake
 Makefile
 docs/
+_debug/
+_release_/
