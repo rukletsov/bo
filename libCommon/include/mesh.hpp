@@ -18,7 +18,7 @@ public:
     typedef std::vector<Vertex> Vertices;
 
     // Face is a triangle with vertices representing indices of the mesh vertices.
-    typedef Triangle3<int> Face;
+    typedef Triangle<int> Face;
     typedef std::vector<Face> Faces;
 
 private:
