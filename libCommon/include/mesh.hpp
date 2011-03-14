@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <string>
 #include <boost/array.hpp>
 
 #include "point.hpp"
@@ -40,9 +41,21 @@ public:
     typedef std::vector<std::size_t> AdjacentFace;
     typedef std::vector<AdjacentFace> AdjacentFaces;
 
+public:
+    static Mesh from_ply(const std::string& file_path);
+
+    // Create an empty mesh with pre-allocated memory.
+    Mesh(size_t initial_count);
+
+    // Add a new vertex to the mesh and return its index.
+    size_t add_vertex(const Vertex& vertex);
+
+    // Add a new face and return its index.
+    size_t add_face(const Face& face);
+
 private:
     // Basic mesh data.
-    Vertex vertices;
+    Vertices vertices;
     Faces faces;
     Normals normals;
     // Some other properties can be used, e.g. triangle strips (for speeding up

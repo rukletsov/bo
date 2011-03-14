@@ -12,15 +12,22 @@ SET (LibCommon_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
 )
 
+# A special section for C sources, which should be compilde using C compiler, not C++
+SET (LibCommon_CSRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.c
+)
+
 SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/point.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/mesh.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/triangle.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.h
 )
 
 INCLUDE_DIRECTORIES (BEFORE
                     ./include
+                    ./rply-1.01
                     $ENV{BOOST_ROOT}
 )
                     
@@ -31,11 +38,16 @@ LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib
 ADD_LIBRARY (LibCommon
 			${LibCommon_HDRS}
 			${LibCommon_SRCS}
+			${LibCommon_CSRCS}
 )
 
 IF (MSVC)
-    # Enable usage for precompiled header for MSVC compiler.
-	SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS "/Yustdafx.h")    
+    # Enable usage for precompiled header for MSVC compiler for C++ sources.
+	# SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS "/Yustdafx.h")    
+	FOREACH (src_file ${LibCommon_SRCS})
+        SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
+    ENDFOREACH (src_file ${LibCommon_SRCS})
+
     SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
 								PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
     
