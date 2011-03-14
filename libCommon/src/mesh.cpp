@@ -1,6 +1,8 @@
 
 #include "stdafx.h"
 
+#include <boost/format.hpp>
+
 #include "rply.h"
 #include "mesh.hpp"
 
@@ -47,10 +49,16 @@ int face_cb(p_ply_argument argument) {
     ply_get_argument_property(argument, NULL, &length, &value_index);
     ply_get_argument_user_data(argument, (void**)&context, NULL);
     
-    context->face->operator [](value_index) = static_cast<int>(ply_get_argument_value(argument));
-    if (value_index == 2)
-        // Means we finished to read current face.
-        context->mesh_ptr->add_face(*(context->face));
+    if (value_index != -1)
+    {
+        context->face->operator [](value_index) = static_cast<int>(ply_get_argument_value(argument));
+        if (value_index == 2)
+            // Means we finished to read current face.
+            context->mesh_ptr->add_face(*(context->face));
+    }
+    // Check points quantity in the face.
+    else if (length != 3)
+        return 0;
 
     return 1;
 }
@@ -60,9 +68,14 @@ int face_cb(p_ply_argument argument) {
 
 namespace common {
 
-Mesh::Mesh(size_t initial_count): vertices(initial_count), faces(initial_count), 
-    normals(initial_count), neighbours(initial_count), adjacent_faces(initial_count)
-{ }
+Mesh::Mesh(size_t initial_count)
+{
+    vertices.reserve(initial_count);
+    faces.reserve(initial_count);
+    normals.reserve(initial_count); 
+    neighbours.reserve(initial_count); 
+    adjacent_faces.reserve(initial_count);
+}
 
 size_t Mesh::add_vertex(const Vertex& vertex)
 {
@@ -93,7 +106,7 @@ Mesh Mesh::from_ply(const std::string& file_path)
     Mesh invalid_mesh(0);
 
     long nvertices, ntriangles;
-    p_ply ply = ply_open("input.ply", NULL);
+    p_ply ply = ply_open(file_path.c_str(), NULL);
     if (!ply) 
         return invalid_mesh;
     if (!ply_read_header(ply)) 
@@ -123,6 +136,27 @@ Mesh Mesh::from_ply(const std::string& file_path)
     ply_close(ply);
 
     return mesh;
+}
+
+std::ostream& operator <<(std::ostream &os, const common::Mesh& obj)
+{
+    // Add syncro primitives to stream operator.
+    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
+        << std::endl << "Vertices: " << obj.vertices.size() << std::endl;
+    
+    
+    common::Mesh::Vertices::const_iterator vertices_end = obj.vertices.end();
+    for (common::Mesh::Vertices::const_iterator it = obj.vertices.begin();
+         it != vertices_end; ++it)
+    {
+        os << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x % it->y % it->z
+            << std::endl;
+    }
+
+    os << "Faces: " << obj.faces.size() << std::endl 
+        << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
+
+    return os;
 }
 
 } // namespace common

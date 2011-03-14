@@ -38,6 +38,7 @@
 #include <cstddef>
 #include <vector>
 #include <string>
+#include <iostream>
 #include <boost/array.hpp>
 
 #include "point.hpp"
@@ -85,6 +86,8 @@ public:
 
     // Add a new face and return its index.
     size_t add_face(const Face& face);
+
+    friend std::ostream& operator <<(std::ostream &os, const Mesh &obj);
 
 private:
     // Basic mesh data.
