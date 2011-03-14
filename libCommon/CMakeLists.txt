@@ -23,6 +23,8 @@ SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/mesh.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/triangle.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/routines.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/errors.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/performance.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/raw_image.hpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.h

@@ -1,16 +1,18 @@
-#ifndef RAW_IMAGE_HPP_563F526B_DA89_4252_9B8C_C26F9F66457C_
-#define RAW_IMAGE_HPP_563F526B_DA89_4252_9B8C_C26F9F66457C_
+#ifndef RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
+#define RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
 
 #include <vector>
 #include <math.h>
 
 #include <boost/cstdint.hpp>
-#include <opencv/cv.h>
 
-#include "routines.hpp"
+// Use one of the next two headers. This depends on the version of OpenCV you have.
+#include <opencv/cv.h>
+//#include <opencv2/opencv.hpp>
 
 
 namespace common {
+
 
 typedef std::pair<size_t, size_t> Index;
 typedef std::vector<Index> Indices;
@@ -48,13 +50,35 @@ protected:
 };
 
 
+// Utility functions for RawImage class.
+template <typename T> inline 
+bool is_bpps_equal_to(const cv::Mat& model)
+{
+    return 
+        (sizeof(T) == model.elemSize());
+}
+
+inline
+void show_image(const std::string& caption, const cv::Mat& image)
+{
+    cv::namedWindow(caption, CV_WINDOW_AUTOSIZE);
+    cv::imshow(caption, image);
+}
+
+inline
+int wait_for_key(int msecs)
+{
+    return cv::waitKey(msecs);
+}
+
+// RawImage methods definition.
 template <typename ValType> 
 RawImage<ValType>::RawImage(const PixelMatrix& image): 
     image_(image)
 { }
 
-// Converts and normalizes to double a given cv::Mat image. If the supposed size 
-// of pixel (T) differs from real size in the given image, returns empty RawImage.
+// Convert and normalize to double a given cv::Mat image. If the supposed size 
+// of pixel (T) differs from real size in the given image, return empty RawImage.
 template <typename ValType> template <typename T>
 RawImage<ValType> RawImage<ValType>::from_cvmat(const cv::Mat& image)
 {
@@ -78,7 +102,7 @@ RawImage<ValType> RawImage<ValType>::from_cvmat(const cv::Mat& image)
     return RawImage(retvalue);
 }
 
-// Converts current state to cv::Mat image. Uses CV_8UC1 flag to create an image
+// Convert current state to cv::Mat image. CV_8UC1 flag is used to create an image
 // with 1 byte per pixel intensities.
 template <typename ValType> 
 cv::Mat RawImage<ValType>::to_cvmat() const
@@ -99,7 +123,7 @@ cv::Mat RawImage<ValType>::to_cvmat() const
     return retvalue;
 }
 
-template <typename ValType> 
+template <typename ValType> inline
 typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
 {
     return image_;
@@ -130,7 +154,7 @@ ValType& RawImage<ValType>::pixval_at(size_t row, size_t col)
 }
 
 
-// Returns a set of brightness values of the pixel itself and surrounding neighbours.
+// Return a set of brightness values of the pixel itself and surrounding neighbours.
 template <typename ValType>
 typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
     size_t row, size_t col) const
@@ -217,4 +241,4 @@ double RawImage<ValType>::std_devia(size_t row, size_t col) const
 }
 
 } // namespace common
-#endif // RAW_IMAGE_HPP_563F526B_DA89_4252_9B8C_C26F9F66457C_
+#endif // RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
