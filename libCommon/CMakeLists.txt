@@ -32,6 +32,7 @@ SET (LibCommon_HDRS
 
 INCLUDE_DIRECTORIES (BEFORE
                     ./include
+                    ./include/common
                     ./rply-1.01
                     $ENV{BOOST_ROOT}
 )

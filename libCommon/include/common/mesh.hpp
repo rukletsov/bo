@@ -76,17 +76,19 @@ public:
     typedef std::vector<AdjacentFace> AdjacentFaces;
 
 public:
-    static Mesh from_ply(const std::string& file_path);
-
     // Create an empty mesh with pre-allocated memory.
     Mesh(size_t initial_count);
 
     // Add a new vertex to the mesh and return its index.
     size_t add_vertex(const Vertex& vertex);
 
-    // Add a new face and return its index.
+    // Add a new face and return its index. Update dependent collections.
     size_t add_face(const Face& face);
 
+    // IO functions, allow to read mesh from and write to a .ply files, 
+    // print formatted mesh data to an std::ostream.
+    static Mesh from_ply(const std::string& file_path);
+    void to_ply(const std::string& file_path);
     friend std::ostream& operator <<(std::ostream &os, const Mesh &obj);
 
 private:

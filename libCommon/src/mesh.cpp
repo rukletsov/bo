@@ -9,6 +9,7 @@
 
 namespace {
 
+// Context for RPly callbacks. See comments on Mesh::from_ply() for more info.
 struct PLYContext
 {
     common::Mesh* mesh_ptr;
@@ -16,6 +17,8 @@ struct PLYContext
     common::Mesh::Face* face;
 };
 
+// Callback for reading vertex component. Suppose that vertex has only 3 components
+// and perform vertex adding after reading the third component.
 int vertex_cb(p_ply_argument argument) {
     long type;
     PLYContext* context;
@@ -43,12 +46,15 @@ int vertex_cb(p_ply_argument argument) {
     return 1;
 }
 
+// Callback for reading triangle face point. Works only with triangle faces and
+// rejects other. Add face after reading the third face point.
 int face_cb(p_ply_argument argument) {
     long length, value_index;
     PLYContext* context;
     ply_get_argument_property(argument, NULL, &length, &value_index);
     ply_get_argument_user_data(argument, (void**)&context, NULL);
     
+    // Means not the first component (length) of the list is being read.
     if (value_index != -1)
     {
         context->face->operator [](value_index) = static_cast<int>(ply_get_argument_value(argument));
@@ -56,7 +62,7 @@ int face_cb(p_ply_argument argument) {
             // Means we finished to read current face.
             context->mesh_ptr->add_face(*(context->face));
     }
-    // Check points quantity in the face.
+    // Check points quantity in the face when reading the first list component.
     else if (length != 3)
         return 0;
 
@@ -101,20 +107,31 @@ size_t Mesh::add_face(const Face& face)
     return new_face_index;
 }
 
+
+// RPly library is used for reading and writing meshes to .ply files.
+// The library is written in C and its sources are included in the project.
+// 
+// Reading is done via callbacks. RPly first reads .ply header and then reads
+// data with known structure and calls defined function for every data unit.
+// In the simplified case which is supposed in our case, data is vertices and
+// a list of triangle faces. So, two callbacks are defined above in an anonymous 
+// namespace. First callback is for reading vertex components and the second is 
+// for reading face vertices. Both functions use the same context for storing
+// temporary values and for accessing mesh function.
+
 Mesh Mesh::from_ply(const std::string& file_path)
 {
     Mesh invalid_mesh(0);
-
     long nvertices, ntriangles;
+
     p_ply ply = ply_open(file_path.c_str(), NULL);
     if (!ply) 
         return invalid_mesh;
     if (!ply_read_header(ply)) 
         return invalid_mesh;
 
-    // Prepare PLYContext and callbacks for RPly reader.
+    // Prepare PLYContext and set callbacks for RPly reader.
     PLYContext context;
-
     nvertices = ply_set_read_cb(ply, "vertex", "x", vertex_cb, &context, 0);
     ply_set_read_cb(ply, "vertex", "y", vertex_cb, &context, 1);
     ply_set_read_cb(ply, "vertex", "z", vertex_cb, &context, 2);
@@ -129,7 +146,7 @@ Mesh Mesh::from_ply(const std::string& file_path)
     context.vertex = &temp_vertex;
     context.face = &temp_face;
 
-    // Read contents into mesh.
+    // Perform reading contents into mesh.
     if (!ply_read(ply)) 
         return invalid_mesh;
 
@@ -138,6 +155,8 @@ Mesh Mesh::from_ply(const std::string& file_path)
     return mesh;
 }
 
+// Print formatted mesh data to a given stream. See boost.format library for more
+// details about formatting.
 std::ostream& operator <<(std::ostream &os, const common::Mesh& obj)
 {
     // Add syncro primitives to stream operator.
