@@ -19,13 +19,13 @@ SET (LibCommon_CSRCS
 
 SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/point.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/mesh.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/triangle.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/routines.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/errors.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/performance.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/raw_image.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/point.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/routines.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.h
 )
