@@ -5,7 +5,7 @@
 
     2D image class. OpenCV library is used for IO. Be advised that different 
     versions of OpenCV can have different interface and influence RawImage 
-    class. For this reason OpenCV 2.0 or 2.1 is recommended.
+    class. For this reason OpenCV 2.0, 2.1 or 2.2 is recommended.
 
     Copyright (c) 2010, 2011
     Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
@@ -42,10 +42,15 @@
 
 #include <boost/cstdint.hpp>
 
-// Use one of the next two headers. This depends on the version of OpenCV you have.
-#include <opencv/cv.h>
-//#include <opencv2/opencv.hpp>
-
+// Depending on the version of OpenCV you link to one of the following headers 
+// should be used. If your OpenCV version is 2.2, define OPENCV_2_2 symbol
+// before including this file. If your OpenCV version is either 2.0 or 2.1, 
+// include this file without defining any symbols.
+#ifdef OPENCV_2_2
+    #include <opencv2/opencv.hpp>
+#else
+    #include <opencv/cv.h>
+#endif
 
 namespace common {
 
