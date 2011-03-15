@@ -88,8 +88,8 @@ public:
     // IO functions, allow to read mesh from and write to a .ply files, 
     // print formatted mesh data to an std::ostream.
     static Mesh from_ply(const std::string& file_path);
-    void to_ply(const std::string& file_path);
-    friend std::ostream& operator <<(std::ostream &os, const Mesh &obj);
+    bool to_ply(const std::string& file_path);
+    friend std::ostream& operator <<(std::ostream& os, const Mesh& obj);
 
 private:
     // Basic mesh data.
