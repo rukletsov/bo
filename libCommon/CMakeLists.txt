@@ -24,9 +24,8 @@ SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp
-	
-	${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp	
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
