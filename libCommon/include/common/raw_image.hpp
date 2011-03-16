@@ -98,7 +98,9 @@ protected:
 };
 
 
-// Utility functions for RawImage class.
+#ifdef USE_OPENCV
+
+// Utility functions for RawImage class with OpenCV usage.
 template <typename T> inline 
 bool is_bpps_equal_to(const cv::Mat& model)
 {
@@ -119,14 +121,6 @@ int wait_for_key(int msecs)
     return cv::waitKey(msecs);
 }
 
-// RawImage methods definition.
-template <typename ValType> 
-RawImage<ValType>::RawImage(const PixelMatrix& image): 
-    image_(image)
-{ }
-
-
-#ifdef USE_OPENCV
 // Convert and normalize to double a given cv::Mat image. If the supposed size 
 // of pixel (T) differs from real size in the given image, return empty RawImage.
 template <typename ValType> template <typename T>
@@ -172,8 +166,15 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 
     return retvalue;
 }
+
 #endif
 
+
+// RawImage methods definition.
+template <typename ValType> 
+RawImage<ValType>::RawImage(const PixelMatrix& image): 
+    image_(image)
+{ }
 
 template <typename ValType> inline
 typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
