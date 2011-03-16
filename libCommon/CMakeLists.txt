@@ -8,7 +8,6 @@ SET (BIN_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 SET (LibCommon_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/point.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
 )
 
