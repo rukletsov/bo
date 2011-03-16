@@ -14,7 +14,7 @@ SET (LibCommon_SRCS
 
 # A special section for C sources, which should be compilde using C compiler, not C++
 SET (LibCommon_CSRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.c
+	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.c
 )
 
 SET (LibCommon_HDRS
@@ -27,13 +27,13 @@ SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp
 	
-	${CMAKE_CURRENT_SOURCE_DIR}/rply-1.01/rply.h
+	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
 
 INCLUDE_DIRECTORIES (BEFORE
                     ./include
                     ./include/common
-                    ./rply-1.01
+                    ./3rdparty/rply-1.01
                     $ENV{BOOST_ROOT}
 )
                     
@@ -48,14 +48,14 @@ ADD_LIBRARY (LibCommon
 )
 
 IF (MSVC)
-    # Enable usage for precompiled header for MSVC compiler for C++ sources.
+  # Enable usage for precompiled header for MSVC compiler for C++ sources.
 	# SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS "/Yustdafx.h")    
 	FOREACH (src_file ${LibCommon_SRCS})
-        SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
-    ENDFOREACH (src_file ${LibCommon_SRCS})
+    SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
+  ENDFOREACH (src_file ${LibCommon_SRCS})
 
-    SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
-								PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
+  SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
+	                					  	PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
     
 	SET_TARGET_PROPERTIES (LibCommon PROPERTIES PREFIX "../")
 	SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "_debug")
