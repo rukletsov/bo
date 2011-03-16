@@ -2,6 +2,7 @@
 #include "stdafx.h"
 
 #include <boost/format.hpp>
+#include <boost/scope_exit.hpp>
 
 #include "rply.h"
 #include "mesh.hpp"
@@ -160,55 +161,65 @@ Mesh Mesh::from_ply(const std::string& file_path)
 // conversion to float is made, despite the fact that mesh stores double type.
 bool Mesh::to_ply(const std::string& file_path)
 {
-    bool retvalue = true;
-
     // Create .ply file in ascii format.
     p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
     if (!oply) 
         return false;
 
-    // Try to write mesh data. If an error happens, stop further writing, clean-up 
-    // and return false. RPly library functions doesn't use esceptions.
-    try
+    // Suppose successful file close operation unless otherwise specified.
+    bool close_succeeded = true;
+
+    // Try to write mesh data. If an error happens, stop further writing and return,
+    // clean-up will be made automatically by boost/scope_exit.
     {
+        // Since the file has been opened successfully by this point, add a clean-up
+        // action, which will be executed at the end of the current scope.
+        BOOST_SCOPE_EXIT ((&close_succeeded) (&oply)) {
+            if (!ply_close(oply))  
+                close_succeeded = false;
+        } BOOST_SCOPE_EXIT_END
+
         // Add "vertex" element.
         if (!ply_add_element(oply, "vertex", this->vertices.size())) 
-            throw 1;
+            return false;
         // Add "vertex" properties. if the type parameter is not PLY_LIST, two last
         // parameters are ignored. So, PLY_LIST is passed for two last parameters
         // as the most unsuitable value.
         if (!ply_add_property(oply, "x", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
-            throw 1;
+            return false;
         if (!ply_add_property(oply, "y", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
-            throw 1;
+            return false;
         if (!ply_add_property(oply, "z", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
-            throw 1;
+            return false;
 
         // Add "face" element.
         if (!ply_add_element(oply, "face", this->faces.size())) 
-            throw 1;
+            return false;
         // Add "face" only property. It is a list of vertex indices. 
         if (!ply_add_property(oply, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT)) 
-            throw 1;
+            return false;
 
         // Add a comment and an obj_info.
         if (!ply_add_comment(oply, "libCommon generated PLY file")) 
-            throw 1;
+            return false;
         if (!ply_add_obj_info(oply, "common::Mesh class dump")) 
-            throw 1;
+            return false;
 
         // Write .ply header.
         if (!ply_write_header(oply)) 
-            throw 1;
+            return false;
 
         // Write mesh data in the same order as declared above.
         Mesh::Vertices::const_iterator vertices_end = this->vertices.end();
         for (Mesh::Vertices::const_iterator it = this->vertices.begin();
              it != vertices_end; ++it)
         {
-            if (!ply_write(oply, it->x)) throw 1;
-            if (!ply_write(oply, it->y)) throw 1;
-            if (!ply_write(oply, it->z)) throw 1;
+            if (!ply_write(oply, it->x)) 
+                return false;
+            if (!ply_write(oply, it->y))
+                return false;
+            if (!ply_write(oply, it->z)) 
+                return false;
         }
 
         Mesh::Faces::const_iterator faces_end = this->faces.end();
@@ -216,22 +227,20 @@ bool Mesh::to_ply(const std::string& file_path)
             it != faces_end; ++it)
         {
             // 3 can be hardcoded since Mesh works only with triangle faces.
-            if (!ply_write(oply, 3)) throw 1;
-            if (!ply_write(oply, static_cast<double>(it->A()))) throw 1;
-            if (!ply_write(oply, static_cast<double>(it->B()))) throw 1;
-            if (!ply_write(oply, static_cast<double>(it->C()))) throw 1;
+            if (!ply_write(oply, 3)) 
+                return false;
+            if (!ply_write(oply, static_cast<double>(it->A()))) 
+                return false;
+            if (!ply_write(oply, static_cast<double>(it->B()))) 
+                return false;
+            if (!ply_write(oply, static_cast<double>(it->C()))) 
+                return false;
         }
-    } // end of try
-    catch (...)
-    {
-        retvalue = false;
-    }
-
-    // Try to close the file and return the function result.
-    if (!ply_close(oply))  
-        return false;
+    } // end of scope with file writing.
     
-    return retvalue;
+    // Returning false is possible only when an error occured during file closing.
+    // All other errors lead to immediate function termination, i.e. not here.
+    return close_succeeded;
 }
 
 // Print formatted mesh data to a given stream. See boost.format library for more

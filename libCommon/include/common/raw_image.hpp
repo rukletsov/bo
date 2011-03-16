@@ -42,14 +42,17 @@
 
 #include <boost/cstdint.hpp>
 
-// Depending on the version of OpenCV you link to one of the following headers 
-// should be used. If your OpenCV version is 2.2, define OPENCV_2_2 symbol
-// before including this file. If your OpenCV version is either 2.0 or 2.1, 
-// include this file without defining any symbols.
-#ifdef OPENCV_2_2
-    #include <opencv2/opencv.hpp>
-#else
-    #include <opencv/cv.h>
+// Enable OpenCV usage only when requested by the library user.
+#ifdef USE_OPENCV
+    // Depending on the version of OpenCV you link to one of the following 
+    // headers should be used. If your OpenCV version is 2.2, define OPENCV_2_2 
+    // symbol before including this file. If your OpenCV version is either 2.0 
+    // or 2.1, include this file without defining any symbols.
+    #ifdef OPENCV_2_2
+        #include <opencv2/opencv.hpp>
+    #else
+        #include <opencv/cv.h>
+    #endif
 #endif
 
 namespace common {
@@ -68,10 +71,14 @@ public:
 
     RawImage(const PixelMatrix& image);
 
+    // Convertion functions from and to OpenCV format are available on demand.
+#ifdef USE_OPENCV
     template <typename T> static
     RawImage<ValType> from_cvmat(const cv::Mat& image);
 
     cv::Mat to_cvmat() const;
+#endif
+
     PixelMatrix raw() const;
 
     size_t size() const;
@@ -91,7 +98,9 @@ protected:
 };
 
 
-// Utility functions for RawImage class.
+#ifdef USE_OPENCV
+
+// Utility functions for RawImage class with OpenCV usage.
 template <typename T> inline 
 bool is_bpps_equal_to(const cv::Mat& model)
 {
@@ -111,12 +120,6 @@ int wait_for_key(int msecs)
 {
     return cv::waitKey(msecs);
 }
-
-// RawImage methods definition.
-template <typename ValType> 
-RawImage<ValType>::RawImage(const PixelMatrix& image): 
-    image_(image)
-{ }
 
 // Convert and normalize to double a given cv::Mat image. If the supposed size 
 // of pixel (T) differs from real size in the given image, return empty RawImage.
@@ -163,6 +166,15 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 
     return retvalue;
 }
+
+#endif
+
+
+// RawImage methods definition.
+template <typename ValType> 
+RawImage<ValType>::RawImage(const PixelMatrix& image): 
+    image_(image)
+{ }
 
 template <typename ValType> inline
 typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
