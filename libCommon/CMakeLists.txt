@@ -22,7 +22,6 @@ SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/point.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/common/routines.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp
