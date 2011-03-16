@@ -15,6 +15,7 @@ SET (LibCommon_SRCS
 # A special section for C sources, which should be compilde using C compiler, not C++
 SET (LibCommon_CSRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.c
+	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.c
 )
 
 SET (LibCommon_HDRS
@@ -26,6 +27,8 @@ SET (LibCommon_HDRS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp
+	
+	${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
