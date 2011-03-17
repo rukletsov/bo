@@ -6,6 +6,7 @@
 #include "kdtree++/kdtree.hpp"
 
 #include <functional>
+#include <map>
 #include <boost/numeric/ublas/matrix.hpp>
 
 //Uncomment for equal-square triangles propagation  
@@ -884,7 +885,7 @@ bool D25ActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps
 }
 
 
-std::list<Triangle<Point3<float>>> D25ActiveContours::buildMesh(std::list<Point3<float>> &vertexList)
+common::Mesh D25ActiveContours::buildMesh(std::list<Point3<float>> &vertexList)
 {
 	if(vertices)delete vertices;
 	vertices=new HVertexContainer(vertexList);
@@ -896,22 +897,45 @@ std::list<Triangle<Point3<float>>> D25ActiveContours::buildMesh(std::list<Point3
 
 	unvisitedCount=vertices->tree.size();
 
-	//Building the mesh
+	//Building a set of faces
 	while(growStep());
 
+	//Construct a mesh
+	common::Mesh m(triangles.size());
 
-	//Return the mesh
-	std::list<Triangle<Point3<float>>> mesh;
+	//Create a reference map (from the local triangles nodes to the mesh vertices)
+	std::map<HPointSeed*,size_t> mymap;
 	std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
 	while(itt!=triangles.end())
 	{
-		Triangle<Point3<float>> tr(itt->p1->p,itt->p2->p,itt->p3->p);
-		mesh.push_back(tr);
+		for(int j=0; j<3; ++j)
+		{
+			HPointSeed* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
+
+			//If the triangle node is not yet in the map
+			if(mymap.find(ps)==mymap.end())
+			{	
+				//Add the vertex/node into the mesh and to the reference map
+				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x,ps->p.y,ps->p.z));
+				mymap[itt->p1]=ind;
+			}
+		}
+
+		//Add the face from the processed triangle nodes
+		size_t A=mymap[itt->p1];
+		size_t B=mymap[itt->p2];
+		size_t C=mymap[itt->p3];
+		
+		m.add_face(common::Mesh::Face(A,B,C));
+
 		++itt;
 	}
-	return mesh;
+
+
+	return m;
 
 }
+
 
 inline bool D25ActiveContours::triangleMesh3DIntersection( const HTriangleSeed &t )
 {

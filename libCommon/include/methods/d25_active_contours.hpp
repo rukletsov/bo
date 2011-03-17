@@ -42,6 +42,7 @@
 
 #include "point.hpp"
 #include "triangle.hpp"
+#include "mesh.hpp"
 
 namespace methods {
 
@@ -230,11 +231,11 @@ public:
 	*/
 	const std::list<HTriangleSeed>* getTriangleList();
 
-	/*! The main mesh construction procedure. Input: list of points in 3D. Output: list of triangles in 3D constructing a mesh
+	/*! The main mesh construction procedure.
 		\param vertexList The list of vertices in 3D
-		\return The list of triangles in 3D
+		\return Reconstructed mesh
 	*/
-	std::list<common::Triangle<common::Point3<float>>> buildMesh(std::list<common::Point3<float>> &vertexList);
+	common::Mesh buildMesh(std::list<common::Point3<float>> &vertexList);
 
 	/*! Loads points cloud into the internal vertices structure
 		\param vertexList The list of vertices in 3D
