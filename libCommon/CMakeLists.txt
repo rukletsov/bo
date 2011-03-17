@@ -9,6 +9,7 @@ SET (BIN_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET (LibCommon_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/d25_active_contours.cpp
 )
 
 # A special section for C sources, which should be compiled using C compiler, not C++
@@ -26,6 +27,7 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp	
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/methods/d25_active_contours.hpp	
 	
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
@@ -33,6 +35,7 @@ SET (LibCommon_HDRS
 INCLUDE_DIRECTORIES (BEFORE
                      ./include
                      ./include/common
+                     ./include/methods
                      ./3rdparty/rply-1.01
                      $ENV{BOOST_ROOT}
 )

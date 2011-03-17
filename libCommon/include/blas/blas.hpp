@@ -115,6 +115,10 @@ int determinant_sign(const permutation_matrix<std::size_t>& pm)
 	return pm_sign;
 }
 
+//TODO: svd
+
+
+
 } // namespace blas
 
 #endif // BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
