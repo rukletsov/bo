@@ -5,7 +5,8 @@
 
     Basic linear algebra subprograms. 
 
-    Copyright (c) 2011, Dzmitry Hlindzich <hlindzich@gmail.com>
+    Copyright (c) 2011
+    Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -42,7 +43,7 @@ using namespace boost::numeric::ublas;
 namespace blas {
 
 // Matrix inversion routine.
-// Uses lu_factorize and lu_substitute in uBLAS to invert a matrix 
+// Use lu_factorize and lu_substitute in uBLAS to invert a matrix. 
 template<class T>
 bool invert_matrix(const matrix<T>& input, matrix<T>& inverse)
 {
@@ -66,7 +67,7 @@ bool invert_matrix(const matrix<T>& input, matrix<T>& inverse)
 	return true;
 }
 
-// Calculates the determinant of the input matrix.
+// Calculate the determinant of the input matrix.
 template<class T>
 double determinant(const matrix<T>& input )
 {
@@ -96,7 +97,7 @@ double determinant(const matrix<T>& input )
 	return det;
 }
 
-//Defines the sign of the determinant using the given permutation matrix.
+// Define the sign of the determinant using the given permutation matrix.
 inline
 int determinant_sign(const permutation_matrix<std::size_t>& pm)
 {
@@ -113,7 +114,6 @@ int determinant_sign(const permutation_matrix<std::size_t>& pm)
 
 	return pm_sign;
 }
-
 
 } // namespace blas
 

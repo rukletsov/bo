@@ -3,7 +3,7 @@
 
     triangle.hpp, v 1.0.2 2011.03.10
 
-    Triangle classe. 
+    Triangle class. 
 
     Copyright (c) 2010, 2011
     Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
