@@ -49,7 +49,7 @@ bool invert_matrix(const matrix<T>& input, matrix<T>& inverse)
 {
 	// Create a working copy of the input
 	matrix<T> A(input);
-
+		
 	// Create a permutation matrix for the LU-factorization
 	permutation_matrix<std::size_t> pm(A.size1());
 
@@ -97,6 +97,7 @@ double determinant(const matrix<T>& input )
 	return det;
 }
 
+
 // Define the sign of the determinant using the given permutation matrix.
 inline
 int determinant_sign(const permutation_matrix<std::size_t>& pm)
@@ -108,7 +109,7 @@ int determinant_sign(const permutation_matrix<std::size_t>& pm)
 		if (i != pm(i)) 
 		{
 			// swap_rows would swap a pair of rows here, so we change sign
-			pm_sign *= -1.0;
+			pm_sign *= -1;
 		}
 	}
 

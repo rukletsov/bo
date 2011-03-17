@@ -1,15 +1,21 @@
 #include "stdafx.h"
 
 #include "d25_active_contours.hpp"
-
-#include <functional>
-
-#include "svd.h"
+#include "blas/blas.hpp"
+#include "svd/svd.c"
 #include "kdtree++/kdtree.hpp"
 
+#include <functional>
+#include <boost/numeric/ublas/matrix.hpp>
 
 //Uncomment for equal-square triangles propagation  
 //#define USE_EQUAL_SQUARE_PROPAGATION
+
+using namespace common;
+
+namespace methods {
+
+namespace {
 
 /*! \struct HTreeElement
 \brief HPointSeed wrapper for HVertexContainer utilization 
@@ -20,7 +26,7 @@ struct HContainerElement
 	HContainerElement():ps(0){}
 
 	/*! Constructor */
-	HContainerElement(HPointSeed* ps):ps(ps){}
+	HContainerElement(surfaces::HPointSeed* ps):ps(ps){}
 
 	/*! Access operator */
 	inline float operator [] (const int t) const 
@@ -35,7 +41,7 @@ struct HContainerElement
 	}
 
 	/*! Pointer to an elementary vertex item*/
-	HPointSeed* ps;
+	surfaces::HPointSeed* ps;
 };
 
 
@@ -50,13 +56,13 @@ class HVertexContainer
 {
 public:
 
-	HVertexContainer(std::list<HPoint3<float>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
+	HVertexContainer(std::list<Point3<float>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
 	{		
 		linear.resize(vertices.size());
 
 		//Filling in the 3D Tree
 		int cnt=0;
-		for(std::list<HPoint3<float>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
+		for(std::list<Point3<float>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
 		{
 			linear[cnt].isNode=false;
 			linear[cnt].isVisited=false;
@@ -75,7 +81,7 @@ public:
 	}
 
 	D3Tree tree;
-	std::vector<HPointSeed> linear;
+	std::vector<surfaces::HPointSeed> linear;
 };
 
 //Predicate for closest point with minimal allowed distance
@@ -87,10 +93,10 @@ public:
 	}
 	inline bool operator()( HContainerElement const& ce ) const
 	{
-		return ((!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited))&&((searchCenter.p-ce.ps->p).getNorm()>minDistance);
+		return ((!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited))&&((searchCenter.p-ce.ps->p).get_eucl_norm()>minDistance);
 	}
 protected:
-	HPointSeed searchCenter;
+	surfaces::HPointSeed searchCenter;
 	float minDistance;
 	bool checkNodes;
 	bool checkVisited;
@@ -104,7 +110,7 @@ public:
 	{
 		eps=0.5;
 		ba=ce2.ps->p-ce1.ps->p;
-		absBa=ba.getNorm();
+		absBa=ba.get_eucl_norm();
 	}
 	inline bool operator()( HContainerElement const& ce ) const
 	{
@@ -114,13 +120,13 @@ public:
 		if(absBa==0)return false;
 
 		//Collinearity test
-		HPoint3<float> ca=ce.ps->p-ce1.ps->p;;
-		float absCa2=ca.x*ca.x+ca.y*ca.y+ca.z*ca.z;
+		Point3<float> ca=ce.ps->p-ce1.ps->p;;
+		double absCa2=ca.x*ca.x+ca.y*ca.y+ca.z*ca.z;
 
-		float scalBaCa=ba*ca;
-		float projCaOnBa=scalBaCa/absBa;
+		double scalBaCa=ba*ca;
+		double projCaOnBa=scalBaCa/absBa;
 
-		float residual2=absCa2-projCaOnBa*projCaOnBa;
+		double residual2=absCa2-projCaOnBa*projCaOnBa;
 
 		if(residual2>eps)return true;
 		else return false;
@@ -130,13 +136,18 @@ protected:
 	HContainerElement ce2;
 	bool checkNodes;
 	bool checkVisited;
-	float eps;
-	HPoint3<float> ba;
-	float absBa;
+	double eps;
+	Point3<float> ba;
+	double absBa;
 };
 
+} //anonymous namespace
 
-HActiveContours::HActiveContours()
+
+namespace surfaces {
+
+
+D25ActiveContours::D25ActiveContours()
 {
 	//Default init
 
@@ -154,12 +165,12 @@ HActiveContours::HActiveContours()
 	vertices=0;
 }
 
-HActiveContours::~HActiveContours()
+D25ActiveContours::~D25ActiveContours()
 {
 	delete vertices;
 }
 
-inline HPointSeed* HActiveContours::getClosestPoint( const HPointSeed &ps, bool checkNodes, bool checkVisited )
+inline HPointSeed* D25ActiveContours::getClosestPoint( const HPointSeed &ps, bool checkNodes, bool checkVisited )
 {
 	HContainerElement ce(0);
 
@@ -170,10 +181,10 @@ inline HPointSeed* HActiveContours::getClosestPoint( const HPointSeed &ps, bool 
 	return ce.ps;
 }
 
-HPointSeed* HActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited )
+HPointSeed* D25ActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited )
 {
-	HPoint3<float> v1=ps2.p-ps1.p;
-	float a=v1.getNorm();
+	Point3<float> v1=ps2.p-ps1.p;
+	double a=v1.get_eucl_norm();
 
 	HPointSeed mid;
 	mid.p=(ps1.p+ps2.p)/2;
@@ -184,22 +195,22 @@ HPointSeed* HActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, cons
 	vertices->tree.find_within_range(HContainerElement(&mid), range, std::back_inserter(v));
 
 	HContainerElement ce(0);
-	float func=-1;
+	double func=-1;
 
 	std::vector<HContainerElement>::const_iterator it = v.begin();
 	while(it!=v.end())
 	{
 		if((!(*it).ps->isVisited)||(checkNodes&&(*it).ps->isNode)||(checkVisited&&(*it).ps->isVisited))
 		{	
-			HPoint3<float> v2=(*it).ps->p-ps2.p;
-			HPoint3<float> v3=ps1.p-(*it).ps->p;
+			Point3<float> v2=(*it).ps->p-ps2.p;
+			Point3<float> v3=ps1.p-(*it).ps->p;
 
-			float b=v2.getNorm();
-			float c=v3.getNorm();
+			double b=v2.get_eucl_norm();
+			double c=v3.get_eucl_norm();
 
 			if(b<maxInitDistance&&c<maxInitDistance&&b>minInitDistance&&c>minInitDistance)
 			{
-				float f=abs(a-b)+abs(a-c);
+				double f=abs(a-b)+abs(a-c);
 
 				if(func==-1||f<func)
 				{
@@ -217,7 +228,7 @@ HPointSeed* HActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, cons
 }
 
 
-inline HPointSeed* HActiveContours::getClosestNoncollinearPoint(const HPointSeed &ps, const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+inline HPointSeed* D25ActiveContours::getClosestNoncollinearPoint(const HPointSeed &ps, const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
 {
 	HContainerElement ce(0);
 
@@ -229,13 +240,13 @@ inline HPointSeed* HActiveContours::getClosestNoncollinearPoint(const HPointSeed
 }
 
 
-inline float HActiveContours::getDistance( const HPointSeed &ps1, const HPointSeed &ps2 )
+inline float D25ActiveContours::getDistance( const HPointSeed &ps1, const HPointSeed &ps2 )
 {
-	return (ps1.p-ps2.p).getNorm();
+	return (float)(ps1.p-ps2.p).get_eucl_norm();
 }
 
 
-void HActiveContours::modelInit()
+void D25ActiveContours::modelInit()
 {
 	HPointSeed *pps1=0,*pps2=0,*pps3=0;
 
@@ -297,7 +308,7 @@ void HActiveContours::modelInit()
 }
 
 
-void HActiveContours::modelGrow()
+void D25ActiveContours::modelGrow()
 {
 	if(activeEdges.size()==0)return;
 
@@ -360,23 +371,23 @@ void HActiveContours::modelGrow()
 		activeEdges.erase(it);
 }
 
-bool HActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeSeed &e3 )
+bool D25ActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeSeed &e3 )
 {
 	if(e1.p1!=e3.p2 || e2.p1!=e1.p2 || e3.p1!=e2.p2)return false;
 
-	HPoint3<float> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
+	Point3<float> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
 
-	HPoint3<float> v1=e1.p2->p-e1.p1->p;
-	HPoint3<float> v2=e2.p2->p-e2.p1->p;
-	HPoint3<float> v3=e3.p2->p-e3.p1->p;
+	Point3<float> v1=e1.p2->p-e1.p1->p;
+	Point3<float> v2=e2.p2->p-e2.p1->p;
+	Point3<float> v3=e3.p2->p-e3.p1->p;
 
-	HPoint3<float> propagationE1,propagationE2,propagationE3;
+	Point3<float> propagationE1,propagationE2,propagationE3;
 
 	//PCA-based approximation 
 	if(faceSurfaceFactor!=0)
 	{
 		//PCA-based surface normal calculation
-		HPoint3<float> midNorm=getSurfaceNormal(mid,normalNeighborhoodRadius);
+		Point3<float> midNorm=getSurfaceNormal(mid,normalNeighborhoodRadius);
 
 		//Propagation directions. Surface normal calculation
 		propagationE1=getNormalVector(v1,midNorm);
@@ -384,22 +395,22 @@ bool HActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeS
 		propagationE3=getNormalVector(v3,midNorm);
 
 		//Outer directions correction
-		HPoint3<float> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
-		HPoint3<float> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
-		HPoint3<float> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
+		Point3<float> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
+		Point3<float> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
+		Point3<float> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
 
-		float cosMP1=(medianE1*propagationE1)/(medianE1.getNorm()*propagationE1.getNorm());
-		float cosMP2=(medianE2*propagationE2)/(medianE2.getNorm()*propagationE2.getNorm());
-		float cosMP3=(medianE3*propagationE3)/(medianE3.getNorm()*propagationE3.getNorm());
+		float cosMP1=(medianE1*propagationE1)/float(medianE1.get_eucl_norm()*propagationE1.get_eucl_norm());
+		float cosMP2=(medianE2*propagationE2)/float(medianE2.get_eucl_norm()*propagationE2.get_eucl_norm());
+		float cosMP3=(medianE3*propagationE3)/float(medianE3.get_eucl_norm()*propagationE3.get_eucl_norm());
 
 		if(cosMP1<0)propagationE1=propagationE1*(-1);
 		if(cosMP2<0)propagationE2=propagationE2*(-1);
 		if(cosMP3<0)propagationE3=propagationE3*(-1);
 
 		//Mixture with the PCA-face propagations
-		propagationE1=(propagationE1/propagationE1.getNorm())*faceSurfaceFactor+(medianE1/medianE1.getNorm())*(1-faceSurfaceFactor);
-		propagationE2=(propagationE2/propagationE2.getNorm())*faceSurfaceFactor+(medianE2/medianE2.getNorm())*(1-faceSurfaceFactor);
-		propagationE3=(propagationE3/propagationE3.getNorm())*faceSurfaceFactor+(medianE3/medianE3.getNorm())*(1-faceSurfaceFactor);
+		propagationE1=(propagationE1/float(propagationE1.get_eucl_norm()))*faceSurfaceFactor+(medianE1/float(medianE1.get_eucl_norm()))*(1-faceSurfaceFactor);
+		propagationE2=(propagationE2/float(propagationE2.get_eucl_norm()))*faceSurfaceFactor+(medianE2/float(medianE2.get_eucl_norm()))*(1-faceSurfaceFactor);
+		propagationE3=(propagationE3/float(propagationE3.get_eucl_norm()))*faceSurfaceFactor+(medianE3/float(medianE3.get_eucl_norm()))*(1-faceSurfaceFactor);
 	}
 	//Triangle face based approximation
 	else
@@ -411,9 +422,9 @@ bool HActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeS
 
 
 	//Normalization
-	propagationE1=propagationE1/propagationE1.getNorm();
-	propagationE2=propagationE2/propagationE2.getNorm();
-	propagationE3=propagationE3/propagationE3.getNorm();
+	propagationE1=propagationE1/float(propagationE1.get_eucl_norm());
+	propagationE2=propagationE2/float(propagationE2.get_eucl_norm());
+	propagationE3=propagationE3/float(propagationE3.get_eucl_norm());
 
 #ifdef USE_EQUAL_SQUARE_PROPAGATION
 
@@ -453,11 +464,11 @@ bool HActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeS
 }
 
 
-inline HPointSeed* HActiveContours::getPropagatedVertex(const HEdgeSeed &e, bool checkVisited)
+inline HPointSeed* D25ActiveContours::getPropagatedVertex(const HEdgeSeed &e, bool checkVisited)
 {
 	HPointSeed p;
 
-	HPoint3<float> mid=(e.p1->p+e.p2->p)/2;
+	Point3<float> mid=(e.p1->p+e.p2->p)/2;
 
 	p.p=mid+e.propagationVector;
 
@@ -467,7 +478,7 @@ inline HPointSeed* HActiveContours::getPropagatedVertex(const HEdgeSeed &e, bool
 }
 
 
-void HActiveContours::visitPoints( std::list<HTriangleSeed> &newTriangles )
+void D25ActiveContours::visitPoints( std::list<HTriangleSeed> &newTriangles )
 {
 	std::list<HTriangleSeed>::iterator tit = newTriangles.begin();
 	while(tit!=newTriangles.end())
@@ -477,7 +488,7 @@ void HActiveContours::visitPoints( std::list<HTriangleSeed> &newTriangles )
 	}
 }
 
-void HActiveContours::visitPoints( HTriangleSeed &tr )
+void D25ActiveContours::visitPoints( HTriangleSeed &tr )
 {
 	const float eps=0.001f;
 
@@ -487,11 +498,11 @@ void HActiveContours::visitPoints( HTriangleSeed &tr )
 	tr.p3->isNode=true;
 
 	//Select points from the neighborhood. Define the radius
-	HPoint3<float> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
+	Point3<float> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
 	float tmp, rad=maxSurfaceDepth;
-	rad=rad>(tmp=(tr.p1->p-mid).getNorm())?rad:tmp;
-	rad=rad>(tmp=(tr.p2->p-mid).getNorm())?rad:tmp;
-	rad=rad>(tmp=(tr.p3->p-mid).getNorm())?rad:tmp;
+	rad=rad>(tmp=float((tr.p1->p-mid).get_eucl_norm()))?rad:tmp;
+	rad=rad>(tmp=float((tr.p2->p-mid).get_eucl_norm()))?rad:tmp;
+	rad=rad>(tmp=float((tr.p3->p-mid).get_eucl_norm()))?rad:tmp;
 
 	//Pre-search: choose all points in the range
 	HPointSeed mids;
@@ -501,44 +512,50 @@ void HActiveContours::visitPoints( HTriangleSeed &tr )
 
 	//Check if the selected points are inside the prism
 	//Calculate triangle prism basis matrix
-	HPoint3<float> X=tr.p2->p-tr.p1->p;
-	HPoint3<float> Y=tr.p3->p-tr.p1->p;
-	HPoint3<float> Z=getNormalVector(tr); Z=Z/Z.getNorm()*maxSurfaceDepth;
-	HPoint3<float> O=tr.p1->p;
+	Point3<float> X=tr.p2->p-tr.p1->p;
+	Point3<float> Y=tr.p3->p-tr.p1->p;
+	Point3<float> Z=getNormalVector(tr); Z=Z/float(Z.get_eucl_norm())*maxSurfaceDepth;
+	Point3<float> O=tr.p1->p;
 
-	MatrixTCL<float> m(3,3);
+	boost::numeric::ublas::matrix<float> m(3,3);
 	m(0,0)=X.x; m(0,1)=Y.x; m(0,2)=Z.x;
 	m(1,0)=X.y; m(1,1)=Y.y; m(1,2)=Z.y;
 	m(2,0)=X.z; m(2,1)=Y.z; m(2,2)=Z.z;
-	m=m.Inv();
-
-	std::vector<HContainerElement>::iterator it=v.begin();
-	while(it!=v.end())
+	
+	boost::numeric::ublas::matrix<float> im;  
+	
+	if( blas::invert_matrix(m,im))
 	{
-		if(!it->ps->isVisited)
+		std::vector<HContainerElement>::iterator it=v.begin();
+		while(it!=v.end())
 		{
-			MatrixTCL<float> mp(3,1);
-			mp(0,0)=it->ps->p.x-O.x;
-			mp(1,0)=it->ps->p.y-O.y;
-			mp(2,0)=it->ps->p.z-O.z;
-
-			MatrixTCL<float> am=m*mp;
-
-			float a=am(0,0);
-			float b=am(1,0);
-			float c=am(2,0);
-
-			if(a+b<=1+eps&&a>=-eps&&b>=-eps&&c>=-1&&c<=1)
+			if(!it->ps->isVisited)
 			{
+				boost::numeric::ublas::matrix<float> mp(3,1);
+				mp(0,0)=it->ps->p.x-O.x;
+				mp(1,0)=it->ps->p.y-O.y;
+				mp(2,0)=it->ps->p.z-O.z;
 
-				visitPoint(it->ps);	
+				boost::numeric::ublas::matrix<float> am=prod(im,mp);
+
+				float a=am(0,0);
+				float b=am(1,0);
+				float c=am(2,0);
+
+				if(a+b<=1+eps&&a>=-eps&&b>=-eps&&c>=-1&&c<=1)
+				{
+
+					visitPoint(it->ps);	
+				}
 			}
+			++it;
 		}
-		++it;
 	}
+
+	
 }
 
-inline void HActiveContours::visitPoint( HPointSeed* p )
+inline void D25ActiveContours::visitPoint( HPointSeed* p )
 {
 	if(p->isVisited==false)
 	{
@@ -548,12 +565,12 @@ inline void HActiveContours::visitPoint( HPointSeed* p )
 }
 
 
-inline HPoint3<float> HActiveContours::getNormalVector(const HTriangleSeed &t)
+inline Point3<float> D25ActiveContours::getNormalVector(const HTriangleSeed &t)
 {
-	HPoint3<float> A=t.p2->p-t.p1->p;
-	HPoint3<float> B=t.p3->p-t.p1->p;
+	Point3<float> A=t.p2->p-t.p1->p;
+	Point3<float> B=t.p3->p-t.p1->p;
 
-	HPoint3<float> p;
+	Point3<float> p;
 	p.x=A.y*B.z-B.y*A.z;
 	p.y=A.z*B.x-B.z*A.x;
 	p.z=A.x*B.y-B.x*A.y;
@@ -561,7 +578,7 @@ inline HPoint3<float> HActiveContours::getNormalVector(const HTriangleSeed &t)
 	return p;
 }
 
-inline void HActiveContours::addActiveEdge(const HEdgeSeed &e )
+inline void D25ActiveContours::addActiveEdge(const HEdgeSeed &e )
 {
 	//Init the list of segments
 	std::list<HEdgeSeed> segments;
@@ -574,7 +591,7 @@ inline void HActiveContours::addActiveEdge(const HEdgeSeed &e )
 	activeEdges.splice(activeEdges.end(),segments);
 }
 
-void HActiveContours::killOverlappingRegularSegments( std::list<HEdgeSeed> &segmentParts, std::list<HEdgeSeed> &edgeList )
+void D25ActiveContours::killOverlappingRegularSegments( std::list<HEdgeSeed> &segmentParts, std::list<HEdgeSeed> &edgeList )
 {
 	std::list<HEdgeSeed> newEdgeList;
 
@@ -761,12 +778,12 @@ void HActiveContours::killOverlappingRegularSegments( std::list<HEdgeSeed> &segm
 }
 
 
-bool HActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdgeSeed &e, float &t)
+bool D25ActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdgeSeed &e, float &t)
 {
 	const float eps=0.001f;
 
-	HPoint3<float> v1=ps.p-e.p1->p;
-	HPoint3<float> v2=e.p2->p-e.p1->p;
+	Point3<float> v1=ps.p-e.p1->p;
+	Point3<float> v2=e.p2->p-e.p1->p;
 
 	if(ps.p==e.p1->p)
 	{
@@ -784,8 +801,8 @@ bool HActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdgeS
 	}
 
 	float dotProduct=v1*v2;
-	float normV2=v2.getNorm();
-	float normsProduct=v1.getNorm()*normV2;
+	float normV2=float(v2.get_eucl_norm());
+	float normsProduct=float(v1.get_eucl_norm())*normV2;
 
 	//If collinear, |cos|~1
 	if(dotProduct>=normsProduct-eps||dotProduct<=-normsProduct+eps)
@@ -797,7 +814,7 @@ bool HActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdgeS
 	return false;
 }
 
-inline bool HActiveContours::excludeSmallAngles( const HEdgeSeed &e, HPointSeed* &ps )
+inline bool D25ActiveContours::excludeSmallAngles( const HEdgeSeed &e, HPointSeed* &ps )
 {
 
 	if(stickToAdjacentEdge(e, ps, activeEdges) || stickToAdjacentEdge(e, ps, frozenEdges) )
@@ -808,7 +825,7 @@ inline bool HActiveContours::excludeSmallAngles( const HEdgeSeed &e, HPointSeed*
 	return false;
 }
 
-bool HActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps, std::list<HEdgeSeed> &edgeList )
+bool D25ActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps, std::list<HEdgeSeed> &edgeList )
 {
 
 	std::list<HEdgeSeed>::const_iterator it=edgeList.begin();
@@ -832,7 +849,7 @@ bool HActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps, 
 		}
 
 		//Sticking
-		HPoint3<float> p;
+		Point3<float> p;
 		if((p=e.p1->p)==ee.p1->p||e.p1->p==ee.p2->p||
 			(p=e.p2->p)==ee.p1->p||e.p2->p==ee.p2->p)
 		{
@@ -843,11 +860,11 @@ bool HActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps, 
 				ee.p2=tmp;
 			}
 
-			HPoint3<float> v1=ps->p-p;
-			float normV1=v1.getNorm();
+			Point3<float> v1=ps->p-p;
+			float normV1=float(v1.get_eucl_norm());
 
-			HPoint3<float> v2=ee.p2->p-p;
-			float normV2=v2.getNorm();
+			Point3<float> v2=ee.p2->p-p;
+			float normV2=float(v2.get_eucl_norm());
 
 			if(normV1==0||normV2==0)return false;
 
@@ -867,7 +884,7 @@ bool HActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps, 
 }
 
 
-std::list<HTriangle3<float>> HActiveContours::buildMesh(std::list<HPoint3<float>> &vertexList)
+std::list<Triangle<Point3<float>>> D25ActiveContours::buildMesh(std::list<Point3<float>> &vertexList)
 {
 	if(vertices)delete vertices;
 	vertices=new HVertexContainer(vertexList);
@@ -884,14 +901,11 @@ std::list<HTriangle3<float>> HActiveContours::buildMesh(std::list<HPoint3<float>
 
 
 	//Return the mesh
-	std::list<HTriangle3<float>> mesh;
+	std::list<Triangle<Point3<float>>> mesh;
 	std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
 	while(itt!=triangles.end())
 	{
-		HTriangle3<float> tr;
-		tr.A=itt->p1->p;
-		tr.B=itt->p2->p;
-		tr.C=itt->p3->p;
+		Triangle<Point3<float>> tr(itt->p1->p,itt->p2->p,itt->p3->p);
 		mesh.push_back(tr);
 		++itt;
 	}
@@ -899,23 +913,17 @@ std::list<HTriangle3<float>> HActiveContours::buildMesh(std::list<HPoint3<float>
 
 }
 
-inline bool HActiveContours::triangleMesh3DIntersection( const HTriangleSeed &t )
+inline bool D25ActiveContours::triangleMesh3DIntersection( const HTriangleSeed &t )
 {
-	HTriangle3<float> t1,t2;
-
-	t1.A=t.p1->p;
-	t1.B=t.p2->p;
-	t1.C=t.p3->p;
+	Triangle<Point3<float>> t1(t.p1->p,t.p2->p,t.p3->p);
 
 	std::list<HTriangleSeed>::iterator tit = triangles.begin();
 	while(tit!=triangles.end())
 	{
 		HTriangleSeed tt=*tit;
-
-		t2.A=tt.p1->p;
-		t2.B=tt.p2->p;
-		t2.C=tt.p3->p;
-
+		
+		Triangle<Point3<float>> t2(tt.p1->p,tt.p2->p,tt.p3->p);
+		
 		if(triangles3DIntersection(t1,t2))return true;
 
 		++tit;
@@ -925,17 +933,17 @@ inline bool HActiveContours::triangleMesh3DIntersection( const HTriangleSeed &t 
 }
 
 
-inline HPoint3<float> HActiveContours::getNormalVector( const HTriangle3<float> &t )
+inline Point3<float> D25ActiveContours::getNormalVector( const Triangle<Point3<float>> &t )
 {
-	HPoint3<float> A=t.B-t.A;
-	HPoint3<float> B=t.C-t.A;
+	Point3<float> A=t.B()-t.A();
+	Point3<float> B=t.C()-t.A();
 
 	return getNormalVector(A,B);
 }
 
-inline HPoint3<float> HActiveContours::getNormalVector( const HPoint3<float> A, const HPoint3<float> B )
+inline Point3<float> D25ActiveContours::getNormalVector( const Point3<float> A, const Point3<float> B )
 {
-	HPoint3<float> p;
+	Point3<float> p;
 
 	p.x=A.y*B.z-B.y*A.z;
 	p.y=A.z*B.x-B.z*A.x;
@@ -944,7 +952,7 @@ inline HPoint3<float> HActiveContours::getNormalVector( const HPoint3<float> A, 
 	return p;
 }
 
-void HActiveContours::edgeStitch(HEdgeSeed e )
+void D25ActiveContours::edgeStitch(HEdgeSeed e )
 {
 	HPointSeed* pps1=getPropagatedVertex(e,true);
 
@@ -952,11 +960,7 @@ void HActiveContours::edgeStitch(HEdgeSeed e )
 
 	if(pps1)
 	{
-		HTriangle3<float> t1;
-
-		t1.A.x=e.p1->p.x; t1.B.x=e.p2->p.x; t1.C.x=pps1->p.x;
-		t1.A.y=e.p1->p.y; t1.B.y=e.p2->p.y; t1.C.y=pps1->p.y;
-		t1.A.z=e.p1->p.z; t1.B.z=e.p2->p.z; t1.C.z=pps1->p.z;
+		Triangle<Point3<float>> t1(e.p1->p,e.p2->p,pps1->p);
 
 		for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
 		{
@@ -973,11 +977,7 @@ void HActiveContours::edgeStitch(HEdgeSeed e )
 
 				if(pps2)
 				{
-					HTriangle3<float> t2;
-
-					t2.A.x=ee.p1->p.x; t2.B.x=ee.p2->p.x; t2.C.x=pps2->p.x;
-					t2.A.y=ee.p1->p.y; t2.B.y=ee.p2->p.y; t2.C.y=pps2->p.y;
-					t2.A.z=ee.p1->p.z; t2.B.z=ee.p2->p.z; t2.C.z=pps2->p.z;
+					Triangle<Point3<float>> t2(ee.p1->p,ee.p2->p,pps2->p);
 
 					if(triangles3DIntersection(t1,t2))
 					{
@@ -1042,7 +1042,7 @@ void HActiveContours::edgeStitch(HEdgeSeed e )
 
 }
 
-HPoint3<float> HActiveContours::getSurfaceNormal( HPoint3<float> p, float windowRadius )
+Point3<float> D25ActiveContours::getSurfaceNormal( Point3<float> p, float windowRadius )
 {
 	//Select points from the neighborhood
 	HPointSeed ps;
@@ -1054,7 +1054,7 @@ HPoint3<float> HActiveContours::getSurfaceNormal( HPoint3<float> p, float window
 	int pointCount=neighbours.size();
 
 	//Principal Component Analysis (PCA)
-	HPoint3<float> mean(0,0,0);	
+	Point3<float> mean(0,0,0);	
 	mean=mean/(float)pointCount;
 
 	double** A=new double*[6]; 
@@ -1069,7 +1069,7 @@ HPoint3<float> HActiveContours::getSurfaceNormal( HPoint3<float> p, float window
 	std::vector<HContainerElement>::const_iterator itp=neighbours.begin();
 	while(itp!=neighbours.end())
 	{
-		HPoint3<float> pp=(*itp).ps->p;
+		Point3<float> pp=(*itp).ps->p;
 
 		A[0][0]+=(pp.x-mean.x)*(pp.x-mean.x); A[1][0]+=(pp.y-mean.y)*(pp.x-mean.x); A[2][0]+=(pp.z-mean.z)*(pp.x-mean.x); 
 		A[0][1]+=(pp.x-mean.x)*(pp.y-mean.y); A[1][1]+=(pp.y-mean.y)*(pp.y-mean.y); A[2][1]+=(pp.z-mean.z)*(pp.y-mean.y);
@@ -1091,7 +1091,7 @@ HPoint3<float> HActiveContours::getSurfaceNormal( HPoint3<float> p, float window
 
 	int maxIndex=(S2[0]<S2[1])?(S2[0]<S2[2]?0:2):(S2[1]<S2[2]?1:2);
 
-	HPoint3<float> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
+	Point3<float> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
 
 	for(int i=0; i<6; ++i)
 	{
@@ -1100,70 +1100,70 @@ HPoint3<float> HActiveContours::getSurfaceNormal( HPoint3<float> p, float window
 	delete[] A;
 	delete[] S2;
 
-	return v/v.getNorm();
+	return v/float(v.get_eucl_norm());
 }
 
-void HActiveContours::setMinInitDistance( float minInitDistance )
+void D25ActiveContours::setMinInitDistance( float minInitDistance )
 {
 	this->minInitDistance=minInitDistance;
 }
 
-void HActiveContours::setMaxInitDistance( float maxInitDistance )
+void D25ActiveContours::setMaxInitDistance( float maxInitDistance )
 {
 	this->maxInitDistance=maxInitDistance;
 }
 
-void HActiveContours::setMaxProjectionNodeDistance( float maxProjectionNodeDistance )
+void D25ActiveContours::setMaxProjectionNodeDistance( float maxProjectionNodeDistance )
 {
 	this->maxProjectionNodeDistance=maxProjectionNodeDistance;
 }
 
-void HActiveContours::setMaxSurfaceDepth( float maxSurfaceDepth )
+void D25ActiveContours::setMaxSurfaceDepth( float maxSurfaceDepth )
 {
 	this->maxSurfaceDepth=maxSurfaceDepth;
 }
 
-void HActiveContours::setMaxExcludedAngle( float maxExcludedAngle )
+void D25ActiveContours::setMaxExcludedAngle( float maxExcludedAngle )
 {
 	this->maxExcludedAngle=maxExcludedAngle;
 }
 
-void HActiveContours::setNormalNeighborhoodRadius( float normalNeighborhoodRadius )
+void D25ActiveContours::setNormalNeighborhoodRadius( float normalNeighborhoodRadius )
 {
 	this->normalNeighborhoodRadius=normalNeighborhoodRadius;
 }
 
-void HActiveContours::setFaceSurfaceFactor( float faceSurfaceFactor )
+void D25ActiveContours::setFaceSurfaceFactor( float faceSurfaceFactor )
 {
 	this->faceSurfaceFactor=faceSurfaceFactor;
 }
 
-void HActiveContours::setMaxStitchedAngle( float maxStitchedAngle )
+void D25ActiveContours::setMaxStitchedAngle( float maxStitchedAngle )
 {
 	this->maxStitchedAngle=maxStitchedAngle;
 }
 
-const std::vector<HPointSeed>* HActiveContours::getVerticesVector()
+const std::vector<HPointSeed>* D25ActiveContours::getVerticesVector()
 {
 	return &vertices->linear;
 }
 
-const std::list<HEdgeSeed>* HActiveContours::getActiveEdgeList()
+const std::list<HEdgeSeed>* D25ActiveContours::getActiveEdgeList()
 {
 	return &activeEdges;
 }
 
-const std::list<HEdgeSeed>* HActiveContours::getFrozenEdgeList()
+const std::list<HEdgeSeed>* D25ActiveContours::getFrozenEdgeList()
 {
 	return &frozenEdges;
 }
 
-const std::list<HTriangleSeed>* HActiveContours::getTriangleList()
+const std::list<HTriangleSeed>* D25ActiveContours::getTriangleList()
 {
 	return &triangles;
 }
 
-void HActiveContours::initMeshScale( float minInitDistance )
+void D25ActiveContours::initMeshScale( float minInitDistance )
 {
 	this->minInitDistance=minInitDistance;
 	maxInitDistance=1.5f*minInitDistance;
@@ -1171,59 +1171,59 @@ void HActiveContours::initMeshScale( float minInitDistance )
 	normalNeighborhoodRadius=maxInitDistance;
 }
 
-bool HActiveContours::triangles3DIntersection( const HTriangle3<float> &t1, const HTriangle3<float> &t2 )
+bool D25ActiveContours::triangles3DIntersection( const Triangle<Point3<float>> &t1, const Triangle<Point3<float>> &t2 )
 {
 	const float eps=0.001f;
 
-	HPoint3<float> vertices[2][5];
-	HTriangle3<float> faces[2][6];
-	HPoint3<float> mid[2];
+	Point3<float> vertices[2][5];
+	Triangle<Point3<float>> faces[2][6];
+	Point3<float> mid[2];
 
 	//Pyramids construction
-	HPoint3<float> z1=getNormalVector(t1);
-	HPoint3<float> z2=getNormalVector(t2);
+	Point3<float> z1=getNormalVector(t1);
+	Point3<float> z2=getNormalVector(t2);
 
-	z1=z1/z1.getNorm()*maxSurfaceDepth/2;
-	z2=z2/z2.getNorm()*maxSurfaceDepth/2;
+	z1=z1/float(z1.get_eucl_norm())*maxSurfaceDepth/2;
+	z2=z2/float(z2.get_eucl_norm())*maxSurfaceDepth/2;
 
-	mid[0]=(t1.A+t1.B+t1.C)/3.0;
-	HPoint3<float> p11=mid[0]+z1;
-	HPoint3<float> p12=mid[0]-z1;
-	mid[1]=(t2.A+t2.B+t2.C)/3.0;
-	HPoint3<float> p21=mid[1]+z2;
-	HPoint3<float> p22=mid[1]-z2;
+	mid[0]=(t1.A()+t1.B()+t1.C())/3.0;
+	Point3<float> p11=mid[0]+z1;
+	Point3<float> p12=mid[0]-z1;
+	mid[1]=(t2.A()+t2.B()+t2.C())/3.0;
+	Point3<float> p21=mid[1]+z2;
+	Point3<float> p22=mid[1]-z2;
 
-	vertices[0][0]=t1.A; vertices[0][1]=t1.B; vertices[0][2]=t1.C;
+	vertices[0][0]=t1.A(); vertices[0][1]=t1.B(); vertices[0][2]=t1.C();
 	vertices[0][3]=p11; vertices[0][4]=p12;
-	faces[0][0]=HTriangle3<float>(t1.A, t1.B, p11);
-	faces[0][1]=HTriangle3<float>(t1.B, t1.C, p11);
-	faces[0][2]=HTriangle3<float>(t1.C, t1.A, p11);
-	faces[0][3]=HTriangle3<float>(t1.A, t1.B, p12);
-	faces[0][4]=HTriangle3<float>(t1.B, t1.C, p12);
-	faces[0][5]=HTriangle3<float>(t1.C, t1.A, p12);
+	faces[0][0]=Triangle<Point3<float>>(t1.A(), t1.B(), p11);
+	faces[0][1]=Triangle<Point3<float>>(t1.B(), t1.C(), p11);
+	faces[0][2]=Triangle<Point3<float>>(t1.C(), t1.A(), p11);
+	faces[0][3]=Triangle<Point3<float>>(t1.A(), t1.B(), p12);
+	faces[0][4]=Triangle<Point3<float>>(t1.B(), t1.C(), p12);
+	faces[0][5]=Triangle<Point3<float>>(t1.C(), t1.A(), p12);
 
-	vertices[1][0]=t2.A; vertices[1][1]=t2.B; vertices[1][2]=t2.C;
+	vertices[1][0]=t2.A(); vertices[1][1]=t2.B(); vertices[1][2]=t2.C();
 	vertices[1][3]=p21; vertices[1][4]=p22;
-	faces[1][0]=HTriangle3<float>(t2.A, t2.B, p21);
-	faces[1][1]=HTriangle3<float>(t2.B, t2.C, p21);
-	faces[1][2]=HTriangle3<float>(t2.C, t2.A, p21);
-	faces[1][3]=HTriangle3<float>(t2.A, t2.B, p22);
-	faces[1][4]=HTriangle3<float>(t2.B, t2.C, p22);
-	faces[1][5]=HTriangle3<float>(t2.C, t2.A, p22);
+	faces[1][0]=Triangle<Point3<float>>(t2.A(), t2.B(), p21);
+	faces[1][1]=Triangle<Point3<float>>(t2.B(), t2.C(), p21);
+	faces[1][2]=Triangle<Point3<float>>(t2.C(), t2.A(), p21);
+	faces[1][3]=Triangle<Point3<float>>(t2.A(), t2.B(), p22);
+	faces[1][4]=Triangle<Point3<float>>(t2.B(), t2.C(), p22);
+	faces[1][5]=Triangle<Point3<float>>(t2.C(), t2.A(), p22);
 
 	for(unsigned i=0; i<2; ++i)
 		for(unsigned int t=0; t<6; ++t)
 		{
-			HTriangle3<float> face=faces[i][t];
-			HPoint3<float> norm=getNormalVector(face);
-			HPoint3<float> homeVector=mid[i]-face.A;
+			Triangle<Point3<float>> face=faces[i][t];
+			Point3<float> norm=getNormalVector(face);
+			Point3<float> homeVector=mid[i]-face.A();
 			float homeDot=(norm*homeVector);
 			int homeSign=homeDot>eps?1:(homeDot<-eps?-1:0);
 
 			bool isSeparation=true;
 			for(int k=0; k<5; ++k)
 			{
-				HPoint3<float> alienVector=vertices[1-i][k]-face.A;
+				Point3<float> alienVector=vertices[1-i][k]-face.A();
 				float alienDot=norm*alienVector;
 				int alienSign=alienDot>eps?1:(alienDot<-eps?-1:0);
 				if(alienSign==homeSign&&alienSign!=0)
@@ -1239,22 +1239,22 @@ bool HActiveContours::triangles3DIntersection( const HTriangle3<float> &t1, cons
 		return true;
 }
 
-bool HActiveContours::triangleDegenerate( const HTriangleSeed &t )
+bool D25ActiveContours::triangleDegenerate( const HTriangleSeed &t )
 {
 	const float eps=0.001f;
-	HPoint3<float> v1=t.p2->p-t.p1->p;
-	HPoint3<float> v2=t.p3->p-t.p2->p;
-	HPoint3<float> v3=t.p1->p-t.p3->p;
+	Point3<float> v1=t.p2->p-t.p1->p;
+	Point3<float> v2=t.p3->p-t.p2->p;
+	Point3<float> v3=t.p1->p-t.p3->p;
 
-	float cos1=v1*v2/(v1.getNorm()*v2.getNorm());
-	float cos2=v2*v3/(v2.getNorm()*v3.getNorm());
-	float cos3=v3*v1/(v3.getNorm()*v1.getNorm());
+	float cos1=v1*v2/float((v1.get_eucl_norm()*v2.get_eucl_norm()));
+	float cos2=v2*v3/float((v2.get_eucl_norm()*v3.get_eucl_norm()));
+	float cos3=v3*v1/float((v3.get_eucl_norm()*v1.get_eucl_norm()));
 
 	if(fabs(cos1)>1-eps||fabs(cos2)>1-eps||fabs(cos3)>1-eps)return true;
 	else return false;
 }
 
-void HActiveContours::loadVertices( std::list<HPoint3<float>> &vertexList )
+void D25ActiveContours::loadVertices( std::list<Point3<float>> &vertexList )
 {
 
 	if(vertices)delete vertices;
@@ -1270,7 +1270,7 @@ void HActiveContours::loadVertices( std::list<HPoint3<float>> &vertexList )
 
 }
 
-bool HActiveContours::growStep()
+bool D25ActiveContours::growStep()
 {	
 	if(unvisitedCount==0&&activeEdges.size()==0)
 	{
@@ -1284,7 +1284,7 @@ bool HActiveContours::growStep()
 	return true;
 }
 
-void HActiveContours::postStitch()
+void D25ActiveContours::postStitch()
 {
 	if(frozenEdges.size()==0)return;
 
@@ -1320,21 +1320,21 @@ void HActiveContours::postStitch()
 
 				//Check the stitching condition (see the "Red Notebook")
 				{
-					HPoint3<float> a=e.p2->p-e.p1->p;
-					HPoint3<float> b=ee.p2->p-ee.p1->p;
-					HPoint3<float> norm=getNormalVector(a,b);
+					Point3<float> a=e.p2->p-e.p1->p;
+					Point3<float> b=ee.p2->p-ee.p1->p;
+					Point3<float> norm=getNormalVector(a,b);
 
-					HPoint3<float> n1=getNormalVector(a,norm);
+					Point3<float> n1=getNormalVector(a,norm);
 					float signCor1=n1*e.propagationVector>0?1.0f:-1.0f;
 					n1=n1*signCor1;
 
-					HPoint3<float> n2=getNormalVector(b,norm);
+					Point3<float> n2=getNormalVector(b,norm);
 					float signCor2=n2*ee.propagationVector>0?1.0f:-1.0f;
 					n2=n2*signCor2;
 
 					float sgn1=a*n2;
 					float sgn2=b*n1;
-					float cosab=a*b/(a.getNorm()*b.getNorm());
+					float cosab=a*b/float((a.get_eucl_norm()*b.get_eucl_norm()));
 
 					if(sgn1>0&&sgn2>0)
 						if(cosab>maxStitchedAngle)
@@ -1375,5 +1375,8 @@ void HActiveContours::postStitch()
 
 	}
 
+} // namespace surfaces
+
+} // namespace methods
 
 }

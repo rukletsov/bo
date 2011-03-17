@@ -36,7 +36,9 @@ INCLUDE_DIRECTORIES (BEFORE
                      ./include
                      ./include/common
                      ./include/methods
+                     ./3rdparty
                      ./3rdparty/rply-1.01
+                     ./3rdparty/libkdtree++_0.7.0
                      $ENV{BOOST_ROOT}
 )
                     
