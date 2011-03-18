@@ -40,7 +40,7 @@
 #include <list>
 #include <vector>
 
-#include "common/point.hpp"
+#include "common/vector.hpp"
 #include "common/triangle.hpp"
 #include "common/mesh.hpp"
 

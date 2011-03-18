@@ -41,7 +41,7 @@
 #include <iostream>
 #include <boost/array.hpp>
 
-#include "point.hpp"
+#include "vector.hpp"
 #include "triangle.hpp"
 
 
@@ -85,6 +85,10 @@ public:
     // Add a new face and return its index. Update dependent collections.
     size_t add_face(const Face& face);
 
+    // Temporary accessor methods.
+    Vertices get_all_vertice() const;
+    Faces get_all_faces() const;
+
     // IO functions, allow to read mesh from and write to a .ply files, 
     // print formatted mesh data to an std::ostream.
     static Mesh from_ply(const std::string& file_path);
@@ -106,6 +110,19 @@ private:
     // We can also add, e.g. faces adjacent to faces over edges, i.e. each face will
     // have maximum 3 these neighbouring faces.
 };
+
+
+inline
+Mesh::Vertices Mesh::get_all_vertice() const
+{
+    return vertices;
+}
+
+inline
+Mesh::Faces Mesh::get_all_faces() const
+{
+    return faces;
+}
 
 } // namespace common
 
