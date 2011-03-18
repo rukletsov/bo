@@ -53,7 +53,7 @@ class Mesh
 public:
     // Mesh vertices. Their order shouldn't be changed, since other collections 
     // use vertex indices as references.
-    typedef Point3<double> Vertex;
+    typedef Vector3<double> Vertex;
     typedef std::vector<Vertex> Vertices;
 
     // Face is a triangle with vertices representing indices of the mesh vertices.

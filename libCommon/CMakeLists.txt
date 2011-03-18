@@ -20,7 +20,7 @@ SET (LibCommon_CSRCS
 
 SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/point.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp

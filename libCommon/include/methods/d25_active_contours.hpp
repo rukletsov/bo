@@ -40,9 +40,9 @@
 #include <list>
 #include <vector>
 
-#include "point.hpp"
-#include "triangle.hpp"
-#include "mesh.hpp"
+#include "common/point.hpp"
+#include "common/triangle.hpp"
+#include "common/mesh.hpp"
 
 namespace methods {
 
@@ -63,7 +63,7 @@ namespace surfaces {
 struct HPointSeed
 {	
 	/*! 3D Vertex */
-	common::Point3<float> p;
+	common::Vector3<float> p;
 
 	/*! Visits flag */
 	bool isVisited;
@@ -103,7 +103,7 @@ struct  HEdgeSeed
 	HPointSeed* p2;
 
 	/*! Vector of the propagation direction */
-	common::Point3<float> propagationVector;
+	common::Vector3<float> propagationVector;
 
 	/*! Comparison operator */
 	bool operator == (const HEdgeSeed& other) const
@@ -235,12 +235,12 @@ public:
 		\param vertexList The list of vertices in 3D
 		\return Reconstructed mesh
 	*/
-	common::Mesh buildMesh(std::list<common::Point3<float>> &vertexList);
+	common::Mesh buildMesh(std::list<common::Vector3<float>> &vertexList);
 
 	/*! Loads points cloud into the internal vertices structure
 		\param vertexList The list of vertices in 3D
 	*/
-	void loadVertices(std::list<common::Point3<float>> &vertexList);
+	void loadVertices(std::list<common::Vector3<float>> &vertexList);
 	
 	/*! Performs one growing iteration. Returns true if further growing is possible otherwise returns false
 		\return true if further growing is possible otherwise returns false
@@ -328,7 +328,7 @@ protected:
 		\param t2 Second input triangle
 		\return True if an approximation of the pyramidal projection of \p t1 intersects the truncated projection of \p t2 in 3D. Otherwise returns false.
 	*/
-	bool triangles3DIntersection(const common::Triangle<common::Point3<float>> &t1, const common::Triangle<common::Point3<float>> &t2);
+	bool triangles3DIntersection(const common::Triangle<common::Vector3<float>> &t1, const common::Triangle<common::Vector3<float>> &t2);
 
 	/*! Tests \p triangle3DIntersection() for the given triangle \p t with all triangles from \p triangles
 		\param t The input triangle
@@ -391,20 +391,20 @@ protected:
 		\param t The input triangle
 		\return The normal vector for \p t
 	*/
-	common::Point3<float> getNormalVector(const common::Triangle<common::Point3<float>> &t);
+	common::Vector3<float> getNormalVector(const common::Triangle<common::Vector3<float>> &t);
 
 	/*! Calculates the normal vector for the face of the given triangle \p ts. Attention: the direction depends on the vertices order
 		\param ts The input triangle
 		\return The normal vector for \p ts
 	*/
-	common::Point3<float> getNormalVector(const HTriangleSeed &ts);
+	common::Vector3<float> getNormalVector(const HTriangleSeed &ts);
 
 	/*! Calculates the normal vector of the plane formed by two given vectors \p v1 and \p v2
 		\param v1 The first input vector
 		\param v2 The second input vector
 		\return The normal vector to <v1,v2>
 	*/
-	common::Point3<float> getNormalVector(const common::Point3<float> v1, const common::Point3<float> v2);
+	common::Vector3<float> getNormalVector(const common::Vector3<float> v1, const common::Vector3<float> v2);
 	
 	/*! Calculates the element from \p vertices that is nearest to the point of propagation for the given edge \p e. Searches among the visited points if \p checkVisited is true 
 		\param e The input vertex
@@ -426,7 +426,7 @@ protected:
 		\param windowRadius The radius of the neighborhood
 		\return The normal vector
 	*/
-	common::Point3<float> getSurfaceNormal(common::Point3<float> p, float windowRadius);
+	common::Vector3<float> getSurfaceNormal(common::Vector3<float> p, float windowRadius);
 
 
 	//! Container of the input vertices. Internal realization as a k-DTree
