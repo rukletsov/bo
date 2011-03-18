@@ -916,7 +916,7 @@ common::Mesh D25ActiveContours::buildMesh(std::list<Vector3<float>> &vertexList)
 			{	
 				//Add the vertex/node into the mesh and to the reference map
 				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x,ps->p.y,ps->p.z));
-				mymap[itt->p1]=ind;
+				mymap[ps]=ind;
 			}
 		}
 
