@@ -86,7 +86,7 @@ public:
     size_t add_face(const Face& face);
 
     // Temporary accessor methods.
-    Vertices get_all_vertice() const;
+    Vertices get_all_vertices() const;
     Faces get_all_faces() const;
 
     // IO functions, allow to read mesh from and write to a .ply files, 
@@ -113,7 +113,7 @@ private:
 
 
 inline
-Mesh::Vertices Mesh::get_all_vertice() const
+Mesh::Vertices Mesh::get_all_vertices() const
 {
     return vertices;
 }
