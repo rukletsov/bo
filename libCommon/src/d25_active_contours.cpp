@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <map>
-#include <boost/numeric/ublas/matrix.hpp>
 
 //Uncomment for equal-square triangles propagation  
 //#define USE_EQUAL_SQUARE_PROPAGATION
@@ -552,7 +551,7 @@ void D25ActiveContours::visitPoints( HTriangleSeed &tr )
 			++it;
 		}
 	}
-
+	
 	
 }
 
