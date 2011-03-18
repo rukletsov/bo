@@ -65,12 +65,15 @@ struct Vector3
 	Vector3();
 	Vector3(T _x, T _y, T _z);
 
-	Vector3<T> operator + (const Vector3<T> &other) const;
-	Vector3<T> operator - (const Vector3<T> &other) const;
-	Vector3<T> operator * (const T &scalar) const;
-	Vector3<T> operator / (const T &scalar) const;
-	T operator * (const Vector3<T> &other) const;
-	bool operator == (const Vector3<T> &other) const;
+	Vector3<T> operator + (const Vector3<T>& other) const;
+	Vector3<T> operator - (const Vector3<T>& other) const;
+	Vector3<T> operator * (const T& scalar) const;
+	Vector3<T> operator / (const T& scalar) const;
+	T operator * (const Vector3<T>& other) const;
+	bool operator == (const Vector3<T>& other) const;
+
+    T dot_product(const Vector3<T>& other) const;
+    Vector3<T> cross_product(const Vector3& other) const;
 
 	double get_eucl_norm() const;
 
@@ -229,7 +232,8 @@ Vector3<T> Vector3<T>::operator/(const T& scalar) const
 template<typename T>
 T Vector3<T>::operator*(const Vector3<T>& other) const
 {
-	return x * other.x + y * other.y + z * other.z;
+	return 
+        x * other.x + y * other.y + z * other.z;
 }
 
 template<typename T>
@@ -237,6 +241,22 @@ bool Vector3<T>::operator==(const Vector3<T>& other) const
 {
     return 
         (((x == other.x) && (y==other.y) && (z == other.z)) ? true : false);
+}
+
+template<typename T>
+T Vector3<T>::dot_product(const Vector3<T>& other) const
+{
+	return
+        x * other.x + y * other.y + z * other.z;
+}
+
+template<typename T>
+Vector3<T> Vector3<T>::cross_product(const Vector3& other) const
+{
+    return Vector3<T>
+        (y * other.z - z * other.y,
+         z * other.x - x * other.z,
+         x * other.y - y * other.x);
 }
 
 template<typename T> 
