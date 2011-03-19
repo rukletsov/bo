@@ -37,6 +37,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <set>
 #include <string>
 #include <iostream>
 #include <boost/array.hpp>
@@ -60,20 +61,20 @@ public:
     typedef Triangle<std::size_t> Face;
     typedef std::vector<Face> Faces;
 
-    // Normal is a 3-vector and is attached to a vertex. A normal corresponds to a 
-    // vertex with the same index in vertices collection.
-    typedef boost::array<double, 3> Normal;
+    // Normal is a 3-vector can be attached to a vertex or to a face. A normal 
+    // corresponds to a component with the same index in relevant collection.
+    typedef Vector3<double> Normal;
     typedef std::vector<Normal> Normals;
 
     // Neighbours for each vertex. Each neighbour contains indices of vertex in
     // vertices collection.
-    typedef std::vector<std::size_t> AdjacentVertex;
-    typedef std::vector<AdjacentVertex> AdjacentVertices;
+    typedef std::set<std::size_t> AdjacentVerticesPerVertex;
+    typedef std::vector<AdjacentVerticesPerVertex> AdjacentVertices;
 
     // Neighbouring faces for each vertex. Each adjacent face is an index of a face
     // in faces collection.
-    typedef std::vector<std::size_t> AdjacentFace;
-    typedef std::vector<AdjacentFace> AdjacentFaces;
+    typedef std::set<std::size_t> AdjacentFacesPerVertex;
+    typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
 public:
     // Create an empty mesh with pre-allocated memory.
@@ -85,21 +86,34 @@ public:
     // Add a new face and return its index. Update dependent collections.
     size_t add_face(const Face& face);
 
+    // Get vertex normal, computed according to 
+    // N.Max, "Weights for Computing Vertex Normals from Facet Normals",
+    // Journal of Graphics Tools, Vol. 4, No. 2, 1999.
+    Normal get_vertex_normal(size_t vertex_index) const;
+
     // Temporary accessor methods.
-    Vertices get_all_vertice() const;
+    Vertices get_all_vertices() const;
     Faces get_all_faces() const;
 
     // IO functions, allow to read mesh from and write to a .ply files, 
     // print formatted mesh data to an std::ostream.
     static Mesh from_ply(const std::string& file_path);
-    bool to_ply(const std::string& file_path);
+    bool to_ply(const std::string& file_path) const;
     friend std::ostream& operator <<(std::ostream& os, const Mesh& obj);
+
+private:
+    // Add connectivity relations. Return false in case of new relation leads to 
+    // a duplicate.
+    bool add_neighbouring_pair(size_t vertex1, size_t vertex2);
+    bool add_adjacent_face(size_t vertex, size_t face);
+
+    Normal compute_face_normal(const Face& face) const;
 
 private:
     // Basic mesh data.
     Vertices vertices;
     Faces faces;
-    Normals normals;
+    Normals face_normals;
     // Some other properties can be used, e.g. triangle strips (for speeding up
     // rendering), curvature information, BBox, grid, etc (See TriMesh implementation
     // by Szymon Rusinkiewicz as an example.)
@@ -113,7 +127,7 @@ private:
 
 
 inline
-Mesh::Vertices Mesh::get_all_vertice() const
+Mesh::Vertices Mesh::get_all_vertices() const
 {
     return vertices;
 }

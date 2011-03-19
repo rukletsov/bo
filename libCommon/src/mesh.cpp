@@ -80,7 +80,7 @@ Mesh::Mesh(size_t initial_count)
 {
     vertices.reserve(initial_count);
     faces.reserve(initial_count);
-    normals.reserve(initial_count); 
+    face_normals.reserve(initial_count); 
     neighbours.reserve(initial_count); 
     adjacent_faces.reserve(initial_count);
 }
@@ -91,7 +91,9 @@ size_t Mesh::add_vertex(const Vertex& vertex)
     vertices.push_back(vertex);
     size_t new_vertex_index = vertices.size() - 1;
 
-    // Count vertex normal and store it.
+    // Add empty connectivity containers.
+    neighbours.push_back(AdjacentVerticesPerVertex());
+    adjacent_faces.push_back(AdjacentFacesPerVertex());
 
     return new_vertex_index;
 }
@@ -102,11 +104,25 @@ size_t Mesh::add_face(const Face& face)
     faces.push_back(face);
     size_t new_face_index = faces.size() - 1;
 
+    // Compute and save face normal.
+    face_normals.push_back(compute_face_normal(face));
+
     // Update vertex neighbours.
+    add_neighbouring_pair(face.A(), face.B());
+    add_neighbouring_pair(face.B(), face.C());
+    add_neighbouring_pair(face.C(), face.A());
 
     // Update adjacent faces.
+    add_adjacent_face(face.A(), new_face_index);
+    add_adjacent_face(face.B(), new_face_index);
+    add_adjacent_face(face.C(), new_face_index);
 
     return new_face_index;
+}
+
+Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
+{
+    return Normal();
 }
 
 
@@ -159,7 +175,7 @@ Mesh Mesh::from_ply(const std::string& file_path)
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
 // Some shitty software doesn't support double type for vertices that's why a 
 // conversion to float is made, despite the fact that mesh stores double type.
-bool Mesh::to_ply(const std::string& file_path)
+bool Mesh::to_ply(const std::string& file_path) const
 {
     // Create .ply file in ascii format.
     p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
@@ -247,23 +263,85 @@ bool Mesh::to_ply(const std::string& file_path)
 // details about formatting.
 std::ostream& operator <<(std::ostream &os, const Mesh& obj)
 {
-    // Add syncro primitives to stream operator.
+    // Add syncro primitives to stream operator and, perhaps, verbose levels.
     os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
         << std::endl << "Vertices: " << obj.vertices.size() << std::endl;
     
-    
+    // Print full vertex info
     Mesh::Vertices::const_iterator vertices_end = obj.vertices.end();
     for (Mesh::Vertices::const_iterator it = obj.vertices.begin();
          it != vertices_end; ++it)
     {
-        os << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x % it->y % it->z
-            << std::endl;
+        // Print vertex coordinates.
+        size_t index = it - obj.vertices.begin();
+        os << boost::format("vertex %1%: ") % index << std::endl << "\t"
+           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x % it->y % it->z;
+
+        // Print neighbouring vertices.
+        os << std::endl << "\t"
+           << boost::format("neighbours (%1%): ") % obj.neighbours[index].size();
+
+        Mesh::AdjacentVerticesPerVertex::const_iterator neighbours_end = 
+            obj.neighbours[index].end();
+        for (Mesh::AdjacentVerticesPerVertex::const_iterator neighbour = 
+            obj.neighbours[index].begin(); neighbour != neighbours_end; ++neighbour)
+        {
+            os << boost::format("%1%, %|4t|") % (*neighbour);
+        }
+
+        // Print adjacent faces.            
+        os << std::endl << "\t" 
+           << boost::format("adjacent faces (%1%): ") % obj.adjacent_faces[index].size();
+
+        Mesh::AdjacentFacesPerVertex::const_iterator faces_end = 
+            obj.adjacent_faces[index].end();
+        for (Mesh::AdjacentFacesPerVertex::const_iterator face = 
+            obj.adjacent_faces[index].begin(); face != faces_end; ++face)
+        {
+            os << boost::format("%1%, %|4t|") % (*face);
+        }
+
+        os << std::endl;
     }
 
+    // Print full faces info.
     os << "Faces: " << obj.faces.size() << std::endl 
-        << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
+       << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
 
     return os;
+}
+
+// Private Urility functions.
+bool Mesh::add_neighbouring_pair(size_t vertex1, size_t vertex2)
+{
+    // If the neighbouring relation between given vertices already exists, 
+    // set::insert signal this and won't add a duplicate. A neighbouring relation
+    // should be mutual. In case one vertex has another as a neighbour and another
+    // has not, report error through assertion.
+    bool exist1 = neighbours[vertex1].insert(vertex2).second;
+    bool exist2 = neighbours[vertex2].insert(vertex1).second;
+
+    BOOST_ASSERT(!(exist1 ^ exist2));
+
+    // Since relation is mutual, either exist1 or exist2 can be returned.
+    return exist1;
+}
+
+bool Mesh::add_adjacent_face(size_t vertex, size_t face)
+{
+    // If the face is already attached to the vertex, set::insert won't add a 
+    // duplicate. See set::insert documentation.
+    return 
+        adjacent_faces[vertex].insert(face).second;
+}
+
+Mesh::Normal Mesh::compute_face_normal(const Face& face) const
+{
+    Vector3<double> a = vertices[face.A()] - vertices[face.B()];
+    Vector3<double> b = vertices[face.B()] - vertices[face.C()];
+    
+    return 
+        a.cross_product(b);
 }
 
 } // namespace common
