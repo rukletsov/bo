@@ -1,0 +1,34 @@
+
+LIBRARY
+================================================================================
+* CMake msvc compiler options.
+* CMake different options for debug/release configuration.
+* Supress msvc unsafe CRT warnings.
+* Put windows-dependent code under #ifdef.
+
+
+Mesh class
+================================================================================
+* Check algorithms and investigate speed-up possibilites (pointers, inline, etc).
+* Add logging levels in operator <<().
+* Make Mesh thread-safe.
+* Do not add duplicated faces, edges, points.
+? Do not add "close" points, e.g. which are in radius of two-three floats; 
+  use existed point instead.
+* Make well-designed accessor functions (see standard graph representations).
+* Implement "primitive-object" for Mesh class in order to visualize a Mesh.
+? Merge current Mesh implementation with Pasha's one.
+* Create vertex moving function.
+
+
+Vector<> class
+================================================================================
+* Make an n-dimensional vector based on boost::array.
+* Inherit Vector2<>, Vector3<>, Vector4<> from new n-Vector<> class.
+* Add useful mathematical methods.
+* Speed-up.
+
+
+OTHER
+================================================================================
+
