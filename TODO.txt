@@ -19,6 +19,7 @@ Mesh class
 * Implement "primitive-object" for Mesh class in order to visualize a Mesh.
 ? Merge current Mesh implementation with Pasha's one.
 * Create vertex moving function.
+* Check English names for mesh terms (basic graph and mesh definitions).
 
 
 Vector<> class

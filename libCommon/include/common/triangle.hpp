@@ -66,7 +66,7 @@ Triangle<PointType>::Triangle(const PointType& _A, const PointType& _B, const Po
 {
     vertices[0] = _A;
     vertices[1] = _B;
-    vertices[0] = _C;
+    vertices[2] = _C;
 }
 
 template <typename PointType> inline
