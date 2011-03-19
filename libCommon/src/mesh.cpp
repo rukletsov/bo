@@ -263,11 +263,12 @@ bool Mesh::to_ply(const std::string& file_path) const
 // details about formatting.
 std::ostream& operator <<(std::ostream &os, const Mesh& obj)
 {
-    // Add syncro primitives to stream operator and, perhaps, verbose levels.
-    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
-        << std::endl << "Vertices: " << obj.vertices.size() << std::endl;
+    // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
     
-    // Print full vertex info
+    // Print full vertex info.
+    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
+       << std::endl << "Vertices: " << obj.vertices.size() << std::endl;
+
     Mesh::Vertices::const_iterator vertices_end = obj.vertices.end();
     for (Mesh::Vertices::const_iterator it = obj.vertices.begin();
          it != vertices_end; ++it)
@@ -305,8 +306,28 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
     }
 
     // Print full faces info.
-    os << "Faces: " << obj.faces.size() << std::endl 
-       << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
+    os << "Faces: " << obj.faces.size() << std::endl;
+
+    Mesh::Faces::const_iterator faces_end = obj.faces.end();
+    for (Mesh::Faces::const_iterator face = obj.faces.begin(); 
+        face != faces_end; ++face)
+    {
+        // Print face's vertices.
+        size_t index = face - obj.faces.begin();
+        os << boost::format("face %1%: ") % index << std::endl << "\t"
+           << boost::format("A: %1%, %|18t|B: %2%, %|36t|C: %3%,") 
+           % face->A() % face->B() % face->C();
+
+        // Print face's normal.
+        Mesh::Normal normal = obj.face_normals[index];
+        os << std::endl << "\t"
+           << boost::format("normal: (%1%, %2%, %3%)") % normal.x % normal.y % normal.z;
+
+        os << std::endl;        
+    }
+
+    // Print footer and return.
+    os << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
 
     return os;
 }

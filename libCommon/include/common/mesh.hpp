@@ -94,6 +94,7 @@ public:
     // Temporary accessor methods.
     Vertices get_all_vertices() const;
     Faces get_all_faces() const;
+    Normals get_all_face_normals() const;
 
     // IO functions, allow to read mesh from and write to a .ply files, 
     // print formatted mesh data to an std::ostream.
@@ -136,6 +137,12 @@ inline
 Mesh::Faces Mesh::get_all_faces() const
 {
     return faces;
+}
+
+inline
+Mesh::Normals Mesh::get_all_face_normals() const
+{
+    return face_normals;
 }
 
 } // namespace common
