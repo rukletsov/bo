@@ -122,7 +122,34 @@ size_t Mesh::add_face(const Face& face)
 
 Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
 {
-    return Normal();
+    // A normal of a vertex is a sum of weighted normals of adjacent faces.
+    Normal retvalue;
+
+    AdjacentFacesPerVertex::const_iterator faces_end = 
+        adjacent_faces[vertex_index].end();
+    for (AdjacentFacesPerVertex::const_iterator face_index = 
+        adjacent_faces[vertex_index].begin(); face_index != faces_end; ++face_index)
+    {
+        // Determine to which face vertex considered vertex belong. Without loss of
+        // generality, suppose, that face[2] == vertex_index.
+        Face face = faces[*face_index];
+        size_t pt1 = face[0];
+        size_t pt2 = face[1];
+        if (face[0] == vertex_index)
+            pt1 = face[2];
+        else if (face[1] == vertex_index)
+            pt2 = face[2];
+
+        // Compute face's normal weight (multiplied dot products of two edges).
+        Vector3<double> edge1 = vertices[pt1] - vertices[vertex_index];
+        Vector3<double> edge2 = vertices[pt2] - vertices[vertex_index];
+        double weight = ((edge1 * edge1) * (edge2 * edge2));
+
+        // Append weighted face's normal.
+        retvalue = retvalue + face_normals[*face_index] * (1.0 / weight);
+    }
+
+    return retvalue;
 }
 
 

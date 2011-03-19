@@ -262,7 +262,8 @@ Vector3<T> Vector3<T>::cross_product(const Vector3& other) const
 template<typename T> 
 double Vector3<T>::get_eucl_norm() const
 {
-    return sqrt(double(x * x + y * y + z * z));
+    return 
+        sqrt(static_cast<double>((*this) * (*this)));
 }
 
 

@@ -26,8 +26,14 @@ Vector<> class
 ================================================================================
 * Make an n-dimensional vector based on boost::array.
 * Inherit Vector2<>, Vector3<>, Vector4<> from new n-Vector<> class.
-* Add useful mathematical methods.
+* Add useful mathematical methods, e.g. normalize(), etc.
 * Speed-up.
+* Implement operator+=, operator-=, etc.
+
+
+Triangle<> class
+================================================================================
+* Implement Equals() method.
 
 
 OTHER
