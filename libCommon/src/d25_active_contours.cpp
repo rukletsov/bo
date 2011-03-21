@@ -899,40 +899,8 @@ common::Mesh D25ActiveContours::buildMesh(std::list<Vector3<float>> &vertexList)
 	//Building a set of faces
 	while(growStep());
 
-	//Construct a mesh
-	common::Mesh m(triangles.size());
-
-	//Create a reference map (from the local triangles nodes to the mesh vertices)
-	std::map<HPointSeed*,size_t> mymap;
-	std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
-	while(itt!=triangles.end())
-	{
-		for(int j=0; j<3; ++j)
-		{
-			HPointSeed* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
-
-			//If the triangle node is not yet in the map
-			if(mymap.find(ps)==mymap.end())
-			{	
-				//Add the vertex/node into the mesh and to the reference map
-				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x,ps->p.y,ps->p.z));
-				mymap[ps]=ind;
-			}
-		}
-
-		//Add the face from the processed triangle nodes
-		size_t A=mymap[itt->p1];
-		size_t B=mymap[itt->p2];
-		size_t C=mymap[itt->p3];
-		
-		m.add_face(common::Mesh::Face(A,B,C));
-
-		++itt;
-	}
-
-
-	return m;
-
+	//Generate and return the mesh
+	return getCurrentMesh();
 }
 
 
@@ -1399,6 +1367,43 @@ void D25ActiveContours::postStitch()
 	}
 
 } // namespace surfaces
+
+common::Mesh D25ActiveContours::getCurrentMesh()
+{
+	//Construct a mesh
+	common::Mesh m(triangles.size());
+
+	//Create a reference map (from the local triangles nodes to the mesh vertices)
+	std::map<HPointSeed*,size_t> mymap;
+	std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
+	while(itt!=triangles.end())
+	{
+		for(int j=0; j<3; ++j)
+		{
+			HPointSeed* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
+
+			//If the triangle node is not yet in the map
+			if(mymap.find(ps)==mymap.end())
+			{	
+				//Add the vertex/node into the mesh and to the reference map
+				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x,ps->p.y,ps->p.z));
+				mymap[ps]=ind;
+			}
+		}
+
+		//Add the face from the processed triangle nodes
+		size_t A=mymap[itt->p1];
+		size_t B=mymap[itt->p2];
+		size_t C=mymap[itt->p3];
+
+		m.add_face(common::Mesh::Face(A,B,C));
+
+		++itt;
+	}
+
+	return m;
+}
+
 
 } // namespace methods
 
