@@ -231,6 +231,11 @@ public:
 	*/
 	const std::list<HTriangleSeed>* getTriangleList();
 
+	/*! Generates a mesh object from the current list of triangles
+		\return Reconstructed mesh
+	*/
+	common::Mesh getCurrentMesh();
+
 	/*! The main mesh construction procedure.
 		\param vertexList The list of vertices in 3D
 		\return Reconstructed mesh
