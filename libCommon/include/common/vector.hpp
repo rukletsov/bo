@@ -77,7 +77,11 @@ struct Vector3
 
 	double get_eucl_norm() const;
 
-	T get_dimension_value(int dimension_index);
+    // Note that for integral types normalize won't work. For this reason this
+    // function is designed const and it returns a normalized double vector.
+    Vector3<double> normalized() const;
+
+	T get_dimension_value(int dimension_index) const;
 	void set_dimension_value(int dimension_index, T value);
 };
 
@@ -149,7 +153,7 @@ Vector3<T>::Vector3(T _x, T _y, T _z): x(_x), y(_y), z(_z)
 { }
 
 template<typename T>
-T Vector3<T>::get_dimension_value(int dimension_index)
+T Vector3<T>::get_dimension_value(int dimension_index) const
 {
 	T dimension_value;
 	switch (dimension_index)
@@ -264,6 +268,17 @@ double Vector3<T>::get_eucl_norm() const
 {
     return 
         sqrt(static_cast<double>((*this) * (*this)));
+}
+
+
+template<typename T> 
+Vector3<double> Vector3<T>::normalized() const
+{
+    double factor = 1.0 / get_eucl_norm();
+    return Vector3<double>
+        (static_cast<double>(x) * factor,
+         static_cast<double>(y) * factor,
+         static_cast<double>(z) * factor);
 }
 
 

@@ -105,7 +105,7 @@ size_t Mesh::add_face(const Face& face)
     size_t new_face_index = faces.size() - 1;
 
     // Compute and save face normal.
-    face_normals.push_back(compute_face_normal(face));
+    face_normals.push_back(compute_face_normal(face).normalized());
 
     // Update vertex neighbours.
     add_neighbouring_pair(face.A(), face.B());
@@ -132,7 +132,7 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
     {
         // Determine to which face vertex considered vertex belong. Without loss of
         // generality, suppose, that face[2] == vertex_index.
-        Face face = faces[*face_index];
+        const Face& face = faces[*face_index];
         size_t pt1 = face[0];
         size_t pt2 = face[1];
         if (face[0] == vertex_index)

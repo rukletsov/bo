@@ -38,4 +38,8 @@ Triangle<> class
 
 OTHER
 ================================================================================
+* Look and compare 3rd-party mesh implementations: 
+  VCG (http://vcg.sourceforge.net/index.php/Main_Page), 
+  OpenMesh (http://www.openmesh.org/), 
+  Meshlab (http://meshlab.sourceforge.net/)
 
