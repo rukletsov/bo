@@ -1,12 +1,11 @@
 
 /******************************************************************************
 
-    vector.hpp, v 1.0.1 2011.03.10
+    vector.hpp, v 1.0.2 2011.03.23
 
-    Multidimensional Vector and Point classes. 
+    Multidimensional Vector (Point) class. 
 
     Copyright (c) 2010, 2011
-    Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
     Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
     All rights reserved.
 
@@ -36,8 +35,386 @@
 #ifndef VECTOR_HPP_4545D406_43E3_4444_8E4B_9B5A10E7AB16_
 #define VECTOR_HPP_4545D406_43E3_4444_8E4B_9B5A10E7AB16_
 
+#include <cstddef>
+#include <math.h>
+#include <iostream>
+#include <boost/array.hpp>
+#include <boost/operators.hpp>
+#include <boost/format.hpp>
+
 
 namespace common {
+
+// Basic n-vector.
+template <typename T, std::size_t N>
+class Vector
+    : boost::additive2< Vector<T, N>, T
+    , boost::multiplicative2< Vector<T, N>, T
+    , boost::equality_comparable1< Vector<T, N>
+    , boost::additive1< Vector<T, N>
+    > > > > 
+{
+
+public:
+
+    // Each component is initialized either to 0 or to a given value.
+    // If a c-array of type S is given, copy its elements.
+	Vector();
+    Vector(const T& value);
+    template <typename S> explicit Vector(const S& data, std::size_t length);
+
+    // Some of standard operators. boost::operators adds more.
+    Vector<T, N> operator+=(const T& scalar);
+    Vector<T, N> operator-=(const T& scalar);
+    Vector<T, N> operator*=(const T& scalar);
+    Vector<T, N> operator/=(const T& scalar);
+
+    bool operator==(const Vector<T, N>& other) const;
+
+    Vector<T, N> operator+=(const Vector<T, N>& other);
+    Vector<T, N> operator-=(const Vector<T, N>& other);
+
+    // Dot product operator cannot be created by boost since its return value is
+    // T, not Vector<T, N>. Therefore, create these operators manually. See below
+    // for operator* implementation.
+    T operator*=(const Vector<T, N>& other);  
+
+    // Assignment and access operators. Range-check is done by boost::array.
+    const T& operator[](std::size_t index) const;
+    T& operator[](std::size_t index);
+
+    // See below for operator<<, defined outside the class.
+
+    // Simple usual functions.
+    T min() const;
+    std::size_t min_index() const;
+    T max() const;
+    std::size_t max_index() const;
+    T sum() const;
+    T product() const;
+    T avg() const;
+	
+    // Compute euclidean norm of the vectors. If the return variable is given,
+    // try to convert the result to retvar's type.
+    double eucl_norm() const;
+    template <typename RetType> void eucl_norm(RetType& retvar) const;
+
+    // Note that for integral types normalize won't work. For this reason this
+    // function is designed const and it returns a normalized double vector.
+    Vector<double, N> normalized() const;
+
+    // Size is always the same: N.
+    std::size_t size() const;
+
+    // Swap method (linear complexity).
+    void swap(Vector<T, N>& other);
+
+    // Fill each component with a given value.
+    void fill(const T& value);
+
+    // Set components' values from anything, that can be accessed by [].
+    template <typename S> void assign(const S& data, std::size_t length);
+
+protected:
+    boost::array<T, N> components;
+};
+
+
+// Dot product operator for two Vector<T, N>.
+template <typename T, std::size_t N> inline
+T operator*(Vector<T, N> lhs, const Vector<T, N>& rhs) 
+{ 
+    return lhs *= rhs; 
+}
+
+// Stream operator<< for printing Vector<T, N> contents.
+template <typename T, std::size_t N>
+std::ostream& operator<<(std::ostream &os, const Vector<T, N>& obj)
+{
+    os << boost::format("%1%-Vector, object %2$#x, %3% bytes: ") 
+        % N % &obj % sizeof(obj) << std::endl << "    (";
+
+    for (std::size_t i = 0; i < N-1; ++i)
+        os << boost::format("%1%, %|4t|") % obj[i];
+
+    // Print last element separately in order to avoid last comma and spaces.
+    os << boost::format("%1%)") % obj[N-1] << std::endl 
+       << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return os;
+}
+
+
+template <typename T, std::size_t N>
+Vector<T, N>::Vector()
+{ 
+    components.fill(static_cast<T>(0));
+}
+
+template <typename T, std::size_t N>
+Vector<T, N>::Vector(const T& value)
+{ 
+    fill(value);
+}
+
+template <typename T, std::size_t N> template <typename S>
+Vector<T, N>::Vector(const S& data, std::size_t length)
+{
+    assign(data, length);
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator+=(const T& scalar)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] += scalar;
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator-=(const T& scalar)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] -= scalar;
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator*=(const T& scalar)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] *= scalar;
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator/=(const T& scalar)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] /= scalar;
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+bool Vector<T, N>::operator==(const Vector<T, N>& other) const
+{
+    for (std::size_t i = 0; i < N; ++i)
+        if (components[i] != other.components[i])
+            return false;
+
+    return true;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator+=(const Vector<T, N>& other)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] += other.components[i];
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator-=(const Vector<T, N>& other)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        components[i] -= other.components[i];
+
+    return *this;
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::operator*=(const Vector<T, N>& other)
+{
+    T retvalue = 0;
+    for (std::size_t i = 0; i < N; ++i)
+        retvalue += components[i] * other.components[i];
+    	
+    return retvalue;
+}
+
+template <typename T, std::size_t N> inline
+const T& Vector<T, N>::operator[](std::size_t index) const
+{
+    return components[index];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::operator[](std::size_t index)
+{
+    return components[index];
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::min() const
+{ 
+    T min_value = components[0];
+    for (std::size_t i = 1; i < N; ++i)
+	    if (components[i] < min_value)  
+            min_value = components[i];
+
+    return min_value; 
+}
+
+template <typename T, std::size_t N>
+std::size_t Vector<T, N>::min_index() const
+{
+    std::size_t min_index = 0;
+    T min_value = components[0];
+
+    for (std::size_t i = 1; i < N; ++i)
+    {
+	    if (components[i] < min_value)  
+        {
+            min_index = i;
+            min_value = components[i];
+        }
+    }
+
+    return min_index;
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::max() const
+{ 
+    T max_value = components[0];
+    for (std::size_t i = 1; i < N; ++i)
+	    if (components[i] > max_value)  
+            max_value = components[i];
+
+    return max_value; 
+}
+
+template <typename T, std::size_t N>
+std::size_t Vector<T, N>::max_index() const
+{
+    std::size_t max_index = 0;
+    T max_value = components[0];
+
+    for (std::size_t i = 1; i < N; ++i)
+    {
+	    if (components[i] > max_value)  
+        {
+            max_index = i;
+            max_value = components[i];
+        }
+    }
+
+    return max_index;
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::sum() const
+{ 
+    T total = components[0];
+    for (std::size_t i = 1; i < N; ++i) 
+        total += components[i];
+
+    return total; 
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::product() const
+{ 
+    T product = components[0];
+    for (std::size_t i = 1; i < N; ++i) 
+        product *= components[i];
+
+    return product; 
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::avg() const
+{ 
+    return 
+        sum() / N; 
+}
+
+template <typename T, std::size_t N> 
+double Vector<T, N>::eucl_norm() const
+{
+    return 
+        sqrt(static_cast<double>((*this) * (*this)));
+}
+
+template <typename T, std::size_t N> template <typename RetType> 
+void Vector<T, N>::eucl_norm(RetType& retvar) const
+{
+    retvar = static_cast<RetType>(sqrt(static_cast<double>((*this) * (*this))));
+}
+
+template <typename T, std::size_t N> 
+Vector<double, N> Vector<T, N>::normalized() const
+{
+    double factor = 1.0 / eucl_norm();
+    Vector<double, N> retvalue;
+
+    for (std::size_t i = 0; i < N; ++i)
+        retvalue[i] = static_cast<double>(components[i]) * factor;
+
+    return retvalue;
+}
+
+template <typename T, std::size_t N> inline
+std::size_t Vector<T, N>::size() const
+{
+    return N;
+}
+
+template <typename T, std::size_t N> 
+void Vector<T, N>::swap(Vector<T, N>& other)
+{
+    components.swap(other.components);
+}
+
+template <typename T, std::size_t N> 
+void Vector<T, N>::fill(const T& value)
+{
+    components.fill(value);
+}
+
+template <typename T, std::size_t N> template <typename S>
+void Vector<T, N>::assign(const S& data, std::size_t length)
+{
+    // If a given array is smaller than N, copy everything and set 0 for other
+    // components. If a given array is bigger than N, copy first N elements.
+    std::size_t num = length < N ? length : N;
+    for (std::size_t i = 0; i < num; ++i)
+        components[i] = static_cast<T>(data[i]);
+
+    for (std::size_t i = num; i < N; ++i)
+        components[i] = static_cast<T>(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 2D vector.
 template<typename T>

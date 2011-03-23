@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    triangle.hpp, v 1.0.2 2011.03.10
+    triangle.hpp, v 1.0.3 2011.03.22
 
     Triangle class. 
 
@@ -56,7 +56,7 @@ public:
     PointType& operator[] (std::size_t index);
     const PointType& operator[] (std::size_t index) const;
 
-private:
+protected:
     boost::array<PointType, 3> vertices;
 };
 

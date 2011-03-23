@@ -354,7 +354,7 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
     }
 
     // Print footer and return.
-    os << boost::format("end of Mesh object %1$#x.") % &obj << std::endl;
+    os << boost::format("end of object %1$#x.") % &obj << std::endl;
 
     return os;
 }
