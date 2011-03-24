@@ -118,7 +118,7 @@ public:
     
     // Cross product makes sense only in 3D and therefore is available only for 
     // Vector<T, 3>.
-    const Vector<T, N>& cross_product(const Vector<T, N>& other) const;
+    Vector<T, N> cross_product(const Vector<T, N>& other) const;
 
     // Simple usual functions.
     T min() const;
@@ -136,7 +136,7 @@ public:
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
-    const Vector<double, N>& normalized() const;
+    Vector<double, N> normalized() const;
 
     // Size is always the same: N.
     std::size_t size() const;
@@ -371,7 +371,7 @@ T& Vector<T, N>::w()
 }
 
 template <typename T, std::size_t N>
-const Vector<T, N>& Vector<T, N>::cross_product(const Vector<T, N>& other) const
+Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
 {
     BOOST_STATIC_ASSERT(N == 3);
 
@@ -480,7 +480,7 @@ void Vector<T, N>::eucl_norm(RetType& retvar) const
 }
 
 template <typename T, std::size_t N> 
-const Vector<double, N>& Vector<T, N>::normalized() const
+Vector<double, N> Vector<T, N>::normalized() const
 {
     double factor = 1.0 / eucl_norm();
     Vector<double, N> retvalue;
