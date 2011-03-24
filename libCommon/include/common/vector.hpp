@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    vector.hpp, v 1.0.2 2011.03.23
+    vector.hpp, v 1.1.1 2011.03.24
 
     Multidimensional Vector (Point) class. 
 
@@ -71,15 +71,15 @@ public:
     Vector(const T& x, const T& y, const T& z, const T& w);
 
     // Some of standard operators. boost::operators library adds more.
-    Vector<T, N> operator+=(const T& scalar);
-    Vector<T, N> operator-=(const T& scalar);
-    Vector<T, N> operator*=(const T& scalar);
-    Vector<T, N> operator/=(const T& scalar);
+    const Vector<T, N>& operator+=(const T& scalar);
+    const Vector<T, N>& operator-=(const T& scalar);
+    const Vector<T, N>& operator*=(const T& scalar);
+    const Vector<T, N>& operator/=(const T& scalar);
 
     bool operator==(const Vector<T, N>& other) const;
 
-    Vector<T, N> operator+=(const Vector<T, N>& other);
-    Vector<T, N> operator-=(const Vector<T, N>& other);
+    const Vector<T, N>& operator+=(const Vector<T, N>& other);
+    const Vector<T, N>& operator-=(const Vector<T, N>& other);
 
     // Dot product operator cannot be created by boost since its return value is
     // T, not Vector<T, N>. Therefore, create these operators manually. See below
@@ -118,7 +118,7 @@ public:
     
     // Cross product makes sense only in 3D and therefore is available only for 
     // Vector<T, 3>.
-    Vector<T, N> cross_product(const Vector<T, N>& other) const;
+    const Vector<T, N>& cross_product(const Vector<T, N>& other) const;
 
     // Simple usual functions.
     T min() const;
@@ -136,7 +136,7 @@ public:
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
-    Vector<double, N> normalized() const;
+    const Vector<double, N>& normalized() const;
 
     // Size is always the same: N.
     std::size_t size() const;
@@ -229,7 +229,7 @@ Vector<T, N>::Vector(const T& x, const T& y, const T& z, const T& w)
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator+=(const T& scalar)
+const Vector<T, N>& Vector<T, N>::operator+=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] += scalar;
@@ -238,7 +238,7 @@ Vector<T, N> Vector<T, N>::operator+=(const T& scalar)
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator-=(const T& scalar)
+const Vector<T, N>& Vector<T, N>::operator-=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] -= scalar;
@@ -247,7 +247,7 @@ Vector<T, N> Vector<T, N>::operator-=(const T& scalar)
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator*=(const T& scalar)
+const Vector<T, N>& Vector<T, N>::operator*=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] *= scalar;
@@ -256,7 +256,7 @@ Vector<T, N> Vector<T, N>::operator*=(const T& scalar)
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator/=(const T& scalar)
+const Vector<T, N>& Vector<T, N>::operator/=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] /= scalar;
@@ -275,7 +275,7 @@ bool Vector<T, N>::operator==(const Vector<T, N>& other) const
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator+=(const Vector<T, N>& other)
+const Vector<T, N>& Vector<T, N>::operator+=(const Vector<T, N>& other)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] += other.components[i];
@@ -284,7 +284,7 @@ Vector<T, N> Vector<T, N>::operator+=(const Vector<T, N>& other)
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::operator-=(const Vector<T, N>& other)
+const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
 {
     for (std::size_t i = 0; i < N; ++i)
         components[i] -= other.components[i];
@@ -371,7 +371,7 @@ T& Vector<T, N>::w()
 }
 
 template <typename T, std::size_t N>
-Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
+const Vector<T, N>& Vector<T, N>::cross_product(const Vector<T, N>& other) const
 {
     BOOST_STATIC_ASSERT(N == 3);
 
@@ -480,7 +480,7 @@ void Vector<T, N>::eucl_norm(RetType& retvar) const
 }
 
 template <typename T, std::size_t N> 
-Vector<double, N> Vector<T, N>::normalized() const
+const Vector<double, N>& Vector<T, N>::normalized() const
 {
     double factor = 1.0 / eucl_norm();
     Vector<double, N> retvalue;
