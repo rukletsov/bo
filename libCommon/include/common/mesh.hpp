@@ -54,7 +54,7 @@ class Mesh
 public:
     // Mesh vertices. Their order shouldn't be changed, since other collections 
     // use vertex indices as references.
-    typedef Vector3<double> Vertex;
+    typedef Vector<double, 3> Vertex;
     typedef std::vector<Vertex> Vertices;
 
     // Face is a triangle with vertices representing indices of the mesh vertices.
@@ -63,7 +63,7 @@ public:
 
     // Normal is a 3-vector can be attached to a vertex or to a face. A normal 
     // corresponds to a component with the same index in relevant collection.
-    typedef Vector3<double> Normal;
+    typedef Vector<double, 3> Normal;
     typedef std::vector<Normal> Normals;
 
     // Neighbours for each vertex. Each neighbour contains indices of vertex in

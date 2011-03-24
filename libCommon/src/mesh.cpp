@@ -29,15 +29,15 @@ int vertex_cb(p_ply_argument argument) {
     {
     case 0:
         // Means we scan x-coord of a vertex.
-        context->vertex->x = ply_get_argument_value(argument);
+        context->vertex->x() = ply_get_argument_value(argument);
         break;
     case 1:
         // Means we scan y-coord of a vertex.
-        context->vertex->y = ply_get_argument_value(argument);
+        context->vertex->y() = ply_get_argument_value(argument);
         break;
     case 2:
         // Means we scan z-coord and are ready to store the vertex.
-        context->vertex->z = ply_get_argument_value(argument);
+        context->vertex->z() = ply_get_argument_value(argument);
         context->mesh_ptr->add_vertex(*(context->vertex));
         break;
     default:
@@ -141,8 +141,8 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
             pt2 = face[2];
 
         // Compute face's normal weight (multiplied dot products of two edges).
-        Vector3<double> edge1 = vertices[pt1] - vertices[vertex_index];
-        Vector3<double> edge2 = vertices[pt2] - vertices[vertex_index];
+        Vector<double, 3> edge1 = vertices[pt1] - vertices[vertex_index];
+        Vector<double, 3> edge2 = vertices[pt2] - vertices[vertex_index];
         double weight = ((edge1 * edge1) * (edge2 * edge2));
 
         // Append weighted face's normal.
@@ -257,11 +257,11 @@ bool Mesh::to_ply(const std::string& file_path) const
         for (Mesh::Vertices::const_iterator it = this->vertices.begin();
              it != vertices_end; ++it)
         {
-            if (!ply_write(oply, it->x)) 
+            if (!ply_write(oply, it->x())) 
                 return false;
-            if (!ply_write(oply, it->y))
+            if (!ply_write(oply, it->y()))
                 return false;
-            if (!ply_write(oply, it->z)) 
+            if (!ply_write(oply, it->z())) 
                 return false;
         }
 
@@ -303,7 +303,8 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
         // Print vertex coordinates.
         size_t index = it - obj.vertices.begin();
         os << boost::format("vertex %1%: ") % index << std::endl << "\t"
-           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x % it->y % it->z;
+           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x() 
+           % it->y() % it->z();
 
         // Print neighbouring vertices.
         os << std::endl << "\t"
@@ -348,7 +349,8 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
         // Print face's normal.
         Mesh::Normal normal = obj.face_normals[index];
         os << std::endl << "\t"
-           << boost::format("normal: (%1%, %2%, %3%)") % normal.x % normal.y % normal.z;
+           << boost::format("normal: (%1%, %2%, %3%)") % normal.x() % normal.y() 
+           % normal.z();
 
         os << std::endl;        
     }
@@ -385,8 +387,8 @@ bool Mesh::add_adjacent_face(size_t vertex, size_t face)
 
 Mesh::Normal Mesh::compute_face_normal(const Face& face) const
 {
-    Vector3<double> a = vertices[face.A()] - vertices[face.B()];
-    Vector3<double> b = vertices[face.B()] - vertices[face.C()];
+    Vector<double, 3> a = vertices[face.A()] - vertices[face.B()];
+    Vector<double, 3> b = vertices[face.B()] - vertices[face.C()];
     
     return 
         a.cross_product(b);
