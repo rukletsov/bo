@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 
+#include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/scope_exit.hpp>
 
@@ -371,7 +372,7 @@ bool Mesh::add_neighbouring_pair(size_t vertex1, size_t vertex2)
     bool exist1 = neighbours[vertex1].insert(vertex2).second;
     bool exist2 = neighbours[vertex2].insert(vertex1).second;
 
-    BOOST_ASSERT(!(exist1 ^ exist2));
+    BOOST_ASSERT(!(exist1 ^ exist2) && "Mesh: neighbouring relation is not mutual.");
 
     // Since relation is mutual, either exist1 or exist2 can be returned.
     return exist1;
