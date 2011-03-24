@@ -41,11 +41,14 @@
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 #include <boost/format.hpp>
+#include <boost/static_assert.hpp>
 
 
 namespace common {
 
-// Basic n-vector.
+// Basic n-vector. Some methods, such as x(), y(), cross_product() are available
+// only for certain specializations. A compiler error will be thrown if an 
+// inappropriate call attempt is made. See notes on accessor functions below.
 template <typename T, std::size_t N>
 class Vector
     : boost::additive2< Vector<T, N>, T
@@ -54,16 +57,14 @@ class Vector
     , boost::additive1< Vector<T, N>
     > > > > 
 {
-
 public:
-
     // Each component is initialized either to 0 or to a given value.
     // If a c-array of type S is given, copy its elements.
 	Vector();
     Vector(const T& value);
     template <typename S> explicit Vector(const S& data, std::size_t length);
 
-    // Some of standard operators. boost::operators adds more.
+    // Some of standard operators. boost::operators library adds more.
     Vector<T, N> operator+=(const T& scalar);
     Vector<T, N> operator-=(const T& scalar);
     Vector<T, N> operator*=(const T& scalar);
@@ -79,11 +80,35 @@ public:
     // for operator* implementation.
     T operator*=(const Vector<T, N>& other);  
 
+    // See below for operator<<, defined outside the class.
+
     // Assignment and access operators. Range-check is done by boost::array.
     const T& operator[](std::size_t index) const;
     T& operator[](std::size_t index);
 
-    // See below for operator<<, defined outside the class.
+    // These special accessor functions are available only where appropriate.
+    // That means, if you try to call x() on Vector<T, 10> or z() on Vector<T, 2>
+    // you'll get an error. Unfortunately, not "... is not a member of ..." error,
+    // but still clear enough to understand the reason. 
+    //
+    // The other solution is to have a basic, say, VectorImpl<T, N> class and 
+    // derived classes Vector<T, N> and its specializations Vector<T, 2> and so on.
+    // But this approach leads to a lot of copy-paste mesthods, e.g. all operators,
+    // constructors and some other. The possible solution is to write macros for 
+    // automatic creation of these dublicated methods. An open question is performance
+    // in the presence of inheritance and possible redundant object copying. That 
+    // should be checked in case of this approach.
+    //
+    // Finally, it was decided to favor the first approach because of its simplicty
+    // and not worse performance.
+    const T& x() const;
+    const T& y() const;
+    const T& z() const;
+    const T& w() const;
+    T& x();
+    T& y();
+    T& z();
+    T& w();
 
     // Simple usual functions.
     T min() const;
@@ -247,6 +272,62 @@ template <typename T, std::size_t N> inline
 T& Vector<T, N>::operator[](std::size_t index)
 {
     return components[index];
+}
+
+template <typename T, std::size_t N> inline
+const T& Vector<T, N>::x() const
+{
+    BOOST_STATIC_ASSERT(N >= 1 && N <= 4);
+    return components[0];
+}
+
+template <typename T, std::size_t N> inline
+const T& Vector<T, N>::y() const
+{
+    BOOST_STATIC_ASSERT(N >= 2 && N <= 4);
+    return components[1];
+}
+
+template <typename T, std::size_t N> inline
+const T& Vector<T, N>::z() const
+{
+    BOOST_STATIC_ASSERT(N >= 3 && N <= 4);
+    return components[2];
+}
+
+template <typename T, std::size_t N> inline
+const T& Vector<T, N>::w() const
+{
+    BOOST_STATIC_ASSERT(N == 4);
+    return components[3];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::x()
+{
+    BOOST_STATIC_ASSERT(N >= 1 && N <= 4);
+    return components[0];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::y()
+{
+    BOOST_STATIC_ASSERT(N >= 2 && N <= 4);
+    return components[1];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::z()
+{
+    BOOST_STATIC_ASSERT(N >= 3 && N <= 4);
+    return components[2];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::w()
+{
+    BOOST_STATIC_ASSERT(N == 4);
+    return components[3];
 }
 
 template <typename T, std::size_t N>
