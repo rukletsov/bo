@@ -64,6 +64,12 @@ public:
     Vector(const T& value);
     template <typename S> explicit Vector(const S& data, std::size_t length);
 
+    // These constructors add support for specializations with N = 2, 3, 4. See 
+    // notes on accessor functions below.
+    Vector(const T& x, const T& y);
+    Vector(const T& x, const T& y, const T& z);
+    Vector(const T& x, const T& y, const T& z, const T& w);
+
     // Some of standard operators. boost::operators library adds more.
     Vector<T, N> operator+=(const T& scalar);
     Vector<T, N> operator-=(const T& scalar);
@@ -109,6 +115,10 @@ public:
     T& y();
     T& z();
     T& w();
+    
+    // Cross product makes sense only in 3D and therefore is available only for 
+    // Vector<T, 3>.
+    Vector<T, N> cross_product(const Vector<T, N>& other) const;
 
     // Simple usual functions.
     T min() const;
@@ -186,6 +196,36 @@ template <typename T, std::size_t N> template <typename S>
 Vector<T, N>::Vector(const S& data, std::size_t length)
 {
     assign(data, length);
+}
+
+template <typename T, std::size_t N>
+Vector<T, N>::Vector(const T& x, const T& y)
+{
+    BOOST_STATIC_ASSERT(N == 2);
+
+    components[0] = x;
+    components[1] = y;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N>::Vector(const T& x, const T& y, const T& z)
+{
+    BOOST_STATIC_ASSERT(N == 3);
+
+    components[0] = x;
+    components[1] = y;
+    components[2] = z;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N>::Vector(const T& x, const T& y, const T& z, const T& w)
+{
+    BOOST_STATIC_ASSERT(N == 4);
+
+    components[0] = x;
+    components[1] = y;
+    components[2] = z;
+    components[3] = w;
 }
 
 template <typename T, std::size_t N>
@@ -328,6 +368,17 @@ T& Vector<T, N>::w()
 {
     BOOST_STATIC_ASSERT(N == 4);
     return components[3];
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
+{
+    BOOST_STATIC_ASSERT(N == 3);
+
+    return Vector<T, N>
+        (y() * other.z() - z() * other.y(),
+         z() * other.x() - x() * other.z(),
+         x() * other.y() - y() * other.x());
 }
 
 template <typename T, std::size_t N>
