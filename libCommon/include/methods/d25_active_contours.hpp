@@ -210,6 +210,8 @@ public:
 	*/
 	void setMaxStitchedAngle(float maxStitchedAngle);
 
+	void set_tetrahedron_base_angle(float tetrahedronBaseAngle);
+
 	/*! Vertices vector getter
 		\return Vertices vector
 	*/
@@ -236,11 +238,16 @@ public:
 	*/
 	common::Mesh getCurrentMesh();
 
-	/*! The main mesh construction procedure.
+	/*! Mesh construction procedure.
 		\param vertexList The list of vertices in 3D
 		\return Reconstructed mesh
 	*/
 	common::Mesh buildMesh(std::list<common::Vector3<float>> &vertexList);
+
+	/*! Reconstruct a mesh from pre-loaded vertices
+		\return Reconstructed mesh
+	*/
+	common::Mesh buildMesh();
 
 	/*! Loads points cloud into the internal vertices structure
 		\param vertexList The list of vertices in 3D
@@ -389,28 +396,6 @@ protected:
 	*/
 	bool excludeSmallAngles(const HEdgeSeed &e, HPointSeed* &ps);
 	
-
-	
-	
-	/*! Calculates the normal vector for the face of the given triangle \p t. Attention: the direction depends on the vertices order
-		\param t The input triangle
-		\return The normal vector for \p t
-	*/
-	common::Vector3<float> getNormalVector(const common::Triangle<common::Vector3<float>> &t);
-
-	/*! Calculates the normal vector for the face of the given triangle \p ts. Attention: the direction depends on the vertices order
-		\param ts The input triangle
-		\return The normal vector for \p ts
-	*/
-	common::Vector3<float> getNormalVector(const HTriangleSeed &ts);
-
-	/*! Calculates the normal vector of the plane formed by two given vectors \p v1 and \p v2
-		\param v1 The first input vector
-		\param v2 The second input vector
-		\return The normal vector to <v1,v2>
-	*/
-	common::Vector3<float> getNormalVector(const common::Vector3<float> v1, const common::Vector3<float> v2);
-	
 	/*! Calculates the element from \p vertices that is nearest to the point of propagation for the given edge \p e. Searches among the visited points if \p checkVisited is true 
 		\param e The input vertex
 		\param checkVisited A flag. Search among the visited vertices if true
@@ -459,7 +444,7 @@ protected:
 	//! The maximum analyzed depth of the points cloud layer
 	float maxSurfaceDepth;
 
-	//! The maximum cos-value of angles between mesh edges that will be excluded during the mesh construction
+	//! Cos-value of the maximum angle between mesh edges that will be excluded during the mesh construction
 	float maxExcludedAngle;
 
 	//! The radius of the neighborhood system used for PCA-based normal vector calculation
@@ -468,8 +453,11 @@ protected:
 	//! The linear proportion between PCA-normal and triangle-based normals
 	float faceSurfaceFactor;
 
-	//! The maximum cos-value of the angles between adjacent frozen edges, that allows post-stitching of the edges
+	//! Cos-value of the maximum angle between adjacent frozen edges, that allows post-stitching of the edges
 	float maxStitchedAngle;
+
+	//! Cos-value of tetrahedron angles (half of the minimal allowed angle between adjacent faces)
+	float tetrahedronBaseAngle;
 
 	//! Auxiliary variable. Current polygon square
 	float initSquare;
