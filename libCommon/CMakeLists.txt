@@ -54,14 +54,25 @@ ADD_LIBRARY (LibCommon
 
 IF (MSVC)
     # Enable usage for precompiled header for MSVC compiler for C++ sources.
-    # SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS "/Yustdafx.h")    
     FOREACH (src_file ${LibCommon_SRCS})
         SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
     ENDFOREACH (src_file ${LibCommon_SRCS})
 
+    # Set "create precompiled header" option for only stdafx.cpp file.
     SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
                                  PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
     
+    # Specify output path and name suffix for debug build.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES PREFIX "../")
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "_debug")
+    
+    # Supress secure warnings (C4996) for MSVC compiler.
+    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
+                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
+    # Alternative variant:
+    #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
+    #SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")                           
+  
+    # Supress "no public symbols found" MSVC's linker warning for stdafx.obj. 
+    SET_TARGET_PROPERTIES (LibCommon PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
 ENDIF (MSVC)
