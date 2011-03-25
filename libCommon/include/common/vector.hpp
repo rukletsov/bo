@@ -88,9 +88,16 @@ public:
 
     // See below for operator<<, defined outside the class.
 
-    // Assignment and access operators. Range-check is done by boost::array.
+    // Assignment and access operators. Range-check is done by boost::array via 
+    // debug-only assertions. Use at() method for safer but less efficient version 
+    // with exceptions.
     const T& operator[](std::size_t index) const;
     T& operator[](std::size_t index);
+
+    // Assignment and access methods. Throws an exception in case of bad index.
+    // Safer, but less efficient alternative of opeartor[].
+    const T& at(std::size_t index) const;
+    T& at(std::size_t index);
 
     // These special accessor functions are available only where appropriate.
     // That means, if you try to call x() on Vector<T, 10> or z() on Vector<T, 2>
@@ -118,7 +125,7 @@ public:
     
     // Cross product makes sense only in 3D and therefore is available only for 
     // Vector<T, 3>.
-    const Vector<T, N>& cross_product(const Vector<T, N>& other) const;
+    Vector<T, N> cross_product(const Vector<T, N>& other) const;
 
     // Simple usual functions.
     T min() const;
@@ -136,7 +143,7 @@ public:
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
-    const Vector<double, N>& normalized() const;
+    Vector<double, N> normalized() const;
 
     // Size is always the same: N.
     std::size_t size() const;
@@ -149,6 +156,11 @@ public:
 
     // Set components' values from anything, that can be accessed by [].
     template <typename S> void assign(const S& data, std::size_t length);
+
+protected:
+    // Provide range check for a given index. Throws a std::out_of_range exception
+    // in case of bad index.
+    void check_range(std::size_t index) const;
 
 protected:
     boost::array<T, N> components;
@@ -315,6 +327,20 @@ T& Vector<T, N>::operator[](std::size_t index)
 }
 
 template <typename T, std::size_t N> inline
+const T& Vector<T, N>::at(std::size_t index) const
+{
+    check_range(index);
+    return components[index];
+}
+
+template <typename T, std::size_t N> inline
+T& Vector<T, N>::at(std::size_t index)
+{
+    check_range(index);
+    return components[index];
+}
+
+template <typename T, std::size_t N> inline
 const T& Vector<T, N>::x() const
 {
     BOOST_STATIC_ASSERT(N >= 1 && N <= 4);
@@ -371,7 +397,7 @@ T& Vector<T, N>::w()
 }
 
 template <typename T, std::size_t N>
-const Vector<T, N>& Vector<T, N>::cross_product(const Vector<T, N>& other) const
+Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
 {
     BOOST_STATIC_ASSERT(N == 3);
 
@@ -480,7 +506,7 @@ void Vector<T, N>::eucl_norm(RetType& retvar) const
 }
 
 template <typename T, std::size_t N> 
-const Vector<double, N>& Vector<T, N>::normalized() const
+Vector<double, N> Vector<T, N>::normalized() const
 {
     double factor = 1.0 / eucl_norm();
     Vector<double, N> retvalue;
@@ -520,6 +546,18 @@ void Vector<T, N>::assign(const S& data, std::size_t length)
 
     for (std::size_t i = num; i < N; ++i)
         components[i] = static_cast<T>(0);
+}
+
+template <typename T, std::size_t N> 
+void Vector<T, N>::check_range(std::size_t index) const
+{
+    if (index >= size()) 
+    {
+        std::out_of_range e((boost::format(
+            "%1%-Vector's index \"%2%\" is out of range.") % N % index).str());
+
+        throw e;
+    }
 }
 
 } // namespace common

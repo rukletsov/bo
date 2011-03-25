@@ -24,11 +24,10 @@ Mesh class
 
 Vector<> class
 ================================================================================
-* Make an n-dimensional vector based on boost::array.
-* Inherit Vector2<>, Vector3<>, Vector4<> from new n-Vector<> class.
-* Add useful mathematical methods, e.g. normalize(), etc.
-* Speed-up.
-* Implement operator+=, operator-=, etc.
+[DONE] * Make an n-dimensional vector based on boost::array.
+[DONE] * Add useful mathematical methods, e.g. normalize(), etc.
+* Speed-up ().
+[DONE] * Implement operator+=, operator-=, etc.
 
 
 Triangle<> class
@@ -41,5 +40,7 @@ OTHER
 * Look and compare 3rd-party mesh implementations: 
   VCG (http://vcg.sourceforge.net/index.php/Main_Page), 
   OpenMesh (http://www.openmesh.org/), 
-  Meshlab (http://meshlab.sourceforge.net/)
+  Meshlab (http://meshlab.sourceforge.net/).
+* Implement performance evaluation methods for not Windows OS (look at 
+  boost::timer).
 
