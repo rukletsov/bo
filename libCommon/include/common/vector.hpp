@@ -99,13 +99,13 @@ public:
     //
     // The other solution is to have a basic, say, VectorImpl<T, N> class and 
     // derived classes Vector<T, N> and its specializations Vector<T, 2> and so on.
-    // But this approach leads to a lot of copy-paste mesthods, e.g. all operators,
+    // But this approach leads to a lot of copy-paste methods, e.g. all operators,
     // constructors and some other. The possible solution is to write macros for 
-    // automatic creation of these dublicated methods. An open question is performance
+    // automatic creation of these duplicated methods. An open question is performance
     // in the presence of inheritance and possible redundant object copying. That 
     // should be checked in case of this approach.
     //
-    // Finally, it was decided to favor the first approach because of its simplicty
+    // Finally, it was decided to favor the first approach because of its simplicity
     // and not worse performance.
     const T& x() const;
     const T& y() const;

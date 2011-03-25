@@ -56,13 +56,13 @@ class HVertexContainer
 {
 public:
 
-	HVertexContainer(std::list<Vector3<float>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
+	HVertexContainer(std::list<Vector<float,3>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
 	{		
 		linear.resize(vertices.size());
 
 		//Filling in the 3D Tree
 		int cnt=0;
-		for(std::list<Vector3<float>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
+		for(std::list<Vector<float,3>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
 		{
 			linear[cnt].isNode=false;
 			linear[cnt].isVisited=false;
@@ -93,7 +93,7 @@ public:
 	}
 	inline bool operator()( HContainerElement const& ce ) const
 	{
-		return ((!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited))&&((searchCenter.p-ce.ps->p).get_eucl_norm()>minDistance);
+		return ((!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited))&&((searchCenter.p-ce.ps->p).eucl_norm()>minDistance);
 	}
 protected:
 	surfaces::HPointSeed searchCenter;
@@ -110,7 +110,7 @@ public:
 	{
 		eps=0.5;
 		ba=ce2.ps->p-ce1.ps->p;
-		absBa=ba.get_eucl_norm();
+		absBa=ba.eucl_norm();
 	}
 	inline bool operator()( HContainerElement const& ce ) const
 	{
@@ -120,8 +120,8 @@ public:
 		if(absBa==0)return false;
 
 		//Collinearity test
-		Vector3<float> ca=ce.ps->p-ce1.ps->p;;
-		double absCa2=ca.x*ca.x+ca.y*ca.y+ca.z*ca.z;
+		Vector<float,3> ca=ce.ps->p-ce1.ps->p;;
+		double absCa2=ca.x()*ca.x()+ca.y()*ca.y()+ca.z()*ca.z();
 
 		double scalBaCa=ba*ca;
 		double projCaOnBa=scalBaCa/absBa;
@@ -137,7 +137,7 @@ protected:
 	bool checkNodes;
 	bool checkVisited;
 	double eps;
-	Vector3<float> ba;
+	Vector<float,3> ba;
 	double absBa;
 };
 
@@ -146,13 +146,13 @@ protected:
 	\param v2 The second input vector
 	\return The normal vector to <v1,v2>
 */
-Vector3<float> getNormalVector( const Vector3<float> A, const Vector3<float> B )
+Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> b )
 {
-	Vector3<float> p;
+	Vector<float,3> p;
 
-	p.x=A.y*B.z-B.y*A.z;
-	p.y=A.z*B.x-B.z*A.x;
-	p.z=A.x*B.y-B.x*A.y;
+	p.x()=a.y()*b.z()-b.y()*a.z();
+	p.y()=a.z()*b.x()-b.z()*a.x();
+	p.z()=a.x()*b.y()-b.x()*a.y();
 
 	return p;
 }
@@ -161,50 +161,45 @@ Vector3<float> getNormalVector( const Vector3<float> A, const Vector3<float> B )
 	\param t The input triangle
 	\return The normal vector for \p t
 */
-Vector3<float> getNormalVector( const Triangle<Vector3<float>> &t )
+Vector<float,3> getNormalVector( const Triangle<Vector<float,3>> &t )
 {
-	Vector3<float> A=t.B()-t.A();
-	Vector3<float> B=t.C()-t.A();
+	Vector<float,3> a=t.B()-t.A();
+	Vector<float,3> b=t.C()-t.A();
 
-	return getNormalVector(A,B);
+	return getNormalVector(a,b);
 }
 
 /*! Calculates the normal vector for the face of the given triangle \p ts. Attention: the direction depends on the vertices order
 	\param ts The input triangle
 	\return The normal vector for \p ts
 */
-Vector3<float> getNormalVector(const surfaces::HTriangleSeed &ts)
+Vector<float,3> getNormalVector(const surfaces::HTriangleSeed &ts)
 {
-	Vector3<float> A=ts.p2->p-ts.p1->p;
-	Vector3<float> B=ts.p3->p-ts.p1->p;
+	Vector<float,3> a=ts.p2->p-ts.p1->p;
+	Vector<float,3> b=ts.p3->p-ts.p1->p;
 
-	Vector3<float> p;
-	p.x=A.y*B.z-B.y*A.z;
-	p.y=A.z*B.x-B.z*A.x;
-	p.z=A.x*B.y-B.x*A.y;
-
-	return p;
+	return getNormalVector(a,b);
 }
 
 //Triangular dipyramid
 struct TriangularDipyramid
 {
-	Vector3<float> vertices[5];
-	Triangle<Vector3<float>> faces[6];
-	Vector3<float> center;
+	Vector<float,3> vertices[5];
+	Triangle<Vector<float,3>> faces[6];
+	Vector<float,3> center;
 	
 	//Triangular dipyramid based on the given triangle with the given base angle
-	static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector3<float>> & t, float baseAngleCos)
+	static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3>> & t, float baseAngleCos)
 	{
 		TriangularDipyramid tdp;
 		
 		//Normal calculation.
-		Vector3<float> z=getNormalVector(t);
+		Vector<float,3> z=getNormalVector(t);
 
 		//Sides length.
-		float a=float((t.B()-t.C()).get_eucl_norm());
-		float b=float((t.C()-t.A()).get_eucl_norm());
-		float c=float((t.A()-t.B()).get_eucl_norm());
+		float a=float((t.B()-t.C()).eucl_norm());
+		float b=float((t.C()-t.A()).eucl_norm());
+		float c=float((t.A()-t.B()).eucl_norm());
 		
 		//Half-perimeter.
 		float p=(a+b+c)/2;
@@ -220,61 +215,61 @@ struct TriangularDipyramid
 		float h=r*sqrt(1/(baseAngleCos*baseAngleCos)-1);
 
 		//Height vector
-		z=z/float(z.get_eucl_norm())*h;
+		z=z/float(z.eucl_norm())*h;
 		
 		//Two top-vertices
-		Vector3<float> p1=tdp.center+z;
-		Vector3<float> p2=tdp.center-z;
+		Vector<float,3> p1=tdp.center+z;
+		Vector<float,3> p2=tdp.center-z;
 
 		//Vertices of the dipyramid
 		tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
 		tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
 		//Faces of the dipyramid
-		tdp.faces[0]=Triangle<Vector3<float>>(t.A(), t.B(), p1);
-		tdp.faces[1]=Triangle<Vector3<float>>(t.B(), t.C(), p1);
-		tdp.faces[2]=Triangle<Vector3<float>>(t.C(), t.A(), p1);
-		tdp.faces[3]=Triangle<Vector3<float>>(t.A(), t.B(), p2);
-		tdp.faces[4]=Triangle<Vector3<float>>(t.B(), t.C(), p2);
-		tdp.faces[5]=Triangle<Vector3<float>>(t.C(), t.A(), p2);
+		tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
+		tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
+		tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
+		tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
+		tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
+		tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
 
 		return tdp;
 	}
 
 	//Triangular dipyramid based on the given triangle with the given height
-	static TriangularDipyramid from_triangle_and_height(const Triangle<Vector3<float>> & t, float height)
+	static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float,3>> & t, float height)
 	{
 		TriangularDipyramid tdp;
 
 		//Normal calculation.
-		Vector3<float> z=getNormalVector(t);
+		Vector<float,3> z=getNormalVector(t);
 
 		//Sides length.
-		float a=float((t.B()-t.C()).get_eucl_norm());
-		float b=float((t.C()-t.A()).get_eucl_norm());
-		float c=float((t.A()-t.B()).get_eucl_norm());
+		float a=float((t.B()-t.C()).eucl_norm());
+		float b=float((t.C()-t.A()).eucl_norm());
+		float c=float((t.A()-t.B()).eucl_norm());
 
 		//Center of the incircle.
 		tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
 
 		//Height vector
-		z=z/float(z.get_eucl_norm())*height;
+		z=z/float(z.eucl_norm())*height;
 
 		//Two top-vertices
-		Vector3<float> p1=tdp.center+z;
-		Vector3<float> p2=tdp.center-z;
+		Vector<float,3> p1=tdp.center+z;
+		Vector<float,3> p2=tdp.center-z;
 
 		//Vertices of the dipyramid
 		tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
 		tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
 		//Faces of the dipyramid
-		tdp.faces[0]=Triangle<Vector3<float>>(t.A(), t.B(), p1);
-		tdp.faces[1]=Triangle<Vector3<float>>(t.B(), t.C(), p1);
-		tdp.faces[2]=Triangle<Vector3<float>>(t.C(), t.A(), p1);
-		tdp.faces[3]=Triangle<Vector3<float>>(t.A(), t.B(), p2);
-		tdp.faces[4]=Triangle<Vector3<float>>(t.B(), t.C(), p2);
-		tdp.faces[5]=Triangle<Vector3<float>>(t.C(), t.A(), p2);
+		tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
+		tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
+		tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
+		tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
+		tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
+		tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
 
 		return tdp;
 	}
@@ -291,17 +286,17 @@ struct TriangularDipyramid
 		{
 			for(unsigned int t=0; t<6; ++t)
 			{
-				Triangle<Vector3<float>> face=tp1.faces[t];
-				Vector3<float> norm=getNormalVector(face);
-				Vector3<float> homeVector=tp1.center-face.A();
-				float homeDot = norm*homeVector/float(norm.get_eucl_norm()*homeVector.get_eucl_norm());
+				Triangle<Vector<float,3>> face=tp1.faces[t];
+				Vector<float,3> norm=getNormalVector(face);
+				Vector<float,3> homeVector=tp1.center-face.A();
+				float homeDot = norm*homeVector/float(norm.eucl_norm()*homeVector.eucl_norm());
 				int homeSign=homeDot>eps?1:(homeDot<-eps?-1:0);
 
 				bool isSeparation=true;
 				for(int k=0; k<5; ++k)
 				{
-					Vector3<float> alienVector=tp2.vertices[k]-face.A();
-					float alienDot=norm*alienVector/float(norm.get_eucl_norm()*alienVector.get_eucl_norm());
+					Vector<float,3> alienVector=tp2.vertices[k]-face.A();
+					float alienDot=norm*alienVector/float(norm.eucl_norm()*alienVector.eucl_norm());
 					int alienSign=alienDot>eps?1:(alienDot<-eps?-1:0);
 					if(alienSign==homeSign&&alienSign!=0)
 					{
@@ -370,8 +365,8 @@ inline HPointSeed* D25ActiveContours::getClosestPoint( const HPointSeed &ps, boo
 
 HPointSeed* D25ActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited )
 {
-	Vector3<float> v1=ps2.p-ps1.p;
-	double a=v1.get_eucl_norm();
+	Vector<float,3> v1=ps2.p-ps1.p;
+	double a=v1.eucl_norm();
 
 	HPointSeed mid;
 	mid.p=(ps1.p+ps2.p)/2;
@@ -389,11 +384,11 @@ HPointSeed* D25ActiveContours::getClosestMinFuncPoint( const HPointSeed &ps1, co
 	{
 		if((!(*it).ps->isVisited)||(checkNodes&&(*it).ps->isNode)||(checkVisited&&(*it).ps->isVisited))
 		{	
-			Vector3<float> v2=(*it).ps->p-ps2.p;
-			Vector3<float> v3=ps1.p-(*it).ps->p;
+			Vector<float,3> v2=(*it).ps->p-ps2.p;
+			Vector<float,3> v3=ps1.p-(*it).ps->p;
 
-			double b=v2.get_eucl_norm();
-			double c=v3.get_eucl_norm();
+			double b=v2.eucl_norm();
+			double c=v3.eucl_norm();
 
 			if(b<maxInitDistance&&c<maxInitDistance&&b>minInitDistance&&c>minInitDistance)
 			{
@@ -429,7 +424,7 @@ inline HPointSeed* D25ActiveContours::getClosestNoncollinearPoint(const HPointSe
 
 inline float D25ActiveContours::getDistance( const HPointSeed &ps1, const HPointSeed &ps2 )
 {
-	return (float)(ps1.p-ps2.p).get_eucl_norm();
+	return (float)(ps1.p-ps2.p).eucl_norm();
 }
 
 
@@ -539,7 +534,7 @@ void D25ActiveContours::modelGrow()
 				//Add new triangle to the mesh
 				triangles.push_back(tr);
 			}
- 
+  
 		}
 		else 
 		{
@@ -565,19 +560,19 @@ bool D25ActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdg
 {
 	if(e1.p1!=e3.p2 || e2.p1!=e1.p2 || e3.p1!=e2.p2)return false;
 
-	Vector3<float> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
+	Vector<float,3> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
 
-	Vector3<float> v1=e1.p2->p-e1.p1->p;
-	Vector3<float> v2=e2.p2->p-e2.p1->p;
-	Vector3<float> v3=e3.p2->p-e3.p1->p;
+	Vector<float,3> v1=e1.p2->p-e1.p1->p;
+	Vector<float,3> v2=e2.p2->p-e2.p1->p;
+	Vector<float,3> v3=e3.p2->p-e3.p1->p;
 
-	Vector3<float> propagationE1,propagationE2,propagationE3;
+	Vector<float,3> propagationE1,propagationE2,propagationE3;
 
 	//PCA-based approximation 
 	if(faceSurfaceFactor!=0)
 	{
 		//PCA-based surface normal calculation
-		Vector3<float> midNorm=getSurfaceNormal(mid,normalNeighborhoodRadius);
+		Vector<float,3> midNorm=getSurfaceNormal(mid,normalNeighborhoodRadius);
 
 		//Propagation directions. Surface normal calculation
 		propagationE1=getNormalVector(v1,midNorm);
@@ -585,22 +580,22 @@ bool D25ActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdg
 		propagationE3=getNormalVector(v3,midNorm);
 
 		//Outer directions correction
-		Vector3<float> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
-		Vector3<float> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
-		Vector3<float> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
+		Vector<float,3> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
+		Vector<float,3> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
+		Vector<float,3> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
 
-		float cosMP1=(medianE1*propagationE1)/float(medianE1.get_eucl_norm()*propagationE1.get_eucl_norm());
-		float cosMP2=(medianE2*propagationE2)/float(medianE2.get_eucl_norm()*propagationE2.get_eucl_norm());
-		float cosMP3=(medianE3*propagationE3)/float(medianE3.get_eucl_norm()*propagationE3.get_eucl_norm());
+		float cosMP1=(medianE1*propagationE1)/float(medianE1.eucl_norm()*propagationE1.eucl_norm());
+		float cosMP2=(medianE2*propagationE2)/float(medianE2.eucl_norm()*propagationE2.eucl_norm());
+		float cosMP3=(medianE3*propagationE3)/float(medianE3.eucl_norm()*propagationE3.eucl_norm());
 
 		if(cosMP1<0)propagationE1=propagationE1*(-1);
 		if(cosMP2<0)propagationE2=propagationE2*(-1);
 		if(cosMP3<0)propagationE3=propagationE3*(-1);
 
 		//Mixture with the PCA-face propagations
-		propagationE1=(propagationE1/float(propagationE1.get_eucl_norm()))*faceSurfaceFactor+(medianE1/float(medianE1.get_eucl_norm()))*(1-faceSurfaceFactor);
-		propagationE2=(propagationE2/float(propagationE2.get_eucl_norm()))*faceSurfaceFactor+(medianE2/float(medianE2.get_eucl_norm()))*(1-faceSurfaceFactor);
-		propagationE3=(propagationE3/float(propagationE3.get_eucl_norm()))*faceSurfaceFactor+(medianE3/float(medianE3.get_eucl_norm()))*(1-faceSurfaceFactor);
+		propagationE1=(propagationE1/float(propagationE1.eucl_norm()))*faceSurfaceFactor+(medianE1/float(medianE1.eucl_norm()))*(1-faceSurfaceFactor);
+		propagationE2=(propagationE2/float(propagationE2.eucl_norm()))*faceSurfaceFactor+(medianE2/float(medianE2.eucl_norm()))*(1-faceSurfaceFactor);
+		propagationE3=(propagationE3/float(propagationE3.eucl_norm()))*faceSurfaceFactor+(medianE3/float(medianE3.eucl_norm()))*(1-faceSurfaceFactor);
 	}
 	//Triangle face based approximation
 	else
@@ -612,9 +607,9 @@ bool D25ActiveContours::getEdgesPropagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdg
 
 
 	//Normalization
-	propagationE1=propagationE1/float(propagationE1.get_eucl_norm());
-	propagationE2=propagationE2/float(propagationE2.get_eucl_norm());
-	propagationE3=propagationE3/float(propagationE3.get_eucl_norm());
+	propagationE1=propagationE1/float(propagationE1.eucl_norm());
+	propagationE2=propagationE2/float(propagationE2.eucl_norm());
+	propagationE3=propagationE3/float(propagationE3.eucl_norm());
 
 #ifdef USE_EQUAL_SQUARE_PROPAGATION
 
@@ -658,7 +653,7 @@ inline HPointSeed* D25ActiveContours::getPropagatedVertex(const HEdgeSeed &e, bo
 {
 	HPointSeed p;
 
-	Vector3<float> mid=(e.p1->p+e.p2->p)/2;
+	Vector<float,3> mid=(e.p1->p+e.p2->p)/2;
 
 	p.p=mid+e.propagationVector;
 
@@ -688,11 +683,11 @@ void D25ActiveContours::visitPoints( HTriangleSeed &tr )
 	tr.p3->isNode=true;
 
 	//Select points from the neighborhood. Define the radius
-	Vector3<float> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
+	Vector<float,3> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
 	float tmp, rad=maxSurfaceDepth;
-	rad=rad>(tmp=float((tr.p1->p-mid).get_eucl_norm()))?rad:tmp;
-	rad=rad>(tmp=float((tr.p2->p-mid).get_eucl_norm()))?rad:tmp;
-	rad=rad>(tmp=float((tr.p3->p-mid).get_eucl_norm()))?rad:tmp;
+	rad=rad>(tmp=float((tr.p1->p-mid).eucl_norm()))?rad:tmp;
+	rad=rad>(tmp=float((tr.p2->p-mid).eucl_norm()))?rad:tmp;
+	rad=rad>(tmp=float((tr.p3->p-mid).eucl_norm()))?rad:tmp;
 
 	//Pre-search: choose all points in the range
 	HPointSeed mids;
@@ -702,15 +697,15 @@ void D25ActiveContours::visitPoints( HTriangleSeed &tr )
 
 	//Check if the selected points are inside the prism
 	//Calculate triangle prism basis matrix
-	Vector3<float> X=tr.p2->p-tr.p1->p;
-	Vector3<float> Y=tr.p3->p-tr.p1->p;
-	Vector3<float> Z=getNormalVector(tr); Z=Z/float(Z.get_eucl_norm())*maxSurfaceDepth;
-	Vector3<float> O=tr.p1->p;
+	Vector<float,3> X=tr.p2->p-tr.p1->p;
+	Vector<float,3> Y=tr.p3->p-tr.p1->p;
+	Vector<float,3> Z=getNormalVector(tr); Z=Z/float(Z.eucl_norm())*maxSurfaceDepth;
+	Vector<float,3> O=tr.p1->p;
 
 	boost::numeric::ublas::matrix<float> m(3,3);
-	m(0,0)=X.x; m(0,1)=Y.x; m(0,2)=Z.x;
-	m(1,0)=X.y; m(1,1)=Y.y; m(1,2)=Z.y;
-	m(2,0)=X.z; m(2,1)=Y.z; m(2,2)=Z.z;
+	m(0,0)=X.x(); m(0,1)=Y.x(); m(0,2)=Z.x();
+	m(1,0)=X.y(); m(1,1)=Y.y(); m(1,2)=Z.y();
+	m(2,0)=X.z(); m(2,1)=Y.z(); m(2,2)=Z.z();
 	
 	boost::numeric::ublas::matrix<float> im(3,3);  
 	
@@ -722,9 +717,9 @@ void D25ActiveContours::visitPoints( HTriangleSeed &tr )
 			if(!it->ps->isVisited)
 			{
 				boost::numeric::ublas::matrix<float> mp(3,1);
-				mp(0,0)=it->ps->p.x-O.x;
-				mp(1,0)=it->ps->p.y-O.y;
-				mp(2,0)=it->ps->p.z-O.z;
+				mp(0,0)=it->ps->p.x()-O.x();
+				mp(1,0)=it->ps->p.y()-O.y();
+				mp(2,0)=it->ps->p.z()-O.z();
 
 				boost::numeric::ublas::matrix<float> am=prod(im,mp);
 
@@ -959,8 +954,8 @@ bool D25ActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdg
 {
 	const float eps=0.001f;
 
-	Vector3<float> v1=ps.p-e.p1->p;
-	Vector3<float> v2=e.p2->p-e.p1->p;
+	Vector<float,3> v1=ps.p-e.p1->p;
+	Vector<float,3> v2=e.p2->p-e.p1->p;
 
 	if(ps.p==e.p1->p)
 	{
@@ -978,8 +973,8 @@ bool D25ActiveContours::segmentOverlapParameter(const HPointSeed &ps, const HEdg
 	}
 
 	float dotProduct=v1*v2;
-	float normV2=float(v2.get_eucl_norm());
-	float normsProduct=float(v1.get_eucl_norm())*normV2;
+	float normV2=float(v2.eucl_norm());
+	float normsProduct=float(v1.eucl_norm())*normV2;
 
 	//If collinear, |cos|~1
 	if(dotProduct>=normsProduct-eps||dotProduct<=-normsProduct+eps)
@@ -1026,18 +1021,18 @@ bool D25ActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps
 		}
 
 		//Sticking
-		Vector3<float> p;
+		Vector<float,3> p;
 		if((p=e.p1->p)==ee.p1->p||e.p1->p==ee.p2->p||
 			(p=e.p2->p)==ee.p1->p||e.p2->p==ee.p2->p)
 		{
 			if(p==ee.p2->p)
 				ee.swap();
 			
-			Vector3<float> v1=ps->p-p;
-			double normV1=v1.get_eucl_norm();
+			Vector<float,3> v1=ps->p-p;
+			double normV1=v1.eucl_norm();
 
-			Vector3<float> v2=ee.p2->p-p;
-			double normV2=v2.get_eucl_norm();
+			Vector<float,3> v2=ee.p2->p-p;
+			double normV2=v2.eucl_norm();
 
 			if(normV1==0||normV2==0)return false;
 
@@ -1057,7 +1052,7 @@ bool D25ActiveContours::stickToAdjacentEdge( const HEdgeSeed &e, HPointSeed* &ps
 }
 
 
-common::Mesh D25ActiveContours::buildMesh(std::list<Vector3<float>> &vertexList)
+common::Mesh D25ActiveContours::buildMesh(std::list<Vector<float,3>> &vertexList)
 {
 	if(vertices)delete vertices;
 	vertices=new HVertexContainer(vertexList);
@@ -1096,14 +1091,14 @@ common::Mesh D25ActiveContours::buildMesh()
 
 inline bool D25ActiveContours::triangleMesh3DIntersection( const HTriangleSeed &t )
 {
-	Triangle<Vector3<float>> t1(t.p1->p,t.p2->p,t.p3->p);
+	Triangle<Vector<float,3>> t1(t.p1->p,t.p2->p,t.p3->p);
 
 	std::list<HTriangleSeed>::iterator tit = triangles.begin();
 	while(tit!=triangles.end())
 	{
 		HTriangleSeed tt=*tit;
 		
-		Triangle<Vector3<float>> t2(tt.p1->p,tt.p2->p,tt.p3->p);
+		Triangle<Vector<float,3>> t2(tt.p1->p,tt.p2->p,tt.p3->p);
 		
 		if(triangles3DIntersection(t1,t2))return true;
 
@@ -1121,7 +1116,7 @@ void D25ActiveContours::edgeStitch(HEdgeSeed e )
 
 	if(pps1)
 	{
-		Triangle<Vector3<float>> t1(e.p1->p,e.p2->p,pps1->p);
+		Triangle<Vector<float,3>> t1(e.p1->p,e.p2->p,pps1->p);
 
 		for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
 		{
@@ -1138,7 +1133,7 @@ void D25ActiveContours::edgeStitch(HEdgeSeed e )
 
 				if(pps2)
 				{
-					Triangle<Vector3<float>> t2(ee.p1->p,ee.p2->p,pps2->p);
+					Triangle<Vector<float,3>> t2(ee.p1->p,ee.p2->p,pps2->p);
 
 					if(triangles3DIntersection(t1,t2))
 					{
@@ -1203,7 +1198,7 @@ void D25ActiveContours::edgeStitch(HEdgeSeed e )
 
 }
 
-Vector3<float> D25ActiveContours::getSurfaceNormal( Vector3<float> p, float windowRadius )
+Vector<float,3> D25ActiveContours::getSurfaceNormal( Vector<float,3> p, float windowRadius )
 {
 	//Select points from the neighborhood
 	HPointSeed ps;
@@ -1215,7 +1210,7 @@ Vector3<float> D25ActiveContours::getSurfaceNormal( Vector3<float> p, float wind
 	int pointCount=neighbours.size();
 
 	//Principal Component Analysis (PCA)
-	Vector3<float> mean(0,0,0);	
+	Vector<float,3> mean(0,0,0);	
 	mean=mean/(float)pointCount;
 
 	double** A=new double*[6]; 
@@ -1230,11 +1225,11 @@ Vector3<float> D25ActiveContours::getSurfaceNormal( Vector3<float> p, float wind
 	std::vector<HContainerElement>::const_iterator itp=neighbours.begin();
 	while(itp!=neighbours.end())
 	{
-		Vector3<float> pp=(*itp).ps->p;
+		Vector<float,3> pp=(*itp).ps->p;
 
-		A[0][0]+=(pp.x-mean.x)*(pp.x-mean.x); A[1][0]+=(pp.y-mean.y)*(pp.x-mean.x); A[2][0]+=(pp.z-mean.z)*(pp.x-mean.x); 
-		A[0][1]+=(pp.x-mean.x)*(pp.y-mean.y); A[1][1]+=(pp.y-mean.y)*(pp.y-mean.y); A[2][1]+=(pp.z-mean.z)*(pp.y-mean.y);
-		A[0][2]+=(pp.x-mean.x)*(pp.z-mean.z); A[1][2]+=(pp.y-mean.y)*(pp.z-mean.z); A[2][2]+=(pp.z-mean.z)*(pp.z-mean.z);
+		A[0][0]+=(pp.x()-mean.x())*(pp.x()-mean.x()); A[1][0]+=(pp.y()-mean.y())*(pp.x()-mean.x()); A[2][0]+=(pp.z()-mean.z())*(pp.x()-mean.x()); 
+		A[0][1]+=(pp.x()-mean.x())*(pp.y()-mean.y()); A[1][1]+=(pp.y()-mean.y())*(pp.y()-mean.y()); A[2][1]+=(pp.z()-mean.z())*(pp.y()-mean.y());
+		A[0][2]+=(pp.x()-mean.x())*(pp.z()-mean.z()); A[1][2]+=(pp.y()-mean.y())*(pp.z()-mean.z()); A[2][2]+=(pp.z()-mean.z())*(pp.z()-mean.z());
 
 		++itp;
 	}
@@ -1252,7 +1247,7 @@ Vector3<float> D25ActiveContours::getSurfaceNormal( Vector3<float> p, float wind
 
 	int maxIndex=(S2[0]<S2[1])?(S2[0]<S2[2]?0:2):(S2[1]<S2[2]?1:2);
 
-	Vector3<float> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
+	Vector<float,3> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
 
 	for(int i=0; i<6; ++i)
 	{
@@ -1261,7 +1256,7 @@ Vector3<float> D25ActiveContours::getSurfaceNormal( Vector3<float> p, float wind
 	delete[] A;
 	delete[] S2;
 
-	return v/float(v.get_eucl_norm());
+	return v/float(v.eucl_norm());
 }
 
 void D25ActiveContours::setMinInitDistance( float minInitDistance )
@@ -1337,15 +1332,15 @@ void D25ActiveContours::initMeshScale( float minInitDistance )
 	normalNeighborhoodRadius=maxInitDistance;
 }
 
-bool D25ActiveContours::triangles3DIntersection( const Triangle<Vector3<float>> &t1, const Triangle<Vector3<float>> &t2 )
+bool D25ActiveContours::triangles3DIntersection( const Triangle<Vector<float,3>> &t1, const Triangle<Vector<float,3>> &t2 )
 {
 	const float eps=0.001f;
 	float alpha=tetrahedronBaseAngle<eps?eps:tetrahedronBaseAngle;
 
 	//if the triangles are adjacent
-	if(t1.A()==t2.A() || t1.A()==t2.B() || t1.A==t2.C() ||
-	   t1.B()==t2.A() || t1.B()==t2.B() || t1.B==t2.C() ||
-	   t1.C()==t2.A() || t1.C()==t2.B() || t1.C==t2.C())
+	if(t1.A()==t2.A() || t1.A()==t2.B() || t1.A()==t2.C() ||
+		t1.B()==t2.A() || t1.B()==t2.B() || t1.B()==t2.C() ||
+		t1.C()==t2.A() || t1.C()==t2.B() || t1.C()==t2.C())
 	{
 
 		TriangularDipyramid tdp1=TriangularDipyramid::from_triangle_and_angle(t1,alpha);
@@ -1364,19 +1359,19 @@ bool D25ActiveContours::triangles3DIntersection( const Triangle<Vector3<float>> 
 
 bool D25ActiveContours::triangleDegenerate( const HTriangleSeed &t )
 {
-	Vector3<float> v1=t.p2->p-t.p1->p;
-	Vector3<float> v2=t.p3->p-t.p2->p;
-	Vector3<float> v3=t.p1->p-t.p3->p;
+	Vector<float,3> v1=t.p2->p-t.p1->p;
+	Vector<float,3> v2=t.p3->p-t.p2->p;
+	Vector<float,3> v3=t.p1->p-t.p3->p;
 
-	float cos1=v1*v2/float((v1.get_eucl_norm()*v2.get_eucl_norm()));
-	float cos2=v2*v3/float((v2.get_eucl_norm()*v3.get_eucl_norm()));
-	float cos3=v3*v1/float((v3.get_eucl_norm()*v1.get_eucl_norm()));
+	float cos1=v1*v2/float((v1.eucl_norm()*v2.eucl_norm()));
+	float cos2=v2*v3/float((v2.eucl_norm()*v3.eucl_norm()));
+	float cos3=v3*v1/float((v3.eucl_norm()*v1.eucl_norm()));
 
 	if(fabs(cos1)>maxExcludedAngle||fabs(cos2)>maxExcludedAngle||fabs(cos3)>maxExcludedAngle)return true;
 	else return false;
 }
 
-void D25ActiveContours::loadVertices( std::list<Vector3<float>> &vertexList )
+void D25ActiveContours::loadVertices( std::list<Vector<float,3>> &vertexList )
 {
 
 	if(vertices)delete vertices;
@@ -1445,21 +1440,21 @@ void D25ActiveContours::postStitch()
 
 				//Check the stitching condition (see the "Red Notebook")
 				{
-					Vector3<float> a=e.p2->p-e.p1->p;
-					Vector3<float> b=ee.p2->p-ee.p1->p;
-					Vector3<float> norm=getNormalVector(a,b);
+					Vector<float,3> a=e.p2->p-e.p1->p;
+					Vector<float,3> b=ee.p2->p-ee.p1->p;
+					Vector<float,3> norm=getNormalVector(a,b);
 
-					Vector3<float> n1=getNormalVector(a,norm);
+					Vector<float,3> n1=getNormalVector(a,norm);
 					float signCor1=n1*e.propagationVector>0?1.0f:-1.0f;
 					n1=n1*signCor1;
 
-					Vector3<float> n2=getNormalVector(b,norm);
+					Vector<float,3> n2=getNormalVector(b,norm);
 					float signCor2=n2*ee.propagationVector>0?1.0f:-1.0f;
 					n2=n2*signCor2;
 
 					float sgn1=a*n2;
 					float sgn2=b*n1;
-					float cosab=a*b/float((a.get_eucl_norm()*b.get_eucl_norm()));
+					float cosab=a*b/float((a.eucl_norm()*b.eucl_norm()));
 
 					if(sgn1>0&&sgn2>0)
 						if(cosab>maxStitchedAngle)
@@ -1520,7 +1515,7 @@ common::Mesh D25ActiveContours::getCurrentMesh()
 			if(mymap.find(ps)==mymap.end())
 			{	
 				//Add the vertex/node into the mesh and to the reference map
-				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x,ps->p.y,ps->p.z));
+				size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x(),ps->p.y(),ps->p.z()));
 				mymap[ps]=ind;
 			}
 		}

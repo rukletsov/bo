@@ -63,7 +63,7 @@ namespace surfaces {
 struct HPointSeed
 {	
 	/*! 3D Vertex */
-	common::Vector3<float> p;
+	common::Vector<float,3> p;
 
 	/*! Visits flag */
 	bool isVisited;
@@ -74,7 +74,7 @@ struct HPointSeed
 	/*! Access operator */
 	inline float operator [] (const int t) const 
 	{
-		return t==0?p.x:(t==1?p.y:p.z);
+		return t==0?p.x():(t==1?p.y():p.z());
 	}
 
 	/*! Comparison operator */
@@ -103,7 +103,7 @@ struct  HEdgeSeed
 	HPointSeed* p2;
 
 	/*! Vector of the propagation direction */
-	common::Vector3<float> propagationVector;
+	common::Vector<float,3> propagationVector;
 
 	/*! Comparison operator */
 	bool operator == (const HEdgeSeed& other) const
@@ -242,7 +242,7 @@ public:
 		\param vertexList The list of vertices in 3D
 		\return Reconstructed mesh
 	*/
-	common::Mesh buildMesh(std::list<common::Vector3<float>> &vertexList);
+	common::Mesh buildMesh(std::list<common::Vector<float,3>> &vertexList);
 
 	/*! Reconstruct a mesh from pre-loaded vertices
 		\return Reconstructed mesh
@@ -252,7 +252,7 @@ public:
 	/*! Loads points cloud into the internal vertices structure
 		\param vertexList The list of vertices in 3D
 	*/
-	void loadVertices(std::list<common::Vector3<float>> &vertexList);
+	void loadVertices(std::list<common::Vector<float,3>> &vertexList);
 	
 	/*! Performs one growing iteration. Returns true if further growing is possible otherwise returns false
 		\return true if further growing is possible otherwise returns false
@@ -340,7 +340,7 @@ protected:
 		\param t2 Second input triangle
 		\return True if an approximation of the pyramidal projection of \p t1 intersects the truncated projection of \p t2 in 3D. Otherwise returns false.
 	*/
-	bool triangles3DIntersection(const common::Triangle<common::Vector3<float>> &t1, const common::Triangle<common::Vector3<float>> &t2);
+	bool triangles3DIntersection(const common::Triangle<common::Vector<float,3>> &t1, const common::Triangle<common::Vector<float,3>> &t2);
 
 	/*! Tests \p triangle3DIntersection() for the given triangle \p t with all triangles from \p triangles
 		\param t The input triangle
@@ -416,7 +416,7 @@ protected:
 		\param windowRadius The radius of the neighborhood
 		\return The normal vector
 	*/
-	common::Vector3<float> getSurfaceNormal(common::Vector3<float> p, float windowRadius);
+	common::Vector<float,3> getSurfaceNormal(common::Vector<float,3> p, float windowRadius);
 
 
 	//! Container of the input vertices. Internal realization as a k-DTree
