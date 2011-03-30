@@ -3,8 +3,10 @@ LIBRARY
 ================================================================================
 * CMake msvc compiler options.
 * CMake different options for debug/release configuration.
-* Supress msvc unsafe CRT warnings.
+[DONE] * Supress msvc unsafe CRT warnings.
 * Put windows-dependent code under #ifdef.
+* Look at CMake's special functions such as FindBoost and, probably, FindSTLPort.
+* add .hgeol file.
 
 
 Mesh class
@@ -17,7 +19,6 @@ Mesh class
   use existed point instead.
 * Make well-designed accessor functions (see standard graph representations).
 * Implement "primitive-object" for Mesh class in order to visualize a Mesh.
-? Merge current Mesh implementation with Pasha's one.
 * Create vertex moving function.
 * Check English names for mesh terms (basic graph and mesh definitions).
 
@@ -28,6 +29,9 @@ Vector<> class
 [DONE] * Add useful mathematical methods, e.g. normalize(), etc.
 * Speed-up ().
 [DONE] * Implement operator+=, operator-=, etc.
+* Test if function inlining gives some performace boost.
+* Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
+  appropriate std algorithms, such as std::min_element(), std::accumulate().
 
 
 Triangle<> class
