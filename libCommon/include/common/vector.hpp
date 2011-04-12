@@ -38,6 +38,9 @@
 #include <cstddef>
 #include <math.h>
 #include <iostream>
+#include <algorithm>
+#include <numeric>
+#include <functional>
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 #include <boost/format.hpp>
@@ -438,21 +441,20 @@ std::size_t Vector<T, N>::max_index() const
 template <typename T, std::size_t N>
 T Vector<T, N>::sum() const
 { 
-    T total = components[0];
-    for (std::size_t i = 1; i < N; ++i) 
-        total += components[i];
-
-    return total; 
+    // A small optimization here: start with the second elem and pass first elem
+    // as an initial value.
+    return
+        (std::accumulate(components.begin() + 1, components.end(), components[0]));
 }
 
 template <typename T, std::size_t N>
 T Vector<T, N>::product() const
 { 
-    T product = components[0];
-    for (std::size_t i = 1; i < N; ++i) 
-        product *= components[i];
-
-    return product; 
+    // A small optimization here: start with the second elem and pass first elem
+    // as an initial value.
+    return
+        (std::accumulate(components.begin() + 1, components.end(), components[0], 
+         std::multiplies<T>()));
 }
 
 template <typename T, std::size_t N>
@@ -510,7 +512,7 @@ void Vector<T, N>::assign(const S& data, std::size_t length)
 {
     // If a given array is smaller than N, copy everything and set 0 for other
     // components. If a given array is bigger than N, copy first N elements.
-    std::size_t num = length < N ? length : N;
+    std::size_t num = (length < N) ? length : N;
     for (std::size_t i = 0; i < num; ++i)
         components[i] = static_cast<T>(data[i]);
 

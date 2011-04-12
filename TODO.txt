@@ -30,7 +30,7 @@ Vector<> class
 * Speed-up ().
 [DONE] * Implement operator+=, operator-=, etc.
 * Test if function inlining gives some performace boost.
-* Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
+[DONE] Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
   appropriate std algorithms, such as std::min_element(), std::accumulate().
 
 
