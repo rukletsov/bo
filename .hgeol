@@ -1,0 +1,17 @@
+[patterns]
+**.cpp = native
+**.cc = native
+**.c = native
+**.h = native
+**.hpp = native
+**.rb = native
+**.pl = native
+**.py = native
+**.txt = native
+
+.hgignore = native
+.hgtags = native
+.hgeol = native
+
+**.vcproj = CRLF
+**.sln = CRLF
