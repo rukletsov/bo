@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    performance.hpp, v 1.0.2 2011.03.24
+    performance.hpp, v 1.0.3 2011.04.12
 
     Functions for performance evaluation and manipulation based on WindowsAPI.
     Time is calculated through processor ticks and processor frequency. 
@@ -38,9 +38,9 @@
 #include <boost/cstdint.hpp>
 
 #ifdef _MSC_VER
-    #define NOMINMAX
-    #include <windows.h>
-#endif
+
+#define NOMINMAX
+#include <windows.h>
 
 /* Usage example:
  *
@@ -61,41 +61,31 @@ namespace common {
 inline
 boost::int64_t get_proc_ticks()
 {
-#ifdef _MSC_VER
     LARGE_INTEGER retvalue;
     QueryPerformanceCounter(&retvalue);
 
     return 
         static_cast<boost::int64_t>(retvalue.QuadPart);
-
-#elif
-    return boost::int64_t(0);
-#endif
 }
 
 inline 
 boost::int64_t get_proc_freq()
 {
-#ifdef _MSC_VER
     LARGE_INTEGER retvalue;
     QueryPerformanceFrequency(&retvalue);
 
     return 
         static_cast<boost::int64_t>(retvalue.QuadPart);
-
-#elif
-    return boost::int64_t(0);
-#endif
 }
 
 inline
 void increase_process_priority()
 {
-#ifdef _MSC_VER
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-#endif
 }
 
 } // namespace common
+
+#endif // _MSC_VER
 
 #endif // PERFORMANCE_HPP_88D42F69_941B_451A_BC38_DAF8A399F977_

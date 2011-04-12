@@ -5,7 +5,7 @@ LIBRARY
 * CMake different options for debug/release configuration.
 [DONE] * Supress msvc unsafe CRT warnings.
 * Put windows-dependent code under #ifdef.
-* Look at CMake's special functions such as FindBoost and, probably, FindSTLPort.
+[DONE] Look at CMake's special functions such as FindBoost and, probably, FindSTLPort.
 [DONE] add .hgeol file.
 * Create an auto test project (look at boost::test)
 
@@ -46,6 +46,3 @@ OTHER
   VCG (http://vcg.sourceforge.net/index.php/Main_Page), 
   OpenMesh (http://www.openmesh.org/), 
   Meshlab (http://meshlab.sourceforge.net/).
-* Implement performance evaluation methods for not Windows OS (look at 
-  boost::timer).
-
