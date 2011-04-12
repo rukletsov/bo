@@ -410,59 +410,29 @@ Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
 template <typename T, std::size_t N>
 T Vector<T, N>::min() const
 { 
-    T min_value = components[0];
-    for (std::size_t i = 1; i < N; ++i)
-	    if (components[i] < min_value)  
-            min_value = components[i];
-
-    return min_value; 
+    return 
+        (*std::min_element(components.begin(), components.end()));
 }
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
 {
-    std::size_t min_index = 0;
-    T min_value = components[0];
-
-    for (std::size_t i = 1; i < N; ++i)
-    {
-	    if (components[i] < min_value)  
-        {
-            min_index = i;
-            min_value = components[i];
-        }
-    }
-
-    return min_index;
+    return 
+        (std::min_element(components.begin(), components.end()) - components.begin());
 }
 
 template <typename T, std::size_t N>
 T Vector<T, N>::max() const
 { 
-    T max_value = components[0];
-    for (std::size_t i = 1; i < N; ++i)
-	    if (components[i] > max_value)  
-            max_value = components[i];
-
-    return max_value; 
+    return 
+        (*std::max_element(components.begin(), components.end()));
 }
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::max_index() const
 {
-    std::size_t max_index = 0;
-    T max_value = components[0];
-
-    for (std::size_t i = 1; i < N; ++i)
-    {
-	    if (components[i] > max_value)  
-        {
-            max_index = i;
-            max_value = components[i];
-        }
-    }
-
-    return max_index;
+    return 
+        (std::max_element(components.begin(), components.end()) - components.begin());
 }
 
 template <typename T, std::size_t N>
