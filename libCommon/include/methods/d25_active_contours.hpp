@@ -259,12 +259,12 @@ public:
 	*/
 	bool growStep();
 
-
-protected:
-
 	/*!Generalizes an init triangle seed from unvisited elements of \p vertices if possible.  Visits the points
 	*/
 	void modelInit();
+
+protected:
+
 	
 	/*! Tries to propagate an element of the active contour. The surface can be propagated if \p activeEdges is not empty
 	*/
