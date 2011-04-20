@@ -421,7 +421,7 @@ template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
 {
     return 
-        (std::min_element(components.begin(), components.end()) - components.begin());
+        (std::min_element(components.begin(), components.end()) - components.begin()); 
 }
 
 template <typename T, std::size_t N>
@@ -438,8 +438,8 @@ std::size_t Vector<T, N>::max_index() const
         (std::max_element(components.begin(), components.end()) - components.begin());
 }
 
-template <typename T, std::size_t N>
-T Vector<T, N>::sum() const
+template <typename T, std::size_t N> 
+T Vector<T, N>::sum() const 
 { 
     // A small optimization here: start with the second elem and pass first elem
     // as an initial value.

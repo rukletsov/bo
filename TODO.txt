@@ -7,7 +7,7 @@ LIBRARY
 * Put windows-dependent code under #ifdef.
 [DONE] Look at CMake's special functions such as FindBoost and, probably, FindSTLPort.
 [DONE] add .hgeol file.
-* Create an auto test project (look at boost::test)
+* Create an auto test project (look at boost::test).
 
 
 Mesh class
@@ -28,9 +28,8 @@ Vector<> class
 ================================================================================
 [DONE] * Make an n-dimensional vector based on boost::array.
 [DONE] * Add useful mathematical methods, e.g. normalize(), etc.
-* Speed-up ().
 [DONE] * Implement operator+=, operator-=, etc.
-* Test if function inlining gives some performace boost.
+[DONE] * Test if function inlining gives some performace boost (ANSWER: more or less NO).
 [DONE] Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
   appropriate std algorithms, such as std::min_element(), std::accumulate().
 
