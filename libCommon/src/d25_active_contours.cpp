@@ -109,13 +109,27 @@ public:
 	PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2, bool checkNodes, bool checkVisited):ce1(ce1),ce2(ce2),checkNodes(checkNodes),checkVisited(checkVisited)
 	{
 		eps=0.5;
+		this->ce1=ce1;
+		this->ce2=ce2;
 		ba=ce2.ps->p-ce1.ps->p;
 		absBa=ba.eucl_norm();
+		only_nodes=false;
+	}
+	inline void check_only_nodes(bool only_nodes)
+	{
+		this->only_nodes=only_nodes;
 	}
 	inline bool operator()( HContainerElement const& ce ) const
 	{
-		bool isPretender=(!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited);
-		if(!isPretender)return false;
+		if(only_nodes)
+		{
+			if(!ce.ps->isNode)return false;
+		}
+		else
+		{
+			bool isPretender=(!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited);
+			if(!isPretender)return false;
+		}
 
 		if(absBa==0)return false;
 
@@ -132,11 +146,12 @@ public:
 		else return false;
 	}
 protected:
-	HContainerElement ce1;
-	HContainerElement ce2;
 	bool checkNodes;
+	bool only_nodes;
 	bool checkVisited;
 	double eps;
+	HContainerElement ce1;
+	HContainerElement ce2;
 	Vector<float,3> ba;
 	double absBa;
 };
@@ -278,7 +293,7 @@ struct TriangularDipyramid
 	//Based on the Separatiing Plane Theorem.
 	bool intersects(TriangularDipyramid& other)
 	{
-		float eps=0.001f;
+		float eps=0.01f;
 
 		TriangularDipyramid tp1=*this, tp2=other;
 
@@ -288,27 +303,48 @@ struct TriangularDipyramid
 			{
 				Triangle<Vector<float,3>> face=tp1.faces[t];
 				Vector<float,3> norm=getNormalVector(face);
-				Vector<float,3> homeVector=tp1.center-face.A();
-				float homeDot = norm*homeVector/float(norm.eucl_norm()*homeVector.eucl_norm());
-				int homeSign=homeDot>eps?1:(homeDot<-eps?-1:0);
-
-				bool isSeparation=true;
+				
+				//Calculating min and max of the projection of the first dipyramid 
+				//on the current normal vector
+				float t1MinProj=0, t1MaxProj=0;
 				for(int k=0; k<5; ++k)
 				{
-					Vector<float,3> alienVector=tp2.vertices[k]-face.A();
-					float alienDot=norm*alienVector/float(norm.eucl_norm()*alienVector.eucl_norm());
-					int alienSign=alienDot>eps?1:(alienDot<-eps?-1:0);
-					if(alienSign==homeSign&&alienSign!=0)
+					Vector<float,3> v=tp1.vertices[k];
+					float dot=norm*v;
+					if(k==0)
 					{
-						isSeparation=false;
-						break;
+						t1MaxProj=t1MinProj=dot;
+					}
+					else
+					{
+						if(t1MaxProj<dot)t1MaxProj=dot;
+						if(t1MinProj>dot)t1MinProj=dot;
 					}
 				}
 
-				if(isSeparation)return false;
+				//Calculating min and max of the projection of the second dipyramid 
+				//on the current normal vector
+				float t2MinProj=0, t2MaxProj=0;
+				for(int k=0; k<5; ++k)
+				{
+					Vector<float,3> v=tp2.vertices[k];
+					float dot=norm*v;
+					if(k==0)
+					{
+						t2MaxProj=t2MinProj=dot;
+					}
+					else
+					{
+						if(t2MaxProj<dot)t2MaxProj=dot;
+						if(t2MinProj>dot)t2MinProj=dot;
+					}
+				}
+
+				//If the projection intervals do not intersect, than the convex polygons are separated
+				if(t1MaxProj<t2MinProj+eps||t2MaxProj<t1MinProj+eps)return false;
 			}
 
-			//swap
+			//swap the dipyramids
 			TriangularDipyramid tmp=tp1;
 			tp1=tp2;
 			tp2=tmp;
@@ -415,11 +451,20 @@ inline HPointSeed* D25ActiveContours::getClosestNoncollinearPoint(const HPointSe
 	HContainerElement ce(0);
 
 	PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointSeed*>(&ps1)),HContainerElement(const_cast<HPointSeed*>(&ps2)),checkNodes,checkVisited);
+	pred.check_only_nodes(true);
 	std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),maxProjectionNodeDistance,pred);
 	if(nif.first!=vertices->tree.end())ce=*nif.first;
+	else
+	{
+		pred.check_only_nodes(false);
+		nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),maxProjectionNodeDistance,pred);
+		if(nif.first!=vertices->tree.end())ce=*nif.first;
+	}
 
 	return ce.ps;
 }
+
+
 
 
 inline float D25ActiveContours::getDistance( const HPointSeed &ps1, const HPointSeed &ps2 )
@@ -515,7 +560,6 @@ void D25ActiveContours::modelGrow()
 		//Test for triangles collisions
 		else if(!triangleMesh3DIntersection(tr))
 		{
-			//if(triangleMesh3DIntersection(tr))std::cout<<" !intersected!";
 			//New edges based on an old one and the propagated point
 			HEdgeSeed e1(e.p2,pps);
 			HEdgeSeed e2(pps,e.p1);
@@ -533,20 +577,17 @@ void D25ActiveContours::modelGrow()
 
 				//Add new triangle to the mesh
 				triangles.push_back(tr);
-			}
+			} 
   
 		}
 		else 
 		{
 			//"On-the-fly" stitching
-			//edgeStitch(e);
-			frozenEdges.push_back(e);
+			edgeStitch(e);
 		}
 	}
 	else 
 	{
-		//"On-the-fly" stitching
-		//edgeStitch(e);
 		frozenEdges.push_back(e);
 	}
 
@@ -1080,6 +1121,8 @@ common::Mesh D25ActiveContours::buildMesh()
 
 	unvisitedCount=vertices->tree.size();
 
+	modelInit();
+
 	//Building a set of faces
 	while(growStep());
 
@@ -1130,7 +1173,7 @@ void D25ActiveContours::edgeStitch(HEdgeSeed e )
 			if((b11=(e.p1==ee.p1))||(b12=(e.p1==ee.p2))||(b21=(e.p2==ee.p1))||(b22=(e.p2==ee.p2)))
 			{
 				HPointSeed* pps2=getPropagatedVertex(ee,true);
-
+				
 				if(pps2)
 				{
 					Triangle<Vector<float,3>> t2(ee.p1->p,ee.p2->p,pps2->p);
@@ -1163,7 +1206,7 @@ void D25ActiveContours::edgeStitch(HEdgeSeed e )
 							tr.p1=p1;
 							tr.p2=p2;
 							tr.p3=p3;
-
+ 
 							//Test for triangles collisions
 							if(!triangleMesh3DIntersection(tr))
 							{
@@ -1359,13 +1402,18 @@ bool D25ActiveContours::triangles3DIntersection( const Triangle<Vector<float,3>>
 
 bool D25ActiveContours::triangleDegenerate( const HTriangleSeed &t )
 {
-	Vector<float,3> v1=t.p2->p-t.p1->p;
-	Vector<float,3> v2=t.p3->p-t.p2->p;
-	Vector<float,3> v3=t.p1->p-t.p3->p;
+	Vector<float,3> v1a=t.p2->p-t.p1->p;
+	Vector<float,3> v1b=t.p3->p-t.p1->p;
 
-	float cos1=v1*v2/float((v1.eucl_norm()*v2.eucl_norm()));
-	float cos2=v2*v3/float((v2.eucl_norm()*v3.eucl_norm()));
-	float cos3=v3*v1/float((v3.eucl_norm()*v1.eucl_norm()));
+	Vector<float,3> v2a=t.p1->p-t.p2->p;
+	Vector<float,3> v2b=t.p3->p-t.p2->p; 
+
+	Vector<float,3> v3a=t.p1->p-t.p3->p;
+	Vector<float,3> v3b=t.p2->p-t.p3->p;
+ 
+	float cos1=v1a*v1b/float((v1a.eucl_norm()*v1b.eucl_norm()));
+	float cos2=v2a*v2b/float((v2a.eucl_norm()*v2b.eucl_norm()));
+	float cos3=v3a*v3b/float((v3a.eucl_norm()*v3b.eucl_norm()));
 
 	if(fabs(cos1)>maxExcludedAngle||fabs(cos2)>maxExcludedAngle||fabs(cos3)>maxExcludedAngle)return true;
 	else return false;
@@ -1389,14 +1437,11 @@ void D25ActiveContours::loadVertices( std::list<Vector<float,3>> &vertexList )
 
 bool D25ActiveContours::growStep()
 {	
-	if(unvisitedCount==0/*&&activeEdges.size()==0*/)
+	if(unvisitedCount==0&&activeEdges.size()==0)
 	{
-		/*
 		unsigned int frozenBefore=frozenEdges.size();
 		postStitch();
 		return activeEdges.size()>0 || frozenEdges.size()<frozenBefore;
-		*/
-		return false;
 	}
 	else if(activeEdges.size()>0)modelGrow();
 	else modelInit();
