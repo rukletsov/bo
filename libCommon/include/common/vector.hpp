@@ -421,8 +421,8 @@ template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
 {
     return 
-        (std::distance(std::min_element(components.begin(), components.end()), 
-            components.begin())); 
+        std::distance(std::min_element(components.begin(), components.end()), 
+            components.begin()); 
 }
 
 template <typename T, std::size_t N>
@@ -436,8 +436,8 @@ template <typename T, std::size_t N>
 std::size_t Vector<T, N>::max_index() const
 {
     return 
-        (std::distance(std::max_element(components.begin(), components.end()), 
-            components.begin()));
+        std::distance(std::max_element(components.begin(), components.end()), 
+            components.begin());
 }
 
 template <typename T, std::size_t N> 
@@ -446,7 +446,7 @@ T Vector<T, N>::sum() const
     // A small optimization here: start with the second elem and pass first elem
     // as an initial value.
     return
-        (std::accumulate(components.begin() + 1, components.end(), components[0]));
+        std::accumulate(components.begin() + 1, components.end(), components[0]);
 }
 
 template <typename T, std::size_t N>
@@ -455,15 +455,15 @@ T Vector<T, N>::product() const
     // A small optimization here: start with the second elem and pass first elem
     // as an initial value.
     return
-        (std::accumulate(components.begin() + 1, components.end(), components[0], 
-         std::multiplies<T>()));
+        std::accumulate(components.begin() + 1, components.end(), components[0], 
+            std::multiplies<T>());
 }
 
 template <typename T, std::size_t N>
 T Vector<T, N>::avg() const
 { 
     return 
-        sum() / N; 
+        (sum() / N); 
 }
 
 template <typename T, std::size_t N> 
