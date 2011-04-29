@@ -1,7 +1,3 @@
-// appMeshTest.cpp : Defines the entry point for the console application.
-//
-
-#define NOMINMAX
 
 #include <iostream>
 #include <vector>
@@ -9,9 +5,29 @@
 #include "common/mesh.hpp"
 #include "common/performance.hpp"
 
+#if defined(_MSC_VER) && defined(_DEBUG)
+#   define _CRTDBG_MAP_ALLOC
+#   include <stdlib.h>
+#   include <crtdbg.h>
+#endif
+
 
 int main(int argc, char* argv[])
 {
+    // Dump detected memory leaks into the stderr for debug mode.
+#ifdef _MSC_VER
+    _CrtSetReportMode(_CRT_ASSERT , _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
     //common::Vector<int, 3> vec01(1, 2, 3);
     //double d = vec01.eucl_norm();
     //std::cout << vec01[3];
@@ -84,20 +100,20 @@ int main(int argc, char* argv[])
     //std::cout << vec1 << std::endl;
 
 
-    // Speed test.
-    // Vector
-    boost::int64_t freq = common::get_proc_freq();
-    boost::int64_t start = common::get_proc_ticks();
+    //// Speed test.
+    //// Vector
+    //boost::int64_t freq = common::get_proc_freq();
+    //boost::int64_t start = common::get_proc_ticks();
 
-    common::Vector<double, 3000> vec10(10.);
-    common::Vector<double, 1000> res;
-    for (int i = 0; i < 1000; ++i)
-        res[i] = vec10.sum();
+    //common::Vector<double, 3000> vec10(10.);
+    //common::Vector<double, 1000> res;
+    //for (int i = 0; i < 1000; ++i)
+    //    res[i] = vec10.sum();
 
-    boost::int64_t total = common::get_proc_ticks() - start;
+    //boost::int64_t total = common::get_proc_ticks() - start;
 
-    std::cout << "result: " << vec10.normalized() << std::endl 
-        << "Vector<> ticks: " << total << std::endl;
+    //std::cout << "result: " << vec10.normalized() << std::endl 
+    //    << "Vector<> ticks: " << total << std::endl;
 
 
 
