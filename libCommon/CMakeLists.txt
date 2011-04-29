@@ -3,9 +3,6 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 PROJECT (LibCommon)
 
-SET (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-SET (BIN_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-
 SET (LibCommon_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
@@ -32,17 +29,13 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
 
-INCLUDE_DIRECTORIES (BEFORE
-                     ./include
+# For additional dependencies check the root CMakeLists.
+INCLUDE_DIRECTORIES (./include
                      ./include/common
                      ./include/methods
                      ./3rdparty
                      ./3rdparty/rply-1.01
                      ./3rdparty/libkdtree++_0.7.0
-                     $ENV{BOOST_ROOT}
-)
-                    
-LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib
 )
 
 # Compile our Library.
@@ -64,7 +57,7 @@ IF (MSVC)
     
     # Specify output path and name suffix for debug build.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES PREFIX "../")
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "_debug")
+    SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "-d")
     
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
