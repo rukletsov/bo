@@ -55,10 +55,6 @@ IF (MSVC)
     SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
                                  PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
     
-    # Specify output path and name suffix for debug build.
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES PREFIX "../")
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "-d")
-    
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")

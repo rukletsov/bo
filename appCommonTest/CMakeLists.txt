@@ -21,11 +21,10 @@ ADD_EXECUTABLE (AppCommonTest
 )
 
 TARGET_LINK_LIBRARIES (AppCommonTest
-                       debug LibCommon-d optimized LibCommon
+                       LibCommon
 )
 
 IF (MSVC)
-    # Specify output path and name suffix for debug build.
-    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES PREFIX "../")
+    # Specify the name suffix for debug build.
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "-d")
 ENDIF (MSVC)
