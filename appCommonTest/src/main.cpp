@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
 
 
     //// Constructor tests.
-    //common::Vector<double, 3> vec1;
-    //common::Vector<double, 3> vec2(5.f);
+        //common::Vector<double, 3> vec1;
+        //common::Vector<double, 3> vec2(5.f);
 
     //float f[2] = {1.f, 2.2f};
     //common::Vector<int, 3> vec3(f, 2);
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     //int f2[5] = {3, 4, 10, 45, 3};
     //common::Vector<double, 3> vec4(f2, 5);
 
-    //common::Vector<double, 3> vec5(vec2);
+        //common::Vector<double, 3> vec5(vec2);
 
 
     //// operator[] test.
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
 
     //// Partially available accessors.
-    //common::Vector<double, 4> vec20(0., 4., 56., -1.);
+        //common::Vector<double, 4> vec20(0., 4., 56., -1.);
     //vec1.x();
     //vec20.w() = 34.;
 
