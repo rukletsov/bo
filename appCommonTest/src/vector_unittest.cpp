@@ -38,6 +38,36 @@ TEST_F(VectorTest, DefaultConstructor)
     EXPECT_EQ(0, diff);
 }
 
+TEST_F(VectorTest, FillConstructor)
+{
+    double sum = 0.;
+    for (size_t i = 0; i < 3; ++i)
+        sum += vec2_[i];
+
+    EXPECT_EQ(15., sum);
+}
+
+TEST_F(VectorTest, ArrayConstructor)
+{
+    float arr1[2] = {1.f, 2.2f};
+    common::Vector<int, 3> int_vec(arr1, 2);
+
+    EXPECT_EQ(int(1), int_vec[0]);
+    EXPECT_EQ(int(2), int_vec[1]);
+    EXPECT_EQ(int(0), int_vec[2]);
+
+    int arr2[5] = {3, 4, 10, 45};
+    common::Vector<double, 3> double_vec(arr2, 5);
+
+    EXPECT_EQ(3., double_vec[0]);
+    EXPECT_EQ(4., double_vec[1]);
+    EXPECT_EQ(10., double_vec[2]);
+}
+
+TEST_F(VectorTest, CopyConstructor)
+{
+}
+
 TEST_F(VectorTest, MemoryConsumption)
 {
     // Vector should consume no additional memory.

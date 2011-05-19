@@ -198,7 +198,7 @@ std::ostream& operator<<(std::ostream &os, const Vector<T, N>& obj)
 template <typename T, std::size_t N>
 Vector<T, N>::Vector()
 { 
-    components.fill(static_cast<T>(0));
+    fill(static_cast<T>(0));
 }
 
 template <typename T, std::size_t N>
