@@ -1,9 +1,6 @@
 
 #include <iostream>
-#include <vector>
-
-#include "common/mesh.hpp"
-#include "common/performance.hpp"
+#include "gtest/gtest.h"
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #   define _CRTDBG_MAP_ALLOC
@@ -27,6 +24,12 @@ int main(int argc, char* argv[])
 
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
+
+    // Run all declared tests.
+    std::cout << "Running all tests." << std::endl;
+
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 
     //common::Vector<int, 3> vec01(1, 2, 3);
     //double d = vec01.eucl_norm();
