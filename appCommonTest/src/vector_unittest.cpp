@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "common/vector.hpp"
+
 using namespace common;
 
 
@@ -19,6 +20,7 @@ protected:
     Vector<double, 3> vec3_;
     Vector<int, 4> vec4_;
 };
+
 
 TEST_F(VectorTest, DefaultConstructor)
 {
@@ -50,14 +52,14 @@ TEST_F(VectorTest, FillConstructor)
 TEST_F(VectorTest, ArrayConstructor)
 {
     float arr1[2] = {1.f, 2.2f};
-    common::Vector<int, 3> int_vec(arr1, 2);
+    Vector<int, 3> int_vec(arr1, 2);
 
     EXPECT_EQ(int(1), int_vec[0]);
     EXPECT_EQ(int(2), int_vec[1]);
     EXPECT_EQ(int(0), int_vec[2]);
 
     int arr2[5] = {3, 4, 10, 45};
-    common::Vector<double, 3> double_vec(arr2, 5);
+    Vector<double, 3> double_vec(arr2, 5);
 
     EXPECT_EQ(3., double_vec[0]);
     EXPECT_EQ(4., double_vec[1]);
@@ -66,13 +68,87 @@ TEST_F(VectorTest, ArrayConstructor)
 
 TEST_F(VectorTest, CopyConstructor)
 {
+    Vector<double, 3> double_vec = vec2_;
+    int diff = memcmp(&double_vec, &vec2_, 3 * sizeof(double));
+
+    EXPECT_EQ(0, diff);
 }
 
 TEST_F(VectorTest, MemoryConsumption)
 {
-    // Vector should consume no additional memory.
+    // Vector is expected to consume no additional memory.
     EXPECT_EQ(3 * sizeof(float), sizeof(vec1_));
     EXPECT_EQ(4 * sizeof(int), sizeof(vec4_));
     EXPECT_EQ(sizeof(char), sizeof(Vector<int, 0>));
 }
 
+TEST_F(VectorTest, BoundaryChecks)
+{
+    EXPECT_NO_THROW(vec1_.at(0));
+    EXPECT_NO_THROW(vec1_.at(vec1_.size() - 1));
+    EXPECT_THROW(vec1_.at(vec1_.size()), std::out_of_range);
+    EXPECT_THROW(vec1_.at(-1), std::out_of_range);
+
+    // operator[] cannot be checked since it uses BOOST_ASSERT.
+}
+
+TEST_F(VectorTest, VectorScalarArithmetics)
+{
+    Vector<int, 4> int_vec = vec4_ * int(2);
+    EXPECT_EQ(18, int_vec.x());
+    EXPECT_EQ(18, int_vec.y());
+    EXPECT_EQ(18, int_vec.z());
+    EXPECT_EQ(18, int_vec.w());
+
+    int_vec += int(2);
+    EXPECT_EQ(20, int_vec.x());
+    EXPECT_EQ(20, int_vec.y());
+    EXPECT_EQ(20, int_vec.z());
+    EXPECT_EQ(20, int_vec.w());
+
+    int_vec = vec4_ - int(4);
+    EXPECT_EQ(5, int_vec.x());
+    EXPECT_EQ(5, int_vec.y());
+    EXPECT_EQ(5, int_vec.z());
+    EXPECT_EQ(5, int_vec.w());
+
+    int_vec = vec4_ / int(4);
+    EXPECT_EQ(2, int_vec.x());
+    EXPECT_EQ(2, int_vec.y());
+    EXPECT_EQ(2, int_vec.z());
+    EXPECT_EQ(2, int_vec.w());
+}
+
+TEST_F(VectorTest, VectorVectorArithmetics)
+{
+    Vector<double, 3> double_vec = vec2_ + vec3_;
+    EXPECT_DOUBLE_EQ(5.3, double_vec.x());
+    EXPECT_DOUBLE_EQ(9., double_vec.y());
+    EXPECT_DOUBLE_EQ(22., double_vec.z());
+
+    double_vec -= vec2_;
+    EXPECT_DOUBLE_EQ(vec3_.x(), double_vec.x());
+    EXPECT_DOUBLE_EQ(vec3_.y(), double_vec.y());
+    EXPECT_DOUBLE_EQ(vec3_.z(), double_vec.z());
+
+    int arr1[] = {7, 8, 9};
+    Vector<int, 4> int_vec(arr1, 3);
+    int_vec.x() = int_vec.y() * 2 - int_vec.x();
+    int_vec.y() = int_vec.y() * 9 / 8;
+    int_vec.w() = int_vec.z();
+    EXPECT_EQ(vec4_, int_vec);
+}
+
+TEST_F(VectorTest, DotProduct)
+{
+    double dot_product = vec2_ * vec3_;
+    EXPECT_DOUBLE_EQ(106.5, dot_product);
+}
+
+TEST_F(VectorTest, CrossProduct)
+{
+    vec2_ = vec2_.cross_product(vec3_);
+    EXPECT_DOUBLE_EQ(65., vec2_.x());
+    EXPECT_DOUBLE_EQ(-83.5, vec2_.y());
+    EXPECT_DOUBLE_EQ(18.5, vec2_.z());
+}

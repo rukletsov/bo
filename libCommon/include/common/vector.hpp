@@ -79,17 +79,15 @@ public:
     const Vector<T, N>& operator*=(const T& scalar);
     const Vector<T, N>& operator/=(const T& scalar);
 
+    // In general won't work for floats. This is because not every real number can 
+    // be represented by float/double/long double and therefore theoretically equal
+    // numbers can differ. I.e. f^{-1}(f(x)) can differ from x. Fore more information
+    // on this topic see
+    //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
     bool operator==(const Vector<T, N>& other) const;
 
     const Vector<T, N>& operator+=(const Vector<T, N>& other);
     const Vector<T, N>& operator-=(const Vector<T, N>& other);
-
-    // Dot product operator cannot be created by boost since its return value is
-    // T, not Vector<T, N>. Therefore, create these operators manually. See below
-    // for operator* implementation.
-    T operator*=(const Vector<T, N>& other);  
-
-    // See below for operator<<, defined outside the class.
 
     // Assignment and access operators. Range-check is done by boost::array via 
     // debug-only assertions. Use at() method for safer but less efficient version 
@@ -101,6 +99,7 @@ public:
     // Safer, but less efficient alternative of opeartor[].
     const T& at(std::size_t index) const;
     T& at(std::size_t index);
+
 
     // These special accessor functions are available only where appropriate.
     // That means, if you try to call x() on Vector<T, 10> or z() on Vector<T, 2>
@@ -117,10 +116,12 @@ public:
     //
     // Finally, it was decided to favor the first approach because of its simplicity
     // and not worse performance.
+
     const T& x() const;
     const T& y() const;
     const T& z() const;
     const T& w() const;
+
     T& x();
     T& y();
     T& z();
@@ -129,6 +130,9 @@ public:
     // Cross product makes sense only in 3D and therefore is available only for 
     // Vector<T, 3>.
     Vector<T, N> cross_product(const Vector<T, N>& other) const;
+
+    // See below for operator* (dot product), defined outside the class.
+    // See below for operator<<, defined outside the class.
 
     // Simple usual functions.
     T min() const;
@@ -174,7 +178,11 @@ protected:
 template <typename T, std::size_t N> inline
 T operator*(Vector<T, N> lhs, const Vector<T, N>& rhs) 
 { 
-    return lhs *= rhs; 
+    T retvalue = 0;
+    for (std::size_t i = 0; i < N; ++i)
+        retvalue += lhs[i] * rhs[i];
+    	
+    return retvalue;
 }
 
 // Stream operator<< for printing Vector<T, N> contents.
@@ -305,16 +313,6 @@ const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
         components[i] -= other.components[i];
 
     return *this;
-}
-
-template <typename T, std::size_t N>
-T Vector<T, N>::operator*=(const Vector<T, N>& other)
-{
-    T retvalue = 0;
-    for (std::size_t i = 0; i < N; ++i)
-        retvalue += components[i] * other.components[i];
-    	
-    return retvalue;
 }
 
 template <typename T, std::size_t N> inline
