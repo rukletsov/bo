@@ -1,5 +1,6 @@
 
-#include "gtest/gtest.h"
+#include <limits>
+#include <gtest/gtest.h>
 
 #include "common/vector.hpp"
 
@@ -151,4 +152,92 @@ TEST_F(VectorTest, CrossProduct)
     EXPECT_DOUBLE_EQ(65., vec2_.x());
     EXPECT_DOUBLE_EQ(-83.5, vec2_.y());
     EXPECT_DOUBLE_EQ(18.5, vec2_.z());
+}
+
+TEST_F(VectorTest, MinMax)
+{
+    EXPECT_FLOAT_EQ(0., vec1_.min());
+    EXPECT_FLOAT_EQ(0., vec1_.max());
+    EXPECT_EQ(std::size_t(0), vec1_.min_index());
+    EXPECT_EQ(std::size_t(0), vec1_.max_index());
+
+    EXPECT_DOUBLE_EQ(5., vec2_.min());
+    EXPECT_DOUBLE_EQ(5., vec2_.max());
+    EXPECT_EQ(std::size_t(0), vec2_.min_index());
+    EXPECT_EQ(std::size_t(0), vec2_.max_index());
+
+    EXPECT_DOUBLE_EQ(0.3, vec3_.min());
+    EXPECT_DOUBLE_EQ(17, vec3_.max());
+    EXPECT_EQ(std::size_t(0), vec3_.min_index());
+    EXPECT_EQ(std::size_t(2), vec3_.max_index());
+
+    vec4_.y() = 4;
+    vec4_.z() = 10;
+    EXPECT_EQ(int(4), vec4_.min());
+    EXPECT_EQ(int(10), vec4_.max());
+    EXPECT_EQ(std::size_t(1), vec4_.min_index());
+    EXPECT_EQ(std::size_t(2), vec4_.max_index());
+}
+
+TEST_F(VectorTest, AggregationFunctions)
+{
+    EXPECT_FLOAT_EQ(0.f, vec1_.sum());
+    EXPECT_FLOAT_EQ(0.f, vec1_.product());
+    EXPECT_FLOAT_EQ(0.f, vec1_.avg());
+
+    EXPECT_DOUBLE_EQ(15., vec2_.sum());
+    EXPECT_DOUBLE_EQ(125., vec2_.product());
+    EXPECT_DOUBLE_EQ(5., vec2_.avg());
+
+    EXPECT_DOUBLE_EQ(21.3, vec3_.sum());
+    EXPECT_DOUBLE_EQ(20.4, vec3_.product());
+    EXPECT_DOUBLE_EQ(7.1, vec3_.avg());
+
+    EXPECT_EQ(int(36), vec4_.sum());
+    EXPECT_EQ(int(6561), vec4_.product());
+    EXPECT_EQ(int(9), vec4_.avg());
+}
+
+TEST_F(VectorTest, Normalization)
+{
+    EXPECT_DOUBLE_EQ(0., vec1_.eucl_norm());
+    EXPECT_NEAR(8.66025, vec2_.eucl_norm(), 0.00001);
+    EXPECT_NEAR(17.46682, vec3_.eucl_norm(), 0.00001);
+    EXPECT_DOUBLE_EQ(18, vec4_.eucl_norm());
+
+    float float_retval;
+    vec2_.eucl_norm(float_retval);
+    EXPECT_NEAR(8.66025f, float_retval, 0.00001f);
+
+    vec4_.eucl_norm(float_retval);
+    EXPECT_FLOAT_EQ(18.f, float_retval);
+
+    int int_retval;
+    vec3_.eucl_norm(int_retval);
+    EXPECT_EQ(int(17), int_retval);
+
+    vec4_.eucl_norm(int_retval);
+    EXPECT_EQ(int(18), int_retval);
+
+    // Normalization of the null-vector is expected to return a vector made of NaNs.
+    // A simple check for a NaN is (NaN != NaN). An open question is what will be on
+    // platforms which don't support IEC559 (IEEE754).
+    Vector<double, 3> double_vec = vec1_.normalized();
+    EXPECT_NE(double_vec.x(), double_vec.x());
+    EXPECT_NE(double_vec.y(), double_vec.y());
+    EXPECT_NE(double_vec.z(), double_vec.z());
+
+    double_vec = vec2_.normalized();
+    EXPECT_NEAR(0.57735, double_vec.x(), 0.00001);
+    EXPECT_DOUBLE_EQ(double_vec.y(), double_vec.z());
+
+    double_vec = vec3_.normalized();
+    EXPECT_NEAR(0.01717, double_vec.x(), 0.00001);
+    EXPECT_NEAR(0.229, double_vec.y(), 0.00001);
+    EXPECT_NEAR(0.97327, double_vec.z(), 0.00001);
+ 
+    Vector<double, 4> double_vec2 = vec4_.normalized();
+    EXPECT_NEAR(0.5, double_vec2.x(), 0.00001);
+    EXPECT_DOUBLE_EQ(double_vec2.x(), double_vec2.z());
+    EXPECT_DOUBLE_EQ(double_vec2.y(), double_vec2.w());
 }

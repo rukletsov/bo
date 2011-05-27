@@ -134,15 +134,18 @@ public:
     // See below for operator* (dot product), defined outside the class.
     // See below for operator<<, defined outside the class.
 
-    // Simple usual functions.
+    // Simple aggregation functions. 
     T min() const;
-    std::size_t min_index() const;
     T max() const;
-    std::size_t max_index() const;
     T sum() const;
     T product() const;
     T avg() const;
 	
+    // These functions use std::min_element() and therefore return an index of the 
+    // first found element (in case there are several equal min/max elements).
+    std::size_t min_index() const;
+    std::size_t max_index() const;
+
     // Compute euclidean norm of the vectors. If the return variable is given,
     // try to convert the result to retvar's type.
     double eucl_norm() const;
@@ -150,6 +153,11 @@ public:
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
+    // If the vector is a null-vector, normalization is sensless. However, some
+    // software (e.g. Wolfram Mathematica 7.0) returns the null-vector as a result
+    // of a normalization of the null-vector. In order not to inflate the code,
+    // the function called on the null-vector will make 0/0 division and return
+    // a vector made of NaNs. 
     Vector<double, N> normalized() const;
 
     // Size is always the same: N.
@@ -419,8 +427,8 @@ template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
 {
     return 
-        std::distance(std::min_element(components.begin(), components.end()), 
-            components.begin()); 
+        std::distance(components.begin(), 
+            std::min_element(components.begin(), components.end())); 
 }
 
 template <typename T, std::size_t N>
@@ -434,8 +442,8 @@ template <typename T, std::size_t N>
 std::size_t Vector<T, N>::max_index() const
 {
     return 
-        std::distance(std::max_element(components.begin(), components.end()), 
-            components.begin());
+        std::distance(components.begin(), 
+            std::max_element(components.begin(), components.end()));
 }
 
 template <typename T, std::size_t N> 
