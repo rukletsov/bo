@@ -489,13 +489,13 @@ void Vector<T, N>::eucl_norm(RetType& retvar) const
 template <typename T, std::size_t N> 
 Vector<double, N> Vector<T, N>::normalized() const
 {
-    // Normalization of the null-vector is meaningess. In this case vector's norm
+    // Normalization of the null vector is meaningess. In this case vector's norm
     // is zero and factor should be Infinity (according to IEC559/IEEE754). A simple 
     // check for this is using numeric_limits<> class.
     double factor = 1.0 / eucl_norm();
     if (std::numeric_limits<double>::infinity() == factor)
     {
-        std::invalid_argument e("Normalization of a null-vector is meaningless.");
+        std::invalid_argument e("Normalization of the null vector is meaningless.");
         throw e;
     }
 

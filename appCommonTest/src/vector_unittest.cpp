@@ -91,7 +91,18 @@ TEST_F(VectorTest, BoundaryChecks)
     EXPECT_THROW(vec1_.at(vec1_.size()), std::out_of_range);
     EXPECT_THROW(vec1_.at(-1), std::out_of_range);
 
-    // operator[] cannot be checked since it uses BOOST_ASSERT.
+    // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
+    // expected to lead to a program termination in debug mode for console 
+    // applications. This assertion can be caught and therefore tested if it works 
+    // when necessary.
+#ifdef _DEBUG
+    EXPECT_DEATH(vec3_[vec3_.size()], "Assertion failed: i < N && \"out of range\".*");
+    EXPECT_DEATH(vec3_[-1], "Assertion failed: i < N && \"out of range\".*");
+#endif
+
+    // However, valid indices should be always processed without any crashes.
+    double double_val = vec3_[0];
+    double_val = vec3_[vec3_.size() - 1];
 }
 
 TEST_F(VectorTest, VectorScalarArithmetics)
@@ -222,7 +233,7 @@ TEST_F(VectorTest, Normalization)
     vec4_.eucl_norm(int_retval);
     EXPECT_EQ(int(18), int_retval);
 
-    // Normalization of the null-vector is expected to throw an exception. This is
+    // Normalization of the null vector is expected to throw an exception. This is
     // a requested feature, not a bug.
     EXPECT_THROW(vec1_.normalized(), std::invalid_argument);
 
