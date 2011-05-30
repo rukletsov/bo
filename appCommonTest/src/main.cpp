@@ -1,5 +1,4 @@
 
-#include <iostream>
 #include "gtest/gtest.h"
 
 #if defined(_MSC_VER) && defined(_DEBUG)
@@ -26,26 +25,10 @@ int main(int argc, char* argv[])
 #endif
 
 
-    // Run all declared tests.
+    // Run all defined tests.
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 
-    //common::Vector<int, 3> vec01(1, 2, 3);
-    //double d = vec01.eucl_norm();
-    //std::cout << vec01[3];
-
-
-    //// Constructor tests.
-        //common::Vector<double, 3> vec1;
-        //common::Vector<double, 3> vec2(5.f);
-
-    //float f[2] = {1.f, 2.2f};
-    //common::Vector<int, 3> vec3(f, 2);
-
-    //int f2[5] = {3, 4, 10, 45, 3};
-    //common::Vector<double, 3> vec4(f2, 5);
-
-        //common::Vector<double, 3> vec5(vec2);
 
 
     //// operator[] test.
@@ -53,6 +36,7 @@ int main(int argc, char* argv[])
     //vec1[1] = 10.;
     //// Should call assertion.
     ////vec4[3] = 10.;
+
 
 
     //// Other functions test.

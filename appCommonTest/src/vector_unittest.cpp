@@ -31,14 +31,14 @@ TEST_F(VectorTest, DefaultConstructor)
     for (size_t i = 0; i < 3; ++i)
         sum += vec1_[i];
 
-    EXPECT_EQ(0.f, sum);
+    EXPECT_FLOAT_EQ(0.f, sum);
 
     Vector<int, 3> zero_vec;
     int zeros[3];
     memset(&zeros, 0, 3 * sizeof(int));
     int diff = memcmp(&zero_vec[0], &zeros, 3 * sizeof(int));
 
-    EXPECT_EQ(0, diff);
+    EXPECT_EQ(int(0), diff);
 }
 
 TEST_F(VectorTest, FillConstructor)
@@ -47,7 +47,7 @@ TEST_F(VectorTest, FillConstructor)
     for (size_t i = 0; i < 3; ++i)
         sum += vec2_[i];
 
-    EXPECT_EQ(15., sum);
+    EXPECT_DOUBLE_EQ(15., sum);
 }
 
 TEST_F(VectorTest, ArrayConstructor)
@@ -72,7 +72,7 @@ TEST_F(VectorTest, CopyConstructor)
     Vector<double, 3> double_vec = vec2_;
     int diff = memcmp(&double_vec, &vec2_, 3 * sizeof(double));
 
-    EXPECT_EQ(0, diff);
+    EXPECT_EQ(int(0), diff);
 }
 
 TEST_F(VectorTest, MemoryConsumption)
@@ -85,6 +85,7 @@ TEST_F(VectorTest, MemoryConsumption)
 
 TEST_F(VectorTest, BoundaryChecks)
 {
+    // Iff the given index is out of range an exception should be thrown.
     EXPECT_NO_THROW(vec1_.at(0));
     EXPECT_NO_THROW(vec1_.at(vec1_.size() - 1));
     EXPECT_THROW(vec1_.at(vec1_.size()), std::out_of_range);
@@ -96,28 +97,28 @@ TEST_F(VectorTest, BoundaryChecks)
 TEST_F(VectorTest, VectorScalarArithmetics)
 {
     Vector<int, 4> int_vec = vec4_ * int(2);
-    EXPECT_EQ(18, int_vec.x());
-    EXPECT_EQ(18, int_vec.y());
-    EXPECT_EQ(18, int_vec.z());
-    EXPECT_EQ(18, int_vec.w());
+    EXPECT_EQ(int(18), int_vec.x());
+    EXPECT_EQ(int(18), int_vec.y());
+    EXPECT_EQ(int(18), int_vec.z());
+    EXPECT_EQ(int(18), int_vec.w());
 
     int_vec += int(2);
-    EXPECT_EQ(20, int_vec.x());
-    EXPECT_EQ(20, int_vec.y());
-    EXPECT_EQ(20, int_vec.z());
-    EXPECT_EQ(20, int_vec.w());
+    EXPECT_EQ(int(20), int_vec.x());
+    EXPECT_EQ(int(20), int_vec.y());
+    EXPECT_EQ(int(20), int_vec.z());
+    EXPECT_EQ(int(20), int_vec.w());
 
     int_vec = vec4_ - int(4);
-    EXPECT_EQ(5, int_vec.x());
-    EXPECT_EQ(5, int_vec.y());
-    EXPECT_EQ(5, int_vec.z());
-    EXPECT_EQ(5, int_vec.w());
+    EXPECT_EQ(int(5), int_vec.x());
+    EXPECT_EQ(int(5), int_vec.y());
+    EXPECT_EQ(int(5), int_vec.z());
+    EXPECT_EQ(int(5), int_vec.w());
 
     int_vec = vec4_ / int(4);
-    EXPECT_EQ(2, int_vec.x());
-    EXPECT_EQ(2, int_vec.y());
-    EXPECT_EQ(2, int_vec.z());
-    EXPECT_EQ(2, int_vec.w());
+    EXPECT_EQ(int(2), int_vec.x());
+    EXPECT_EQ(int(2), int_vec.y());
+    EXPECT_EQ(int(2), int_vec.z());
+    EXPECT_EQ(int(2), int_vec.w());
 }
 
 TEST_F(VectorTest, VectorVectorArithmetics)
@@ -156,11 +157,13 @@ TEST_F(VectorTest, CrossProduct)
 
 TEST_F(VectorTest, MinMax)
 {
+    // Min/max for the null-vector.
     EXPECT_FLOAT_EQ(0., vec1_.min());
     EXPECT_FLOAT_EQ(0., vec1_.max());
     EXPECT_EQ(std::size_t(0), vec1_.min_index());
     EXPECT_EQ(std::size_t(0), vec1_.max_index());
 
+    // Min/max for the vector filled with only one value.
     EXPECT_DOUBLE_EQ(5., vec2_.min());
     EXPECT_DOUBLE_EQ(5., vec2_.max());
     EXPECT_EQ(std::size_t(0), vec2_.min_index());
@@ -203,7 +206,7 @@ TEST_F(VectorTest, Normalization)
     EXPECT_DOUBLE_EQ(0., vec1_.eucl_norm());
     EXPECT_NEAR(8.66025, vec2_.eucl_norm(), 0.00001);
     EXPECT_NEAR(17.46682, vec3_.eucl_norm(), 0.00001);
-    EXPECT_DOUBLE_EQ(18, vec4_.eucl_norm());
+    EXPECT_DOUBLE_EQ(18., vec4_.eucl_norm());
 
     float float_retval;
     vec2_.eucl_norm(float_retval);
@@ -219,15 +222,11 @@ TEST_F(VectorTest, Normalization)
     vec4_.eucl_norm(int_retval);
     EXPECT_EQ(int(18), int_retval);
 
-    // Normalization of the null-vector is expected to return a vector made of NaNs.
-    // A simple check for a NaN is (NaN != NaN). An open question is what will be on
-    // platforms which don't support IEC559 (IEEE754).
-    Vector<double, 3> double_vec = vec1_.normalized();
-    EXPECT_NE(double_vec.x(), double_vec.x());
-    EXPECT_NE(double_vec.y(), double_vec.y());
-    EXPECT_NE(double_vec.z(), double_vec.z());
+    // Normalization of the null-vector is expected to throw an exception. This is
+    // a requested feature, not a bug.
+    EXPECT_THROW(vec1_.normalized(), std::invalid_argument);
 
-    double_vec = vec2_.normalized();
+    Vector<double, 3> double_vec = vec2_.normalized();
     EXPECT_NEAR(0.57735, double_vec.x(), 0.00001);
     EXPECT_DOUBLE_EQ(double_vec.y(), double_vec.z());
 
