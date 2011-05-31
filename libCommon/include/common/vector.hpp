@@ -162,7 +162,7 @@ public:
     Vector<double, N> normalized() const;
 
     // Size is always the same: N.
-    std::size_t size() const;
+    static std::size_t size();
 
     // Swap method (linear complexity).
     void swap(Vector<T, N>& other);
@@ -495,7 +495,7 @@ Vector<double, N> Vector<T, N>::normalized() const
     double factor = 1.0 / eucl_norm();
     if (std::numeric_limits<double>::infinity() == factor)
     {
-        std::invalid_argument e("Normalization of the null vector is meaningless.");
+        std::logic_error e("Normalization of the null vector is meaningless.");
         throw e;
     }
 
@@ -508,7 +508,7 @@ Vector<double, N> Vector<T, N>::normalized() const
 }
 
 template <typename T, std::size_t N> inline
-std::size_t Vector<T, N>::size() const
+std::size_t Vector<T, N>::size()
 {
     return N;
 }

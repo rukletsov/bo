@@ -257,7 +257,7 @@ TEST_F(VectorTest, Normalization)
 
     // Normalization of the null vector is expected to throw an exception. This is
     // a requested feature, not a bug.
-    EXPECT_THROW(vec1_.normalized(), std::invalid_argument);
+    EXPECT_THROW(vec1_.normalized(), std::logic_error);
 
     Vector<double, 3> double_vec = vec2_.normalized();
     EXPECT_NEAR(0.57735, double_vec.x(), 0.00001);
