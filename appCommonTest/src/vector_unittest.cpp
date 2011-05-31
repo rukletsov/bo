@@ -83,6 +83,33 @@ TEST_F(VectorTest, MemoryConsumption)
     EXPECT_EQ(sizeof(char), sizeof(Vector<int, 0>));
 }
 
+TEST_F(VectorTest, SettersGetters)
+{
+    // opearator[] and at() tests.
+    EXPECT_DOUBLE_EQ(0.3, vec3_.at(0));
+    EXPECT_DOUBLE_EQ(4., vec3_[1]);
+    EXPECT_DOUBLE_EQ(17., vec3_[2]);
+
+    vec3_[0] = 24.5;
+    vec3_.at(1) = 7.9;
+    vec3_.at(vec3_.size() - 1) = -0.6;
+
+    EXPECT_DOUBLE_EQ(24.5, vec3_[0]);
+    EXPECT_DOUBLE_EQ(7.9, vec3_.at(1));
+    EXPECT_DOUBLE_EQ(-0.6, vec3_.at(2));
+
+    // x(), y(), z(), w() tests.
+    vec4_.x() = 6;
+    vec4_.y() = vec4_.z();
+    vec4_.z() = vec4_.x();
+    vec4_.w() = -2;
+
+    EXPECT_EQ(6, vec4_.x());
+    EXPECT_EQ(9, vec4_.y());
+    EXPECT_EQ(6, vec4_.z());
+    EXPECT_EQ(-2, vec4_.w());
+}
+
 TEST_F(VectorTest, BoundaryChecks)
 {
     // Iff the given index is out of range an exception should be thrown.
@@ -91,18 +118,13 @@ TEST_F(VectorTest, BoundaryChecks)
     EXPECT_THROW(vec1_.at(vec1_.size()), std::out_of_range);
     EXPECT_THROW(vec1_.at(-1), std::out_of_range);
 
-    // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
-    // expected to lead to a program termination in debug mode for console 
-    // applications. This assertion can be caught and therefore tested if it works 
-    // when necessary.
-#ifdef _DEBUG
-    EXPECT_DEATH(vec3_[vec3_.size()], "Assertion failed: i < N && \"out of range\".*");
-    EXPECT_DEATH(vec3_[-1], "Assertion failed: i < N && \"out of range\".*");
-#endif
-
-    // However, valid indices should be always processed without any crashes.
-    double double_val = vec3_[0];
-    double_val = vec3_[vec3_.size() - 1];
+    // opeartor[] doesn't throw exceptions when wrong index is used. An assertion
+    // is used in debug mode and nothing in release mode. Since assertion leads to
+    // a special state of a program (usually termination and via abort()), 
+    // corresponding tests are placed in a special test case for so-called "death
+    // tests". However, valid indices should be always processed without any crashes.
+    vec3_[0] = -1.;
+    double double_val = vec3_[vec3_.size() - 1];
 }
 
 TEST_F(VectorTest, VectorScalarArithmetics)
@@ -250,4 +272,38 @@ TEST_F(VectorTest, Normalization)
     EXPECT_NEAR(0.5, double_vec2.x(), 0.00001);
     EXPECT_DOUBLE_EQ(double_vec2.x(), double_vec2.z());
     EXPECT_DOUBLE_EQ(double_vec2.y(), double_vec2.w());
+}
+
+TEST_F(VectorTest, SwapFillAssign)
+{
+    Vector<double, 3> double_vector = vec2_;
+    vec3_.swap(vec2_);
+    EXPECT_EQ(double_vector, vec3_);
+
+    vec2_.fill(5.);
+    EXPECT_EQ(double_vector, vec2_);
+
+    vec3_.fill(2.);
+    vec3_.y() = 3.;
+    vec2_.assign(&vec3_[0], 2);
+
+    EXPECT_DOUBLE_EQ(2., vec2_[0]);
+    EXPECT_DOUBLE_EQ(3., vec2_[1]);
+    EXPECT_DOUBLE_EQ(0., vec2_[2]);
+}
+
+
+// An aliased fixture for so-called "death tests".
+typedef VectorTest VectorDeathTest;
+
+TEST_F(VectorDeathTest, Assertions)
+{
+    // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
+    // expected to lead to a program termination in debug mode for console 
+    // applications. This assertion can be caught and therefore tested if it works 
+    // when necessary.
+#ifdef _DEBUG
+    EXPECT_DEATH(vec3_[vec3_.size()], "Assertion failed: i < N && \"out of range\".*");
+    EXPECT_DEATH(vec3_[-1], "Assertion failed: i < N && \"out of range\".*");
+#endif
 }
