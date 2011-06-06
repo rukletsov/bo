@@ -29,7 +29,7 @@ struct HContainerElement
 	HContainerElement(surfaces::HPointSeed* ps):ps(ps){}
 
 	/*! Access operator */
-	inline float operator [] (const int t) const 
+	inline float operator [] (const size_t t) const 
 	{
 		return (*ps)[t];
 	}
@@ -1123,7 +1123,7 @@ common::Mesh D25ActiveContours::build_mesh()
 	activeEdges.clear();
 	frozenEdges.clear();
 	triangles.clear();
-	unvisitedCount=vertices->tree.size();
+	unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 
 	//Building the set of triangles
 	while(grow_step());
@@ -1252,7 +1252,7 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
 	float const range = windowRadius;
 	vertices->tree.find_within_range(HContainerElement(&ps), range, std::back_inserter(neighbours));
 
-	int pointCount=neighbours.size();
+	unsigned pointCount = static_cast<unsigned>(neighbours.size());
 
 	//Principal Component Analysis (PCA)
 	Vector<float,3> mean(0,0,0);	
@@ -1385,14 +1385,14 @@ void D25ActiveContours::set_vertices( std::vector<Vector<float,3>> &v )
 	if(vertices)delete vertices;
 	vertices=new HVertexContainer(v);
 
-	unvisitedCount=vertices->tree.size();
+	unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 }
 
 bool D25ActiveContours::grow_step()
 {	
 	if(unvisitedCount==0&&activeEdges.size()==0)
 	{
-		unsigned int frozenBefore=frozenEdges.size();
+		unsigned int frozenBefore = static_cast<unsigned>(frozenEdges.size());
 		post_stitch();
 		return activeEdges.size()>0 || frozenEdges.size()<frozenBefore;
 	}

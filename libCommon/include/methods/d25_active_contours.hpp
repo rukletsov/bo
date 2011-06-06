@@ -72,7 +72,7 @@ struct HPointSeed
 	bool isNode;
 
 	/*! Access operator. */
-	inline float operator [] (const int t) const 
+	inline float operator [] (const size_t t) const 
 	{
 		return t==0?p.x():(t==1?p.y():p.z());
 	}

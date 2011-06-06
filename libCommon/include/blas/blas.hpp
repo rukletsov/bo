@@ -54,7 +54,7 @@ bool invert_matrix(const matrix<T>& input, matrix<T>& inverse)
 	permutation_matrix<std::size_t> pm(A.size1());
 
 	// Perform LU-factorization
-	int res = lu_factorize(A, pm);
+	size_t res = lu_factorize(A, pm);
 	if (res != 0)
 		return false;
 
