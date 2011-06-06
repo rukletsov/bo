@@ -8,6 +8,7 @@ LIBRARY
 [DONE] Look at CMake's special functions such as FindBoost and, probably, FindSTLPort.
 [DONE] add .hgeol file.
 [DONE] Create an auto test project (look at boost::test or Google Test Framework).
+* Check types compatibility (size_t, int, unsigned, etc).
 
 
 Mesh class
