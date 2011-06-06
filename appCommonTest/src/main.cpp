@@ -31,21 +31,6 @@ int main(int argc, char* argv[])
 
 
 
-    //// operator[] test.
-    //double temp1 = vec1[1];
-    //vec1[1] = 10.;
-    //// Should call assertion.
-    ////vec4[3] = 10.;
-
-
-
-    //// Other functions test.
-    //vec3.size();
-    //vec1.swap(vec2);
-    //vec4.assign(f, 2);
-    //std::cout << vec1 << std::endl;
-
-
 
 
 
