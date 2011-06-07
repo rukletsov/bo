@@ -31,4 +31,8 @@ TARGET_LINK_LIBRARIES (AppCommonTest
 IF (MSVC)
     # Specify the name suffix for debug build.
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "-d")
+    
+    # Supress secure warnings (C4996) for MSVC compiler.
+    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS 
+                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
 ENDIF (MSVC)

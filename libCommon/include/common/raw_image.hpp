@@ -38,7 +38,7 @@
 #define RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
 
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 #include <boost/cstdint.hpp>
 

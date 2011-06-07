@@ -36,7 +36,7 @@
 #define VECTOR_HPP_4545D406_43E3_4444_8E4B_9B5A10E7AB16_
 
 #include <cstddef>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <algorithm>
 #include <numeric>

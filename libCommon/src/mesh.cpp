@@ -224,7 +224,7 @@ bool Mesh::to_ply(const std::string& file_path) const
         } BOOST_SCOPE_EXIT_END
 
         // Add "vertex" element.
-        if (!ply_add_element(oply, "vertex", this->vertices.size())) 
+        if (!ply_add_element(oply, "vertex", static_cast<long>(this->vertices.size()))) 
             return false;
         // Add "vertex" properties. if the type parameter is not PLY_LIST, two last
         // parameters are ignored. So, PLY_LIST is passed for two last parameters
@@ -237,7 +237,7 @@ bool Mesh::to_ply(const std::string& file_path) const
             return false;
 
         // Add "face" element.
-        if (!ply_add_element(oply, "face", this->faces.size())) 
+        if (!ply_add_element(oply, "face", static_cast<long>(this->faces.size()))) 
             return false;
         // Add "face" only property. It is a list of vertex indices. 
         if (!ply_add_property(oply, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT)) 
