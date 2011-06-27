@@ -77,7 +77,7 @@ public:
     typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
 public:
-    // Create an empty mesh with pre-allocated memory.
+    // Create an empty mesh ready to store initial_count vertices.
     Mesh(size_t initial_count);
 
     // Add a new vertex to the mesh and return its index.
@@ -119,9 +119,9 @@ private:
     // rendering), curvature information, BBox, grid, etc (See TriMesh implementation
     // by Szymon Rusinkiewicz as an example.)
 
-	// Connectivity structures.
-	AdjacentVertices neighbours;
-	AdjacentFaces adjacent_faces;
+    // Connectivity structures.
+    AdjacentVertices neighbours;
+    AdjacentFaces adjacent_faces;
     // We can also add, e.g. faces adjacent to faces over edges, i.e. each face will
     // have maximum 3 these neighbouring faces.
 };
