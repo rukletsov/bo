@@ -1,2 +1,0 @@
-hg pull https://bitbucket.org/belarus.europe/libcommon
-hg push https://bitbucket.org/belarus.europe/libcommon
