@@ -25,12 +25,12 @@ ADD_EXECUTABLE (AppCommonTest
 
 TARGET_LINK_LIBRARIES (AppCommonTest
                        LibCommon
-                       gtest
+                       debug gtestd optimized gtest
 )
 
 IF (MSVC)
     # Specify the name suffix for debug build.
-    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "-d")
+    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
     
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS 
