@@ -92,9 +92,9 @@ public:
     Normal get_vertex_normal(size_t vertex_index) const;
 
     // Temporary accessor methods.
-    Vertices get_all_vertices() const;
-    Faces get_all_faces() const;
-    Normals get_all_face_normals() const;
+    const Vertices& get_all_vertices() const;
+    const Faces& get_all_faces() const;
+    const Normals& get_all_face_normals() const;
 
     // IO functions, allow to read mesh from and write to a .ply files, 
     // print formatted mesh data to an std::ostream.
@@ -128,19 +128,19 @@ private:
 
 
 inline
-Mesh::Vertices Mesh::get_all_vertices() const
+const Mesh::Vertices& Mesh::get_all_vertices() const
 {
     return vertices;
 }
 
 inline
-Mesh::Faces Mesh::get_all_faces() const
+const Mesh::Faces& Mesh::get_all_faces() const
 {
     return faces;
 }
 
 inline
-Mesh::Normals Mesh::get_all_face_normals() const
+const Mesh::Normals& Mesh::get_all_face_normals() const
 {
     return face_normals;
 }
