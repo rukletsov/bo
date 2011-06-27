@@ -21,3 +21,4 @@ _release/
 lib/**
 bin/**
 vs20*/**
+qtcreator/**
