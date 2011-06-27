@@ -41,6 +41,15 @@ Triangle<> class
 ================================================================================
 * Implement Equals() method.
 
+IniReader class
+================================================================================
+* Replace IniReaderSettings class with traits.
+* Add default sections to switches (otherwise e.g. GCC will not compile it).
+* Try using fin.peek() != char_traits<char>::eof() instead of while (fin.good()).
+* Add tests. 
+* Add an error handling.
+
+
 
 OTHER
 ================================================================================
