@@ -27,6 +27,8 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/methods/d25_active_contours.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/io/ini_reader.hpp	
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/basic_configuration.hpp	
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/uon_basic_configuration.hpp	
 	
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
 )
@@ -36,6 +38,7 @@ INCLUDE_DIRECTORIES (./include
                      ./include/common
                      ./include/methods
                      ./include/io
+                     ./include/io/config_parser
                      ./3rdparty
                      ./3rdparty/rply-1.01
                      ./3rdparty/libkdtree++_0.7.0
