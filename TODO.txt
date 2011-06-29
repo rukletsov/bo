@@ -1,15 +1,10 @@
 
 LIBRARY
 ================================================================================
-[DONE] CMake msvc compiler options.
 * CMake different options for debug/release configuration.
-[DONE] * Supress msvc unsafe CRT warnings.
 * Put windows-dependent code under #ifdef.
-[DONE] Look at CMake's special functions such as FindBoost and, probably, 
-  FindSTLPort.
-[DONE] add .hgeol file.
-[DONE] Create an auto test project (look at boost::test or Google Test Framework).
 * Check types compatibility (size_t, int, unsigned, etc).
+* Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 
 
 Mesh class
@@ -24,17 +19,7 @@ Mesh class
 * Implement "primitive-object" for Mesh class in order to visualize a Mesh.
 * Create vertex moving function.
 * Check English names for mesh terms (basic graph and mesh definitions).
-
-
-Vector<> class
-================================================================================
-[DONE] * Make an n-dimensional vector based on boost::array.
-[DONE] * Add useful mathematical methods, e.g. normalize(), etc.
-[DONE] * Implement operator+=, operator-=, etc.
-[DONE] * Test if function inlining gives some performace boost (ANSWER: more or
-  less NO).
-[DONE] Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
-  appropriate std algorithms, such as std::min_element(), std::accumulate().
+* Write tests.
 
 
 Triangle<> class
@@ -47,9 +32,8 @@ IniReader class
 * Replace IniReaderSettings class with traits.
 * Add default sections to switches (otherwise e.g. GCC will not compile it).
 * Try using fin.peek() != char_traits<char>::eof() instead of while (fin.good()).
-* Add tests. 
-* Add an error handling.
-
+* Write tests. 
+* Add errors handling.
 
 
 OTHER
@@ -58,3 +42,29 @@ OTHER
   VCG (http://vcg.sourceforge.net/index.php/Main_Page), 
   OpenMesh (http://www.openmesh.org/), 
   Meshlab (http://meshlab.sourceforge.net/).
+
+
+
+
+================================================================================
+                                      ARCHIVE
+================================================================================
+
+LIBRARY
+--------------------------------------------------------------------------------
+[DONE] * CMake msvc compiler options.
+[DONE] * Supress msvc unsafe CRT warnings.
+[DONE] * Look at CMake's special functions such as FindBoost and, probably, 
+  FindSTLPort.
+[DONE] * add .hgeol file.
+[DONE] * Create a test project (look at boost::test or Google Test Framework).  
+
+Vector<> class
+--------------------------------------------------------------------------------
+[DONE] * Make an n-dimensional vector based on boost::array.
+[DONE] * Add useful mathematical methods, e.g. normalize(), etc.
+[DONE] * Implement operator+=, operator-=, etc.
+[DONE] * Test if function inlining gives some performace boost (ANSWER: more or
+  less NO).
+[DONE] * Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
+  appropriate std algorithms, such as std::min_element(), std::accumulate().
