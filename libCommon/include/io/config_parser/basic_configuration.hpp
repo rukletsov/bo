@@ -46,13 +46,13 @@ class BasicConfiguration
 {
 public:
     BasicConfiguration() : ini_reader_(DEFAULT_INI_SETTINGS)
-    { };
+    { }
 
     BasicConfiguration(const IniReaderSettings& settings) : ini_reader_(settings)
-    { };
+    { }
 
     virtual ~BasicConfiguration() 
-    { };
+    { }
 
     // Reads a config file using the IniReader class.
 	virtual void read_file(const String& file_name);

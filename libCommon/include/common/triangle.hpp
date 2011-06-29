@@ -46,12 +46,12 @@ class Triangle
 { 
 
 public:
-	Triangle() { };
-	Triangle(const PointType& _A, const PointType& _B, const PointType& _C);
+    Triangle() { }
+    Triangle(const PointType& _A, const PointType& _B, const PointType& _C);
 
     PointType A() const;
-	PointType B() const;
-	PointType C() const;
+    PointType B() const;
+    PointType C() const;
 
     PointType& operator[] (std::size_t index);
     const PointType& operator[] (std::size_t index) const;

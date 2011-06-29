@@ -113,12 +113,13 @@ typedef boost::numeric::ublas::matrix<float> CommonFloatMatrix;
 // Namespace uon_config contains definitions of key names for UON configurations.
 namespace uon_config {
 
-// Symbols at the beginning and at the end of a value representing a vector (in an ini file). 
+// Symbols at the beginning and at the end of a value representing a vector (in an
+// ini file).
 static const Symbols VECTOR_TRIM_SYMBOLS = "[]";
 
 // Names of the keys in a config file.
-static const String CONTOUR_POINT_2D_NAME = "contourPoint....2d";        // pattern name
-static const String CONTOUR_POINT_3D_NAME = "contourPoint....3d";        // pattern name
+static const String CONTOUR_POINT_2D_NAME_PATTERN = "contourPoint\\d{4,}2d";
+static const String CONTOUR_POINT_3D_NAME_PATTERN = "contourPoint\\d{4,}3d";
 static const String IMAGE_TRANSFORM_ROT_X_NAME = "ImageTransform.Rot.x";
 static const String IMAGE_TRANSFORM_ROT_Y_NAME = "ImageTransform.Rot.y";
 static const String IMAGE_TRANSFORM_ROT_Z_NAME = "ImageTransform.Rot.z";
@@ -140,10 +141,10 @@ class UonBasicConfiguration_ : public BasicConfiguration
 {
 public:
     UonBasicConfiguration_() 
-    { };
+    { }
     
     virtual ~UonBasicConfiguration_() 
-    { };
+    { }
     
     // Combines three rotational and one translation vector to one 4x4 matrix.
     virtual bool build_transformation_matrix(const VectorType& x_rotation, 
@@ -176,18 +177,23 @@ protected:
     // Key's name should match the input key_name_pattern.
     // If no such key exists, or more than one key matches the input name,
     // or value parsing fails, returns false.
-    virtual bool parse_vector_by_pattern(const String& section_name, const String& subsection_name, 
-                                         const String& key_name_pattern, VectorType& vector) const;
+    virtual bool parse_vector_by_pattern(const String& section_name,
+                                         const String& subsection_name,
+                                         const String& key_name_pattern,
+                                         VectorType& vector) const;
 
-    // Gets the value from IniReader by it's name and trims unnecessary symbols at both sides.
-    // Default section and subsection are used.
-    // If no such value found, returns 'def_value'.
-    virtual String prepare_parsed_vector(const String& key_name, const String& def_value) const;
+    // Get the value from IniReader by it's name and trims unnecessary symbols at
+    // both sides. Default section and subsection are used. If no such value found,
+    // return 'def_value'.
+    virtual String prepare_parsed_vector(const String& key_name,
+                                         const String& def_value) const;
 
-    // Gets the value from IniReader by it's name and trims unnecessary symbols at both sides.
-    // If no such value found, returns 'def_value'.
-    virtual String prepare_parsed_vector(const String& section_name, const String& subsection_name,
-                                         const String& key_name, const String& def_value) const;
+    // Gets the value from IniReader by it's name and trims unnecessary symbols at
+    // both sides. If no such value found, returns 'def_value'.
+    virtual String prepare_parsed_vector(const String& section_name,
+                                         const String& subsection_name,
+                                         const String& key_name,
+                                         const String& def_value) const;
 
     // Parses a string into a vector of floats and stores it in an input vector.
     // If parsing fails, returns false and doesn't change an input vector.
@@ -211,10 +217,10 @@ class UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix> :
 public:
     UonBasicConfiguration()
     {   image_transformation.resize(4, 4); 
-    };
+    }
 
     virtual ~UonBasicConfiguration()
-    { };
+    { }
 
     virtual bool build_transformation_matrix(const Vector<float, 3>& x_rotation, 
                                              const Vector<float, 3>& y_rotation,
@@ -259,7 +265,8 @@ bool UonBasicConfiguration_<VectorType, MatrixType>::parse()
 {
     // Read ContourPoints 2D
     contour_points_2d.clear();
-    Strings contour_points_2d_names = ini_reader_.get_key_names_by_pattern(uon_config::CONTOUR_POINT_2D_NAME);
+    Strings contour_points_2d_names = ini_reader_.get_key_names_by_pattern(
+                uon_config::CONTOUR_POINT_2D_NAME_PATTERN);
     VectorType contour_point_2d;
     for (int i = 0; i < static_cast<int>(contour_points_2d_names.size()); ++i)
     {
@@ -269,7 +276,8 @@ bool UonBasicConfiguration_<VectorType, MatrixType>::parse()
 
     // Read ContourPoints 3D
     contour_points_3d.clear();
-    Strings contour_points_3d_names = ini_reader_.get_key_names_by_pattern(uon_config::CONTOUR_POINT_3D_NAME);
+    Strings contour_points_3d_names = ini_reader_.get_key_names_by_pattern(
+                uon_config::CONTOUR_POINT_3D_NAME_PATTERN);
     VectorType contour_point_3d;
     for (int i = 0; i < static_cast<int>(contour_points_3d_names.size()); ++i)
     {

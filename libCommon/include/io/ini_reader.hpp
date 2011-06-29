@@ -134,10 +134,10 @@ public:
 		erroneous_section(_erroneous_section),
 		section_error_type(_section_error_type),
 		keyvalue_error_type(_keyvalue_error_type)
-        { };
+        { }
 
     // Destructor
-    virtual ~IniReaderSettings() {};
+    virtual ~IniReaderSettings() { }
 
 public:
     // Symbols used to separate values of different meaning.
@@ -210,11 +210,12 @@ class IniReader
 {
 public:
 
-    IniReader(const IniReaderSettings& settings = DEFAULT_INI_SETTINGS) : settings_(settings) 
-    { };
+    IniReader(const IniReaderSettings& settings = DEFAULT_INI_SETTINGS):
+        settings_(settings)
+    { }
 
     virtual ~IniReader() 
-    { };
+    { }
 
 	// Parses ini-file and fills 'sections_' with data.
 	void read_file(const String& file_name);
