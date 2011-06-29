@@ -48,6 +48,9 @@
 
 namespace common {
 
+// A basic class for a 3D triangular mesh. Consumes more memory than possible
+// minimum (a standard graph storage) but provides faster access to frequently
+// used structures and operations. NOT thread-safe in the current implemetation.
 class Mesh
 {
 
@@ -78,18 +81,20 @@ public:
 
 public:
     // Create an empty mesh ready to store initial_count vertices.
-    Mesh(size_t initial_count);
+    Mesh(std::size_t initial_count);
 
     // Add a new vertex to the mesh and return its index.
-    size_t add_vertex(const Vertex& vertex);
+    std::size_t add_vertex(const Vertex& vertex);
 
     // Add a new face and return its index. Update dependent collections.
-    size_t add_face(const Face& face);
+    std::size_t add_face(const Face& face);
+
+    Normal get_face_normal(std::size_t face_index) const;
 
     // Get vertex normal, computed according to 
     // N.Max, "Weights for Computing Vertex Normals from Facet Normals",
     // Journal of Graphics Tools, Vol. 4, No. 2, 1999.
-    Normal get_vertex_normal(size_t vertex_index) const;
+    Normal get_vertex_normal(std::size_t vertex_index) const;
 
     // Temporary accessor methods.
     const Vertices& get_all_vertices() const;
@@ -105,23 +110,23 @@ public:
 private:
     // Add connectivity relations. Return false in case of new relation leads to 
     // a duplicate.
-    bool add_neighbouring_pair(size_t vertex1, size_t vertex2);
-    bool add_adjacent_face(size_t vertex, size_t face);
+    bool add_edge_(size_t vertex1, size_t vertex2);
+    bool add_adjacent_face_(size_t vertex, size_t face);
 
-    Normal compute_face_normal(const Face& face) const;
+    Normal compute_face_normal_(const Face& face) const;
 
 private:
     // Basic mesh data.
-    Vertices vertices;
-    Faces faces;
-    Normals face_normals;
+    Vertices vertices_;
+    Faces faces_;
+    Normals face_normals_;
     // Some other properties can be used, e.g. triangle strips (for speeding up
     // rendering), curvature information, BBox, grid, etc (See TriMesh implementation
     // by Szymon Rusinkiewicz as an example.)
 
     // Connectivity structures.
-    AdjacentVertices neighbours;
-    AdjacentFaces adjacent_faces;
+    AdjacentVertices neighbours_;
+    AdjacentFaces adjacent_faces_;
     // We can also add, e.g. faces adjacent to faces over edges, i.e. each face will
     // have maximum 3 these neighbouring faces.
 };
@@ -130,19 +135,19 @@ private:
 inline
 const Mesh::Vertices& Mesh::get_all_vertices() const
 {
-    return vertices;
+    return vertices_;
 }
 
 inline
 const Mesh::Faces& Mesh::get_all_faces() const
 {
-    return faces;
+    return faces_;
 }
 
 inline
 const Mesh::Normals& Mesh::get_all_face_normals() const
 {
-    return face_normals;
+    return face_normals_;
 }
 
 } // namespace common

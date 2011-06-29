@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 
+#include <stdexcept>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/scope_exit.hpp>
@@ -79,46 +80,63 @@ namespace common {
 
 Mesh::Mesh(size_t initial_count)
 {
-    vertices.reserve(initial_count);
-    faces.reserve(initial_count);
-    face_normals.reserve(initial_count); 
-    neighbours.reserve(initial_count); 
-    adjacent_faces.reserve(initial_count);
+    vertices_.reserve(initial_count);
+    faces_.reserve(initial_count);
+    face_normals_.reserve(initial_count);
+    neighbours_.reserve(initial_count);
+    adjacent_faces_.reserve(initial_count);
 }
 
-size_t Mesh::add_vertex(const Vertex& vertex)
+std::size_t Mesh::add_vertex(const Vertex& vertex)
 {
     // Actually, a syncro primitive should be added here.
-    vertices.push_back(vertex);
-    size_t new_vertex_index = vertices.size() - 1;
+    vertices_.push_back(vertex);
+    std::size_t new_vertex_index = vertices_.size() - 1;
 
     // Add empty connectivity containers.
-    neighbours.push_back(AdjacentVerticesPerVertex());
-    adjacent_faces.push_back(AdjacentFacesPerVertex());
+    neighbours_.push_back(AdjacentVerticesPerVertex());
+    adjacent_faces_.push_back(AdjacentFacesPerVertex());
 
     return new_vertex_index;
 }
 
-size_t Mesh::add_face(const Face& face)
+std::size_t Mesh::add_face(const Face& face)
 {
-    // Add a face and get its index. Syncro primitive needed.
-    faces.push_back(face);
-    size_t new_face_index = faces.size() - 1;
+    // Check if all vertices exist in the mesh.
+    std::size_t max_vertex_index = vertices_.size() - 1;
+    if ((face.A() > max_vertex_index) ||
+        (face.B() > max_vertex_index) ||
+        (face.C() > max_vertex_index))
+    {
+        BOOST_ASSERT(false && "Bad vertex indices in the face.");
+        std::out_of_range e("Face cannot be added to the mesh because it references "
+                            "non-existent vertices.");
+        throw e;
+    }
 
-    // Compute and save face normal.
-    face_normals.push_back(compute_face_normal(face).normalized());
+    // Add the face and get its index. Syncro primitive needed.
+    faces_.push_back(face);
+    std::size_t new_face_index = faces_.size() - 1;
 
-    // Update vertex neighbours.
-    add_neighbouring_pair(face.A(), face.B());
-    add_neighbouring_pair(face.B(), face.C());
-    add_neighbouring_pair(face.C(), face.A());
+    // Update vertex neighbours (insert edges).
+    add_edge_(face.A(), face.B());
+    add_edge_(face.B(), face.C());
+    add_edge_(face.C(), face.A());
 
     // Update adjacent faces.
-    add_adjacent_face(face.A(), new_face_index);
-    add_adjacent_face(face.B(), new_face_index);
-    add_adjacent_face(face.C(), new_face_index);
+    add_adjacent_face_(face.A(), new_face_index);
+    add_adjacent_face_(face.B(), new_face_index);
+    add_adjacent_face_(face.C(), new_face_index);
+
+    // Compute and save face normal.
+    face_normals_.push_back(compute_face_normal_(face));
 
     return new_face_index;
+}
+
+Mesh::Normal Mesh::get_face_normal(std::size_t face_index) const
+{
+    return face_normals_.at(face_index);
 }
 
 Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
@@ -127,13 +145,13 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
     Normal retvalue;
 
     AdjacentFacesPerVertex::const_iterator faces_end = 
-        adjacent_faces[vertex_index].end();
+        adjacent_faces_[vertex_index].end();
     for (AdjacentFacesPerVertex::const_iterator face_index = 
-        adjacent_faces[vertex_index].begin(); face_index != faces_end; ++face_index)
+        adjacent_faces_[vertex_index].begin(); face_index != faces_end; ++face_index)
     {
         // Determine to which face vertex considered vertex belong. Without loss of
         // generality, suppose, that face[2] == vertex_index.
-        const Face& face = faces[*face_index];
+        const Face& face = faces_[*face_index];
         size_t pt1 = face[0];
         size_t pt2 = face[1];
         if (face[0] == vertex_index)
@@ -142,26 +160,145 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
             pt2 = face[2];
 
         // Compute face's normal weight (multiplied dot products of two edges).
-        Vector<double, 3> edge1 = vertices[pt1] - vertices[vertex_index];
-        Vector<double, 3> edge2 = vertices[pt2] - vertices[vertex_index];
+        Vector<double, 3> edge1 = vertices_[pt1] - vertices_[vertex_index];
+        Vector<double, 3> edge2 = vertices_[pt2] - vertices_[vertex_index];
         double weight = ((edge1 * edge1) * (edge2 * edge2));
 
         // Append weighted face's normal.
-        retvalue = retvalue + face_normals[*face_index] * (1.0 / weight);
+        retvalue = retvalue + face_normals_[*face_index] * (1.0 / weight);
     }
 
     return retvalue;
 }
 
+// Print formatted mesh data to a given stream. See boost.format library for more
+// details about formatting.
+std::ostream& operator <<(std::ostream &os, const Mesh& obj)
+{
+    // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
+    
+    // Print full vertex info.
+    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
+       << std::endl << "Vertices: " << obj.vertices_.size() << std::endl;
+
+    Mesh::Vertices::const_iterator vertices_end = obj.vertices_.end();
+    for (Mesh::Vertices::const_iterator it = obj.vertices_.begin();
+         it != vertices_end; ++it)
+    {
+        // Print vertex coordinates.
+        size_t index = it - obj.vertices_.begin();
+        os << boost::format("vertex %1%: ") % index << std::endl << "\t"
+           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x() 
+           % it->y() % it->z();
+
+        // Print neighbouring vertices.
+        os << std::endl << "\t"
+           << boost::format("neighbours (%1%): ") % obj.neighbours_[index].size();
+
+        Mesh::AdjacentVerticesPerVertex::const_iterator neighbours_end = 
+            obj.neighbours_[index].end();
+        for (Mesh::AdjacentVerticesPerVertex::const_iterator neighbour = 
+            obj.neighbours_[index].begin(); neighbour != neighbours_end; ++neighbour)
+        {
+            os << boost::format("%1%, %|4t|") % (*neighbour);
+        }
+
+        // Print adjacent faces.            
+        os << std::endl << "\t" 
+           << boost::format("adjacent faces (%1%): ") % obj.adjacent_faces_[index].size();
+
+        Mesh::AdjacentFacesPerVertex::const_iterator faces_end = 
+            obj.adjacent_faces_[index].end();
+        for (Mesh::AdjacentFacesPerVertex::const_iterator face = 
+            obj.adjacent_faces_[index].begin(); face != faces_end; ++face)
+        {
+            os << boost::format("%1%, %|4t|") % (*face);
+        }
+
+        os << std::endl;
+    }
+
+    // Print full faces info.
+    os << "Faces: " << obj.faces_.size() << std::endl;
+
+    Mesh::Faces::const_iterator faces_end = obj.faces_.end();
+    for (Mesh::Faces::const_iterator face = obj.faces_.begin();
+        face != faces_end; ++face)
+    {
+        // Print face's vertices.
+        size_t index = face - obj.faces_.begin();
+        os << boost::format("face %1%: ") % index << std::endl << "\t"
+           << boost::format("A: %1%, %|18t|B: %2%, %|36t|C: %3%,") 
+           % face->A() % face->B() % face->C();
+
+        // Print face's normal.
+        Mesh::Normal normal = obj.face_normals_[index];
+        os << std::endl << "\t"
+           << boost::format("normal: (%1%, %2%, %3%)") % normal.x() % normal.y() 
+           % normal.z();
+
+        os << std::endl;        
+    }
+
+    // Print footer and return.
+    os << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return os;
+}
+
+// Private Urility functions.
+bool Mesh::add_edge_(size_t vertex1, size_t vertex2)
+{
+    // If the neighbouring relation between given vertices already exists, 
+    // set::insert signal this and won't add a duplicate. A neighbouring relation
+    // should be mutual. In case one vertex has another as a neighbour and another
+    // has not, report error through assertion.
+    bool exist1 = neighbours_[vertex1].insert(vertex2).second;
+    bool exist2 = neighbours_[vertex2].insert(vertex1).second;
+
+    BOOST_ASSERT(!(exist1 ^ exist2) && "Neighbouring relation is not mutual.");
+    // No need to throw an exception since we are responsible for maintaining this
+    // condition and it's impossible to break it from the outside. Consider this
+    // situation as a severe internal bug which should be eliminated during testing.
+
+    // Since relation is mutual, either exist1 or exist2 can be returned.
+    return exist1;
+}
+
+bool Mesh::add_adjacent_face_(size_t vertex, size_t face)
+{
+    // If the face is already attached to the vertex, set::insert won't add a 
+    // duplicate. See set::insert documentation.
+    return 
+        adjacent_faces_[vertex].insert(face).second;
+}
+
+Mesh::Normal Mesh::compute_face_normal_(const Face& face) const
+{
+    Vector<double, 3> a = vertices_[face.A()] - vertices_[face.B()];
+    Vector<double, 3> b = vertices_[face.B()] - vertices_[face.C()];
+    
+    Normal norm = a.cross_product(b);
+
+    // If these vectors are collinear (face points are lying on the same line) its
+    // cross product will be the null vector and its normalization is meaningless.
+    try {
+        norm = norm.normalized();
+    }
+    catch(const std::logic_error&)
+    { }
+
+    return norm;
+}
 
 // RPly library is used for reading and writing meshes to .ply files.
 // The library is written in C and its sources are included in the project.
-// 
+//
 // Reading is done via callbacks. RPly first reads .ply header and then reads
 // data with known structure and calls defined function for every data unit.
 // In the simplified case which is supposed in our case, data is vertices and
-// a list of triangle faces. So, two callbacks are defined above in an anonymous 
-// namespace. First callback is for reading vertex components and the second is 
+// a list of triangle faces. So, two callbacks are defined above in an anonymous
+// namespace. First callback is for reading vertex components and the second is
 // for reading face vertices. Both functions use the same context for storing
 // temporary values and for accessing mesh function.
 Mesh Mesh::from_ply(const std::string& file_path)
@@ -170,9 +307,9 @@ Mesh Mesh::from_ply(const std::string& file_path)
     long nvertices, ntriangles;
 
     p_ply ply = ply_open(file_path.c_str(), NULL);
-    if (!ply) 
+    if (!ply)
         return invalid_mesh;
-    if (!ply_read_header(ply)) 
+    if (!ply_read_header(ply))
         return invalid_mesh;
 
     // Prepare PLYContext and set callbacks for RPly reader.
@@ -192,7 +329,7 @@ Mesh Mesh::from_ply(const std::string& file_path)
     context.face = &temp_face;
 
     // Perform reading contents into mesh.
-    if (!ply_read(ply)) 
+    if (!ply_read(ply))
         return invalid_mesh;
 
     ply_close(ply);
@@ -201,13 +338,13 @@ Mesh Mesh::from_ply(const std::string& file_path)
 }
 
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
-// Some shitty software doesn't support double type for vertices that's why a 
+// Some shitty software doesn't support double type for vertices that's why a
 // conversion to float is made, despite the fact that mesh stores double type.
 bool Mesh::to_ply(const std::string& file_path) const
 {
     // Create .ply file in ascii format.
     p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
-    if (!oply) 
+    if (!oply)
         return false;
 
     // Suppose successful file close operation unless otherwise specified.
@@ -219,180 +356,72 @@ bool Mesh::to_ply(const std::string& file_path) const
         // Since the file has been opened successfully by this point, add a clean-up
         // action, which will be executed at the end of the current scope.
         BOOST_SCOPE_EXIT ((&close_succeeded) (&oply)) {
-            if (!ply_close(oply))  
+            if (!ply_close(oply))
                 close_succeeded = false;
         } BOOST_SCOPE_EXIT_END
 
         // Add "vertex" element.
-        if (!ply_add_element(oply, "vertex", static_cast<long>(this->vertices.size()))) 
+        if (!ply_add_element(oply, "vertex", static_cast<long>(this->vertices_.size())))
             return false;
         // Add "vertex" properties. if the type parameter is not PLY_LIST, two last
         // parameters are ignored. So, PLY_LIST is passed for two last parameters
         // as the most unsuitable value.
-        if (!ply_add_property(oply, "x", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
+        if (!ply_add_property(oply, "x", PLY_FLOAT, PLY_LIST, PLY_LIST))
             return false;
-        if (!ply_add_property(oply, "y", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
+        if (!ply_add_property(oply, "y", PLY_FLOAT, PLY_LIST, PLY_LIST))
             return false;
-        if (!ply_add_property(oply, "z", PLY_FLOAT, PLY_LIST, PLY_LIST)) 
+        if (!ply_add_property(oply, "z", PLY_FLOAT, PLY_LIST, PLY_LIST))
             return false;
 
         // Add "face" element.
-        if (!ply_add_element(oply, "face", static_cast<long>(this->faces.size()))) 
+        if (!ply_add_element(oply, "face", static_cast<long>(this->faces_.size())))
             return false;
-        // Add "face" only property. It is a list of vertex indices. 
-        if (!ply_add_property(oply, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT)) 
+        // Add "face" only property. It is a list of vertex indices.
+        if (!ply_add_property(oply, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT))
             return false;
 
         // Add a comment and an obj_info.
-        if (!ply_add_comment(oply, "libCommon generated PLY file")) 
+        if (!ply_add_comment(oply, "libCommon generated PLY file"))
             return false;
-        if (!ply_add_obj_info(oply, "common::Mesh class dump")) 
+        if (!ply_add_obj_info(oply, "common::Mesh class dump"))
             return false;
 
         // Write .ply header.
-        if (!ply_write_header(oply)) 
+        if (!ply_write_header(oply))
             return false;
 
         // Write mesh data in the same order as declared above.
-        Mesh::Vertices::const_iterator vertices_end = this->vertices.end();
-        for (Mesh::Vertices::const_iterator it = this->vertices.begin();
+        Mesh::Vertices::const_iterator vertices_end = this->vertices_.end();
+        for (Mesh::Vertices::const_iterator it = this->vertices_.begin();
              it != vertices_end; ++it)
         {
-            if (!ply_write(oply, it->x())) 
+            if (!ply_write(oply, it->x()))
                 return false;
             if (!ply_write(oply, it->y()))
                 return false;
-            if (!ply_write(oply, it->z())) 
+            if (!ply_write(oply, it->z()))
                 return false;
         }
 
-        Mesh::Faces::const_iterator faces_end = this->faces.end();
-        for (Mesh::Faces::const_iterator it = this->faces.begin();
+        Mesh::Faces::const_iterator faces_end = this->faces_.end();
+        for (Mesh::Faces::const_iterator it = this->faces_.begin();
             it != faces_end; ++it)
         {
             // 3 can be hardcoded since Mesh works only with triangle faces.
-            if (!ply_write(oply, 3)) 
+            if (!ply_write(oply, 3))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->A()))) 
+            if (!ply_write(oply, static_cast<double>(it->A())))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->B()))) 
+            if (!ply_write(oply, static_cast<double>(it->B())))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->C()))) 
+            if (!ply_write(oply, static_cast<double>(it->C())))
                 return false;
         }
     } // end of scope with file writing.
-    
+
     // Returning false is possible only when an error occured during file closing.
     // All other errors lead to immediate function termination, i.e. not here.
     return close_succeeded;
-}
-
-// Print formatted mesh data to a given stream. See boost.format library for more
-// details about formatting.
-std::ostream& operator <<(std::ostream &os, const Mesh& obj)
-{
-    // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
-    
-    // Print full vertex info.
-    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj) 
-       << std::endl << "Vertices: " << obj.vertices.size() << std::endl;
-
-    Mesh::Vertices::const_iterator vertices_end = obj.vertices.end();
-    for (Mesh::Vertices::const_iterator it = obj.vertices.begin();
-         it != vertices_end; ++it)
-    {
-        // Print vertex coordinates.
-        size_t index = it - obj.vertices.begin();
-        os << boost::format("vertex %1%: ") % index << std::endl << "\t"
-           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x() 
-           % it->y() % it->z();
-
-        // Print neighbouring vertices.
-        os << std::endl << "\t"
-           << boost::format("neighbours (%1%): ") % obj.neighbours[index].size();
-
-        Mesh::AdjacentVerticesPerVertex::const_iterator neighbours_end = 
-            obj.neighbours[index].end();
-        for (Mesh::AdjacentVerticesPerVertex::const_iterator neighbour = 
-            obj.neighbours[index].begin(); neighbour != neighbours_end; ++neighbour)
-        {
-            os << boost::format("%1%, %|4t|") % (*neighbour);
-        }
-
-        // Print adjacent faces.            
-        os << std::endl << "\t" 
-           << boost::format("adjacent faces (%1%): ") % obj.adjacent_faces[index].size();
-
-        Mesh::AdjacentFacesPerVertex::const_iterator faces_end = 
-            obj.adjacent_faces[index].end();
-        for (Mesh::AdjacentFacesPerVertex::const_iterator face = 
-            obj.adjacent_faces[index].begin(); face != faces_end; ++face)
-        {
-            os << boost::format("%1%, %|4t|") % (*face);
-        }
-
-        os << std::endl;
-    }
-
-    // Print full faces info.
-    os << "Faces: " << obj.faces.size() << std::endl;
-
-    Mesh::Faces::const_iterator faces_end = obj.faces.end();
-    for (Mesh::Faces::const_iterator face = obj.faces.begin(); 
-        face != faces_end; ++face)
-    {
-        // Print face's vertices.
-        size_t index = face - obj.faces.begin();
-        os << boost::format("face %1%: ") % index << std::endl << "\t"
-           << boost::format("A: %1%, %|18t|B: %2%, %|36t|C: %3%,") 
-           % face->A() % face->B() % face->C();
-
-        // Print face's normal.
-        Mesh::Normal normal = obj.face_normals[index];
-        os << std::endl << "\t"
-           << boost::format("normal: (%1%, %2%, %3%)") % normal.x() % normal.y() 
-           % normal.z();
-
-        os << std::endl;        
-    }
-
-    // Print footer and return.
-    os << boost::format("end of object %1$#x.") % &obj << std::endl;
-
-    return os;
-}
-
-// Private Urility functions.
-bool Mesh::add_neighbouring_pair(size_t vertex1, size_t vertex2)
-{
-    // If the neighbouring relation between given vertices already exists, 
-    // set::insert signal this and won't add a duplicate. A neighbouring relation
-    // should be mutual. In case one vertex has another as a neighbour and another
-    // has not, report error through assertion.
-    bool exist1 = neighbours[vertex1].insert(vertex2).second;
-    bool exist2 = neighbours[vertex2].insert(vertex1).second;
-
-    BOOST_ASSERT(!(exist1 ^ exist2) && "Mesh: neighbouring relation is not mutual.");
-
-    // Since relation is mutual, either exist1 or exist2 can be returned.
-    return exist1;
-}
-
-bool Mesh::add_adjacent_face(size_t vertex, size_t face)
-{
-    // If the face is already attached to the vertex, set::insert won't add a 
-    // duplicate. See set::insert documentation.
-    return 
-        adjacent_faces[vertex].insert(face).second;
-}
-
-Mesh::Normal Mesh::compute_face_normal(const Face& face) const
-{
-    Vector<double, 3> a = vertices[face.A()] - vertices[face.B()];
-    Vector<double, 3> b = vertices[face.B()] - vertices[face.C()];
-    
-    return 
-        a.cross_product(b);
 }
 
 } // namespace common

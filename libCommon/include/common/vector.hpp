@@ -42,6 +42,7 @@
 #include <numeric>
 #include <limits>
 #include <functional>
+#include <stdexcept>
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 #include <boost/format.hpp>

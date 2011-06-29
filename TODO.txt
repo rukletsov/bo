@@ -41,6 +41,7 @@ Triangle<> class
 ================================================================================
 * Implement Equals() method.
 
+
 IniReader class
 ================================================================================
 * Replace IniReaderSettings class with traits.
