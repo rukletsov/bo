@@ -3,7 +3,12 @@
 // are changed infrequently
 //
 
-#pragma once
+#ifndef PCH_H_
+#define PCH_H_
+
+// MSVC-specific stuff and precompiled headers. On platform other than MSVC
+// this file will be empty and therefore precompiled headers won't be supported.
+#ifdef _MSC_VER
 
 #ifndef _WIN32_WINNT		// Allow use of features specific to Windows XP or later.                   
 #define _WIN32_WINNT 0x0501	// Change this to the appropriate value to target other versions of Windows.
@@ -26,3 +31,7 @@
 #include <boost/assert.hpp>
 #include <boost/array.hpp>
 #include <boost/format.hpp>
+
+#endif // _MSC_VER
+
+#endif // PCH_H_
