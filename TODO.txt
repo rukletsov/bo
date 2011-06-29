@@ -5,7 +5,6 @@ LIBRARY
 * Put windows-dependent code under #ifdef.
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
-* Rename "stdafx" to "pch" in order to make it clear.
 * Consider removing precompiled headers (problems on other platforms, distribute
   builds are not possible). Or make an option in CMake.
 * Provide Timer class, which works via Performance Counters on Windows and as 
@@ -73,6 +72,7 @@ LIBRARY
 [DONE] * add .hgeol file.
 [DONE] * Create a test project (look at boost::test or Google Test Framework).  
 [DONE] * Populate precompiled header with frequently used headers.
+[DONE] * Rename "stdafx" to "pch" in order to make it clear.
 
 Vector<> class
 --------------------------------------------------------------------------------

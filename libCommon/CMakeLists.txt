@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 PROJECT (LibCommon)
 
 SET (LibCommon_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d25_active_contours.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ini_reader.cpp
@@ -17,7 +17,7 @@ SET (LibCommon_CSRCS
 )
 
 SET (LibCommon_HDRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
@@ -68,17 +68,17 @@ IF (MSVC)
     
     # Enable usage for precompiled header for MSVC compiler for C++ sources.
     FOREACH (src_file ${LibCommon_SRCS})
-        SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yustdafx.h")
+        SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yupch.h")
     ENDFOREACH (src_file ${LibCommon_SRCS})
 
-    # Set "create precompiled header" option for only stdafx.cpp file.
-    SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.cpp 
-                                 PROPERTIES COMPILE_FLAGS "/Ycstdafx.h")
+    # Set "create precompiled header" option for only pch.cpp file.
+    SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
+                                 PROPERTIES COMPILE_FLAGS "/Ycpch.h")
     
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")                         
   
-    # Supress "no public symbols found" MSVC's linker warning for stdafx.obj. 
+    # Supress "no public symbols found" MSVC's linker warning for pch.obj.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
 ENDIF (MSVC)
