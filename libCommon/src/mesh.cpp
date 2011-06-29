@@ -6,7 +6,7 @@
 #include <boost/format.hpp>
 #include <boost/scope_exit.hpp>
 
-#include "rply.h"
+#include "rply/rply.h"
 #include "mesh.hpp"
 
 
