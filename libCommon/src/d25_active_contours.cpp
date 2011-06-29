@@ -6,7 +6,7 @@
 
 #include "svd/svd.c"
 #include "kdtree++/kdtree.hpp"
-#include "blas/blas.hpp"
+#include "blas.hpp"
 #include "d25_active_contours.hpp"
 
 //Uncomment for equal-square triangles propagation  

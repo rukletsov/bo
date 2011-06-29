@@ -18,6 +18,7 @@ SET (LibCommon_CSRCS
 
 SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.h
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
@@ -31,10 +32,18 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/uon_basic_configuration.hpp	
 	
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply.h
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/kdtree.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/allocator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/function.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/iterator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/region.hpp
 )
 
 # For additional dependencies check the root CMakeLists.
 INCLUDE_DIRECTORIES (./include
+                     ./include/blas
                      ./include/common
                      ./include/methods
                      ./include/io
