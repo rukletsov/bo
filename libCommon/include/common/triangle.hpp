@@ -62,7 +62,8 @@ protected:
 
 
 template <typename PointType>
-Triangle<PointType>::Triangle(const PointType& _A, const PointType& _B, const PointType& _C)
+Triangle<PointType>::Triangle(const PointType& _A, const PointType& _B,
+                              const PointType& _C)
 {
     vertices[0] = _A;
     vertices[1] = _B;

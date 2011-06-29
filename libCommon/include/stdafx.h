@@ -12,5 +12,17 @@
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 
+
+// Specify headers which will be stored in a precompiled header.
+
+#include <cstddef>
 #include <cmath>
+#include <stdexcept>
+#include <string>
 #include <vector>
+#include <map>
+
+#include <boost/cstdint.hpp>
+#include <boost/assert.hpp>
+#include <boost/array.hpp>
+#include <boost/format.hpp>

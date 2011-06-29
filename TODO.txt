@@ -6,7 +6,6 @@ LIBRARY
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 * Rename "stdafx" to "pch" in order to make it clear.
-* Populate precompiled header with frequently used headers.
 * Consider removing precompiled headers (problems on other platforms, distribute
   builds are not possible). Or make an option in CMake.
 * Provide Timer class, which works via Performance Counters on Windows and as 
@@ -25,7 +24,7 @@ Mesh class
   use existed point instead.
 * Make well-designed accessor functions (see standard graph representations).
 * Implement "primitive-object" for Mesh class in order to visualize a Mesh.
-* Create vertex moving function.
+* Provide vertex moving function.
 * Check English names for mesh terms (basic graph and mesh definitions).
 * Write tests.
 * Move IO-related code (Mesh::to_ply(), Mesh::from_ply()) to "io/mesh_io".
@@ -73,6 +72,7 @@ LIBRARY
   FindSTLPort.
 [DONE] * add .hgeol file.
 [DONE] * Create a test project (look at boost::test or Google Test Framework).  
+[DONE] * Populate precompiled header with frequently used headers.
 
 Vector<> class
 --------------------------------------------------------------------------------
