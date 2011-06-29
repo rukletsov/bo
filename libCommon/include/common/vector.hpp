@@ -197,7 +197,7 @@ T operator*(Vector<T, N> lhs, const Vector<T, N>& rhs)
 
 // Stream operator<< for printing Vector<T, N> contents.
 template <typename T, std::size_t N>
-std::ostream& operator<<(std::ostream &os, const Vector<T, N>& obj)
+std::ostream& operator<<(std::ostream& os, const Vector<T, N>& obj)
 {
     os << boost::format("%1%-Vector, object %2$#x, %3% bytes: ") 
         % N % &obj % sizeof(obj) << std::endl << "    (";
@@ -495,10 +495,7 @@ Vector<double, N> Vector<T, N>::normalized() const
     // check for this is using numeric_limits<> class.
     double factor = 1.0 / eucl_norm();
     if (std::numeric_limits<double>::infinity() == factor)
-    {
-        std::logic_error e("Normalization of the null vector is meaningless.");
-        throw e;
-    }
+        throw std::logic_error("Normalization of the null vector is meaningless.");
 
     Vector<double, N> retvalue;
 
@@ -543,12 +540,8 @@ template <typename T, std::size_t N>
 void Vector<T, N>::check_range(std::size_t index) const
 {
     if (index >= size()) 
-    {
-        std::out_of_range e((boost::format(
+        throw std::out_of_range ((boost::format(
             "%1%-Vector's index \"%2%\" is out of range.") % N % index).str());
-
-        throw e;
-    }
 }
 
 } // namespace common

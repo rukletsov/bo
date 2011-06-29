@@ -110,8 +110,8 @@ public:
 private:
     // Add connectivity relations. Return false in case of new relation leads to 
     // a duplicate.
-    bool add_edge_(size_t vertex1, size_t vertex2);
-    bool add_adjacent_face_(size_t vertex, size_t face);
+    bool add_edge_(std::size_t vertex1, std::size_t vertex2);
+    bool add_adjacent_face_(std::size_t vertex, std::size_t face);
 
     Normal compute_face_normal_(const Face& face) const;
 

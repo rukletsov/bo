@@ -78,7 +78,7 @@ int face_cb(p_ply_argument argument) {
 
 namespace common {
 
-Mesh::Mesh(size_t initial_count)
+Mesh::Mesh(std::size_t initial_count)
 {
     vertices_.reserve(initial_count);
     faces_.reserve(initial_count);
@@ -97,21 +97,26 @@ std::size_t Mesh::add_vertex(const Vertex& vertex)
     neighbours_.push_back(AdjacentVerticesPerVertex());
     adjacent_faces_.push_back(AdjacentFacesPerVertex());
 
+    // Check for post-conditions. These include sizes of connectivity structures
+    // and vertex container. If any of the condition is not satisfied consider
+    // this as an internal bug. Therefore no need to throw.
+    BOOST_ASSERT(((neighbours_.size() == vertices_.size()) ||
+                  (adjacent_faces_.size() == vertices_.size())) &&
+                 "Vertex connectivity structures are of different sizes.");
+
     return new_vertex_index;
 }
 
 std::size_t Mesh::add_face(const Face& face)
 {
     // Check if all vertices exist in the mesh.
-    std::size_t max_vertex_index = vertices_.size() - 1;
-    if ((face.A() > max_vertex_index) ||
-        (face.B() > max_vertex_index) ||
-        (face.C() > max_vertex_index))
+    if ((vertices_.size() <= face.A()) ||
+        (vertices_.size() <= face.B()) ||
+        (vertices_.size() <= face.C()))
     {
         BOOST_ASSERT(false && "Bad vertex indices in the face.");
-        std::out_of_range e("Face cannot be added to the mesh because it references "
-                            "non-existent vertices.");
-        throw e;
+        throw std::out_of_range("Face cannot be added to the mesh because it "
+                                "references non-existent vertices.");
     }
 
     // Add the face and get its index. Syncro primitive needed.
@@ -131,18 +136,32 @@ std::size_t Mesh::add_face(const Face& face)
     // Compute and save face normal.
     face_normals_.push_back(compute_face_normal_(face));
 
+    // Check for post-conditions. These include sizes of connectivity structures
+    // and face container. If any of the condition is not satisfied consider this
+    // as an internal bug. Therefore no need to throw.
+    BOOST_ASSERT((face_normals_.size() == faces_.size()) &&
+                 "Vertex connectivity structures are of different sizes.");
+
     return new_face_index;
 }
 
 Mesh::Normal Mesh::get_face_normal(std::size_t face_index) const
 {
-    return face_normals_.at(face_index);
+    // Check if the given face exists in the mesh.
+    if (face_normals_.size() <= face_index)
+        throw std::out_of_range("Specified face doesn't exist.");
+
+    return face_normals_[face_index];
 }
 
-Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
+Mesh::Normal Mesh::get_vertex_normal(std::size_t vertex_index) const
 {
+    // Check if the given vertex exists in the mesh.
+    if (vertices_.size() <= vertex_index)
+        throw std::out_of_range("Specified vertex doesn't exist.");
+
     // A normal of a vertex is a sum of weighted normals of adjacent faces.
-    Normal retvalue;
+    Normal normal;
 
     AdjacentFacesPerVertex::const_iterator faces_end = 
         adjacent_faces_[vertex_index].end();
@@ -152,8 +171,8 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
         // Determine to which face vertex considered vertex belong. Without loss of
         // generality, suppose, that face[2] == vertex_index.
         const Face& face = faces_[*face_index];
-        size_t pt1 = face[0];
-        size_t pt2 = face[1];
+        std::size_t pt1 = face[0];
+        std::size_t pt2 = face[1];
         if (face[0] == vertex_index)
             pt1 = face[2];
         else if (face[1] == vertex_index)
@@ -165,15 +184,22 @@ Mesh::Normal Mesh::get_vertex_normal(size_t vertex_index) const
         double weight = ((edge1 * edge1) * (edge2 * edge2));
 
         // Append weighted face's normal.
-        retvalue = retvalue + face_normals_[*face_index] * (1.0 / weight);
+        normal += face_normals_[*face_index] * (1.0 / weight);
     }
 
-    return retvalue;
+    // Face normals can be the null vectors.
+    try {
+        normal = normal.normalized();
+    }
+    catch(const std::logic_error&)
+    { }
+
+    return normal;
 }
 
 // Print formatted mesh data to a given stream. See boost.format library for more
 // details about formatting.
-std::ostream& operator <<(std::ostream &os, const Mesh& obj)
+std::ostream& operator <<(std::ostream& os, const Mesh& obj)
 {
     // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
     
@@ -186,7 +212,7 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
          it != vertices_end; ++it)
     {
         // Print vertex coordinates.
-        size_t index = it - obj.vertices_.begin();
+        std::size_t index = it - obj.vertices_.begin();
         os << boost::format("vertex %1%: ") % index << std::endl << "\t"
            << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x() 
            % it->y() % it->z();
@@ -204,8 +230,8 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
         }
 
         // Print adjacent faces.            
-        os << std::endl << "\t" 
-           << boost::format("adjacent faces (%1%): ") % obj.adjacent_faces_[index].size();
+        os << std::endl << "\t" << boost::format("adjacent faces (%1%): ")
+           % obj.adjacent_faces_[index].size();
 
         Mesh::AdjacentFacesPerVertex::const_iterator faces_end = 
             obj.adjacent_faces_[index].end();
@@ -226,7 +252,7 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
         face != faces_end; ++face)
     {
         // Print face's vertices.
-        size_t index = face - obj.faces_.begin();
+        std::size_t index = face - obj.faces_.begin();
         os << boost::format("face %1%: ") % index << std::endl << "\t"
            << boost::format("A: %1%, %|18t|B: %2%, %|36t|C: %3%,") 
            % face->A() % face->B() % face->C();
@@ -246,8 +272,8 @@ std::ostream& operator <<(std::ostream &os, const Mesh& obj)
     return os;
 }
 
-// Private Urility functions.
-bool Mesh::add_edge_(size_t vertex1, size_t vertex2)
+// Private utility functions.
+bool Mesh::add_edge_(std::size_t vertex1, std::size_t vertex2)
 {
     // If the neighbouring relation between given vertices already exists, 
     // set::insert signal this and won't add a duplicate. A neighbouring relation
@@ -256,16 +282,16 @@ bool Mesh::add_edge_(size_t vertex1, size_t vertex2)
     bool exist1 = neighbours_[vertex1].insert(vertex2).second;
     bool exist2 = neighbours_[vertex2].insert(vertex1).second;
 
-    BOOST_ASSERT(!(exist1 ^ exist2) && "Neighbouring relation is not mutual.");
     // No need to throw an exception since we are responsible for maintaining this
     // condition and it's impossible to break it from the outside. Consider this
     // situation as a severe internal bug which should be eliminated during testing.
+    BOOST_ASSERT(!(exist1 ^ exist2) && "Neighbouring relation is not mutual.");
 
     // Since relation is mutual, either exist1 or exist2 can be returned.
     return exist1;
 }
 
-bool Mesh::add_adjacent_face_(size_t vertex, size_t face)
+bool Mesh::add_adjacent_face_(std::size_t vertex, std::size_t face)
 {
     // If the face is already attached to the vertex, set::insert won't add a 
     // duplicate. See set::insert documentation.
@@ -275,20 +301,21 @@ bool Mesh::add_adjacent_face_(size_t vertex, size_t face)
 
 Mesh::Normal Mesh::compute_face_normal_(const Face& face) const
 {
+    // Get two vectors representing the given face.
     Vector<double, 3> a = vertices_[face.A()] - vertices_[face.B()];
     Vector<double, 3> b = vertices_[face.B()] - vertices_[face.C()];
-    
-    Normal norm = a.cross_product(b);
 
     // If these vectors are collinear (face points are lying on the same line) its
     // cross product will be the null vector and its normalization is meaningless.
+    Normal normal = a.cross_product(b);
+
     try {
-        norm = norm.normalized();
+        normal = normal.normalized();
     }
     catch(const std::logic_error&)
     { }
 
-    return norm;
+    return normal;
 }
 
 // RPly library is used for reading and writing meshes to .ply files.
