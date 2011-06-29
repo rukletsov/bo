@@ -333,9 +333,18 @@ Mesh Mesh::from_ply(const std::string& file_path)
     Mesh invalid_mesh(0);
     long nvertices, ntriangles;
 
+    // Open .ply file for reading.
     p_ply ply = ply_open(file_path.c_str(), NULL);
     if (!ply)
         return invalid_mesh;
+
+    // Try to read mesh data. Since the file has been already successfully opened
+    // by this point, add a clean-up action by boost/scope_exit, which will be
+    // executed at the end of the current scope.
+    BOOST_SCOPE_EXIT ((&ply)) {
+        ply_close(ply);
+    } BOOST_SCOPE_EXIT_END
+
     if (!ply_read_header(ply))
         return invalid_mesh;
 
@@ -358,8 +367,6 @@ Mesh Mesh::from_ply(const std::string& file_path)
     // Perform reading contents into mesh.
     if (!ply_read(ply))
         return invalid_mesh;
-
-    ply_close(ply);
 
     return mesh;
 }
