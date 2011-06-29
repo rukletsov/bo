@@ -5,6 +5,14 @@ LIBRARY
 * Put windows-dependent code under #ifdef.
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
+* Rename "stdafx" to "pch" in order to make it clear.
+* Populate precompiled header with frequently used headers.
+* Consider removing precompiled headers (problems on other platforms, distribute
+  builds are not possible). Or make an option in CMake.
+* Provide Timer class, which works via Performance Counters on Windows and as 
+  boost::timer on all other platforms. This should replace functions from 
+  "common/performance.hpp".
+* Implement (or find and use) global Logger class.
 
 
 Mesh class
@@ -20,6 +28,13 @@ Mesh class
 * Create vertex moving function.
 * Check English names for mesh terms (basic graph and mesh definitions).
 * Write tests.
+* Move IO-related code (Mesh::to_ply(), Mesh::from_ply()) to "io/mesh_io".
+
+
+RawImage<> class
+================================================================================
+* Use 1D array.
+* Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
 
 
 Triangle<> class
