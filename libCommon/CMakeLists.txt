@@ -52,6 +52,9 @@ SET (LibCommon_HDRS
 
 # Enable usage for precompiled header for MSVC compiler for C++ sources.
 IF ((MSVC) AND (UsePch))
+    # Print info message.
+    MESSAGE (STATUS "Precompiled headers enabled through \"pch.h\" and \"pch.cpp\"")
+
     # Set preprocessor directive USE_PCH so we can use it code sources.
     ADD_DEFINITIONS (-DUSE_PCH)
 
@@ -95,8 +98,18 @@ ADD_LIBRARY (LibCommon
 SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "d")
 
 
-# Supress MSVC-specific compiler and linker warnings.
+# MSVC-specific features and options.
 IF (MSVC)
+    # If MSVC2010 compiler (or newer) is used, target Windows 7. This means that
+    # the newest Windows API will be used but it can be partially unavailable on
+    # previous versions of Windows. For older compilers a default value will be
+    # applied in the "pch.h" file. For more information see
+    #     http://msdn.microsoft.com/en-us/library/aa383745%28v=vs.85%29.aspx
+    IF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
+        MESSAGE (STATUS "Targeting Windows 7 API: _WIN32_WINNT = 0x0601")
+        ADD_DEFINITIONS (-D_WIN32_WINNT=0x0601)
+    ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
+
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")                         
