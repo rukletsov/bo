@@ -6,7 +6,7 @@ LIBRARY
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 * Implement (or find and use) global Logger class.
-
+* Write tests for Timer class.
 
 Mesh class
 ================================================================================
@@ -23,17 +23,14 @@ Mesh class
 * Write tests.
 * Move IO-related code (Mesh::to_ply(), Mesh::from_ply()) to "io/mesh_io".
 
-
 RawImage<> class
 ================================================================================
 * Use 1D array.
 * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
 
-
 Triangle<> class
 ================================================================================
 * Implement Equals() method.
-
 
 IniReader class
 ================================================================================
@@ -42,14 +39,6 @@ IniReader class
 * Try using fin.peek() != char_traits<char>::eof() instead of while (fin.good()).
 * Write tests. 
 * Add errors handling.
-
-
-OTHER
-================================================================================
-* Look and compare 3rd-party mesh implementations: 
-  VCG (http://vcg.sourceforge.net/index.php/Main_Page), 
-  OpenMesh (http://www.openmesh.org/), 
-  Meshlab (http://meshlab.sourceforge.net/).
 
 
 

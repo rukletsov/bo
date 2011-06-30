@@ -77,16 +77,18 @@
 namespace common {
 
 #if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
+    // Use boost::timer on non-Windows and by default.
+    typedef boost::timer Timer;
+#else 
+    // Use MSVCTimer by request.
+    class detail::MSVCTimer;
+    typedef detail::MSVCTimer Timer;
+#endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
 
-// Use boost::timer on non-Windows and by default.
-typedef boost::timer Timer;
 
-#else // _MSC_VER defined and USE_BOOST_TIMER undefined
+#ifdef _MSC_VER
 
-// Use MSVCTimer by request.
-class MSVCTimer;
-typedef MSVCTimer Timer;
-
+namespace detail {
 
 class MSVCTimer
 {
@@ -168,7 +170,9 @@ LONGLONG MSVCTimer::get_proc_freq_() const
     return retvalue.QuadPart;
 }
 
-#endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
+} // namespace detail
+
+#endif // _MSC_VER
 
 } // namespace common
 
