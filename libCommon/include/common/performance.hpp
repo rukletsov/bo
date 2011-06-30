@@ -125,7 +125,7 @@ inline
 double MSVCTimer::elapsed() const
 {
     return
-        (double(get_proc_ticks_()) - double(start_time_)) / get_proc_ticks_();
+        (double(get_proc_ticks_()) - double(start_time_)) / get_proc_freq_();
 }
 
 inline
@@ -133,18 +133,18 @@ double MSVCTimer::elapsed_max() const
 {
     return
         (double(std::numeric_limits<LONGLONG>::max()) - double(start_time_)) /
-            get_proc_ticks_();
+            get_proc_freq_();
 }
 
 inline
 double MSVCTimer::elapsed_min() const
 {
     return
-        double(1) / get_proc_ticks_();
+        double(1) / get_proc_freq_();
 }
 
 inline
-bool MSVCTimer::static bool is_supported()
+bool MSVCTimer::is_supported()
 {
     LARGE_INTEGER temp;
     return
@@ -152,7 +152,7 @@ bool MSVCTimer::static bool is_supported()
 }
 
 inline
-LONGLONG MSVCTimer::get_proc_ticks_()
+LONGLONG MSVCTimer::get_proc_ticks_() const
 {
     LARGE_INTEGER retvalue;
     QueryPerformanceCounter(&retvalue);
@@ -161,7 +161,7 @@ LONGLONG MSVCTimer::get_proc_ticks_()
 }
 
 inline
-LONGLONG MSVCTimer::get_proc_freq_()
+LONGLONG MSVCTimer::get_proc_freq_() const
 {
     LARGE_INTEGER retvalue;
     QueryPerformanceFrequency(&retvalue);
