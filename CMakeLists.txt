@@ -1,7 +1,9 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
+# User-defined options for the whole project.
 OPTION (BuildTests "Build all of Common's tests" OFF)
+
 
 PROJECT (Common)
 

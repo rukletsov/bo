@@ -29,10 +29,12 @@ TARGET_LINK_LIBRARIES (AppCommonTest
                        debug gtestd optimized gtest
 )
 
+# Specify the name suffix for debug build.
+SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
+
+
+# Supress MSVC-specific compiler and linker warnings.
 IF (MSVC)
-    # Specify the name suffix for debug build.
-    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
-    
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS 
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")

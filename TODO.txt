@@ -5,8 +5,6 @@ LIBRARY
 * Put windows-dependent code under #ifdef.
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
-* Consider removing precompiled headers (problems on other platforms, distribute
-  builds are not possible). Or make an option in CMake.
 * Provide Timer class, which works via Performance Counters on Windows and as 
   boost::timer on all other platforms. This should replace functions from 
   "common/performance.hpp".
@@ -83,3 +81,5 @@ Vector<> class
   less NO).
 [DONE] * Rewrite min(), max(), min_index(), max_index(), sum(), product() using 
   appropriate std algorithms, such as std::min_element(), std::accumulate().
+[DONE] * Consider removing precompiled headers (problems on other platforms, distribute
+  builds are not possible). Or make an option in CMake.
