@@ -39,11 +39,11 @@
 
 #include <boost/timer.hpp>
 
-#if defined(_MSC_VER) && !defined(USE_BOOST_TIMER)
+#ifdef _MSC_VER
 #   include <limits>
 #   define NOMINMAX
 #   include <windows.h>
-#endif // defined(_MSC_VER) && !defined(USE_BOOST_TIMER)
+#endif // _MSC_VER
 
 /** The interface of the Timer class is identical with the one of boost::timer class.
   * On the platforms other than Windows Timer class is just a typedef for boost::timer.
@@ -80,7 +80,7 @@ namespace common {
     // Use boost::timer on non-Windows and by default.
     typedef boost::timer Timer;
 #else 
-    // Use MSVCTimer by request.
+    // Use MSVCTimer otherwise.
     class detail::MSVCTimer;
     typedef detail::MSVCTimer Timer;
 #endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)

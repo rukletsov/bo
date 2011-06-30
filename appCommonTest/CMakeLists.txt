@@ -7,6 +7,7 @@ SET (AppCommonTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vector_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/timer_unittest.cpp
 )
 
 # For additional dependencies check the root CMakeLists.
