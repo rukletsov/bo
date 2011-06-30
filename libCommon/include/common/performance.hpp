@@ -1,12 +1,14 @@
 
 /******************************************************************************
 
-    performance.hpp, v 1.0.3 2011.04.12
+    performance.hpp, v 1.1.0 2011.06.30
 
-    Functions for performance evaluation and manipulation based on WindowsAPI.
-    Time is calculated through processor ticks and processor frequency. 
+    Timer class for performance evaluation. By default uses boost::timer
+    class. However on Windows a special more precise alternative can be used
+    (based on performance counter and Windows API).
 
-    Copyright (c) 2010, 2011, Alexander Rukletsov <rukletsov@gmail.com>
+    Copyright (c) 2010, 2011
+    Alexander Rukletsov <rukletsov@gmail.com>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -35,57 +37,140 @@
 #ifndef PERFORMANCE_HPP_88D42F69_941B_451A_BC38_DAF8A399F977_
 #define PERFORMANCE_HPP_88D42F69_941B_451A_BC38_DAF8A399F977_
 
-#include <boost/cstdint.hpp>
+#include <boost/timer.hpp>
 
 #ifdef _MSC_VER
+#   include <limits>
+#   define NOMINMAX
+#   include <windows.h>
+#endif // _MSC_VER
 
-#define NOMINMAX
-#include <windows.h>
-
-/* Usage example:
- *
- *    boost::int64_t start = common::get_proc_ticks();
- *
- *    < ... do job here ... > 
- *
- *    boost::int64_t end = common::get_proc_ticks();
- *
- *    std::cout << "job took: "  
- *        << static_cast<float>(end - start) / common::get_proc_freq() * 1000 
- *        << " msecs" << std::endl;
- */
+/** The interface of the Timer class is identical with the one of boost::timer class.
+  * By default Timer class is just a typedef for boost::timer. On the platforms other
+  * than Windows it is the only available option.
+  *
+  * On Windows a more precise technique can be used: performance counter, which is
+  * implemented in MSVCTimer class. Its interface is identical with the one of the
+  * boost::timer class. For more information see
+  *     http://msdn.microsoft.com/en-us/library/ms644904%28v=vs.85%29.aspx
+  *     http://msdn.microsoft.com/en-us/library/ms644905%28v=vs.85%29.aspx
+  *
+  * To make Timer class coincide MSVCTimer, define USE_HIGH_PERF_TIMER symbol.
+  *
+  * However the installed hardware can lack the support of the high-resolution
+  * performance counter. In this case MSVCTimer works incorrectly and function
+  * MSVCTimer::is_supported() returns false. A standard boost::timer should be used
+  * instead.
+  *
+  * Usage example:
+  *
+  *     #define USE_HIGH_PERF_TIMER
+  *     Timer timer;
+  *
+  *     < ... do calculations here ... >
+  *
+  *     std::cout << "calculations took: "
+  *               << timer.elapsed() << " seconds" << std::endl;
+  *
+  */
 
 
 namespace common {
 
+#if !defined(_MSC_VER) || !defined(USE_HIGH_PERF_TIMER)
+
+// Use boost::timer on non-Windows and by default.
+typedef boost::timer Timer;
+
+#else // _MSC_VER and USE_HIGH_PERF_TIMER are defined
+
+// Use MSVCTimer by request.
+class MSVCTimer;
+typedef MSVCTimer Timer;
+
+
+class MSVCTimer
+{
+public:
+    MSVCTimer();
+    void restart();
+    double elapsed() const;
+    double elapsed_max() const;
+    double elapsed_min() const;
+
+    static bool is_supported();
+
+protected:
+    LONGLONG get_proc_ticks_() const;
+    LONGLONG get_proc_freq_() const;
+
+protected:
+    LONGLONG start_time_;
+};
+
+
 inline
-boost::int64_t get_proc_ticks()
+MSVCTimer::MSVCTimer()
+{
+    restart();
+}
+
+inline
+void MSVCTimer::restart()
+{
+    start_time_ = get_proc_ticks_();
+}
+
+inline
+double MSVCTimer::elapsed() const
+{
+    return
+        (double(get_proc_ticks_()) - double(start_time_)) / get_proc_ticks_();
+}
+
+inline
+double MSVCTimer::elapsed_max() const
+{
+    return
+        (double(std::numeric_limits<LONGLONG>::max()) - double(start_time_)) /
+            get_proc_ticks_();
+}
+
+inline
+double MSVCTimer::elapsed_min() const
+{
+    return
+        double(1) / get_proc_ticks_();
+}
+
+inline
+bool MSVCTimer::static bool is_supported()
+{
+    LARGE_INTEGER temp;
+    return
+        (0 == QueryPerformanceFrequency(&temp) ? false : true);
+}
+
+inline
+LONGLONG MSVCTimer::get_proc_ticks_()
 {
     LARGE_INTEGER retvalue;
     QueryPerformanceCounter(&retvalue);
 
-    return 
-        static_cast<boost::int64_t>(retvalue.QuadPart);
+    return retvalue.QuadPart;
 }
 
-inline 
-boost::int64_t get_proc_freq()
+inline
+LONGLONG MSVCTimer::get_proc_freq_()
 {
     LARGE_INTEGER retvalue;
     QueryPerformanceFrequency(&retvalue);
 
-    return 
-        static_cast<boost::int64_t>(retvalue.QuadPart);
+    return retvalue.QuadPart;
 }
-
-inline
-void increase_process_priority()
-{
-    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-}
-
-} // namespace common
 
 #endif // _MSC_VER
+
+} // namespace common
 
 #endif // PERFORMANCE_HPP_88D42F69_941B_451A_BC38_DAF8A399F977_

@@ -8,7 +8,8 @@
 	Modeling and Visualization (VMV 2003), Munich, Germany, November 19-21, 2003,
 	pages 431 -- 439.
 
-    Copyright (c) 2009-2011, Dzmitry Hlindzich <hlindzich@gmail.com>
+    Copyright (c) 2009-2011
+    Dzmitry Hlindzich <hlindzich@gmail.com>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

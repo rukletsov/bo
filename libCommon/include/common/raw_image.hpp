@@ -8,7 +8,7 @@
     class. For this reason OpenCV 2.0, 2.1 or 2.2 is recommended.
 
     Copyright (c) 2010, 2011
-    Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
+    Alexander Rukletsov <rukletsov@gmail.com>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

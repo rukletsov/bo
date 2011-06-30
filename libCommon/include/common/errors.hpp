@@ -5,7 +5,8 @@
 
     Error handling utilities. 
 
-    Copyright (c) 2010, Alexander Rukletsov <rukletsov@gmail.com>
+    Copyright (c) 2010
+    Alexander Rukletsov <rukletsov@gmail.com>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

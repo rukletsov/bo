@@ -1,12 +1,12 @@
 
 /******************************************************************************
 
-    mesh.hpp, v 1.0.4 2011.03.14
+    mesh.hpp, v 1.0.6 2011.06.29
 
     Triangular mesh declaration. RPly library is used for IO. 
 
     Copyright (c) 2010, 2011
-    Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
+    Alexander Rukletsov <rukletsov@gmail.com>
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

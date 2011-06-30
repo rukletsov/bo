@@ -5,8 +5,8 @@
 
 	IniReader implemetation for plain ini-files with common syntax.
 
-	Copyright (c) 2009-2011	
-    Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
+    Copyright (c) 2009-2011
+    Alexander Rukletsov <rukletsov@gmail.com>
     Alexander Gusak <fami.alex.lom@gmail.com>
     Alena Bakulina <alena.bakulina@ziti.uni-heidelberg.de>
 	All rights reserved.

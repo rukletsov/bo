@@ -6,7 +6,7 @@
     Triangle class. 
 
     Copyright (c) 2010, 2011
-    Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
+    Alexander Rukletsov <rukletsov@gmail.com>
     Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
     All rights reserved.
 
