@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    performance.hpp, v 1.1.0 2011.06.30
+    performance.hpp, v 1.1.2 2011.06.30
 
     Timer class for performance evaluation. By default uses boost::timer
     class. However on Windows a special more precise alternative can be used
@@ -15,10 +15,10 @@
     modification, are permitted provided that the following conditions
     are met:
     1.	Redistributions of source code must retain the above copyright
-	    notice, this list of conditions and the following disclaimer.
+        notice, this list of conditions and the following disclaimer.
     2.	Redistributions in binary form must reproduce the above copyright
-	    notice, this list of conditions and the following disclaimer in the
-	    documentation and/or other materials provided with the distribution.
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
 
     THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -39,32 +39,31 @@
 
 #include <boost/timer.hpp>
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(USE_BOOST_TIMER)
 #   include <limits>
 #   define NOMINMAX
 #   include <windows.h>
-#endif // _MSC_VER
+#endif // defined(_MSC_VER) && !defined(USE_BOOST_TIMER)
 
 /** The interface of the Timer class is identical with the one of boost::timer class.
-  * By default Timer class is just a typedef for boost::timer. On the platforms other
-  * than Windows it is the only available option.
+  * On the platforms other than Windows Timer class is just a typedef for boost::timer.
   *
   * On Windows a more precise technique can be used: performance counter, which is
-  * implemented in MSVCTimer class. Its interface is identical with the one of the
-  * boost::timer class. For more information see
+  * implemented through MSVCTimer class. Its interface is identical with the one of 
+  * boost::timer class. On Windows (actually, where _MSC_VER symbol is defined) by
+  * default Timer class coincides with MSVCTimer. For more information see
   *     http://msdn.microsoft.com/en-us/library/ms644904%28v=vs.85%29.aspx
   *     http://msdn.microsoft.com/en-us/library/ms644905%28v=vs.85%29.aspx
-  *
-  * To make Timer class coincide MSVCTimer, define USE_HIGH_PERF_TIMER symbol.
   *
   * However the installed hardware can lack the support of the high-resolution
   * performance counter. In this case MSVCTimer works incorrectly and function
   * MSVCTimer::is_supported() returns false. A standard boost::timer should be used
-  * instead.
+  * instead. To supress default behaviour and use boost::timer instead of MSVCTimer 
+  * on Windows (where _MSC_VER is defined), define USE_BOOST_TIMER before including
+  * this header.
   *
   * Usage example:
   *
-  *     #define USE_HIGH_PERF_TIMER
   *     Timer timer;
   *
   *     < ... do calculations here ... >
@@ -77,12 +76,12 @@
 
 namespace common {
 
-#if !defined(_MSC_VER) || !defined(USE_HIGH_PERF_TIMER)
+#if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
 
 // Use boost::timer on non-Windows and by default.
 typedef boost::timer Timer;
 
-#else // _MSC_VER and USE_HIGH_PERF_TIMER are defined
+#else // _MSC_VER defined and USE_BOOST_TIMER undefined
 
 // Use MSVCTimer by request.
 class MSVCTimer;
@@ -169,7 +168,7 @@ LONGLONG MSVCTimer::get_proc_freq_() const
     return retvalue.QuadPart;
 }
 
-#endif // _MSC_VER
+#endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
 
 } // namespace common
 
