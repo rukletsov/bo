@@ -13,6 +13,8 @@
 #   pragma warning(pop)
 #endif // _MSC_VER
 
+// This allows us to have (and to test) both timers under MSVC: boost::timer through
+// Timer class and a special high-resolution timer through detail::MSVCTimer.
 #define USE_BOOST_TIMER
 #include "common/performance.hpp"
 
@@ -25,7 +27,7 @@ class TimerTest: public testing::Test
 { };
 
 // Associate a list of available timers with the test case. Testing of the MSVCTimer
-// class is only possible under MSVC, since the MSVCTimer class is available only on
+// class is only possible under MSVC, since the MSVCTimer class is available only for
 // MSVC platform.
 #ifdef _MSC_VER
     typedef testing::Types<Timer, detail::MSVCTimer> TimerTypes;

@@ -126,14 +126,14 @@ inline
 double MSVCTimer::elapsed() const
 {
     return
-        (double(get_proc_ticks_()) - double(start_time_)) / get_proc_freq_();
+        (double(get_proc_ticks_() - start_time_)) / get_proc_freq_();
 }
 
 inline
 double MSVCTimer::elapsed_max() const
 {
     return
-        (double(std::numeric_limits<LONGLONG>::max()) - double(start_time_)) /
+        (double(std::numeric_limits<LONGLONG>::max() - start_time_)) /
             get_proc_freq_();
 }
 
