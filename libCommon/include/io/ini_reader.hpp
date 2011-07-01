@@ -121,7 +121,8 @@ public:
 			          const String& _skipped_section = ini::SKIPPED_SECTION_NAME,
 			          const String& _erroneous_section = ini::ERRONEOUS_SECTION_NAME,
                       SECTION_ERROR_HANDLING_TYPE _section_error_type = TAKE_1ST_AND_LAST,
-                      KEY_VALUE_ERROR_HANDLING_TYPE _keyvalue_error_type = ALLOW_DELIMITERS_IN_VALUE):
+                      KEY_VALUE_ERROR_HANDLING_TYPE _keyvalue_error_type = 
+                        ALLOW_DELIMITERS_IN_VALUE):
         comment_symbols(_comment_symbols),
 		delimiter_symbols(_delimeter_symbols),
 		section_delimiter_symbols(_section_delimiter_symbols),
@@ -164,8 +165,8 @@ public:
 	// sections' name, change this value in order to avoid possible name collision.
 	String ignored_section;
 
-	// Skipped sections (if 'section_error_type' is IGNORE_LINE) are marked with this name.
-	// Be sure no section with this name is possible in an ini-file.
+	// Skipped sections (if 'section_error_type' is IGNORE_LINE) are marked with 
+	// this name. Be sure no section with this name is possible in an ini-file.
 	String skipped_section;
 
 	// All unhandled erroneous sections will be stored here.
@@ -276,7 +277,8 @@ public:
 
 	// Returns names of all keys incide a given section and subsection.
 	// If there is no such section or subsection returns empty vector.
-	Strings get_key_names(const String& section_name, const String& subsection_name) const;
+	Strings get_key_names(const String& section_name, 
+                          const String& subsection_name) const;
 
     // Returns names of all keys incide a given section and subsection,
     // which match an input key name pattern.
@@ -406,7 +408,8 @@ T IniReader::get_value(const String& key_name,
 					   const T& def_value) const
 {
 	return 
-        get_value(settings_.default_section, settings_.default_subsection, key_name, def_value);
+        get_value(settings_.default_section, settings_.default_subsection, 
+                  key_name, def_value);
 }
 
 } // namespace io

@@ -226,7 +226,8 @@ public:
                                              const Vector<float, 3>& y_rotation,
                                              const Vector<float, 3>& z_rotation,
                                              const Vector<float, 3>& translation,
-                                             CommonFloatMatrix& transformation_matrix) const;
+                                             CommonFloatMatrix& transformation_matrix) 
+                                                const;
 protected:
     virtual bool string_to_vector(const String& str, Vector<float, 3>& vector) const;
 }; // class UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix>
@@ -358,7 +359,8 @@ String UonBasicConfiguration_<VectorType, MatrixType>::
 prepare_parsed_vector(const String& section_name, const String& subsection_name,
                       const String& key_name, const String& def_value) const
 {
-    String value = ini_reader_.get_value(section_name, subsection_name, key_name, def_value);
+    String value = ini_reader_.get_value(section_name, subsection_name, 
+                                         key_name, def_value);
     boost::trim_if(value, boost::is_any_of(uon_config::VECTOR_TRIM_SYMBOLS));
     return value;
 }

@@ -34,14 +34,16 @@ void IniReader::read_file(const String& file_name)
 			// append 'default_subsection_' to the line
 			// using any of the section delimiters
 			if (!is_subsection(line))
-				line += settings_.section_delimiter_symbols[0] + settings_.default_subsection;
+				line += settings_.section_delimiter_symbols[0] + 
+                        settings_.default_subsection;
 
 			String section = extract_section(line);
 			if (section != settings_.skipped_section)
 			{	
 				cur_section = section;
 				cur_subsection = extract_subsection(line);
-				add_subsection(cur_section, cur_subsection);        // adds both section and sub section if any of them does not exist
+                // adds both section and sub section if any of them does not exist
+				add_subsection(cur_section, cur_subsection);        
 			} 
         } 
 		else if (is_keyvalue(line))
@@ -90,14 +92,17 @@ String IniReader::get_value(const String& section_name,
 String IniReader::get_value(const String& key_name, 
 							const String& def_value) const
 {
-	return get_value(settings_.default_section, settings_.default_subsection, key_name, def_value);
+	return 
+        get_value(settings_.default_section, settings_.default_subsection, key_name, 
+                  def_value);
 }
 
 Strings IniReader::get_section_names() const
 {
 	Strings retvalue;
 
-	for (SectionsIterator sect_it = sections_.begin(); sect_it != sections_.end(); ++sect_it)
+	for (SectionsIterator sect_it = sections_.begin(); 
+         sect_it != sections_.end(); ++sect_it)
 		retvalue.push_back(sect_it->first);
 
 	return retvalue;
@@ -108,7 +113,8 @@ Strings IniReader::get_section_names_by_pattern(const String& section_name_patte
     Strings retvalue;
 
     boost::regex sections_pattern(section_name_pattern);   	
-    for (SectionsIterator sect_it = sections_.begin(); sect_it != sections_.end(); ++sect_it)
+    for (SectionsIterator sect_it = sections_.begin(); 
+         sect_it != sections_.end(); ++sect_it)
     {	
         // If current section name matches the pattern, then add it to result
         if (boost::regex_match(sect_it->first, sections_pattern) == true)
@@ -136,7 +142,7 @@ Strings IniReader::get_subsection_names(const String& section_name) const
 }
 
 Strings IniReader::get_subsection_names_by_pattern(const String& section_name, 
-                                                   const String& subsection_name_pattern) const
+    const String& subsection_name_pattern) const
 {
     Strings retvalue;
 
@@ -155,7 +161,8 @@ Strings IniReader::get_subsection_names_by_pattern(const String& section_name,
 	return retvalue;
 }
 
-Strings IniReader::get_key_names(const String &section_name, const String &subsection_name) const
+Strings IniReader::get_key_names(const String &section_name, 
+                                 const String &subsection_name) const
 {
 	Strings retvalue;
 
@@ -237,10 +244,12 @@ void IniReader::add_keyvalue(const String& section_name,
 							 const String& key_name,
 							 const String& value)
 {
-	// 'section_name' section and 'subsection_name' subsection should already exist in 'sections_'
+	// 'section_name' section and 'subsection_name' subsection should already 
+    // exist in 'sections_'
     BOOST_ASSERT(sections_.find(section_name) != sections_.end() && 
         "IniReader: can not add key/value pair to a non-existent section.");
-    BOOST_ASSERT(sections_[section_name].find(subsection_name) != sections_[section_name].end() && 
+    BOOST_ASSERT(sections_[section_name].find(subsection_name) != 
+        sections_[section_name].end() && 
         "IniReader: can not add key/value pair to a non-existent subsection.");
 
 	sections_[section_name][subsection_name][key_name] = value;
@@ -256,7 +265,8 @@ Strings IniReader::split_subsection(const Line& trimmed_line) const
 				 boost::is_any_of(settings_.section_delimiter_symbols), 
 				 boost::token_compress_off);
 
-    BOOST_ASSERT(split_result.size() > 1 && "IniReader: subsection name or format is invalid.");
+    BOOST_ASSERT(split_result.size() > 1 && 
+        "IniReader: subsection name or format is invalid.");
 
 	switch(settings_.section_error_type)
 	{
@@ -297,9 +307,8 @@ Strings IniReader::split_keyvalue(const Line& trimmed_line) const
 	{
 	case IniReaderSettings::ALLOW_DELIMITERS_IN_VALUE:
 	{
-		Line::const_iterator pos = std::find_if(trimmed_line.begin(), 
-												trimmed_line.end(), 
-												boost::is_any_of(settings_.delimiter_symbols));
+		Line::const_iterator pos = std::find_if(trimmed_line.begin(), trimmed_line.end(), 
+			boost::is_any_of(settings_.delimiter_symbols));
 
 		// extract key, do not include delimiter
 		String key(trimmed_line.begin(), pos);
@@ -318,7 +327,8 @@ Strings IniReader::split_keyvalue(const Line& trimmed_line) const
 			 boost::is_any_of(settings_.delimiter_symbols),
 			 boost::token_compress_off);
 
-        BOOST_ASSERT(split_result.size() > 1 && "IniReader: key/value pair format is invalid.");
+        BOOST_ASSERT(split_result.size() > 1 && 
+            "IniReader: key/value pair format is invalid.");
 
 		if (split_result.size() > 2)
 		{
@@ -359,9 +369,8 @@ String IniReader::extract_value(const Line& trimmed_line) const
 bool IniReader::is_comments(const Line& trimmed_line) const
 {
 	return
-		 (trimmed_line.begin() == std::find_if(trimmed_line.begin(), 
-											   trimmed_line.end(), 
-											   boost::is_any_of(settings_.comment_symbols)));
+        (trimmed_line.begin() == std::find_if(trimmed_line.begin(), trimmed_line.end(), 
+		    boost::is_any_of(settings_.comment_symbols)));
 }
 
 bool IniReader::is_section(const Line& trimmed_line) const
@@ -376,18 +385,16 @@ bool IniReader::is_subsection(const Line& trimmed_line) const
 {
 	// Check if the trimmed_line has one of the section delimiters.
 	return 
-		(trimmed_line.end() != std::find_if(trimmed_line.begin(), 
-											trimmed_line.end(), 
-											boost::is_any_of(settings_.section_delimiter_symbols)));
+		(trimmed_line.end() != std::find_if(trimmed_line.begin(), trimmed_line.end(), 
+			boost::is_any_of(settings_.section_delimiter_symbols)));
 }
 
 bool IniReader::is_keyvalue(const Line& trimmed_line) const
 {
 	// Check if the trimmed_line has one of the key/value delimiters.
 	return
-		(trimmed_line.end() != std::find_if(trimmed_line.begin(), 
-											trimmed_line.end(), 
-											boost::is_any_of(settings_.delimiter_symbols)));		
+		(trimmed_line.end() != std::find_if(trimmed_line.begin(), trimmed_line.end(), 
+			boost::is_any_of(settings_.delimiter_symbols)));		
 }
 
 bool IniReader::has_pair(const String& section_name, 
@@ -421,11 +428,13 @@ void IniReader::print_sections_() const
 	{
 		std::cout << sect->first << std::endl;
 
-		for (SubSectionsIterator subsect = sect->second.begin(); subsect != sect->second.end(); ++subsect)
+		for (SubSectionsIterator subsect = sect->second.begin(); 
+             subsect != sect->second.end(); ++subsect)
 		{
 			std::cout << "--" << subsect->first << std::endl;
 
-			for (KeyValuePairsIterator pair = subsect->second.begin(); pair != subsect->second.end(); ++pair)
+			for (KeyValuePairsIterator pair = subsect->second.begin(); 
+                 pair != subsect->second.end(); ++pair)
 			{
 				std::cout << "----" << pair->first << " = " << pair->second << std::endl;
 			}
