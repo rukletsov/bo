@@ -18,13 +18,30 @@
 
 using namespace common;
 
-namespace {
 
-// A helper function which provides a standard test for all timers.
+// Create a fixture class template for all timer classes.
 template <typename TimerType>
-void timer_test_helper(const TimerType& timer)
+class TimerTest: public testing::Test
+{ };
+
+// Associate a list of available timers with the test case. Testing of the MSVCTimer
+// class is only possible under MSVC, since the MSVCTimer class is available only on
+// MSVC platform.
+#ifdef _MSC_VER
+    typedef testing::Types<Timer, detail::MSVCTimer> TimerTypes;
+#else // _MSC_VER
+    typedef testing::Types<Timer> TimerTypes;
+#endif // _MSC_VER
+
+TYPED_TEST_CASE(TimerTest, TimerTypes);
+
+
+TYPED_TEST(TimerTest, MeasuringSleep)
 {
     unsigned sleep_time = 1;
+
+    // Create an instance of some timer, which type is one of the specified above.
+    TypeParam timer;
 
     // In its current implementation causes C4244 warning. It will be fixed in the
     // next versions of boost.
@@ -35,31 +52,3 @@ void timer_test_helper(const TimerType& timer)
     // We expect that timer will give an error not more than 20% of the sleep time.
     EXPECT_GE(0.2 * double(sleep_time), abs(elapsed - double(sleep_time)));
 }
-
-} // anonymous namespace
-
-
-TEST(TimerTest, BoostTimer)
-{
-    // This will create boost::timer, since USE_BOOST_TIMER was defined.
-    Timer boost_timer;
-
-    // Run timer test.
-    timer_test_helper(boost_timer);
-}
-
-// This test is only possible under MSVC, since the MSVCTimer class is available
-// only for MSVC platform.
-#ifdef _MSC_VER
-
-TEST(TimerTest, MSVCTimer)
-{
-    // This will create MSVCTimer. One sholud not create an instance of MSVCTimer
-    // explicitly, but use Timer class instead.
-    detail::MSVCTimer msvc_timer;
-
-    // Run timer test.
-    timer_test_helper(msvc_timer);
-}
-
-#endif // _MSC_VER
