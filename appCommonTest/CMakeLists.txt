@@ -37,6 +37,19 @@ SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
 # Copy binary to the directory with test data.
 INSTALL (TARGETS AppCommonTest DESTINATION ${TESTS_OUTPUT_PATH})
 
+# Create tests from the current binary and pass a directory where test data is stored
+# as a command-line argument.
+FUNCTION (TestCase test_name)
+    ADD_TEST (NAME ${test_name}Test
+              COMMAND AppCommonTest --gtest_filter=${test_name}*
+                                    "${TESTS_OUTPUT_PATH}/data"
+    )
+ENDFUNCTION (TestCase test_name)
+
+TestCase(Vector)
+TestCase(Mesh)
+TestCase(Timer)
+
 
 # Supress MSVC-specific compiler and linker warnings.
 IF (MSVC)

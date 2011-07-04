@@ -26,5 +26,6 @@ ADD_SUBDIRECTORY (${LIBCOMMON_ROOT})
 
 # Add test project only if requested.
 IF (BuildTests)
+    ENABLE_TESTING()
     ADD_SUBDIRECTORY (${APPCOMMONTEST_ROOT})
 ENDIF (BuildTests)

@@ -6,6 +6,11 @@
 
 using namespace common;
 
+// Directory where test data is stored. This variable is set during the configuration
+// of the test environment and should be used to determine where external data for
+// the tests is stored.
+extern std::string DataDirectory;
+
 
 // Create a so-called "text fixture" using base class form GTEST.
 class MeshTest: public testing::Test

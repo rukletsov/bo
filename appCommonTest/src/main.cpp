@@ -7,6 +7,9 @@
 #   include <crtdbg.h>
 #endif
 
+// Directory where test data is stored.
+std::string DataDirectory;
+
 
 int main(int argc, char* argv[])
 {
@@ -25,8 +28,19 @@ int main(int argc, char* argv[])
 #endif
 
 
-    // Run all defined tests.
+    // Extract GTest's command-line arguments and prepare test environment.
     testing::InitGoogleTest(&argc, argv);
+
+    // Extract directory with data for tests from command-line, or apply default value.
+    if (argc > 1)
+        DataDirectory.assign(argv[1]);
+    else if (argc == 1)
+        // Apply default value which is "./data" directory.
+        DataDirectory.assign("./data");
+    else
+        DataDirectory.assign("");
+
+    // Run all defined tests.
     return RUN_ALL_TESTS();
 
 
