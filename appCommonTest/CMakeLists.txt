@@ -34,6 +34,10 @@ TARGET_LINK_LIBRARIES (AppCommonTest
 SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
 
 
+# Copy binary to the directory with test data.
+INSTALL (TARGETS AppCommonTest DESTINATION ${TESTS_OUTPUT_PATH})
+
+
 # Supress MSVC-specific compiler and linker warnings.
 IF (MSVC)
     # Supress secure warnings (C4996) for MSVC compiler.
