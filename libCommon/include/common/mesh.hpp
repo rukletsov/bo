@@ -40,7 +40,6 @@
 #include <set>
 #include <string>
 #include <iostream>
-#include <boost/array.hpp>
 
 #include "vector.hpp"
 #include "triangle.hpp"
@@ -80,21 +79,29 @@ public:
     typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
 public:
-    // Create an empty mesh ready to store initial_count vertices.
+    // Creates an empty mesh ready to store initial_count vertices.
     Mesh(std::size_t initial_count);
 
-    // Add a new vertex to the mesh and return its index.
+    // Adds a new vertex to the mesh and return its index.
     std::size_t add_vertex(const Vertex& vertex);
 
-    // Add a new face and return its index. Update dependent collections.
+    // Adds a new face and return its index. Update dependent collections.
     std::size_t add_face(const Face& face);
 
+    // Returns face normal. Throws if face_index is out of range.
     Normal get_face_normal(std::size_t face_index) const;
 
-    // Get vertex normal, computed according to 
+    // Creates and returns vertex normal, computed according to
     // N.Max, "Weights for Computing Vertex Normals from Facet Normals",
     // Journal of Graphics Tools, Vol. 4, No. 2, 1999.
+    // Throws if face index is out of range.
     Normal get_vertex_normal(std::size_t vertex_index) const;
+
+    // Returns data from connectivity structures. Throws if face index is out of range.
+    const AdjacentVerticesPerVertex& get_neighbouring_vertices(
+        std::size_t vertex_index) const;
+    const AdjacentFacesPerVertex& get_neighbouring_faces_by_vertex(
+        std::size_t vertex_index) const;
 
     // Temporary accessor methods.
     const Vertices& get_all_vertices() const;
@@ -108,12 +115,17 @@ public:
     friend std::ostream& operator <<(std::ostream& os, const Mesh& obj);
 
 private:
-    // Add connectivity relations. Return false in case of new relation leads to 
+    // Adds connectivity relations. Return false in case of new relation leads to
     // a duplicate.
     bool add_edge_(std::size_t vertex1, std::size_t vertex2);
     bool add_adjacent_face_(std::size_t vertex, std::size_t face);
 
+    // Computes and returns a normal for the given face.
     Normal compute_face_normal_(const Face& face) const;
+
+    // Range checkers. Throw if an index is out of range.
+    void vertex_rangecheck(std::size_t vertex_index) const;
+    void face_rangecheck(std::size_t face_index) const;
 
 private:
     // Basic mesh data.

@@ -296,14 +296,16 @@ TEST_F(VectorTest, SwapFillAssign)
 // An aliased fixture for so-called "death tests".
 typedef VectorTest VectorDeathTest;
 
+#ifdef _DEBUG
+
 TEST_F(VectorDeathTest, Assertions)
 {
     // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
     // expected to lead to a program termination in debug mode for console 
     // applications. This assertion can be caught and therefore tested if it works 
     // when necessary.
-#ifdef _DEBUG
     EXPECT_DEATH(vec3_[vec3_.size()], "Assertion failed: i < N && \"out of range\".*");
     EXPECT_DEATH(vec3_[-1], "Assertion failed: i < N && \"out of range\".*");
-#endif
 }
+
+#endif

@@ -148,17 +148,16 @@ std::size_t Mesh::add_face(const Face& face)
 Mesh::Normal Mesh::get_face_normal(std::size_t face_index) const
 {
     // Check if the given face exists in the mesh.
-    if (face_normals_.size() <= face_index)
-        throw std::out_of_range("Specified face doesn't exist.");
+    face_rangecheck(face_index);
 
     return face_normals_[face_index];
 }
 
+// TODO: add caching for computed normals.
 Mesh::Normal Mesh::get_vertex_normal(std::size_t vertex_index) const
 {
     // Check if the given vertex exists in the mesh.
-    if (vertices_.size() <= vertex_index)
-        throw std::out_of_range("Specified vertex doesn't exist.");
+    vertex_rangecheck(vertex_index);
 
     // A normal of a vertex is a sum of weighted normals of adjacent faces.
     Normal normal;
@@ -195,6 +194,24 @@ Mesh::Normal Mesh::get_vertex_normal(std::size_t vertex_index) const
     { }
 
     return normal;
+}
+
+const Mesh::AdjacentVerticesPerVertex& Mesh::get_neighbouring_vertices(
+    std::size_t vertex_index) const
+{
+    // Check if the given vertex exists in the mesh.
+    vertex_rangecheck(vertex_index);
+
+    return neighbours_[vertex_index];
+}
+
+const Mesh::AdjacentFacesPerVertex& Mesh::get_neighbouring_faces_by_vertex(
+    std::size_t vertex_index) const
+{
+    // Check if the given vertex exists in the mesh.
+    vertex_rangecheck(vertex_index);
+
+    return adjacent_faces_[vertex_index];
 }
 
 // Print formatted mesh data to a given stream. See boost.format library for more
@@ -316,6 +333,18 @@ Mesh::Normal Mesh::compute_face_normal_(const Face& face) const
     { }
 
     return normal;
+}
+
+void Mesh::vertex_rangecheck(std::size_t vertex_index) const
+{
+    if (vertices_.size() <= vertex_index)
+        throw std::out_of_range("Specified vertex doesn't exist.");
+}
+
+void Mesh::face_rangecheck(std::size_t face_index) const
+{
+    if (face_normals_.size() <= face_index)
+        throw std::out_of_range("Specified face doesn't exist.");
 }
 
 // RPly library is used for reading and writing meshes to .ply files.

@@ -19,6 +19,7 @@ Mesh class
 * Make well-designed accessor functions (see standard graph representations).
 * Implement "primitive-object" for Mesh class in order to visualize a Mesh.
 * Provide vertex moving function.
+* Cache vertex normals.
 * Check English names for mesh terms (basic graph and mesh definitions).
 * Write tests.
 * Move IO-related code (Mesh::to_ply(), Mesh::from_ply()) to "io/mesh_io".
