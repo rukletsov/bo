@@ -97,6 +97,11 @@ public:
     // Throws if face index is out of range.
     Normal get_vertex_normal(std::size_t vertex_index) const;
 
+    // Computes the distance between the given point and the mesh. Uses naive
+    // implementation, which measures distance to each face and then takes the minimum.
+    Vertex get_closest_point(const Vertex& point) const;
+    double distance(const Vertex& point) const;
+
     // Returns data from connectivity structures. Throws if face index is out of range.
     const AdjacentVerticesPerVertex& get_neighbouring_vertices(
         std::size_t vertex_index) const;

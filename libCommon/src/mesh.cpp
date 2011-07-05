@@ -196,6 +196,18 @@ Mesh::Normal Mesh::get_vertex_normal(std::size_t vertex_index) const
     return normal;
 }
 
+Mesh::Vertex Mesh::get_closest_point(const Vertex& point) const
+{
+
+    return Vertex();
+}
+
+double Mesh::distance(const Vertex& point) const
+{
+    double distance = (get_closest_point(point) -= point).eucl_norm();
+    return distance;
+}
+
 const Mesh::AdjacentVerticesPerVertex& Mesh::get_neighbouring_vertices(
     std::size_t vertex_index) const
 {
