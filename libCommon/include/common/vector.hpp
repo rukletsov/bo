@@ -83,7 +83,7 @@ public:
 
     // In general won't work for floats. This is because not every real number can 
     // be represented by float/double/long double and therefore theoretically equal
-    // numbers can differ. I.e. f^{-1}(f(x)) can differ from x. Fore more information
+    // numbers can differ, i.e. f^{-1}(f(x)) can differ from x. Fore more information
     // on this topic see
     //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
     bool operator==(const Vector<T, N>& other) const;

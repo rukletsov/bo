@@ -31,7 +31,8 @@ RawImage<> class
 
 Triangle<> class
 ================================================================================
-* Implement Equals() method.
+* Implement safe at() operators.
+* Write tests.
 
 IniReader class
 ================================================================================
@@ -73,3 +74,7 @@ Vector<> class
   appropriate std algorithms, such as std::min_element(), std::accumulate().
 [DONE] * Consider removing precompiled headers (problems on other platforms, 
   distribute builds are not possible). Or make an option in CMake.
+  
+Triangle<> class
+--------------------------------------------------------------------------------
+[DONE] * Implement Equals() method. 

@@ -37,12 +37,13 @@
 #define TRIANGLE_HPP_507AFC96_F3F4_40FF_827C_66F388AEDAD2_
 
 #include <boost/array.hpp>
+#include <boost/operators.hpp>
 
 
 namespace common {
 
 template <typename PointType>
-class Triangle
+class Triangle: boost::equality_comparable1< Triangle<PointType> >
 { 
 
 public:
@@ -56,8 +57,15 @@ public:
     PointType& operator[] (std::size_t index);
     const PointType& operator[] (std::size_t index) const;
 
+    // In general won't work for floats. This is because not every real number can
+    // be represented by float/double/long double and therefore theoretically equal
+    // numbers can differ, i.e. f^{-1}(f(x)) can differ from x. Fore more information
+    // on this topic see
+    //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
+    bool operator==(const Triangle<PointType>& other) const;
+
 protected:
-    boost::array<PointType, 3> vertices;
+    boost::array<PointType, 3> vertices_;
 };
 
 
@@ -65,39 +73,48 @@ template <typename PointType>
 Triangle<PointType>::Triangle(const PointType& _A, const PointType& _B,
                               const PointType& _C)
 {
-    vertices[0] = _A;
-    vertices[1] = _B;
-    vertices[2] = _C;
+    vertices_[0] = _A;
+    vertices_[1] = _B;
+    vertices_[2] = _C;
 }
 
 template <typename PointType> inline
 PointType Triangle<PointType>::A() const
 {
-    return vertices[0];
+    return vertices_[0];
 }
 
 template <typename PointType> inline
 PointType Triangle<PointType>::B() const
 {
-    return vertices[1];
+    return vertices_[1];
 }
 
 template <typename PointType> inline
 PointType Triangle<PointType>::C() const
 {
-    return vertices[2];
+    return vertices_[2];
 }
 
 template <typename PointType> inline
-PointType& Triangle<PointType>::operator [](std::size_t index)
+PointType& Triangle<PointType>::operator[](std::size_t index)
 {
-    return vertices[index];
+    return vertices_[index];
 }
 
 template <typename PointType> inline
-const PointType& Triangle<PointType>::operator [](std::size_t index) const
+const PointType& Triangle<PointType>::operator[](std::size_t index) const
 {
-    return vertices[index];
+    return vertices_[index];
+}
+
+template <typename PointType>
+bool Triangle<PointType>::operator==(const Triangle<PointType>& other) const
+{
+    return
+        (((vertices_[0] != other.vertices_[0]) ||
+          (vertices_[1] != other.vertices_[1]) ||
+          (vertices_[2] != other.vertices_[2])) ? false : true);
 }
 
 } // namespace common
