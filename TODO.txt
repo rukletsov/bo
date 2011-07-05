@@ -31,7 +31,6 @@ RawImage<> class
 
 Triangle<> class
 ================================================================================
-* Implement safe at() operators.
 * Write tests.
 
 IniReader class
@@ -78,3 +77,4 @@ Vector<> class
 Triangle<> class
 --------------------------------------------------------------------------------
 [DONE] * Implement Equals() method. 
+[DONE] * Implement safe at() operators.

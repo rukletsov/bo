@@ -97,7 +97,7 @@ public:
     const T& operator[](std::size_t index) const;
     T& operator[](std::size_t index);
 
-    // Assignment and access methods. Throws an exception in case of bad index.
+    // Assignment and access methods. Throw an exception in case of bad index.
     // Safer, but less efficient alternative of opeartor[].
     const T& at(std::size_t index) const;
     T& at(std::size_t index);
@@ -177,10 +177,10 @@ public:
 protected:
     // Provide range check for a given index. Throws a std::out_of_range exception
     // in case of bad index.
-    void check_range(std::size_t index) const;
+    static void check_range(std::size_t index);
 
 protected:
-    boost::array<T, N> components;
+    boost::array<T, N> components_;
 };
 
 
@@ -236,8 +236,8 @@ Vector<T, N>::Vector(const T& x, const T& y)
 {
     BOOST_STATIC_ASSERT(N == 2);
 
-    components[0] = x;
-    components[1] = y;
+    components_[0] = x;
+    components_[1] = y;
 }
 
 template <typename T, std::size_t N>
@@ -245,9 +245,9 @@ Vector<T, N>::Vector(const T& x, const T& y, const T& z)
 {
     BOOST_STATIC_ASSERT(N == 3);
 
-    components[0] = x;
-    components[1] = y;
-    components[2] = z;
+    components_[0] = x;
+    components_[1] = y;
+    components_[2] = z;
 }
 
 template <typename T, std::size_t N>
@@ -255,17 +255,17 @@ Vector<T, N>::Vector(const T& x, const T& y, const T& z, const T& w)
 {
     BOOST_STATIC_ASSERT(N == 4);
 
-    components[0] = x;
-    components[1] = y;
-    components[2] = z;
-    components[3] = w;
+    components_[0] = x;
+    components_[1] = y;
+    components_[2] = z;
+    components_[3] = w;
 }
 
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] += scalar;
+        components_[i] += scalar;
 
     return *this;
 }
@@ -274,7 +274,7 @@ template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] -= scalar;
+        components_[i] -= scalar;
 
     return *this;
 }
@@ -283,7 +283,7 @@ template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator*=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] *= scalar;
+        components_[i] *= scalar;
 
     return *this;
 }
@@ -292,7 +292,7 @@ template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator/=(const T& scalar)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] /= scalar;
+        components_[i] /= scalar;
 
     return *this;
 }
@@ -301,7 +301,7 @@ template <typename T, std::size_t N>
 bool Vector<T, N>::operator==(const Vector<T, N>& other) const
 {
     for (std::size_t i = 0; i < N; ++i)
-        if (components[i] != other.components[i])
+        if (components_[i] != other.components_[i])
             return false;
 
     return true;
@@ -311,7 +311,7 @@ template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const Vector<T, N>& other)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] += other.components[i];
+        components_[i] += other.components_[i];
 
     return *this;
 }
@@ -320,7 +320,7 @@ template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
 {
     for (std::size_t i = 0; i < N; ++i)
-        components[i] -= other.components[i];
+        components_[i] -= other.components_[i];
 
     return *this;
 }
@@ -328,83 +328,83 @@ const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::operator[](std::size_t index) const
 {
-    return components[index];
+    return components_[index];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::operator[](std::size_t index)
 {
-    return components[index];
+    return components_[index];
 }
 
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::at(std::size_t index) const
 {
     check_range(index);
-    return components[index];
+    return components_[index];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::at(std::size_t index)
 {
     check_range(index);
-    return components[index];
+    return components_[index];
 }
 
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::x() const
 {
     BOOST_STATIC_ASSERT(N >= 1 && N <= 4);
-    return components[0];
+    return components_[0];
 }
 
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::y() const
 {
     BOOST_STATIC_ASSERT(N >= 2 && N <= 4);
-    return components[1];
+    return components_[1];
 }
 
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::z() const
 {
     BOOST_STATIC_ASSERT(N >= 3 && N <= 4);
-    return components[2];
+    return components_[2];
 }
 
 template <typename T, std::size_t N> inline
 const T& Vector<T, N>::w() const
 {
     BOOST_STATIC_ASSERT(N == 4);
-    return components[3];
+    return components_[3];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::x()
 {
     BOOST_STATIC_ASSERT(N >= 1 && N <= 4);
-    return components[0];
+    return components_[0];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::y()
 {
     BOOST_STATIC_ASSERT(N >= 2 && N <= 4);
-    return components[1];
+    return components_[1];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::z()
 {
     BOOST_STATIC_ASSERT(N >= 3 && N <= 4);
-    return components[2];
+    return components_[2];
 }
 
 template <typename T, std::size_t N> inline
 T& Vector<T, N>::w()
 {
     BOOST_STATIC_ASSERT(N == 4);
-    return components[3];
+    return components_[3];
 }
 
 template <typename T, std::size_t N>
@@ -422,30 +422,30 @@ template <typename T, std::size_t N>
 T Vector<T, N>::min() const
 { 
     return 
-        (*std::min_element(components.begin(), components.end()));
+        (*std::min_element(components_.begin(), components_.end()));
 }
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
 {
     return 
-        std::distance(components.begin(), 
-            std::min_element(components.begin(), components.end())); 
+        std::distance(components_.begin(),
+            std::min_element(components_.begin(), components_.end()));
 }
 
 template <typename T, std::size_t N>
 T Vector<T, N>::max() const
 { 
     return 
-        (*std::max_element(components.begin(), components.end()));
+        (*std::max_element(components_.begin(), components_.end()));
 }
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::max_index() const
 {
     return 
-        std::distance(components.begin(), 
-            std::max_element(components.begin(), components.end()));
+        std::distance(components_.begin(),
+            std::max_element(components_.begin(), components_.end()));
 }
 
 template <typename T, std::size_t N> 
@@ -454,7 +454,7 @@ T Vector<T, N>::sum() const
     // A small optimization here: start with the second elem and pass first elem
     // as an initial value.
     return
-        std::accumulate(components.begin() + 1, components.end(), components[0]);
+        std::accumulate(components_.begin() + 1, components_.end(), components_[0]);
 }
 
 template <typename T, std::size_t N>
@@ -463,7 +463,7 @@ T Vector<T, N>::product() const
     // A small optimization here: start with the second elem and pass first elem
     // as an initial value.
     return
-        std::accumulate(components.begin() + 1, components.end(), components[0], 
+        std::accumulate(components_.begin() + 1, components_.end(), components_[0],
             std::multiplies<T>());
 }
 
@@ -500,7 +500,7 @@ Vector<double, N> Vector<T, N>::normalized() const
     Vector<double, N> retvalue;
 
     for (std::size_t i = 0; i < N; ++i)
-        retvalue[i] = static_cast<double>(components[i]) * factor;
+        retvalue[i] = static_cast<double>(components_[i]) * factor;
 
     return retvalue;
 }
@@ -514,13 +514,13 @@ std::size_t Vector<T, N>::size()
 template <typename T, std::size_t N> 
 void Vector<T, N>::swap(Vector<T, N>& other)
 {
-    components.swap(other.components);
+    components_.swap(other.components_);
 }
 
 template <typename T, std::size_t N> 
 void Vector<T, N>::fill(const T& value)
 {
-    components.fill(value);
+    components_.fill(value);
 }
 
 template <typename T, std::size_t N> template <typename S>
@@ -530,17 +530,17 @@ void Vector<T, N>::assign(const S& data, std::size_t length)
     // components. If a given array is bigger than N, copy first N elements.
     std::size_t num = (length < N) ? length : N;
     for (std::size_t i = 0; i < num; ++i)
-        components[i] = static_cast<T>(data[i]);
+        components_[i] = static_cast<T>(data[i]);
 
     for (std::size_t i = num; i < N; ++i)
-        components[i] = static_cast<T>(0);
+        components_[i] = static_cast<T>(0);
 }
 
 template <typename T, std::size_t N> 
-void Vector<T, N>::check_range(std::size_t index) const
+void Vector<T, N>::check_range(std::size_t index)
 {
     if (index >= size()) 
-        throw std::out_of_range ((boost::format(
+        throw std::out_of_range((boost::format(
             "%1%-Vector's index \"%2%\" is out of range.") % N % index).str());
 }
 

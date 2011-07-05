@@ -54,8 +54,16 @@ public:
     PointType B() const;
     PointType C() const;
 
-    PointType& operator[] (std::size_t index);
-    const PointType& operator[] (std::size_t index) const;
+    // Assignment and access operators. Range-check is done by boost::array via
+    // debug-only assertions. Use at() method for safer but less efficient version
+    // with exceptions.
+    const PointType& operator[](std::size_t index) const;
+    PointType& operator[](std::size_t index);
+
+    // Assignment and access methods. Throw an exception in case of bad index.
+    // Safer, but less efficient alternative of opeartor[].
+    const PointType& at(std::size_t index) const;
+    PointType& at(std::size_t index);
 
     // In general won't work for floats. This is because not every real number can
     // be represented by float/double/long double and therefore theoretically equal
@@ -63,6 +71,11 @@ public:
     // on this topic see
     //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
     bool operator==(const Triangle<PointType>& other) const;
+
+protected:
+    // Provides a range check for a given index. Throws a std::out_of_range exception
+    // in case of bad index.
+    static void check_range(std::size_t index) ;
 
 protected:
     boost::array<PointType, 3> vertices_;
@@ -97,24 +110,45 @@ PointType Triangle<PointType>::C() const
 }
 
 template <typename PointType> inline
+const PointType& Triangle<PointType>::operator[](std::size_t index) const
+{
+    return vertices_[index];
+}
+
+template <typename PointType> inline
 PointType& Triangle<PointType>::operator[](std::size_t index)
 {
     return vertices_[index];
 }
 
 template <typename PointType> inline
-const PointType& Triangle<PointType>::operator[](std::size_t index) const
+const PointType& Triangle<PointType>::at(std::size_t index) const
 {
+    check_range(index);
+    return vertices_[index];
+}
+
+template <typename PointType> inline
+PointType& Triangle<PointType>::at(std::size_t index)
+{
+    check_range(index);
     return vertices_[index];
 }
 
 template <typename PointType>
 bool Triangle<PointType>::operator==(const Triangle<PointType>& other) const
 {
-    return
-        (((vertices_[0] != other.vertices_[0]) ||
-          (vertices_[1] != other.vertices_[1]) ||
-          (vertices_[2] != other.vertices_[2])) ? false : true);
+    bool equal = !((vertices_[0] != other.vertices_[0]) ||
+                   (vertices_[1] != other.vertices_[1]) ||
+                   (vertices_[2] != other.vertices_[2]));
+    return equal;
+}
+
+template <typename PointType>
+void Triangle<PointType>::check_range(std::size_t index)
+{
+    if (index >= 3)
+        throw std::out_of_range("Triangle has only 3 vertices.");
 }
 
 } // namespace common
