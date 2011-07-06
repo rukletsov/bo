@@ -1,9 +1,9 @@
 
 /******************************************************************************
 
-    mesh.hpp, v 1.0.6 2011.06.29
+    mesh.hpp, v 1.2.0 2011.07.06
 
-    Triangular mesh declaration. RPly library is used for IO. 
+    Triangular mesh class.
 
     Copyright (c) 2010, 2011
     Alexander Rukletsov <rukletsov@gmail.com>
@@ -47,7 +47,7 @@
 
 namespace common {
 
-// A basic class for a 3D triangular mesh. Consumes more memory than possible
+// A basic class for a 3D triangular mesh. Consumes more memory than a possible
 // minimum (a standard graph storage) but provides faster access to frequently
 // used structures and operations. NOT thread-safe in the current implemetation.
 class Mesh
@@ -117,11 +117,8 @@ public:
     const Faces& get_all_faces() const;
     const Normals& get_all_face_normals() const;
 
-    // IO functions, allow to read mesh from and write to a .ply files, 
-    // print formatted mesh data to an std::ostream.
-    static Mesh from_ply(const std::string& file_path);
-    bool to_ply(const std::string& file_path) const;
-    friend std::ostream& operator <<(std::ostream& os, const Mesh& obj);
+    // Allow mesh stream operator<< access Mesh members.
+    friend std::ostream& operator<<(std::ostream& os, const Mesh& obj);
 
 private:
     // Adds connectivity relations. Return false in case of new relation leads to

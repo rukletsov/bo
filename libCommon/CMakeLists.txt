@@ -12,6 +12,7 @@ PROJECT (LibCommon)
 # Specify project's C++ source files.
 SET (LibCommon_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d25_active_contours.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ini_reader.cpp
 )
@@ -33,6 +34,7 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/methods/d25_active_contours.hpp	
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/io/ini_reader.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/basic_configuration.hpp	
     ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/uon_basic_configuration.hpp	
