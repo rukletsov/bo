@@ -22,7 +22,6 @@ Mesh class
 * Cache vertex normals.
 * Check English names for mesh terms (basic graph and mesh definitions).
 * Write tests.
-* Move IO-related code (Mesh::to_ply(), Mesh::from_ply()) to "io/mesh_io".
 
 RawImage<> class
 ================================================================================
@@ -78,3 +77,7 @@ Triangle<> class
 --------------------------------------------------------------------------------
 [DONE] * Implement Equals() method. 
 [DONE] * Implement safe at() operators.
+
+Mesh class
+--------------------------------------------------------------------------------
+[DONE] * Move IO-related code: Mesh::to_ply(), Mesh::from_ply() to "io/mesh_io".
