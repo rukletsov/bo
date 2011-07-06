@@ -97,9 +97,13 @@ public:
     // Throws if face index is out of range.
     Normal get_vertex_normal(std::size_t vertex_index) const;
 
-    // Computes the distance between the given point and the mesh. Uses naive
-    // implementation, which measures distance to each face and then takes the minimum.
+    // Finds closest point on the mesh to a given one. Uses naive implementation,
+    // which measures the distance to each face and then takes the minimum.
     Vertex get_closest_point(const Vertex& point) const;
+
+    // Computes the distance between the given point and the mesh. Returns the
+    // euclidean norm of the difference between the given point and the closest to it
+    // point on the mesh.
     double distance(const Vertex& point) const;
 
     // Returns data from connectivity structures. Throws if face index is out of range.
@@ -127,6 +131,11 @@ private:
 
     // Computes and returns a normal for the given face.
     Normal compute_face_normal_(const Face& face) const;
+
+    // Finds the closest point on the given mesh face to the given point. For
+    // more information see
+    //    http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
+    Vertex closest_point_on_face(std::size_t face_index, const Vertex& P) const;
 
     // Range checkers. Throw if an index is out of range.
     void vertex_rangecheck(std::size_t vertex_index) const;

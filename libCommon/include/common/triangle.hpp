@@ -36,6 +36,7 @@
 #ifndef TRIANGLE_HPP_507AFC96_F3F4_40FF_827C_66F388AEDAD2_
 #define TRIANGLE_HPP_507AFC96_F3F4_40FF_827C_66F388AEDAD2_
 
+#include <stdexcept>
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 
