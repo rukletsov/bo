@@ -2,11 +2,10 @@
 LIBRARY
 ================================================================================
 * CMake different options for debug/release configuration.
-* Put windows-dependent code under #ifdef.
 * Check types compatibility (size_t, int, unsigned, etc).
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 * Implement (or find and use) global Logger class.
-* Write tests for Timer class.
+* Add memleak tests (check Application Verifier, Dr. Memory; CTest).
 
 Mesh class
 ================================================================================
@@ -21,12 +20,19 @@ Mesh class
 * Provide vertex moving function.
 * Cache vertex normals.
 * Check English names for mesh terms (basic graph and mesh definitions).
-* Write tests.
+* Add debug assertions to out-of-range exceptions.
+* Handle normalization of the null-vector.
+* Write tests: out-of-range, assertions, distance, IO (using test data).
 
 RawImage<> class
 ================================================================================
 * Use 1D array.
 * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
+
+Vector<> class
+================================================================================
+* Write tests: conversion from/to Vectors of different types; operations with
+  converted vectors.
 
 Triangle<> class
 ================================================================================
@@ -60,6 +66,8 @@ LIBRARY
 [DONE] * Provide Timer class, which works via Performance Counters on Windows 
   and as boost::timer on all other platforms. This should replace functions 
   from "common/performance.hpp".
+[DONE] * Put windows-dependent code under #ifdef.
+[DONE] * Write tests for Timer class.
 
 Vector<> class
 --------------------------------------------------------------------------------
