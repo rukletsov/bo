@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    d25_active_contours.hpp, v 1.0.0 2011.03.17
+    d25_active_contours.hpp, v 1.0.1 2011.03.17
 
 	Modification of the approach by Ye Duan and Hong Qin, "2.5D Active Contour
 	for Surface Reconstruction", Proceedings of the 8th Fall Workshop on Vision,
@@ -45,6 +45,8 @@
 #include "triangle.hpp"
 #include "mesh.hpp"
 
+
+namespace common {
 namespace methods {
 
 namespace {
@@ -432,5 +434,6 @@ protected:
 
 
 } // namespace methods
+} // namespace common
 
 #endif //D25_ACTIVE_CONTOURS_HPP_408B8C5F_B876_4B70_AE3C_4B193F9AEED0_

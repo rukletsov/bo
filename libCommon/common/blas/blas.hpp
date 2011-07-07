@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    blas.hpp, v 1.0.0 2011.03.16
+    blas.hpp, v 1.0.1 2011.03.16
 
     Basic linear algebra subprograms. 
 
@@ -40,6 +40,8 @@
 
 using namespace boost::numeric::ublas;
 
+
+namespace common {
 namespace blas {
 
 // Matrix inversion routine.
@@ -118,8 +120,7 @@ int determinant_sign(const permutation_matrix<std::size_t>& pm)
 
 //TODO: svd
 
-
-
 } // namespace blas
+} // namespace common
 
 #endif // BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_

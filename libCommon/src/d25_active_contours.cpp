@@ -14,6 +14,7 @@
 
 using namespace common;
 
+namespace common {
 namespace methods {
 
 namespace {
@@ -50,7 +51,8 @@ struct HContainerElement
 inline float bac( HContainerElement t, size_t k ) { return t[k]; }
 
 //3D Tree type
-typedef KDTree::KDTree<3, HContainerElement, std::pointer_to_binary_function<HContainerElement,size_t,float>> D3Tree;
+typedef KDTree::KDTree<3, HContainerElement,
+    std::pointer_to_binary_function<HContainerElement,size_t,float> > D3Tree;
 
 //3D Tree Wrapper
 class HVertexContainer
@@ -200,12 +202,13 @@ Vector<float,3> getNormalVector(const surfaces::HTriangleSeed &ts)
 //Triangular dipyramid
 struct TriangularDipyramid
 {
-	Vector<float,3> vertices[5];
-	Triangle<Vector<float,3>> faces[6];
-	Vector<float,3> center;
+    Vector<float,3> vertices[5];
+    Triangle<Vector<float,3> > faces[6];
+    Vector<float,3> center;
 	
-	//Triangular dipyramid based on the given triangle with the given base angle
-	static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3>> & t, float baseAngleCos)
+    //Triangular dipyramid based on the given triangle with the given base angle
+    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3> >& t,
+                                                       float baseAngleCos)
 	{
 		TriangularDipyramid tdp;
 		
@@ -356,9 +359,6 @@ struct TriangularDipyramid
 };
 
 } //anonymous namespace
-
-
-
 
 
 namespace surfaces {
@@ -1307,8 +1307,6 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
 
 
 
-
-
 const std::vector<HPointSeed>* D25ActiveContours::get_vertices()
 {
 	return &vertices->linear;
@@ -1533,6 +1531,7 @@ common::Mesh D25ActiveContours::get_mesh()
 }
 
 
-} // namespace methods
+} // namespace surfaces
 
-}
+} // namespace methods
+} // namespace common

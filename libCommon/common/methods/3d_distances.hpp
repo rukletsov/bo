@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    3d_distances.hpp, v 1.0.0 2011.07.06
+    3d_distances.hpp, v 1.0.1 2011.07.06
 
     Methods and algorithms for calculating distances between varios objects in
     a 3D-space.
@@ -39,13 +39,7 @@
 #include "vector.hpp"
 
 
-namespace {
-
-
-
-} // anonymous namespace
-
-
+namespace common {
 namespace methods {
 
 namespace detail {
@@ -305,5 +299,6 @@ common::Vector<T, 3> find_closest_point_on_triangle(const common::Vector<T, 3>& 
 }
 
 } // namespace methods
+} // namespace common
 
 #endif // THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
