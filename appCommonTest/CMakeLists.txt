@@ -12,7 +12,7 @@ SET (AppCommonTest_SRCS
 
 # For additional dependencies check the root CMakeLists.
 INCLUDE_DIRECTORIES ($ENV{GTEST_ROOT}/include
-                     ${LIBCOMMON_ROOT}/include
+                     ${LIBCOMMON_ROOT}
 )
      
 # For additional dependencies check the root CMakeLists.
