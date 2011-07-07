@@ -188,7 +188,7 @@ protected:
 template <typename T, std::size_t N> inline
 T operator*(Vector<T, N> lhs, const Vector<T, N>& rhs) 
 { 
-    T retvalue = 0;
+    T retvalue(0);
     for (std::size_t i = 0; i < N; ++i)
         retvalue += lhs[i] * rhs[i];
     	

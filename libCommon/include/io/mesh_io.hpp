@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    mesh_io.hpp, v 1.0.0 2011.07.06
+    mesh_io.hpp, v 1.0.1 2011.07.06
 
     I/O for Mesh class. RPly library is used for working with .ply files.
 
