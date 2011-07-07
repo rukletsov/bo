@@ -12,9 +12,9 @@ PROJECT (LibCommon)
 # Specify project's C++ source files.
 SET (LibCommon_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh_io.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/d25_active_contours.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ini_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/mesh_io.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ini_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/methods/d25_active_contours.cpp
 )
 
 # A special section for C sources, which should be compiled using C compiler, not C++
