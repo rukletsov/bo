@@ -24,21 +24,21 @@ SET (LibCommon_CSRCS
 )
 
 SET (LibCommon_HDRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/pch.h
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/vector.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/mesh.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/triangle.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/errors.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/performance.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common/raw_image.hpp	
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/blas/blas.hpp	
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/methods/d25_active_contours.hpp	
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/methods/3d_distances.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/mesh_io.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/ini_reader.hpp	
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/basic_configuration.hpp	
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/io/config_parser/uon_basic_configuration.hpp	
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/vector.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/mesh.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/triangle.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/errors.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/performance.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/raw_image.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/blas/blas.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/d25_active_contours.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/3d_distances.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/io/mesh_io.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/io/ini_reader.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/io/config_parser/basic_configuration.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/io/config_parser/uon_basic_configuration.hpp
 	
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.h
 
@@ -79,12 +79,11 @@ ENDIF ((MSVC) AND (UsePch))
 
 
 # For additional dependencies check the root CMakeLists.
-INCLUDE_DIRECTORIES (./include
-                     ./include/blas
-                     ./include/common
-                     ./include/methods
-                     ./include/io
-                     ./include/io/config_parser
+INCLUDE_DIRECTORIES (./common
+                     ./common/blas
+                     ./common/methods
+                     ./common/io
+                     ./common/io/config_parser
                      ./3rdparty
                      ./3rdparty/rply-1.01
                      ./3rdparty/libkdtree++_0.7.0
