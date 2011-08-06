@@ -6,6 +6,8 @@ LIBRARY
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 * Implement (or find and use) global Logger class.
 * Add memleak tests (check Application Verifier, Dr. Memory; CTest).
+* Use alternative new operator in test application for more verbose memory 
+  leaks. See CRT debug heap for details.
 
 Mesh class
 ================================================================================
