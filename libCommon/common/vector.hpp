@@ -435,12 +435,12 @@ T Vector<T, N>::min_element() const
         (*std::min_element(components_.begin(), components_.end()));
 }
 
+// Available only if not interferes with "windows.h" macros (or other named "min").
 #ifndef min
-template <typename T, std::size_t N>
+template <typename T, std::size_t N> inline
 T Vector<T, N>::min() const
-{ 
-    return 
-        (*std::min_element(components_.begin(), components_.end()));
+{
+    return min_element();
 }
 #endif // min
 
@@ -459,12 +459,12 @@ T Vector<T, N>::max_element() const
         (*std::max_element(components_.begin(), components_.end()));
 }
 
+// Available only if not interferes with "windows.h" macros (or other named "max").
 #ifndef max
-template <typename T, std::size_t N>
+template <typename T, std::size_t N> inline
 T Vector<T, N>::max() const
-{ 
-    return 
-        (*std::max_element(components_.begin(), components_.end()));
+{
+    return max_element();
 }
 #endif // max
 
