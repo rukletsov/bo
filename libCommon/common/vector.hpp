@@ -137,11 +137,21 @@ public:
     // See below for operator<<, defined outside the class.
 
     // Simple aggregation functions. 
-    T min() const;
-    T max() const;
+    T min_element() const;
+    T max_element() const;
     T sum() const;
     T product() const;
     T avg() const;
+
+    // The same as min_element() and max_element(), but available only if min/max
+    // macros are not defined (crappy "windows.h" defines these macors by default).
+#ifndef min
+    T min() const;
+#endif // min
+
+#ifndef max
+    T max() const;
+#endif // max
 	
     // These functions use std::min_element() and therefore return an index of the 
     // first found element (in case there are several equal min/max elements).
@@ -419,11 +429,20 @@ Vector<T, N> Vector<T, N>::cross_product(const Vector<T, N>& other) const
 }
 
 template <typename T, std::size_t N>
+T Vector<T, N>::min_element() const
+{
+    return
+        (*std::min_element(components_.begin(), components_.end()));
+}
+
+#ifndef min
+template <typename T, std::size_t N>
 T Vector<T, N>::min() const
 { 
     return 
         (*std::min_element(components_.begin(), components_.end()));
 }
+#endif // min
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::min_index() const
@@ -434,11 +453,20 @@ std::size_t Vector<T, N>::min_index() const
 }
 
 template <typename T, std::size_t N>
+T Vector<T, N>::max_element() const
+{
+    return
+        (*std::max_element(components_.begin(), components_.end()));
+}
+
+#ifndef max
+template <typename T, std::size_t N>
 T Vector<T, N>::max() const
 { 
     return 
         (*std::max_element(components_.begin(), components_.end()));
 }
+#endif // max
 
 template <typename T, std::size_t N>
 std::size_t Vector<T, N>::max_index() const
