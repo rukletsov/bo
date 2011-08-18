@@ -190,26 +190,37 @@ TEST_F(VectorTest, CrossProduct)
 
 TEST_F(VectorTest, MinMax)
 {
+    // It is guaranteed that here no min/max macros are defined. Therefore, both
+    // min_element() and min(), max_element() and max() can be tested.
+
     // Min/max for the null-vector.
+    EXPECT_FLOAT_EQ(0., vec1_.min_element());
     EXPECT_FLOAT_EQ(0., vec1_.min());
+    EXPECT_FLOAT_EQ(0., vec1_.max_element());
     EXPECT_FLOAT_EQ(0., vec1_.max());
     EXPECT_EQ(std::size_t(0), vec1_.min_index());
     EXPECT_EQ(std::size_t(0), vec1_.max_index());
 
     // Min/max for the vector filled with only one value.
+    EXPECT_DOUBLE_EQ(5., vec2_.min_element());
     EXPECT_DOUBLE_EQ(5., vec2_.min());
+    EXPECT_DOUBLE_EQ(5., vec2_.max_element());
     EXPECT_DOUBLE_EQ(5., vec2_.max());
     EXPECT_EQ(std::size_t(0), vec2_.min_index());
     EXPECT_EQ(std::size_t(0), vec2_.max_index());
 
+    EXPECT_DOUBLE_EQ(0.3, vec3_.min_element());
     EXPECT_DOUBLE_EQ(0.3, vec3_.min());
+    EXPECT_DOUBLE_EQ(17, vec3_.max_element());
     EXPECT_DOUBLE_EQ(17, vec3_.max());
     EXPECT_EQ(std::size_t(0), vec3_.min_index());
     EXPECT_EQ(std::size_t(2), vec3_.max_index());
 
     vec4_.y() = 4;
     vec4_.z() = 10;
+    EXPECT_EQ(int(4), vec4_.min_element());
     EXPECT_EQ(int(4), vec4_.min());
+    EXPECT_EQ(int(10), vec4_.max_element());
     EXPECT_EQ(int(10), vec4_.max());
     EXPECT_EQ(std::size_t(1), vec4_.min_index());
     EXPECT_EQ(std::size_t(2), vec4_.max_index());
