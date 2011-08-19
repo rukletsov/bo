@@ -5,7 +5,7 @@
 #   define _CRTDBG_MAP_ALLOC
 #   include <cstdlib>
 #   include <crtdbg.h>
-#endif
+#endif // defined(_MSC_VER) && defined(_DEBUG)
 
 // Directory where test data is stored.
 std::string DataDirectory;
@@ -13,8 +13,12 @@ std::string DataDirectory;
 
 int main(int argc, char* argv[])
 {
-    // Dump detected memory leaks into the stderr for debug mode.
-#ifdef _MSC_VER
+    // Enable MSVC's debug heap for detecting memory leaks. This includes changing
+    // new operator to one with more info about the leaked block, tracking of all
+    // allocations and redirecting output to the stderr.
+#if defined(_MSC_VER) && defined(_DEBUG)
+#   define new new(_CLIENT_BLOCK, __FILE__, __LINE__)
+
     _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
 
@@ -25,7 +29,7 @@ int main(int argc, char* argv[])
     _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
 
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+#endif // defined(_MSC_VER) && defined(_DEBUG)
 
 
     // Extract GTest's command-line arguments and prepare test environment.
@@ -42,8 +46,6 @@ int main(int argc, char* argv[])
 
     // Run all defined tests.
     return RUN_ALL_TESTS();
-
-
 
 
 
