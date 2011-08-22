@@ -3,9 +3,9 @@
 
     raw_image.hpp, v 1.0.3 2011.03.14
 
-    2D image class. OpenCV library is used for IO. Be advised that different 
-    versions of OpenCV can have different interface and influence RawImage 
-    class. For this reason OpenCV 2.0, 2.1 or 2.2 is recommended.
+    2D image class. OpenCV library can be used for IO. Be advised that
+    different versions of OpenCV can have different interface and influence
+    RawImage class. For this reason OpenCV 2.0, 2.1 or 2.2 are recommended.
 
     Copyright (c) 2010, 2011
     Alexander Rukletsov <rukletsov@gmail.com>
@@ -84,7 +84,7 @@ public:
     size_t size() const;
     Pixels& operator[](size_t row);
     const Pixels& operator[](size_t row) const;
-    ValType& pixval_at(size_t row, size_t col);
+    ValType& at(size_t row, size_t col);
 
     Pixels get_neighbour_values(size_t row, size_t col) const;
     Indices get_neighbours(size_t row, size_t col) const;
@@ -201,7 +201,7 @@ typename RawImage<ValType>::Pixels& RawImage<ValType>::operator[](size_t row)
 }
 
 template <typename ValType> inline
-ValType& RawImage<ValType>::pixval_at(size_t row, size_t col)
+ValType& RawImage<ValType>::at(size_t row, size_t col)
 {
     return image_[row][col];
 }
