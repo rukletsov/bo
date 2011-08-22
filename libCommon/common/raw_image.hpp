@@ -41,6 +41,8 @@
 #include <cmath>
 
 #include <boost/cstdint.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/utility.hpp>
 
 // Enable OpenCV usage only when requested by the library user.
 #ifdef USE_OPENCV
@@ -58,18 +60,19 @@
 namespace common {
 
 
-typedef std::pair<size_t, size_t> Index;
+typedef std::pair<std::size_t, std::size_t> Index;
 typedef std::vector<Index> Indices;
 
 
 template <typename ValType>
-class RawImage
+class RawImage : boost::noncopyable
 {
 public:
     typedef std::vector<ValType> Pixels;
-    typedef std::vector<Pixels> PixelMatrix;
+//    typedef std::vector<Pixels> PixelMatrix;
+    typedef boost::scoped_ptr<ValType> ImageDataPtr;
 
-    RawImage(const PixelMatrix& image);
+//    RawImage(const PixelMatrix& image);
 
     // Convertion functions from and to OpenCV format are available on demand.
 #ifdef USE_OPENCV
@@ -79,22 +82,29 @@ public:
     cv::Mat to_cvmat() const;
 #endif
 
-    PixelMatrix raw() const;
+//    PixelMatrix raw() const;
+    ValType* data() const;
 
-    size_t size() const;
-    Pixels& operator[](size_t row);
-    const Pixels& operator[](size_t row) const;
-    ValType& at(size_t row, size_t col);
+    std::size_t size() const;
 
-    Pixels get_neighbour_values(size_t row, size_t col) const;
-    Indices get_neighbours(size_t row, size_t col) const;
+//    Pixels& operator[](std::size_t row);
+//    const Pixels& operator[](std::size_t row) const;
+
+    ValType& at(std::size_t col, std::size_t row);
+
+    Pixels get_neighbour_values(std::size_t row, std::size_t col) const;
+    Indices get_neighbours(std::size_t row, std::size_t col) const;
 
 protected:
-    double av_dist(size_t row, size_t col) const;
-    double std_devia(size_t row, size_t col) const;
+    double av_dist(std::size_t row, std::size_t col) const;
+    double std_devia(std::size_t row, std::size_t col) const;
 
-protected:
-    PixelMatrix image_;
+private:
+    std::size_t width_;
+    std::size_t height_;
+
+    ImageDataPtr image_;
+    //PixelMatrix image_;
 };
 
 
@@ -171,54 +181,60 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 
 
 // RawImage methods definition.
-template <typename ValType> 
-RawImage<ValType>::RawImage(const PixelMatrix& image): 
-    image_(image)
-{ }
+//template <typename ValType>
+//RawImage<ValType>::RawImage(const PixelMatrix& image):
+//    image_(image)
+//{ }
+
+//template <typename ValType> inline
+//typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
+//{
+//    return image_;
+//}
 
 template <typename ValType> inline
-typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
+ValType* RawImage<ValType>::data() const
 {
-    return image_;
+    return image_.get();
 }
 
 template <typename ValType> inline
-size_t RawImage<ValType>::size() const
+std::size_t RawImage<ValType>::size() const
 {
-    return image_.size();
+    return (width_ * height_ * depth_ * sizeof(ValType));
 }
 
-template <typename ValType> inline
-typename const RawImage<ValType>::Pixels& RawImage<ValType>::operator[](size_t row) const
-{
-    return image_[row];
-}
+//template <typename ValType> inline
+//typename const RawImage<ValType>::Pixels& RawImage<ValType>::operator[](std::size_t row) const
+//{
+//    return image_[row];
+//}
+
+//template <typename ValType> inline
+//typename RawImage<ValType>::Pixels& RawImage<ValType>::operator[](std::size_t row)
+//{
+//    return image_[row];
+//}
 
 template <typename ValType> inline
-typename RawImage<ValType>::Pixels& RawImage<ValType>::operator[](size_t row)
+ValType& RawImage<ValType>::at(std::size_t col, std::size_t row)
 {
-    return image_[row];
-}
-
-template <typename ValType> inline
-ValType& RawImage<ValType>::at(size_t row, size_t col)
-{
-    return image_[row][col];
+    return image_[col + width_ * (row + height_)];
 }
 
 
 // Return a set of brightness values of the pixel itself and surrounding neighbours.
 template <typename ValType>
 typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
-    size_t row, size_t col) const
+    std::size_t col, std::size_t row) const
 {
     Pixels retvalue;
 
-    Indices indices = get_neighbours(row, col);
-    indices.push_back(std::make_pair(row, col));
+    Indices indices = get_neighbours(col, row);
+    indices.push_back(std::make_pair(col, row));
 
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
-        retvalue.push_back(image_[it->first][it->second]);
+        retvalue.push_back(image_.at(it->first, it->second);
 
     return retvalue;
 }
@@ -226,34 +242,34 @@ typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
 // Returns indices of all first-order neighbours of given pixel.
 template <typename ValType>
 Indices RawImage<ValType>::get_neighbours(
-    size_t row, size_t col) const
+    std::size_t col, std::size_t row) const
 {
     Indices retvalue;
 
-    if (row != 0)
-        retvalue.push_back(std::make_pair(row - 1, col));
-
     if (col != 0)
-        retvalue.push_back(std::make_pair(row, col - 1));
+        retvalue.push_back(std::make_pair(col - 1, row));
 
-    if (row != image_.size() - 1)
-        retvalue.push_back(std::make_pair(row + 1, col));
+    if (row != 0)
+        retvalue.push_back(std::make_pair(col, row - 1));
 
-    if (col != image_[row].size() - 1)
-        retvalue.push_back(std::make_pair(row, col + 1));
+    if (col != width_ - 1)
+        retvalue.push_back(std::make_pair(col + 1, row));
+
+    if (row != height_ - 1)
+        retvalue.push_back(std::make_pair(col, row + 1));
 
     return retvalue;
 }
 
 template <typename ValType>
-double RawImage<ValType>::av_dist(size_t row, size_t col) const
+double RawImage<ValType>::av_dist(std::size_t col, std::size_t row) const
 {
     double retvalue = 0.0;
 
-    Indices indices = get_neighbours(row, col);
+    Indices indices = get_neighbours(col, row);
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        retvalue += abs(image_[row][col] - image_[it->first][it->second]);
+        retvalue += abs(at(col, row) - at(it->first, it->second));
     }
 
     return
@@ -261,18 +277,18 @@ double RawImage<ValType>::av_dist(size_t row, size_t col) const
 }
 
 template <typename ValType>
-double RawImage<ValType>::std_devia(size_t row, size_t col) const
+double RawImage<ValType>::std_devia(std::size_t col, std::size_t row) const
 {
     double retvalue = 0.0;
 
-    Indices indices = get_neighbours(row, col);
+    Indices indices = get_neighbours(col, row);
 
     // First we should get series of differences.
     Pixels diffs;
     diffs.reserve(indices.size());
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        diffs.push_back(image_[row][col] - image_[it->first][it->second]);
+        diffs.push_back(image_[col][row] - image_[it->first][it->second]);
     }
 
     // Then obtain a mean.
