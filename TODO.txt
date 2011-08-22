@@ -28,6 +28,8 @@ RawImage<> class
 ================================================================================
 * Use 1D array.
 * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
+* Provide is_null() method.
+* Write tests.
 
 Vector<> class
 ================================================================================
