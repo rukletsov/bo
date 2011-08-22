@@ -67,10 +67,13 @@ typedef std::vector<Index> Indices;
 template <typename ValType>
 class RawImage : boost::noncopyable
 {
-public:
     typedef std::vector<ValType> Pixels;
 //    typedef std::vector<Pixels> PixelMatrix;
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
+
+public:
+    RawImage();
+    RawImage(std::size_t width, std::size_t height);
 
 //    RawImage(const PixelMatrix& image);
 
@@ -104,9 +107,17 @@ private:
     std::size_t height_;
 
     ImageDataPtr image_;
-    //PixelMatrix image_;
 };
 
+
+template <typename ValType>
+RawImage<T>::RawImage() : width_(0), height_(0), image_(NULL)
+{ }
+
+template <typename ValType>
+RawImage::RawImage(std::size_t width, std::size_t height) : width_(width),
+    height_(height), image_(new ValType[width * height])
+{ }
 
 #ifdef USE_OPENCV
 
