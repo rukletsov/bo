@@ -220,14 +220,14 @@ template <typename ValType> inline
 RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
                                                          std::size_t row) const
 {
-    // TODO: Perform checks.
+    check_range(col, row);
     return image_[col + width_ * row];
 }
 
 template <typename ValType> inline
 RawImage<ValType>::reference RawImage<ValType>::at(std::size_t col, std::size_t row)
 {
-    // TODO: Perform checks.
+    check_range(col, row);
     return image_[col + width_ * row];
 }
 
