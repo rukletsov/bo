@@ -49,9 +49,9 @@
 
 // Enable OpenCV usage only when requested by the library user.
 #ifdef USE_OPENCV
-    // Depending on the version of OpenCV you link to one of the following 
-    // headers should be used. If your OpenCV version is 2.2, define OPENCV_2_2 
-    // symbol before including this file. If your OpenCV version is either 2.0 
+    // Depending on the version of OpenCV you link to one of the following
+    // headers should be used. If your OpenCV version is 2.2, define OPENCV_2_2
+    // symbol before including this file. If your OpenCV version is either 2.0
     // or 2.1, include this file without defining any symbols.
     #ifdef OPENCV_2_2
         #include <opencv2/opencv.hpp>
