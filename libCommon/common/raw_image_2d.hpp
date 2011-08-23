@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    raw_image.hpp, v 1.0.3 2011.03.14
+    raw_image_2d.hpp, v 1.0.3 2011.03.14
 
     2D image class. OpenCV library can be used for IO. Be advised that
     different versions of OpenCV can have different interface and influence
@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
-#define RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
+#ifndef RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
+#define RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
 
 #include <vector>
 #include <cmath>
@@ -63,7 +63,7 @@
 namespace common {
 
 template <typename ValType>
-class RawImage : boost::noncopyable
+class RawImage2D : boost::noncopyable
 {
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
 
@@ -78,8 +78,8 @@ public:
     typedef std::vector<Index> Indices;
 
 public:
-    RawImage();
-    RawImage(std::size_t width, std::size_t height);
+    RawImage2D();
+    RawImage2D(std::size_t width, std::size_t height);
 
     // Convertion functions from and to OpenCV format are available on demand.
 #ifdef USE_OPENCV
@@ -120,11 +120,11 @@ private:
 
 
 template <typename ValType>
-RawImage<T>::RawImage() : width_(0), height_(0), image_(NULL)
+RawImage2D<T>::RawImage2D() : width_(0), height_(0), image_(NULL)
 { }
 
 template <typename ValType>
-RawImage::RawImage(std::size_t width, std::size_t height) : width_(width),
+RawImage2D::RawImage2D(std::size_t width, std::size_t height) : width_(width),
     height_(height), image_(new ValType[width * height])
 { }
 
@@ -200,7 +200,7 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 #endif
 
 template <typename ValType> inline
-RawImage<ValType>::const_reference RawImage<ValType>::operator()(std::size_t col,
+RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t col,
                                                                  std::size_t row) const
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
@@ -208,7 +208,7 @@ RawImage<ValType>::const_reference RawImage<ValType>::operator()(std::size_t col
 }
 
 template <typename ValType> inline
-RawImage<ValType>::reference RawImage<ValType>::operator()(std::size_t col,
+RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(std::size_t col,
                                                            std::size_t row)
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
@@ -216,7 +216,7 @@ RawImage<ValType>::reference RawImage<ValType>::operator()(std::size_t col,
 }
 
 template <typename ValType> inline
-RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
+RawImage2D<ValType>::const_reference RawImage2D<ValType>::at(std::size_t col,
                                                          std::size_t row) const
 {
     check_range(col, row);
@@ -224,33 +224,33 @@ RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
 }
 
 template <typename ValType> inline
-RawImage<ValType>::reference RawImage<ValType>::at(std::size_t col, std::size_t row)
+RawImage2D<ValType>::reference RawImage2D<ValType>::at(std::size_t col, std::size_t row)
 {
     check_range(col, row);
     return image_[col + width_ * row];
 }
 
 template <typename ValType> inline
-const ValType* RawImage<ValType>::data() const
+const ValType* RawImage2D<ValType>::data() const
 {
     return image_.get();
 }
 
 template <typename ValType> inline
-ValType* RawImage<ValType>::data()
+ValType* RawImage2D<ValType>::data()
 {
     return image_.get();
 }
 
 template <typename ValType> inline
-bool RawImage<ValType>::is_null() const
+bool RawImage2D<ValType>::is_null() const
 {
     return
         (image_.get() == NULL);
 }
 
 template <typename ValType> inline
-std::size_t RawImage<ValType>::size() const
+std::size_t RawImage2D<ValType>::size() const
 {
     return
         (width_ * height_ * sizeof(ValType));
@@ -258,7 +258,7 @@ std::size_t RawImage<ValType>::size() const
 
 // Return a set of brightness values of the pixel itself and surrounding neighbours.
 template <typename ValType>
-typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
+typename RawImage2D<ValType>::Pixels RawImage2D<ValType>::get_neighbour_values(
     std::size_t col, std::size_t row) const
 {
     // TODO: Check index range.
@@ -277,7 +277,7 @@ typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
 
 // Returns indices of all first-order neighbours of given pixel.
 template <typename ValType>
-Indices RawImage<ValType>::get_neighbours(
+Indices RawImage2D<ValType>::get_neighbours(
     std::size_t col, std::size_t row) const
 {
     Indices retvalue;
@@ -298,7 +298,7 @@ Indices RawImage<ValType>::get_neighbours(
 }
 
 template <typename ValType>
-double RawImage<ValType>::av_dist(std::size_t col, std::size_t row) const
+double RawImage2D<ValType>::av_dist(std::size_t col, std::size_t row) const
 {
     double retvalue = 0.0;
 
@@ -313,7 +313,7 @@ double RawImage<ValType>::av_dist(std::size_t col, std::size_t row) const
 }
 
 template <typename ValType>
-double RawImage<ValType>::std_devia(std::size_t col, std::size_t row) const
+double RawImage2D<ValType>::std_devia(std::size_t col, std::size_t row) const
 {
     double retvalue = 0.0;
 
@@ -346,13 +346,13 @@ double RawImage<ValType>::std_devia(std::size_t col, std::size_t row) const
 }
 
 template <typename ValType> inline
-bool RawImage<ValType>::is_valid_index(std::size_t col, std::size_t row) const
+bool RawImage2D<ValType>::is_valid_index(std::size_t col, std::size_t row) const
 {
     return (col < width_ && row < height_);
 }
 
 template <typename ValType> inline
-void RawImage<ValType>::check_range(std::size_t col, std::size_t row) const
+void RawImage2D<ValType>::check_range(std::size_t col, std::size_t row) const
 {
     if (!is_valid_index(col, row))
     {
@@ -363,4 +363,4 @@ void RawImage<ValType>::check_range(std::size_t col, std::size_t row) const
 }
 
 } // namespace common
-#endif // RAW_IMAGE_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
+#endif // RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
