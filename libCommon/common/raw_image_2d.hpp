@@ -1,11 +1,9 @@
 
 /******************************************************************************
 
-    raw_image_2d.hpp, v 1.0.3 2011.03.14
+    raw_image_2d.hpp, v 1.1.0 2011.03.14
 
-    2D image class. OpenCV library can be used for IO. Be advised that
-    different versions of OpenCV can have different interface and influence
-    RawImage class. For this reason OpenCV 2.0, 2.1 or 2.2 are recommended.
+    2D image class.
 
     Copyright (c) 2010, 2011
     Alexander Rukletsov <rukletsov@gmail.com>
@@ -55,6 +53,7 @@ class RawImage2D : boost::noncopyable
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
 
 public:
+    typedef ValType value_type;
     typedef ValType* iterator;
     typedef const ValType* const_iterator;
     typedef ValType& reference;
@@ -80,12 +79,12 @@ public:
     bool is_null() const;
     std::size_t size() const;
 
-    Pixels get_neighbour_values(std::size_t row, std::size_t col) const;
-    Indices get_neighbours(std::size_t row, std::size_t col) const;
+    Pixels get_neighbour_values(std::size_t col, std::size_t row) const;
+    Indices get_neighbours(std::size_t col, std::size_t row) const;
 
 protected:
-    double av_dist(std::size_t row, std::size_t col) const;
-    double std_devia(std::size_t row, std::size_t col) const;
+    double av_dist(std::size_t col, std::size_t row) const;
+    double std_devia(std::size_t col, std::size_t row) const;
 
     bool is_valid_index(std::size_t col, std::size_t row) const;
     void check_range(std::size_t col, std::size_t row) const;
@@ -109,7 +108,7 @@ RawImage2D::RawImage2D(std::size_t width, std::size_t height) : width_(width),
 
 template <typename ValType> inline
 RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t col,
-                                                                 std::size_t row) const
+                                                                std::size_t row) const
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
@@ -117,7 +116,7 @@ RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t
 
 template <typename ValType> inline
 RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(std::size_t col,
-                                                           std::size_t row)
+                                                               std::size_t row)
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
@@ -125,7 +124,7 @@ RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(std::size_t col,
 
 template <typename ValType> inline
 RawImage2D<ValType>::const_reference RawImage2D<ValType>::at(std::size_t col,
-                                                         std::size_t row) const
+                                                             std::size_t row) const
 {
     check_range(col, row);
     return image_[col + width_ * row];
@@ -161,31 +160,30 @@ template <typename ValType> inline
 std::size_t RawImage2D<ValType>::size() const
 {
     return
-        (width_ * height_ * sizeof(ValType));
+        (width_ * height_);
 }
 
-// Return a set of brightness values of the pixel itself and surrounding neighbours.
+// Returns a set of brightness values of the pixel itself and surrounding neighbours.
 template <typename ValType>
 typename RawImage2D<ValType>::Pixels RawImage2D<ValType>::get_neighbour_values(
     std::size_t col, std::size_t row) const
 {
-    // TODO: Check index range.
+    check_range(col, row);
 
     Pixels retvalue;
 
     Indices indices = get_neighbours(col, row);
     indices.push_back(std::make_pair(col, row));
 
-    // TODO: Use accessor without check.
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
-        retvalue.push_back(image_.at(it->first, it->second);
+        retvalue.push_back(this->operator ()(it->first, it->second);
 
     return retvalue;
 }
 
 // Returns indices of all first-order neighbours of given pixel.
 template <typename ValType>
-Indices RawImage2D<ValType>::get_neighbours(
+typename RawImage<ValType>::Indices RawImage2D<ValType>::get_neighbours(
     std::size_t col, std::size_t row) const
 {
     Indices retvalue;
@@ -213,7 +211,8 @@ double RawImage2D<ValType>::av_dist(std::size_t col, std::size_t row) const
     Indices indices = get_neighbours(col, row);
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        retvalue += abs(at(col, row) - at(it->first, it->second));
+        retvalue += abs(this->operator ()(col, row) -
+                        this->operator ()(it->first, it->second));
     }
 
     return
@@ -232,7 +231,8 @@ double RawImage2D<ValType>::std_devia(std::size_t col, std::size_t row) const
     diffs.reserve(indices.size());
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        diffs.push_back(image_[col][row] - image_[it->first][it->second]);
+        diffs.push_back(this->operator ()(col, row) -
+                        this->operator ()(it->first, it->second));
     }
 
     // Then obtain a mean.
