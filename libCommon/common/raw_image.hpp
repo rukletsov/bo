@@ -65,8 +65,6 @@ namespace common {
 template <typename ValType>
 class RawImage : boost::noncopyable
 {
-
-//    typedef std::vector<Pixels> PixelMatrix;
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
 
 public:
@@ -100,6 +98,7 @@ public:
     const ValType* data() const;
     ValType* data();
 
+    bool is_null() const;
     std::size_t size() const;
 
     Pixels get_neighbour_values(std::size_t row, std::size_t col) const;
@@ -244,9 +243,17 @@ ValType* RawImage<ValType>::data()
 }
 
 template <typename ValType> inline
+bool RawImage<ValType>::is_null() const
+{
+    return
+        (image_.get() == NULL);
+}
+
+template <typename ValType> inline
 std::size_t RawImage<ValType>::size() const
 {
-    return (width_ * height_ * sizeof(ValType));
+    return
+        (width_ * height_ * sizeof(ValType));
 }
 
 // Return a set of brightness values of the pixel itself and surrounding neighbours.

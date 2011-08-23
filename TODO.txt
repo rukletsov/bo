@@ -27,7 +27,6 @@ Mesh class
 RawImage<> class
 ================================================================================
 * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
-* Provide is_null() method.
 * Add iterator support and offset() function.
 * Write tests.
 
@@ -75,6 +74,7 @@ LIBRARY
 RawImage<> class
 --------------------------------------------------------------------------------
 [DONE] * Use 1D array.
+[DONE] * Provide is_null() method.
 
 Vector<> class
 --------------------------------------------------------------------------------
