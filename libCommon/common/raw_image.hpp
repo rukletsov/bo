@@ -39,11 +39,13 @@
 
 #include <vector>
 #include <cmath>
+#include <stdexcept>
 
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/assert.hpp>
+#include <boost/format.hpp>
 
 // Enable OpenCV usage only when requested by the library user.
 #ifdef USE_OPENCV
@@ -106,6 +108,9 @@ public:
 protected:
     double av_dist(std::size_t row, std::size_t col) const;
     double std_devia(std::size_t row, std::size_t col) const;
+
+    bool is_valid_index(std::size_t col, std::size_t row) const;
+    void check_range(std::size_t col, std::size_t row) const;
 
 private:
     std::size_t width_;
@@ -199,7 +204,7 @@ template <typename ValType> inline
 RawImage<ValType>::const_reference RawImage<ValType>::operator()(std::size_t col,
                                                                  std::size_t row) const
 {
-    BOOST_ASSERT((col < width_ && row < height_) && "Index is out of range.");
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
 }
 
@@ -207,7 +212,7 @@ template <typename ValType> inline
 RawImage<ValType>::reference RawImage<ValType>::operator()(std::size_t col,
                                                            std::size_t row)
 {
-    BOOST_ASSERT((col < width_ && row < height_) && "Index is out of range.");
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
 }
 
@@ -331,6 +336,23 @@ double RawImage<ValType>::std_devia(std::size_t col, std::size_t row) const
     retvalue = sqrt(retvalue) / (diffs.size() - 1);
 
     return retvalue;
+}
+
+template <typename ValType>
+bool RawImage<ValType>::is_valid_index(std::size_t col, std::size_t row) const
+{
+    return (col < width_ && row < height_);
+}
+
+template <typename ValType>
+void RawImage<ValType>::check_range(std::size_t col, std::size_t row) const
+{
+    if (!is_valid_index(col, row))
+    {
+        throw std::out_of_range((boost::format(
+            "Index [%1%, %2%] is out of range: RawImage<ValType>[%3%, %4%].")
+                % col % row % width_ % height_).str());
+    }
 }
 
 } // namespace common
