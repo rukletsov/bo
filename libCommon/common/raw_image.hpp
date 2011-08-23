@@ -59,17 +59,17 @@
 
 namespace common {
 
-
-typedef std::pair<std::size_t, std::size_t> Index;
-typedef std::vector<Index> Indices;
-
-
 template <typename ValType>
 class RawImage : boost::noncopyable
 {
-    typedef std::vector<ValType> Pixels;
+
 //    typedef std::vector<Pixels> PixelMatrix;
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
+
+public:
+    typedef std::vector<ValType> Pixels;
+    typedef std::pair<std::size_t, std::size_t> Index;
+    typedef std::vector<Index> Indices;
 
 public:
     RawImage();
@@ -212,7 +212,7 @@ ValType* RawImage<ValType>::data() const
 template <typename ValType> inline
 std::size_t RawImage<ValType>::size() const
 {
-    return (width_ * height_ * depth_ * sizeof(ValType));
+    return (width_ * height_ * sizeof(ValType));
 }
 
 //template <typename ValType> inline
@@ -230,20 +230,23 @@ std::size_t RawImage<ValType>::size() const
 template <typename ValType> inline
 ValType& RawImage<ValType>::at(std::size_t col, std::size_t row)
 {
-    return image_[col + width_ * (row + height_)];
+    // TODO: Perform checks.
+    return image_[col + width_ * row];
 }
-
 
 // Return a set of brightness values of the pixel itself and surrounding neighbours.
 template <typename ValType>
 typename RawImage<ValType>::Pixels RawImage<ValType>::get_neighbour_values(
     std::size_t col, std::size_t row) const
 {
+    // TODO: Check index range.
+
     Pixels retvalue;
 
     Indices indices = get_neighbours(col, row);
     indices.push_back(std::make_pair(col, row));
 
+    // TODO: Use accessor without check.
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
         retvalue.push_back(image_.at(it->first, it->second);
 
