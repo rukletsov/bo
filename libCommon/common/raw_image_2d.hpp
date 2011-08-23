@@ -47,19 +47,6 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
-// Enable OpenCV usage only when requested by the library user.
-#ifdef USE_OPENCV
-    // Depending on the version of OpenCV you link to one of the following
-    // headers should be used. If your OpenCV version is 2.2, define OPENCV_2_2
-    // symbol before including this file. If your OpenCV version is either 2.0
-    // or 2.1, include this file without defining any symbols.
-    #ifdef OPENCV_2_2
-        #include <opencv2/opencv.hpp>
-    #else
-        #include <opencv/cv.h>
-    #endif
-#endif
-
 namespace common {
 
 template <typename ValType>
@@ -80,14 +67,6 @@ public:
 public:
     RawImage2D();
     RawImage2D(std::size_t width, std::size_t height);
-
-    // Convertion functions from and to OpenCV format are available on demand.
-#ifdef USE_OPENCV
-    template <typename T> static
-    RawImage<ValType> from_cvmat(const cv::Mat& image);
-
-    cv::Mat to_cvmat() const;
-#endif
 
     const_reference operator()(std::size_t col, std::size_t row) const;
     reference operator()(std::size_t col, std::size_t row);
@@ -127,77 +106,6 @@ template <typename ValType>
 RawImage2D::RawImage2D(std::size_t width, std::size_t height) : width_(width),
     height_(height), image_(new ValType[width * height])
 { }
-
-#ifdef USE_OPENCV
-
-// Utility functions for RawImage class with OpenCV usage.
-template <typename T> inline 
-bool is_bpps_equal_to(const cv::Mat& model)
-{
-    return 
-        (sizeof(T) == model.elemSize());
-}
-
-inline
-void show_image(const std::string& caption, const cv::Mat& image)
-{
-    cv::namedWindow(caption, CV_WINDOW_AUTOSIZE);
-    cv::imshow(caption, image);
-}
-
-inline
-int wait_for_key(int msecs)
-{
-    return cv::waitKey(msecs);
-}
-
-// Convert and normalize to double a given cv::Mat image. If the supposed size 
-// of pixel (T) differs from real size in the given image, return empty RawImage.
-template <typename ValType> template <typename T>
-RawImage<ValType> RawImage<ValType>::from_cvmat(const cv::Mat& image)
-{
-    PixelMatrix retvalue;
-
-    if (is_bpps_equal_to<T>(image))
-    {   
-        retvalue.resize(image.rows);
-        T factor = std::numeric_limits<T>::max();
-
-        for(int i = 0; i < image.rows; ++i)
-        {
-            retvalue[i].resize(image.cols);
-
-            for(int j = 0; j < image.cols; ++j)
-                retvalue[i][j] = static_cast<ValType>(image.at<T>(i, j)) / 
-                                     static_cast<ValType>(factor);
-        }
-    }
-
-    return RawImage(retvalue);
-}
-
-// Convert current state to cv::Mat image. CV_8UC1 flag is used to create an image
-// with 1 byte per pixel intensities.
-template <typename ValType> 
-cv::Mat RawImage<ValType>::to_cvmat() const
-{
-    cv::Mat retvalue(static_cast<int>(image_.size()), 
-                     static_cast<int>(image_[0].size()), 
-                     CV_8UC1);
-
-    boost::uint8_t factor = std::numeric_limits<boost::uint8_t>::max();
-
-    for(int i = 0; i < retvalue.rows; ++i)
-    {
-        for(int j = 0; j < retvalue.cols; ++j)
-            retvalue.at<boost::uint8_t>(i, j) = static_cast<boost::uint8_t>
-                                                    (image_[i][j] * factor);
-    }
-
-    return retvalue;
-}
-
-#endif
 
 template <typename ValType> inline
 RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t col,

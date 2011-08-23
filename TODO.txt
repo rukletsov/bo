@@ -26,8 +26,9 @@ Mesh class
 
 RawImage<> class
 ================================================================================
-* Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
 * Add iterator support and offset() function.
+* Rewrite OpenCV I/O functions (get rid of templated RawImage classes).
+* Provide I/O for Qt classes.
 * Write tests.
 
 Vector<> class
@@ -75,6 +76,7 @@ RawImage<> class
 --------------------------------------------------------------------------------
 [DONE] * Use 1D array.
 [DONE] * Provide is_null() method.
+[DONE] * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
 
 Vector<> class
 --------------------------------------------------------------------------------
