@@ -67,6 +67,11 @@ class RawImage : boost::noncopyable
     typedef boost::scoped_ptr<ValType> ImageDataPtr;
 
 public:
+    typedef ValType* iterator;
+    typedef const ValType* const_iterator;
+    typedef ValType& reference;
+    typedef const ValType& const_reference;
+
     typedef std::vector<ValType> Pixels;
     typedef std::pair<std::size_t, std::size_t> Index;
     typedef std::vector<Index> Indices;
