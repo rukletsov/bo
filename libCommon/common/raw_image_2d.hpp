@@ -38,6 +38,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -47,6 +48,10 @@
 
 namespace common {
 
+// A class representing a 2D image with a template-dependent pixel type. Image data
+// is stored in a one-dimensional dynamic array under boost::scoped_ptr<>. Access to
+// image's pixel values can be done by two indices. Raw pointer to image data can be
+// obtained. The class is noncopyable.
 template <typename ValType>
 class RawImage2D : boost::noncopyable
 {
@@ -64,19 +69,35 @@ public:
     typedef std::vector<Index> Indices;
 
 public:
+    // Create either a NULL image or uninitialized [width, height] image.
     RawImage2D();
     RawImage2D(std::size_t width, std::size_t height);
 
+    // Calculates an offset of the pixel value by the given image indices. Asserts
+    // if indices are out of range.
+    std::size_t offset(std::size_t col, std::size_t row) const;
+
+    // Assignment and access operators. Range-check is done by via debug-only
+    // assertions. Use at() methods for safer but less efficient alternative.
     const_reference operator()(std::size_t col, std::size_t row) const;
     reference operator()(std::size_t col, std::size_t row);
 
+    // Assignment and access methods. Throw an exception in case of bad indices.
+    // Safer, but less efficient alternative of opeartor().
     const_reference at(std::size_t col, std::size_t row) const;
     reference at(std::size_t col, std::size_t row);
 
+    // Returns raw pointer for direct access to image data.
     const ValType* data() const;
     ValType* data();
 
+    // Returns true if image data is NULL.
     bool is_null() const;
+
+    // These methods provide information about underlying image geometry. Note that
+    // size of pixel (i.e. ValType) is not included.
+    std::size_t width() const;
+    std::size_t height() const;
     std::size_t size() const;
 
     Pixels get_neighbour_values(std::size_t col, std::size_t row) const;
@@ -86,7 +107,10 @@ public:
     double std_devia(std::size_t col, std::size_t row) const;
 
 protected:
+    // Provides range check for a given index.
     bool is_valid_index(std::size_t col, std::size_t row) const;
+
+    // Throws a std::out_of_range exception in case of bad index.
     void check_range(std::size_t col, std::size_t row) const;
 
 protected:
@@ -98,13 +122,21 @@ protected:
 
 
 template <typename ValType>
-RawImage2D<T>::RawImage2D() : width_(0), height_(0), image_(NULL)
+RawImage2D<ValType>::RawImage2D() : width_(0), height_(0), image_(NULL)
 { }
 
 template <typename ValType>
-RawImage2D::RawImage2D(std::size_t width, std::size_t height) : width_(width),
-    height_(height), image_(new ValType[width * height])
+RawImage2D<ValType>::RawImage2D(std::size_t width, std::size_t height) :
+    width_(width), height_(height), image_(new ValType[width * height])
 { }
+
+template <typename ValType> inline
+std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
+{
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
+    return
+        (col + width_ * row);
+}
 
 template <typename ValType> inline
 RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t col,
@@ -154,6 +186,18 @@ bool RawImage2D<ValType>::is_null() const
 {
     return
         (image_.get() == NULL);
+}
+
+template <typename ValType> inline
+std::size_t RawImage2D<ValType>::width() const
+{
+    return width_;
+}
+
+template <typename ValType> inline
+std::size_t RawImage2D<ValType>::height() const
+{
+    return height_;
 }
 
 template <typename ValType> inline
