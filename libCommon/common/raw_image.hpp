@@ -338,13 +338,13 @@ double RawImage<ValType>::std_devia(std::size_t col, std::size_t row) const
     return retvalue;
 }
 
-template <typename ValType>
+template <typename ValType> inline
 bool RawImage<ValType>::is_valid_index(std::size_t col, std::size_t row) const
 {
     return (col < width_ && row < height_);
 }
 
-template <typename ValType>
+template <typename ValType> inline
 void RawImage<ValType>::check_range(std::size_t col, std::size_t row) const
 {
     if (!is_valid_index(col, row))
