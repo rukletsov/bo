@@ -91,14 +91,16 @@ public:
 #endif
 
 //    PixelMatrix raw() const;
-    ValType* data() const;
+    const ValType* data() const;
+    ValType* data();
 
     std::size_t size() const;
 
 //    Pixels& operator[](std::size_t row);
 //    const Pixels& operator[](std::size_t row) const;
 
-    ValType& at(std::size_t col, std::size_t row);
+    const_reference at(std::size_t col, std::size_t row) const;
+    reference at(std::size_t col, std::size_t row);
 
     Pixels get_neighbour_values(std::size_t row, std::size_t col) const;
     Indices get_neighbours(std::size_t row, std::size_t col) const;
@@ -209,7 +211,13 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 //}
 
 template <typename ValType> inline
-ValType* RawImage<ValType>::data() const
+const ValType* RawImage<ValType>::data() const
+{
+    return image_.get();
+}
+
+template <typename ValType> inline
+ValType* RawImage<ValType>::data()
 {
     return image_.get();
 }
@@ -233,7 +241,15 @@ std::size_t RawImage<ValType>::size() const
 //}
 
 template <typename ValType> inline
-ValType& RawImage<ValType>::at(std::size_t col, std::size_t row)
+RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
+                                                         std::size_t row) const
+{
+    // TODO: Perform checks.
+    return image_[col + width_ * row];
+}
+
+template <typename ValType> inline
+RawImage<ValType>::reference RawImage<ValType>::at(std::size_t col, std::size_t row)
 {
     // TODO: Perform checks.
     return image_[col + width_ * row];
