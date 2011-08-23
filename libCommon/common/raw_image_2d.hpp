@@ -82,14 +82,14 @@ public:
     Pixels get_neighbour_values(std::size_t col, std::size_t row) const;
     Indices get_neighbours(std::size_t col, std::size_t row) const;
 
-protected:
     double av_dist(std::size_t col, std::size_t row) const;
     double std_devia(std::size_t col, std::size_t row) const;
 
+protected:
     bool is_valid_index(std::size_t col, std::size_t row) const;
     void check_range(std::size_t col, std::size_t row) const;
 
-private:
+protected:
     std::size_t width_;
     std::size_t height_;
 
