@@ -43,6 +43,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/utility.hpp>
+#include <boost/assert.hpp>
 
 // Enable OpenCV usage only when requested by the library user.
 #ifdef USE_OPENCV
@@ -80,8 +81,6 @@ public:
     RawImage();
     RawImage(std::size_t width, std::size_t height);
 
-//    RawImage(const PixelMatrix& image);
-
     // Convertion functions from and to OpenCV format are available on demand.
 #ifdef USE_OPENCV
     template <typename T> static
@@ -90,17 +89,16 @@ public:
     cv::Mat to_cvmat() const;
 #endif
 
-//    PixelMatrix raw() const;
+    const_reference operator()(std::size_t col, std::size_t row) const;
+    reference operator()(std::size_t col, std::size_t row);
+
+    const_reference at(std::size_t col, std::size_t row) const;
+    reference at(std::size_t col, std::size_t row);
+
     const ValType* data() const;
     ValType* data();
 
     std::size_t size() const;
-
-//    Pixels& operator[](std::size_t row);
-//    const Pixels& operator[](std::size_t row) const;
-
-    const_reference at(std::size_t col, std::size_t row) const;
-    reference at(std::size_t col, std::size_t row);
 
     Pixels get_neighbour_values(std::size_t row, std::size_t col) const;
     Indices get_neighbours(std::size_t row, std::size_t col) const;
@@ -197,18 +195,36 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 
 #endif
 
+template <typename ValType> inline
+RawImage<ValType>::const_reference RawImage<ValType>::operator()(std::size_t col,
+                                                                 std::size_t row) const
+{
+    BOOST_ASSERT((col < width_ && row < height_) && "Index is out of range.");
+    return image_[col + width_ * row];
+}
 
-// RawImage methods definition.
-//template <typename ValType>
-//RawImage<ValType>::RawImage(const PixelMatrix& image):
-//    image_(image)
-//{ }
+template <typename ValType> inline
+RawImage<ValType>::reference RawImage<ValType>::operator()(std::size_t col,
+                                                           std::size_t row)
+{
+    BOOST_ASSERT((col < width_ && row < height_) && "Index is out of range.");
+    return image_[col + width_ * row];
+}
 
-//template <typename ValType> inline
-//typename RawImage<ValType>::PixelMatrix RawImage<ValType>::raw() const
-//{
-//    return image_;
-//}
+template <typename ValType> inline
+RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
+                                                         std::size_t row) const
+{
+    // TODO: Perform checks.
+    return image_[col + width_ * row];
+}
+
+template <typename ValType> inline
+RawImage<ValType>::reference RawImage<ValType>::at(std::size_t col, std::size_t row)
+{
+    // TODO: Perform checks.
+    return image_[col + width_ * row];
+}
 
 template <typename ValType> inline
 const ValType* RawImage<ValType>::data() const
@@ -226,33 +242,6 @@ template <typename ValType> inline
 std::size_t RawImage<ValType>::size() const
 {
     return (width_ * height_ * sizeof(ValType));
-}
-
-//template <typename ValType> inline
-//typename const RawImage<ValType>::Pixels& RawImage<ValType>::operator[](std::size_t row) const
-//{
-//    return image_[row];
-//}
-
-//template <typename ValType> inline
-//typename RawImage<ValType>::Pixels& RawImage<ValType>::operator[](std::size_t row)
-//{
-//    return image_[row];
-//}
-
-template <typename ValType> inline
-RawImage<ValType>::const_reference RawImage<ValType>::at(std::size_t col,
-                                                         std::size_t row) const
-{
-    // TODO: Perform checks.
-    return image_[col + width_ * row];
-}
-
-template <typename ValType> inline
-RawImage<ValType>::reference RawImage<ValType>::at(std::size_t col, std::size_t row)
-{
-    // TODO: Perform checks.
-    return image_[col + width_ * row];
 }
 
 // Return a set of brightness values of the pixel itself and surrounding neighbours.
