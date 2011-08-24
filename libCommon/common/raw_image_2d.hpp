@@ -139,31 +139,32 @@ std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
 }
 
 template <typename ValType> inline
-RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(std::size_t col,
-                                                                std::size_t row) const
+typename RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(
+    std::size_t col, std::size_t row) const
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
 }
 
 template <typename ValType> inline
-RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(std::size_t col,
-                                                               std::size_t row)
+typename RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(
+    std::size_t col, std::size_t row)
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return image_[col + width_ * row];
 }
 
 template <typename ValType> inline
-RawImage2D<ValType>::const_reference RawImage2D<ValType>::at(std::size_t col,
-                                                             std::size_t row) const
+typename RawImage2D<ValType>::const_reference RawImage2D<ValType>::at(
+    std::size_t col, std::size_t row) const
 {
     check_range(col, row);
     return image_[col + width_ * row];
 }
 
 template <typename ValType> inline
-RawImage2D<ValType>::reference RawImage2D<ValType>::at(std::size_t col, std::size_t row)
+typename RawImage2D<ValType>::reference RawImage2D<ValType>::at(
+    std::size_t col, std::size_t row)
 {
     check_range(col, row);
     return image_[col + width_ * row];
@@ -220,14 +221,14 @@ typename RawImage2D<ValType>::Pixels RawImage2D<ValType>::get_neighbour_values(
     indices.push_back(std::make_pair(col, row));
 
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
-        retvalue.push_back(this->operator ()(it->first, it->second);
+        retvalue.push_back(this->operator ()(it->first, it->second));
 
     return retvalue;
 }
 
 // Returns indices of all first-order neighbours of given pixel.
 template <typename ValType>
-typename RawImage<ValType>::Indices RawImage2D<ValType>::get_neighbours(
+typename RawImage2D<ValType>::Indices RawImage2D<ValType>::get_neighbours(
     std::size_t col, std::size_t row) const
 {
     Indices retvalue;

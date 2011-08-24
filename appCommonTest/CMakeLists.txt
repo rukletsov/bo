@@ -8,6 +8,7 @@ SET (AppCommonTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vector_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/timer_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image_2d_unittest.cpp
 )
 
 # For additional dependencies check the root CMakeLists.
@@ -49,6 +50,7 @@ ENDFUNCTION (TestCase test_name)
 TestCase(Vector)
 TestCase(Mesh)
 TestCase(Timer)
+TestCase(RawImage2D)
 
 
 # Supress MSVC-specific compiler and linker warnings.

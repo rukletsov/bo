@@ -26,7 +26,7 @@ Mesh class
 
 RawImage<> class
 ================================================================================
-* Add iterator support and offset() function.
+* Add iterator support.
 * Rewrite OpenCV I/O functions (get rid of templated RawImage classes).
 * Provide I/O for Qt classes.
 * Write tests.
