@@ -54,29 +54,37 @@ SET (LibCommon_HDRS
 )
 
 
-# Enable usage for precompiled header for MSVC compiler for C++ sources.
-IF ((MSVC) AND (UsePch))
-    # Print info message.
-    MESSAGE (STATUS "Precompiled headers enabled through \"pch.h\" and \"pch.cpp\"")
+# Enable precompiled headers if requested by the user.
+IF (UsePch)
 
-    # Set preprocessor directive USE_PCH so we can use it code sources.
+    # Set preprocessor directive USE_PCH so we can use it in code sources.
     ADD_DEFINITIONS (-DUSE_PCH)
 
-    # Set "use precompiled header" option for every ".cpp" file.
-    FOREACH (src_file ${LibCommon_SRCS})
-        SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yupch.h")
-    ENDFOREACH (src_file ${LibCommon_SRCS})
+    # MSVC-specific handling of precompiled headers.
+    IF (MSVC)
+        # Print info message.
+        MESSAGE (STATUS "Precompiled header enabled through \"pch.h\" and \"pch.cpp\"")
 
-    # Set "create precompiled header" option only for "pch.cpp" file.
-    SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
-                                 PROPERTIES COMPILE_FLAGS "/Ycpch.h")
+        # Set "use precompiled header" option for every ".cpp" file.
+        FOREACH (src_file ${LibCommon_SRCS})
+            SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yupch.h")
+        ENDFOREACH (src_file ${LibCommon_SRCS})
 
-    # Add "pch.cpp" file to the list of C++ sources.
-    SET (LibCommon_SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
-        ${LibCommon_SRCS})
+        # Set "create precompiled header" option only for "pch.cpp" file.
+        SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
+                                     PROPERTIES COMPILE_FLAGS "/Ycpch.h")
 
-ENDIF ((MSVC) AND (UsePch))
+        # Add "pch.cpp" file to the list of C++ sources.
+        SET (LibCommon_SRCS
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
+            ${LibCommon_SRCS})
+
+    ENDIF (MSVC)
+
+    # Enable usage for precompiled header for non-MSVC compilers (NOT TESTED, can
+    # miss some actions. Should be expanded separately for every supported compiler.
+
+ENDIF (UsePch)
 
 
 # For additional dependencies check the root CMakeLists.

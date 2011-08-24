@@ -72,6 +72,8 @@ LIBRARY
 [DONE] * Write tests for Timer class.
 [DONE] * Use alternative new operator in test application for more verbose 
   memory leaks. See CRT debug heap for details.
+[DONE] * Add "#if defined __cplusplus" to precompiled header for C++ files, so
+  the precompiled header can also be used in C files.
   
 RawImage<> class
 --------------------------------------------------------------------------------
