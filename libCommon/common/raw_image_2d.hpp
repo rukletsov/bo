@@ -63,9 +63,9 @@ public:
     typedef ValType& reference;
     typedef const ValType& const_reference;
 
-    typedef std::vector<ValType> Pixels;
     typedef std::pair<std::size_t, std::size_t> Index;
     typedef std::vector<Index> Indices;
+    typedef std::vector<ValType> Pixels;
 
 public:
     // Create either a NULL image or uninitialized [width, height] image.
