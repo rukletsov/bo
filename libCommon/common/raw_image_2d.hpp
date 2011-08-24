@@ -41,7 +41,7 @@
 #include <utility>
 
 #include <boost/cstdint.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 #include <boost/utility.hpp>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
@@ -55,7 +55,7 @@ namespace common {
 template <typename ValType>
 class RawImage2D : boost::noncopyable
 {
-    typedef boost::scoped_ptr<ValType> ImageDataPtr;
+    typedef boost::scoped_array<ValType> ImageDataPtr;
 
 public:
     typedef ValType value_type;
