@@ -29,7 +29,7 @@ RawImage<> class
 * Add iterator support.
 * Rewrite OpenCV I/O functions (get rid of templated RawImage classes).
 * Provide I/O for Qt classes.
-* Write tests.
+* Write tests: last pixel check, real data, etc.
 
 Vector<> class
 ================================================================================

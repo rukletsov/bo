@@ -126,8 +126,12 @@ RawImage2D<ValType>::RawImage2D() : width_(0), height_(0), image_(NULL)
 
 template <typename ValType>
 RawImage2D<ValType>::RawImage2D(std::size_t width, std::size_t height) :
-    width_(width), height_(height), image_(new ValType[width * height])
-{ }
+    width_(width), height_(height), image_(NULL)
+{
+    // Allocate memory only if both dimensions greater than zero.
+    if ((width > 0) && (height > 0))
+        image_.reset(new ValType[width * height]);
+}
 
 template <typename ValType> inline
 std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
