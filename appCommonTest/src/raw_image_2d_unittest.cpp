@@ -17,6 +17,16 @@ protected:
     RawImage2DTest(): im1_(400, 300), im2_(5, 1), im3_(1, 7), im4_(0, 6)
     { }
 
+    virtual void SetUp()
+    {
+        // Nullify im3_ image.
+        memset(im3_.data(), 0, im3_.size() * sizeof(boost::uint8_t));
+
+        // Initialize im2_ image.
+        for (std::size_t i = 0; i < im2_.size(); ++i)
+            im2_.at(i, 0) = double(i);
+    }
+
     // Variables for all RawImage2D<> tests to use.
     RawImage2D<float> im1_;
     RawImage2D<double> im2_;
