@@ -49,3 +49,43 @@ TEST_F(RawImage2DTest, SizeConstructor)
     EXPECT_TRUE(im4_.is_null());
     EXPECT_EQ(std::size_t(0), im4_.size());
 }
+
+TEST_F(RawImage2DTest, OffsetCalculation)
+{
+    // Method offset() doesn't throw exceptions when wrong index is used. Instead a
+    // debug assertion is used. Since assertion leads to a special state of a program
+    // (usually termination and via abort()), corresponding tests are placed in a
+    // special test case for so-called "death tests". However, valid indices should
+    // be always processed without any crashes.
+    EXPECT_EQ(std::size_t(0), im1_.offset(0, 0));
+    EXPECT_EQ(std::size_t(im1_.width()), im1_.offset(0, 1));
+    EXPECT_EQ(std::size_t(12824), im1_.offset(24, 32));
+    EXPECT_EQ(std::size_t(im1_.size() - 1), im1_.offset(399, 299));
+
+    EXPECT_EQ(std::size_t(4), im2_.offset(4, 0));
+}
+
+
+// An aliased fixture for so-called "death tests".
+typedef RawImage2DTest RawImage2DDeathTest;
+
+#ifdef _DEBUG
+
+TEST_F(RawImage2DDeathTest, OffsetAssertions)
+{
+    // Calculating offset for invalid index should lead to a debug assertion, which
+    // expected to entail a program termination in debug mode (at least for console
+    // applications).
+    EXPECT_DEATH(im1_.offset(400, 299), ".*");
+    EXPECT_DEATH(im1_.offset(399, 300), ".*");
+    EXPECT_DEATH(im1_.offset(-1, 0), ".*");
+    EXPECT_DEATH(im1_.offset(399, -1), ".*");
+
+    EXPECT_DEATH(im2_.offset(4, 1), ".*");
+    EXPECT_DEATH(im3_.offset(1, 1), ".*");
+
+    EXPECT_DEATH(im4_.offset(0, 0), ".*");
+    EXPECT_DEATH(im4_.offset(-1, 1), ".*");
+}
+
+#endif
