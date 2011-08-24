@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "common/raw_image_2d.hpp"
+#include "debug_alloc.hpp"
 
 using namespace common;
 

@@ -1,11 +1,7 @@
 
 #include "gtest/gtest.h"
 
-#if defined(_MSC_VER) && defined(_DEBUG)
-#   define _CRTDBG_MAP_ALLOC
-#   include <cstdlib>
-#   include <crtdbg.h>
-#endif // defined(_MSC_VER) && defined(_DEBUG)
+#include "debug_alloc.hpp"
 
 // Directory where test data is stored.
 std::string DataDirectory;
@@ -17,8 +13,6 @@ int main(int argc, char* argv[])
     // new operator to one with more info about the leaked block, tracking of all
     // allocations and redirecting output to the stderr.
 #if defined(_MSC_VER) && defined(_DEBUG)
-#   define new new(_CLIENT_BLOCK, __FILE__, __LINE__)
-
     _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
 

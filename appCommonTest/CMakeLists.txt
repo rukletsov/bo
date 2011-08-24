@@ -11,8 +11,13 @@ SET (AppCommonTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image_2d_unittest.cpp
 )
 
+SET (AppCommonTest_HDRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/debug_alloc.hpp
+)
+
 # For additional dependencies check the root CMakeLists.
-INCLUDE_DIRECTORIES ($ENV{GTEST_ROOT}/include
+INCLUDE_DIRECTORIES (./include
+                     $ENV{GTEST_ROOT}/include
                      ${LIBCOMMON_ROOT}
 )
      
@@ -24,6 +29,7 @@ LINK_DIRECTORIES ($ENV{GTEST_ROOT}/stage/lib
 # Compile our Library.
 ADD_EXECUTABLE (AppCommonTest
                 ${AppCommonTest_SRCS}
+                ${AppCommonTest_HDRS}
 )
 
 TARGET_LINK_LIBRARIES (AppCommonTest

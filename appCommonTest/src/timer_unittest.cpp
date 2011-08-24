@@ -18,6 +18,8 @@
 #define USE_BOOST_TIMER
 #include "common/performance.hpp"
 
+#include "debug_alloc.hpp"
+
 using namespace common;
 
 
