@@ -40,7 +40,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include <boost/cstdint.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/utility.hpp>
 #include <boost/assert.hpp>

@@ -37,6 +37,7 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/3d_distances.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/ini_reader.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/io/raw_image_2d_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/config_parser/basic_configuration.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/config_parser/uon_basic_configuration.hpp
 	

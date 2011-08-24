@@ -45,6 +45,7 @@
 #define RAW_IMAGE_2D_IO_HPP_203C45E7_9EA0_4B4C_AE8C_A5600E517560_
 
 #include <limits>
+#include <boost/cstdint.hpp>
 
 // Enable OpenCV usage only when explicitly requested.
 // Depending on the version of OpenCV you link to, one of the following
