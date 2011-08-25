@@ -23,7 +23,7 @@ protected:
         memset(im3_.data(), 0, im3_.size() * sizeof(boost::uint8_t));
 
         // Initialize im2_ image.
-        for (std::size_t i = 0; i < im2_.size(); ++i)
+        for (std::size_t i = 0; i < im2_.width(); ++i)
             im2_.at(i, 0) = double(i);
     }
 
@@ -74,6 +74,26 @@ TEST_F(RawImage2DTest, OffsetCalculation)
     EXPECT_EQ(std::size_t(im1_.size() - 1), im1_.offset(399, 299));
 
     EXPECT_EQ(std::size_t(4), im2_.offset(4, 0));
+}
+
+TEST_F(RawImage2DTest, SettersGetters)
+{
+    // These checks are done implicitly in almost all other tests (as well during
+    // SetUp() call). However several tests will be provided here in order to ensure
+    // the coverage of the test.
+    EXPECT_DOUBLE_EQ(0., im2_(0, 0));
+    EXPECT_DOUBLE_EQ(1., im2_.at(1, 0));
+    EXPECT_DOUBLE_EQ(3., im2_(3, 0));
+    EXPECT_DOUBLE_EQ(4., im2_.at(4, 0));
+
+    im3_.(0, 1) = boost::uint8_t(5);
+    im3_.at(0, 6) = boost::uint8_t(4);
+
+    std::size_t sum(0);
+    for (std::size_t i = 0; i < im3_.size(); ++i)
+        sum += im3_.data()[i];
+
+    EXPECT_EQ(std::size_t(9), sum);
 }
 
 
