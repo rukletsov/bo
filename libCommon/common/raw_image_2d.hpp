@@ -86,11 +86,15 @@ public:
     const_reference at(std::size_t col, std::size_t row) const;
     reference at(std::size_t col, std::size_t row);
 
-    // Returns raw pointer for direct access to image data.
+    // Returns raw pointer for direct access to image data. However is_null() method
+    // should be used for checking if image's pixel data is accessible.
     const ValType* data() const;
     ValType* data();
 
-    // Returns true if image data is NULL.
+    // Returns true if image data is NULL. In current implementation image is
+    // considered to be valid iff its data() != NULL. This may change in future:
+    // theoretically a pointer returned by data() can be non-NULL, while is_null()
+    // returns true.
     bool is_null() const;
 
     // These methods provide information about underlying image geometry. Note that

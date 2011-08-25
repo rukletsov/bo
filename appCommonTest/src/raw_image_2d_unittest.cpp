@@ -134,6 +134,14 @@ TEST_F(RawImage2DTest, NullCheck)
 
     EXPECT_TRUE(im_invalid1_.is_null());
     EXPECT_TRUE((RawImage2D<int>()).is_null());
+
+    // Check the return value of data() method.
+    EXPECT_TRUE(NULL != im1_.data());
+    EXPECT_TRUE(NULL != im2_.data());
+    EXPECT_TRUE(NULL != im3_.data());
+
+    EXPECT_EQ(NULL, im_invalid1_.data());
+    EXPECT_EQ(NULL, (RawImage2D<int>()).data());
 }
 
 
