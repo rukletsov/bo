@@ -14,7 +14,7 @@ class RawImage2DTest: public testing::Test
 {
 protected:
 
-    RawImage2DTest(): im1_(400, 300), im2_(5, 1), im3_(1, 7), im4_(0, 6)
+    RawImage2DTest(): im1_(400, 300), im2_(5, 1), im3_(1, 7), im_invalid1_(0, 6)
     { }
 
     virtual void SetUp()
@@ -31,7 +31,7 @@ protected:
     RawImage2D<float> im1_;
     RawImage2D<double> im2_;
     RawImage2D<boost::uint8_t> im3_;
-    RawImage2D<float> im4_;
+    RawImage2D<float> im_invalid1_;
 };
 
 TEST_F(RawImage2DTest, DefaultConstructor)
@@ -57,8 +57,8 @@ TEST_F(RawImage2DTest, SizeConstructor)
     // the next byte doesn't.
 
     // An image with one of the dimensions equals zero should not be created.
-    EXPECT_TRUE(im4_.is_null());
-    EXPECT_EQ(std::size_t(0), im4_.size());
+    EXPECT_TRUE(im_invalid1_.is_null());
+    EXPECT_EQ(std::size_t(0), im_invalid1_.size());
 }
 
 TEST_F(RawImage2DTest, OffsetCalculation)
@@ -109,6 +109,11 @@ TEST_F(RawImage2DTest, BoundaryChecks)
     EXPECT_THROW(im2_.at(5, 0) = 1., ex_t);
     EXPECT_THROW(im2_.at(3, 1) = -1., ex_t);
 
+    // For invalid images (image data is NULL), every index is out of range.
+    EXPECT_THROW(im_invalid1_.at(0, 0) = 1.f, ex_t);
+    EXPECT_THROW(im_invalid1_.at(0, 3), ex_t);
+    EXPECT_THROW(im_invalid1_.at(1, 6) = -1.f, ex_t);
+
     // Operator () doesn't throw exceptions when wrong index is used. Instead a
     // debug assertion is called. Since assertion leads to a special state of a program
     // (usually termination and via abort()), corresponding tests are placed in a
@@ -138,8 +143,8 @@ TEST_F(RawImage2DDeathTest, OffsetAssertions)
     EXPECT_DEATH(im2_.offset(4, 1), ".*");
     EXPECT_DEATH(im3_.offset(1, 1), ".*");
 
-    EXPECT_DEATH(im4_.offset(0, 0), ".*");
-    EXPECT_DEATH(im4_.offset(-1, 1), ".*");
+    EXPECT_DEATH(im_invalid1_.offset(0, 0), ".*");
+    EXPECT_DEATH(im_invalid1_.offset(-1, 1), ".*");
 }
 
 TEST_F(RawImage2DDeathTest, BoundaryChecksAssertions)
@@ -151,6 +156,12 @@ TEST_F(RawImage2DDeathTest, BoundaryChecksAssertions)
     EXPECT_DEATH(im3_(-1, 0) = boost::uint8_t(0), ".*");
     EXPECT_DEATH(im3_(0, 7) = boost::uint8_t(1), ".*");
     EXPECT_DEATH(im3_(1, 2), ".*");
+
+    // For invalid images (image data is NULL), every index is out of range.
+    EXPECT_DEATH(im_invalid1_(0, -1), ".*");
+    EXPECT_DEATH(im_invalid1_(im_invalid1_.width() - 1, im_invalid1_.height() - 1)
+                 = 0.f, ".*");
+    EXPECT_DEATH(im_invalid1_(-1, 6), ".*");
 }
 
 #endif
