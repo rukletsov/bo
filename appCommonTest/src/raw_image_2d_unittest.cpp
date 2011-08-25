@@ -124,6 +124,18 @@ TEST_F(RawImage2DTest, BoundaryChecks)
     EXPECT_NO_THROW(im3_(0, 6));
 }
 
+TEST_F(RawImage2DTest, NullCheck)
+{
+    // Method is_null() should return true iff the image is invalid. If is_null()
+    // returns true, at() must throw an exception for any index.
+    EXPECT_FALSE(im1_.is_null());
+    EXPECT_FALSE(im2_.is_null());
+    EXPECT_FALSE(im3_.is_null());
+
+    EXPECT_TRUE(im_invalid1_.is_null());
+    EXPECT_TRUE((RawImage2D<int>()).is_null());
+}
+
 
 // An aliased fixture for so-called "death tests".
 typedef RawImage2DTest RawImage2DDeathTest;
