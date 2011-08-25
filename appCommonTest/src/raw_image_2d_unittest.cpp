@@ -86,7 +86,7 @@ TEST_F(RawImage2DTest, SettersGetters)
     EXPECT_DOUBLE_EQ(3., im2_(3, 0));
     EXPECT_DOUBLE_EQ(4., im2_.at(4, 0));
 
-    im3_.(0, 1) = boost::uint8_t(5);
+    im3_(0, 1) = boost::uint8_t(5);
     im3_.at(0, 6) = boost::uint8_t(4);
 
     std::size_t sum(0);
@@ -94,6 +94,29 @@ TEST_F(RawImage2DTest, SettersGetters)
         sum += im3_.data()[i];
 
     EXPECT_EQ(std::size_t(9), sum);
+}
+
+TEST_F(RawImage2DTest, BoundaryChecks)
+{
+    typedef std::out_of_range ex_t;
+
+    // An exception should be throw by at() iff the given index is out of range.
+    EXPECT_NO_THROW(im2_.at(0, 0));
+    EXPECT_NO_THROW(im2_.at(4, 0) = 1.);
+
+    EXPECT_THROW(im2_.at(-1, 0), ex_t);
+    EXPECT_THROW(im2_.at(0, -1), ex_t);
+    EXPECT_THROW(im2_.at(5, 0) = 1., ex_t);
+    EXPECT_THROW(im2_.at(3, 1) = -1., ex_t);
+
+    // Operator () doesn't throw exceptions when wrong index is used. Instead a
+    // debug assertion is called. Since assertion leads to a special state of a program
+    // (usually termination and via abort()), corresponding tests are placed in a
+    // special test case for so-called "death tests". However, valid indices should
+    // be always processed without any crashes.
+    EXPECT_NO_THROW(im3_(0, 0) = boost::uint8_t(1));
+    EXPECT_NO_THROW(im3_(0, 2) = boost::uint8_t(0));
+    EXPECT_NO_THROW(im3_(0, 6));
 }
 
 
@@ -117,6 +140,17 @@ TEST_F(RawImage2DDeathTest, OffsetAssertions)
 
     EXPECT_DEATH(im4_.offset(0, 0), ".*");
     EXPECT_DEATH(im4_.offset(-1, 1), ".*");
+}
+
+TEST_F(RawImage2DDeathTest, BoundaryChecksAssertions)
+{
+    // Accessing image pixel data by a wrong index should lead to a debug assertion.
+    // It is expected to terminate the program in debug mode. Note that at() function
+    // should not use assertions (but exceptions) and therefore should not be checked.
+    EXPECT_DEATH(im3_(0, -1), ".*");
+    EXPECT_DEATH(im3_(-1, 0) = boost::uint8_t(0), ".*");
+    EXPECT_DEATH(im3_(0, 7) = boost::uint8_t(1), ".*");
+    EXPECT_DEATH(im3_(1, 2), ".*");
 }
 
 #endif
