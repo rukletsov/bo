@@ -144,6 +144,17 @@ TEST_F(RawImage2DTest, NullCheck)
     EXPECT_EQ(NULL, (RawImage2D<int>()).data());
 }
 
+TEST_F(RawImage2DTest, SizeCheck)
+{
+    // Method size() should not throw and should always be zero for invalid images.
+    // It should correlate with width() and height() methods as well.
+    EXPECT_EQ(std::size_t(5), im2_.size());
+    EXPECT_EQ(std::size_t(0), im_invalid1_.size());
+
+    EXPECT_EQ(im3_.size(), im3_.width() * im3_.height());
+    EXPECT_EQ(im_invalid1_.size(), im_invalid1_.width() * im_invalid1_.height());
+}
+
 
 // An aliased fixture for so-called "death tests".
 typedef RawImage2DTest RawImage2DDeathTest;
