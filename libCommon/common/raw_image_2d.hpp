@@ -72,9 +72,13 @@ public:
     RawImage2D();
     RawImage2D(std::size_t width, std::size_t height);
 
-    // Calculates an offset of the pixel value by the given image indices. Asserts
-    // if indices are out of range.
+    // Calculates an offset of the pixel value by a given image index. Asserts if
+    // the index is out of range.
     std::size_t offset(std::size_t col, std::size_t row) const;
+
+    // Calculates an index pair from a given offset (behaves like offset() inverse.
+    // Asserts if index is out of range.
+    Index index(std::size_t offset) const;
 
     // Assignment and access operators. Range-check is done by via debug-only
     // assertions. Use at() methods for safer but less efficient alternative.
@@ -146,6 +150,16 @@ std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
 }
 
 template <typename ValType> inline
+typename RawImage2D<ValType>::Index RawImage2D<ValType>::index(
+    std::size_t offset) const
+{
+    Index retvalue = std::make_pair(offset % width(), offset / width());
+    BOOST_ASSERT(is_valid_index(retvalue.first, retvalue.second) &&
+                 "Offset is out of range.");
+    return retvalue;
+}
+
+template <typename ValType> inline
 typename RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(
     std::size_t col, std::size_t row) const
 {
@@ -192,8 +206,7 @@ ValType* RawImage2D<ValType>::data()
 template <typename ValType> inline
 bool RawImage2D<ValType>::is_null() const
 {
-    return
-        (image_.get() == NULL);
+    return (image_.get() == NULL);
 }
 
 template <typename ValType> inline
@@ -211,8 +224,7 @@ std::size_t RawImage2D<ValType>::height() const
 template <typename ValType> inline
 std::size_t RawImage2D<ValType>::size() const
 {
-    return
-        (width_ * height_);
+    return (width_ * height_);
 }
 
 // Returns a set of brightness values of the pixel itself and surrounding neighbours.
@@ -267,8 +279,7 @@ double RawImage2D<ValType>::av_dist(std::size_t col, std::size_t row) const
                         this->operator ()(it->first, it->second));
     }
 
-    return
-        (retvalue / indices.size());
+    return (retvalue / indices.size());
 }
 
 template <typename ValType>

@@ -76,6 +76,32 @@ TEST_F(RawImage2DTest, OffsetCalculation)
     EXPECT_EQ(std::size_t(4), im2_.offset(4, 0));
 }
 
+TEST_F(RawImage2DTest, IndexCalculation)
+{
+    // Method index() doesn't throw exceptions when wrong offset is used. It behaves
+    // like offset() if a bad index is used.
+    RawImage2D<float>::Index index;
+
+    index = im1_.index(0);
+    EXPECT_EQ(std::size_t(0), index.first);
+    EXPECT_EQ(std::size_t(0), index.second);
+
+    index = im1_.index(61801); // [201, 154]
+    EXPECT_EQ(std::size_t(201), index.first);
+    EXPECT_EQ(std::size_t(154), index.second);
+
+    index = im1_.index(im1_.offset(18, 237)); // [18, 237]
+    EXPECT_EQ(std::size_t(18), index.first);
+    EXPECT_EQ(std::size_t(237), index.second);
+
+    index = im1_.index(23544);
+    EXPECT_EQ(std::size_t(23544), im1_.offset(index.first, index.second));
+
+    index = im1_.index(im1_.size() - 1);
+    EXPECT_EQ(std::size_t(im1_.width() - 1), index.first);
+    EXPECT_EQ(std::size_t(im1_.height() - 1), index.second);
+}
+
 TEST_F(RawImage2DTest, SettersGetters)
 {
     // These checks are done implicitly in almost all other tests (as well during
@@ -155,6 +181,8 @@ TEST_F(RawImage2DTest, SizeCheck)
     EXPECT_EQ(im_invalid1_.size(), im_invalid1_.width() * im_invalid1_.height());
 }
 
+// TODO: provide tests for other RawImage2D functions.
+
 
 // An aliased fixture for so-called "death tests".
 typedef RawImage2DTest RawImage2DDeathTest;
@@ -176,6 +204,16 @@ TEST_F(RawImage2DDeathTest, OffsetAssertions)
 
     EXPECT_DEATH(im_invalid1_.offset(0, 0), ".*");
     EXPECT_DEATH(im_invalid1_.offset(-1, 1), ".*");
+}
+
+TEST_F(RawImage2DDeathTest, IndexAssertions)
+{
+    // Expected to work very similar to offset() method.
+    EXPECT_DEATH(im1_.index(-1), ".*");
+    EXPECT_DEATH(im3_.index(im3_.size()), ".*");
+
+    EXPECT_DEATH(im_invalid1_.index(0), ".*");
+    EXPECT_DEATH(im_invalid1_.index(1), ".*");
 }
 
 TEST_F(RawImage2DDeathTest, BoundaryChecksAssertions)
