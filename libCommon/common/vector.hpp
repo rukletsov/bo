@@ -91,6 +91,13 @@ public:
     const Vector<T, N>& operator+=(const Vector<T, N>& other);
     const Vector<T, N>& operator-=(const Vector<T, N>& other);
 
+    // Unary negation operator. Creates a new Vector<T, N> and copies every element,
+    // taken with the minus sign. Uses std::transform and std::negate<> in current
+    // implementation. Another possible way to do this is multiplication by -1. In
+    // this case type T should provide a c-tor taking -1 as single argument. This
+    // approach seems to be less rational as the current one.
+    Vector<T, N> operator-() const;
+
     // Assignment and access operators. Range-check is done by boost::array via 
     // debug-only assertions. Use at() method for safer but less efficient version 
     // with exceptions.
@@ -333,6 +340,16 @@ const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
         components_[i] -= other.components_[i];
 
     return *this;
+}
+
+template <typename T, std::size_t N>
+Vector<T, N> Vector<T, N>::operator-() const
+{
+    Vector<T, N> retvalue;
+    std::transform(components_.begin(), components_.end(), retvalue.components_.begin(),
+                   std::negate<T>());
+
+    return retvalue;
 }
 
 template <typename T, std::size_t N> inline

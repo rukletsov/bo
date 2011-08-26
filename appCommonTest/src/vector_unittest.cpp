@@ -128,7 +128,22 @@ TEST_F(VectorTest, BoundaryChecks)
     double double_val = vec3_[vec3_.size() - 1];
 }
 
-TEST_F(VectorTest, VectorScalarArithmetics)
+TEST_F(VectorTest, VectorUnaryArithmetic)
+{
+    Vector<double, 3> double_vec = -vec2_;
+    EXPECT_DOUBLE_EQ(-5., double_vec[0]);
+    EXPECT_DOUBLE_EQ(-5., double_vec[1]);
+    EXPECT_DOUBLE_EQ(-5., double_vec[2]);
+
+    double_vec = -vec3_ + vec3_;
+    EXPECT_DOUBLE_EQ(0., double_vec.sum());
+    EXPECT_DOUBLE_EQ(0., double_vec.min_element());
+    EXPECT_DOUBLE_EQ(0., double_vec.max_element());
+
+    EXPECT_EQ(-(vec4_.sum()), (-vec4_).sum());
+}
+
+TEST_F(VectorTest, VectorScalarArithmetic)
 {
     Vector<int, 4> int_vec = vec4_ * int(2);
     EXPECT_EQ(int(18), int_vec.x());
@@ -155,7 +170,7 @@ TEST_F(VectorTest, VectorScalarArithmetics)
     EXPECT_EQ(int(2), int_vec.w());
 }
 
-TEST_F(VectorTest, VectorVectorArithmetics)
+TEST_F(VectorTest, VectorVectorArithmetic)
 {
     Vector<double, 3> double_vec = vec2_ + vec3_;
     EXPECT_DOUBLE_EQ(5.3, double_vec.x());
