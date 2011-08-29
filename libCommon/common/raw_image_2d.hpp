@@ -72,9 +72,10 @@ public:
     RawImage2D();
     RawImage2D(std::size_t width, std::size_t height);
 
-    // Calculates an offset of the pixel value by a given image index. Asserts if
-    // the index is out of range.
+    // Calculate an offset of the pixel value by a given image index. Assert if the
+    // index is out of range.
     std::size_t offset(std::size_t col, std::size_t row) const;
+    std::size_t offset(const Index& index) const;
 
     // Calculates an index pair from a given offset (behaves like offset() inverse.
     // Asserts if index is out of range.
@@ -145,8 +146,13 @@ template <typename ValType> inline
 std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
 {
     BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
-    return
-        (col + width_ * row);
+    return (col + width_ * row);
+}
+
+template <typename ValType> inline
+std::size_t RawImage2D<ValType>::offset(const Index& index) const
+{
+    return offset(index.first, index.second);
 }
 
 template <typename ValType> inline
