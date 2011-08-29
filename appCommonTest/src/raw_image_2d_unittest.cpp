@@ -27,6 +27,24 @@ protected:
             im2_.at(i, 0) = double(i);
     }
 
+    template <typename T>
+    static RawImage2D<T>* bw_stripes(std::size_t width, std::size_t height)
+    {
+        RawImage2D<T>* retvalue = new RawImage2D<T>(width, height);
+
+        // Fill image data with black and white stripes.
+        for (std::size_t col = 0; col < retvalue->width(); ++col)
+        {
+            T val = T(0);
+            if ((col % 4 == 2) || (col % 4 == 3))
+                val = T(1);
+            for (std::size_t row = 0; row < retvalue->height(); ++row)
+                retvalue->operator ()(col, row) = val;
+        }
+
+        return retvalue;
+    }
+
     // Variables for all RawImage2D<> tests to use.
     RawImage2D<float> im1_;
     RawImage2D<double> im2_;
@@ -98,7 +116,7 @@ TEST_F(RawImage2DTest, IndexCalculation)
     EXPECT_EQ(std::size_t(237), index.second);
 
     index = im1_.index(23544);
-    EXPECT_EQ(std::size_t(23544), im1_.offset(index.first, index.second));
+    EXPECT_EQ(std::size_t(23544), im1_.offset(index));
 
     index = im1_.index(im1_.size() - 1);
     EXPECT_EQ(std::size_t(im1_.width() - 1), index.first);
