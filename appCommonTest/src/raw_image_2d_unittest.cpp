@@ -52,6 +52,7 @@ protected:
     RawImage2D<float> im_invalid1_;
 };
 
+
 TEST_F(RawImage2DTest, DefaultConstructor)
 {
     // Default constructor should allocate no memory for the image.
@@ -59,6 +60,32 @@ TEST_F(RawImage2DTest, DefaultConstructor)
     EXPECT_EQ(std::size_t(0), image.width());
     EXPECT_EQ(std::size_t(0), image.height());
     EXPECT_EQ(NULL, image.data());
+}
+
+TEST_F(RawImage2DTest, CopyConstructor)
+{
+    // Copy c-tor should create a wrapper object for the same image data.
+    RawImage2D<float> image(im1_);
+
+    // Dimensions should be the same.
+    EXPECT_EQ(im1_.size(), image.size());
+    EXPECT_EQ(im1_.width(), image.width());
+    EXPECT_EQ(im1_.height(), image.height());
+
+    // Changing data through one object should be visible through others.
+    image.at(1, 1) = 2.f;
+    EXPECT_FLOAT_EQ(2.f, im1_.at(1, 1));
+
+    im1_(14, 78) *= 2;
+    EXPECT_FLOAT_EQ(im1_(14, 78), image(14, 78));
+
+    // One more copy.
+    RawImage2D<float> image2 = image;
+
+    // Image data should be the same.
+    EXPECT_EQ(im1_.data(), image2.data());
+    int diff = memcmp(image2.data(), image.data(), im1_.size());
+    EXPECT_EQ(int(0), diff);
 }
 
 TEST_F(RawImage2DTest, SizeConstructor)
