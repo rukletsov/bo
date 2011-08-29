@@ -73,7 +73,10 @@ TEST_F(RawImage2DTest, OffsetCalculation)
     EXPECT_EQ(std::size_t(12824), im1_.offset(24, 32));
     EXPECT_EQ(std::size_t(im1_.size() - 1), im1_.offset(399, 299));
 
-    EXPECT_EQ(std::size_t(4), im2_.offset(4, 0));
+    EXPECT_EQ(std::size_t(4), im2_.offset(RawImage2D<double>::Index(4, 0)));
+    EXPECT_EQ(std::size_t(0), im3_.offset(RawImage2D<double>::Index(0, 0)));
+
+    EXPECT_EQ(im3_.offset(0, 6), im3_.offset(RawImage2D<boost::uint8_t>::Index(0, 6)));
 }
 
 TEST_F(RawImage2DTest, IndexCalculation)
@@ -194,8 +197,8 @@ TEST_F(RawImage2DDeathTest, OffsetAssertions)
     // Calculating offset for invalid index should lead to a debug assertion, which
     // expected to entail a program termination in debug mode (at least for console
     // applications).
-    EXPECT_DEATH(im1_.offset(400, 299), ".*");
-    EXPECT_DEATH(im1_.offset(399, 300), ".*");
+    EXPECT_DEATH(im1_.offset(RawImage2D<float>::Index(400, 299)), ".*");
+    EXPECT_DEATH(im1_.offset(RawImage2D<float>::Index(399, 300)), ".*");
     EXPECT_DEATH(im1_.offset(-1, 0), ".*");
     EXPECT_DEATH(im1_.offset(399, -1), ".*");
 
@@ -203,7 +206,7 @@ TEST_F(RawImage2DDeathTest, OffsetAssertions)
     EXPECT_DEATH(im3_.offset(1, 1), ".*");
 
     EXPECT_DEATH(im_invalid1_.offset(0, 0), ".*");
-    EXPECT_DEATH(im_invalid1_.offset(-1, 1), ".*");
+    EXPECT_DEATH(im_invalid1_.offset(RawImage2D<float>::Index(-1, 1)), ".*");
 }
 
 TEST_F(RawImage2DDeathTest, IndexAssertions)
