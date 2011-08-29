@@ -40,21 +40,22 @@
 #include <stdexcept>
 #include <utility>
 
-#include <boost/scoped_array.hpp>
-#include <boost/utility.hpp>
+#include <boost/shared_array.hpp>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
 namespace common {
 
 // A class representing a 2D image with a template-dependent pixel type. Image data
-// is stored in a one-dimensional dynamic array under boost::scoped_ptr<>. Access to
+// is stored in a one-dimensional dynamic array under boost::shared_array<>. Access to
 // image's pixel values can be done by two indices. Raw pointer to image data can be
-// obtained. The class is noncopyable.
+// obtained as well. Copy c-tor and assignment operator don't copy image data, but
+// create a wrapper-object, pointing to the same image data. Use clone() if deep copy
+// is needed.
 template <typename ValType>
-class RawImage2D : boost::noncopyable
+class RawImage2D
 {
-    typedef boost::scoped_array<ValType> ImageDataPtr;
+    typedef boost::shared_array<ValType> ImageDataPtr;
 
 public:
     typedef ValType value_type;
