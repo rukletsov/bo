@@ -29,11 +29,11 @@ RawImage<> class
 * Add iterator support.
 * Rewrite OpenCV I/O functions (get rid of templated RawImage classes).
 * Provide I/O for Qt classes.
-* Provide index() function with range checking and death tests.
 * Write tests: last pixel check, real data, etc.
 
 Vector<> class
 ================================================================================
+* Consider using std algorithms (std::copy, std::swap, etc) instead of cycles.
 * Write tests: conversion from/to Vectors of different types; operations with
   converted vectors.
 
@@ -80,6 +80,7 @@ RawImage<> class
 [DONE] * Use 1D array.
 [DONE] * Provide is_null() method.
 [DONE] * Move IO-related code (RawImage<>::from_cvmat()) to "io/raw_image_io".
+[DONE] * Provide index() function with range checking and death tests.
 
 Vector<> class
 --------------------------------------------------------------------------------
