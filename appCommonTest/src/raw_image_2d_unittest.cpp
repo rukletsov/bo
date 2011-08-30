@@ -106,6 +106,48 @@ TEST_F(RawImage2DTest, SizeConstructor)
     EXPECT_EQ(std::size_t(0), im_invalid1_.size());
 }
 
+TEST_F(RawImage2DTest, Cloning)
+{
+    // Method clone() should create a deep copy of the object.
+    RawImage2D<float> image = im1_.clone();
+
+    // Dimensions should be the same.
+    EXPECT_EQ(im1_.size(), image.size());
+    EXPECT_EQ(im1_.width(), image.width());
+    EXPECT_EQ(im1_.height(), image.height());
+
+    // Right after the cloning image data should be the same in both objects.
+    int diff = memcmp(image.data(), im1_.data(), im1_.size());
+    EXPECT_EQ(int(0), diff);
+
+    // But objects should have separate image data.
+    RawImage2D<float>::Index index(12, 248);
+    im1_(index.first, index.second) += 10.f;
+    EXPECT_PRED_FORMAT2(::testing::FloatLE, image(index.first, index.second),
+                        im1_(index.first, index.second));
+    EXPECT_FLOAT_EQ(im1_(index.first, index.second),
+                    image(index.first, index.second) + 10.f);
+}
+
+TEST_F(RawImage2DTest, AssignmentOperator)
+{
+    RawImage2D<boost::uint8_t> image(5, 5);
+
+    // Assignment operator makes a shallow copy of the object.
+    image = im3_;
+
+    // Dimensions should be the same.
+    EXPECT_EQ(im3_.size(), image.size());
+    EXPECT_EQ(im3_.width(), image.width());
+    EXPECT_EQ(im3_.height(), image.height());
+
+    // As with copy c-tor, image data is shared among shallow copies.
+    image(0, 0) = 74;
+    im3_(0, 6) = -9;
+    int diff = memcmp(image.data(), im3_.data(), image.size());
+    EXPECT_EQ(int(0), diff);
+}
+
 TEST_F(RawImage2DTest, OffsetCalculation)
 {
     // Method offset() doesn't throw exceptions when wrong index is used. Instead a
