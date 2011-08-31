@@ -45,7 +45,10 @@
 #define RAW_IMAGE_2D_IO_HPP_203C45E7_9EA0_4B4C_AE8C_A5600E517560_
 
 #include <limits>
+#include <string>
 #include <boost/cstdint.hpp>
+
+#include "raw_image_2d.hpp"
 
 // Enable OpenCV usage only when explicitly requested.
 // Depending on the version of OpenCV you link to, one of the following
@@ -60,10 +63,12 @@
 #   endif
 #endif
 
-#include "raw_image_2d.hpp"
-
 namespace common {
 namespace io {
+
+// Saves RawImage2D<float> to a raw file (8 bytes per pixel, row by row).
+void save_raw_image_float_to_8bpps(common::RawImage2D<float> image,
+                                   const std::string& filename);
 
 // Convertion functions from and to OpenCV format are available on demand.
 #ifdef LIBCOMMON_USE_OPENCV

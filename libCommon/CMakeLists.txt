@@ -13,6 +13,7 @@ PROJECT (LibCommon)
 SET (LibCommon_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/mesh_io.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/raw_image_2d_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ini_reader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/methods/d25_active_contours.cpp
 )
