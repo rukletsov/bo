@@ -40,7 +40,6 @@
 
 using namespace boost::numeric::ublas;
 
-
 namespace common {
 namespace blas {
 

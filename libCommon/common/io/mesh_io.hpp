@@ -38,7 +38,6 @@
 #include <string>
 class common::Mesh;
 
-
 namespace common {
 namespace io {
 

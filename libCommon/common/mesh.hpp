@@ -41,9 +41,8 @@
 #include <string>
 #include <iostream>
 
-#include "vector.hpp"
-#include "triangle.hpp"
-
+#include "common/vector.hpp"
+#include "common/triangle.hpp"
 
 namespace common {
 

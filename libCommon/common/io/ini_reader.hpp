@@ -34,7 +34,6 @@
 
 *******************************************************************************/
 
-
 #ifndef INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_
 #define INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_
 
@@ -47,7 +46,6 @@
 #include <sstream>
 #include <vector>
 #include <map>
-
 #include <boost/algorithm/string.hpp>
 
 // Used only in print_sections_() function.

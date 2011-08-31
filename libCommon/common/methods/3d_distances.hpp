@@ -36,8 +36,7 @@
 #ifndef THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 #define THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 
-#include "vector.hpp"
-
+#include "common/vector.hpp"
 
 namespace common {
 namespace methods {
@@ -50,6 +49,7 @@ namespace detail {
 
 // The simplest case: the global minimum of Q(s, t) is located inside the triangle.
 // Just perform a postponed division.
+inline
 void region0_helper(double& s, double& t, const double& denominator)
 {
     double inv_factor = 1. / denominator;

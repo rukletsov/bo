@@ -40,7 +40,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <utility>
-
 #include <boost/shared_array.hpp>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>

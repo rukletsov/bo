@@ -35,7 +35,6 @@
 
 *******************************************************************************/
 
-
 #ifndef UON_BASIC_CONFIGURATION_HPP_7A47DDA3_838A_4177_AFD0_227E7B76FBAB_
 #define UON_BASIC_CONFIGURATION_HPP_7A47DDA3_838A_4177_AFD0_227E7B76FBAB_
 
@@ -44,9 +43,9 @@
 #include <boost/algorithm/string/detail/trim.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
-#include "vector.hpp"
-#include "ini_reader.hpp"
-#include "basic_configuration.hpp"
+#include "common/vector.hpp"
+#include "common/io/ini_reader.hpp"
+#include "common/io/config_parser/basic_configuration.hpp"
 
 // Enable ATK usage only when requested by the library user.
 #ifdef ATK_SUPPORTED

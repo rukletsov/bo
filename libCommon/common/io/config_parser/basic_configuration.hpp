@@ -32,11 +32,10 @@
 
 *******************************************************************************/
 
-
 #ifndef BASIC_CONFIGURATION_HPP_5F739AB0_F8FE_4996_ABEB_4E3335AA84C8_
 #define BASIC_CONFIGURATION_HPP_5F739AB0_F8FE_4996_ABEB_4E3335AA84C8_
 
-#include "ini_reader.hpp"
+#include "common/io/ini_reader.hpp"
 
 namespace common {
 namespace io {

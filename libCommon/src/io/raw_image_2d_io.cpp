@@ -2,8 +2,7 @@
 #include "pch.h"
 #include <fstream>
 
-#include "raw_image_2d_io.hpp"
-
+#include "common/io/raw_image_2d_io.hpp"
 
 namespace common {
 namespace io {

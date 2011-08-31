@@ -1,12 +1,10 @@
 
 #include "pch.h"
-
 #include <boost/scope_exit.hpp>
 
 #include "rply/rply.h"
-#include "mesh.hpp"
-#include "mesh_io.hpp"
-
+#include "common/mesh.hpp"
+#include "common/io/mesh_io.hpp"
 
 namespace {
 

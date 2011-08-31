@@ -40,7 +40,6 @@
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 
-
 namespace common {
 
 template <typename PointType>

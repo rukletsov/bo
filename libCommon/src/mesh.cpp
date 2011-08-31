@@ -1,14 +1,12 @@
 
 #include "pch.h"
-
 #include <stdexcept>
 #include <limits>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
-#include "mesh.hpp"
-#include "3d_distances.hpp"
-
+#include "common/mesh.hpp"
+#include "common/methods/3d_distances.hpp"
 
 namespace common {
 

@@ -38,7 +38,6 @@
 #include <iostream>
 #include <string>
 
-
 namespace common {
 
 inline

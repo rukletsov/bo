@@ -25,7 +25,7 @@ SET (LibCommon_CSRCS
 )
 
 SET (LibCommon_HDRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/pch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/pch.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/common/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/mesh.hpp
@@ -89,11 +89,7 @@ ENDIF (UsePch)
 
 
 # For additional dependencies check the root CMakeLists.
-INCLUDE_DIRECTORIES (./common
-                     ./common/blas
-                     ./common/methods
-                     ./common/io
-                     ./common/io/config_parser
+INCLUDE_DIRECTORIES (./
                      ./3rdparty
                      ./3rdparty/rply-1.01
                      ./3rdparty/libkdtree++_0.7.0

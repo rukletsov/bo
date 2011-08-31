@@ -73,7 +73,6 @@
   *
   */
 
-
 namespace common {
 
 #if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)

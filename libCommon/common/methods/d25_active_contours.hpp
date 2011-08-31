@@ -41,10 +41,9 @@
 #include <list>
 #include <vector>
 
-#include "vector.hpp"
-#include "triangle.hpp"
-#include "mesh.hpp"
-
+#include "common/vector.hpp"
+#include "common/triangle.hpp"
+#include "common/mesh.hpp"
 
 namespace common {
 namespace methods {

@@ -38,6 +38,8 @@
 #    include <string>
 #    include <vector>
 #    include <map>
+#    include <algorithm>
+#    include <functional>
 #    include <boost/cstdint.hpp>
 #    include <boost/assert.hpp>
 #    include <boost/array.hpp>

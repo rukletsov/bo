@@ -1,13 +1,12 @@
 
 #include "pch.h"
-
 #include <functional>
 #include <map>
 
 #include "svd/svd.h"
 #include "kdtree++/kdtree.hpp"
-#include "blas.hpp"
-#include "d25_active_contours.hpp"
+#include "common/blas/blas.hpp"
+#include "common/methods/d25_active_contours.hpp"
 
 //Uncomment for equal-square triangles propagation  
 //#define USE_EQUAL_SQUARE_PROPAGATION

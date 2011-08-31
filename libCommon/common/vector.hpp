@@ -48,7 +48,6 @@
 #include <boost/format.hpp>
 #include <boost/static_assert.hpp>
 
-
 namespace common {
 
 // Basic n-vector. Some methods, such as x(), y(), cross_product() are available
