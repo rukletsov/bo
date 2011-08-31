@@ -6,6 +6,7 @@ LIBRARY
 * Add CMake option for GTest and, probably, Boost (consider using FindBoost).
 * Implement (or find and use) global Logger class.
 * Add memleak tests (check Application Verifier, Dr. Memory; CTest).
+* Comments in Doxygen style (Qt style?).
 
 Mesh class
 ================================================================================
