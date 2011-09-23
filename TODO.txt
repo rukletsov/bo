@@ -50,6 +50,11 @@ IniReader class
 * Write tests. 
 * Add errors handling.
 
+Methods namespace
+================================================================================
+* Add function performing linear filtering for RawImage<> (filter2D).
+* Add kernels for Sobel, Laplacian, Prewitt operators.
+
 
 
 ================================================================================
