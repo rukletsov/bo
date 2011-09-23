@@ -21,7 +21,6 @@ SET (LibCommon_SRCS
 # A special section for C sources, which should be compiled using C compiler, not C++
 SET (LibCommon_CSRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.c
 )
 
 SET (LibCommon_HDRS
@@ -44,7 +43,7 @@ SET (LibCommon_HDRS
 	
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.h
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/kdtree.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libkdtree++_0.7.0/kdtree++/allocator.hpp

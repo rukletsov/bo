@@ -3,8 +3,8 @@
 #include <functional>
 #include <map>
 
-#include "svd/svd.h"
-#include "kdtree++/kdtree.hpp"
+#include "3rdparty/svd/svd.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/kdtree.hpp"
 #include "common/blas/blas.hpp"
 #include "common/methods/d25_active_contours.hpp"
 
