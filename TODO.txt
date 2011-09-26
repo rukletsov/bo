@@ -7,6 +7,7 @@ LIBRARY
 * Implement (or find and use) global Logger class.
 * Add memleak tests (check Application Verifier, Dr. Memory; CTest).
 * Comments in Doxygen style (Qt style?).
+* Suppress warnings in headers using pragma push/pop.
 
 Mesh class
 ================================================================================
