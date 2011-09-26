@@ -54,6 +54,7 @@ Methods namespace
 ================================================================================
 * Add function performing linear filtering for RawImage<> (filter2D).
 * Add kernels for Sobel, Laplacian, Prewitt operators.
+* Create test images and test filtering with several kernels.
 
 
 
