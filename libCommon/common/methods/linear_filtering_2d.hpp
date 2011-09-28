@@ -38,6 +38,7 @@
 #include <cmath>
 
 #include "common/raw_image_2d.hpp"
+#include "common/extended_math.hpp"
 
 namespace common {
 namespace methods {
@@ -142,8 +143,8 @@ common::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
 
     for (std::size_t col = 0; col < image_width; ++col) {
         for (std::size_t row = 0; row < image.height(); ++row) {
-            filtered_image(col, row) = sqrt(sobel_col(col, row) * sobel_col(col, row) +
-                                            sobel_row(col, row) * sobel_row(col, row));
+            filtered_image(col, row) = sqrt(square(sobel_col(col, row)) +
+                                            square(sobel_row(col, row)));
     }   }
 
     return filtered_image;

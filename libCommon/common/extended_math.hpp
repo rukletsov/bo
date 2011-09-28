@@ -41,7 +41,7 @@
 namespace common {
 
 template <typename T> inline
-T sqr(const T& arg)
+T square(const T& arg)
 {
     return (arg1 * arg);
 }
