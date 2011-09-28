@@ -38,7 +38,6 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <functional>
 #include <stdexcept>
 #include <utility>
 #include <boost/shared_array.hpp>
@@ -356,51 +355,6 @@ void RawImage2D<ValType>::check_range(std::size_t col, std::size_t row) const
     }
 }
 
-
-// Class free functions. These functions strongly depend on pixel type and therefore
-// defined outside the class.
-
-namespace detail {
-
-// Functor
-template <typename ValType>
-struct invert_brightness: public std::unary_function<ValType, ValType>
-{
-    explicit
-    invert_brightness(const ValType& max_value): max_value_(max_value)
-    { }
-
-    ValType operator()(const ValType& value) const
-    {
-        return (max_value_ - value);
-    }
-
-    ValType max_value_;
-};
-
-} // namespace detail
-
-// Returns an inverted image with float pixels. Supposes pixel values are in [0..1].
-inline
-RawImage2D<float> invert(const RawImage2D<float>& image)
-{
-    RawImage2D<float> inverted(image.width(), image.height());
-    std::transform(image.data(), image.data() + image.size(), inverted.data(),
-                   detail::invert_brightness<float>(1.f));
-
-    return inverted;
-}
-
-// Returns an inverted image with double pixels. Supposes pixel values are in [0..1].
-inline
-RawImage2D<double> invert(const RawImage2D<double>& image)
-{
-    RawImage2D<double> inverted(image.width(), image.height());
-    std::transform(image.data(), image.data() + image.size(), inverted.data(),
-                   detail::invert_brightness<double>(1.));
-
-    return inverted;
-}
-
 } // namespace common
+
 #endif // RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_
