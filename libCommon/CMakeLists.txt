@@ -33,6 +33,7 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/common/errors.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/performance.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/raw_image_2d.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/blas/blas.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/d25_active_contours.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/3d_distances.hpp
