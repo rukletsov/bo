@@ -43,13 +43,13 @@ namespace common {
 template <typename T> inline
 T square(const T& arg)
 {
-    return (arg1 * arg);
+    return (arg * arg);
 }
 
 template <typename T> inline
-T cube(const T& arg1)
+T cube(const T& arg)
 {
-    return (arg1 * arg1 * arg1);
+    return (arg * arg * arg);
 }
 
 } // namespace common
