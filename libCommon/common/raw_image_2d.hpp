@@ -322,14 +322,14 @@ double RawImage2D<ValType>::std_devia(std::size_t col, std::size_t row) const
 
     // Then obtain a mean.
     ValType mean = 0.0;
-    for (Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
+    for (typename Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
     {
         mean += (*it);
     }
     mean = mean / diffs.size();
 
     // Finally, compute a variance.
-    for (Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
+    for (typename Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
     {
         retvalue += pow((*it) - mean, 2.0);
     }    

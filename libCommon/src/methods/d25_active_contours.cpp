@@ -58,13 +58,15 @@ class HVertexContainer
 {
 public:
 
-    HVertexContainer(std::vector<Vector<float,3>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
+    HVertexContainer(std::vector<Vector<float,3> >& vertices):
+        tree(D3Tree(std::ptr_fun(bac)))
     {		
         linear.resize(vertices.size());
 
         //Filling in the 3D Tree
         int cnt=0;
-        for(std::vector<Vector<float,3>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
+        for(std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
+            itp != vertices.end(); ++itp)
         {
             linear[cnt].isNode=false;
             linear[cnt].isVisited=false;
@@ -178,7 +180,7 @@ Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> 
     \param t The input triangle
     \return The normal vector for \p t
 */
-Vector<float,3> getNormalVector( const Triangle<Vector<float,3>> &t )
+Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
 {
     Vector<float,3> a=t.B()-t.A();
     Vector<float,3> b=t.C()-t.A();
@@ -212,7 +214,7 @@ struct TriangularDipyramid
         TriangularDipyramid tdp;
         
         //Normal calculation.
-        Vector<float,3> z=getNormalVector(t);
+        Vector<float,3> z = getNormalVector(t);
 
         //Sides length.
         float a=float((t.B()-t.C()).eucl_norm());
@@ -244,18 +246,19 @@ struct TriangularDipyramid
         tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
         //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
+        tdp.faces[0]=Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
+        tdp.faces[1]=Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
+        tdp.faces[2]=Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
+        tdp.faces[3]=Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
+        tdp.faces[4]=Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
+        tdp.faces[5]=Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
 
     //Triangular dipyramid based on the given triangle with the given height
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float,3>> & t, float height)
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
+                                                        float height)
     {
         TriangularDipyramid tdp;
 
@@ -282,12 +285,12 @@ struct TriangularDipyramid
         tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
         //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
+        tdp.faces[0]=Triangle<Vector<float,3> >(t.A(), t.B(), p1);
+        tdp.faces[1]=Triangle<Vector<float,3> >(t.B(), t.C(), p1);
+        tdp.faces[2]=Triangle<Vector<float,3> >(t.C(), t.A(), p1);
+        tdp.faces[3]=Triangle<Vector<float,3> >(t.A(), t.B(), p2);
+        tdp.faces[4]=Triangle<Vector<float,3> >(t.B(), t.C(), p2);
+        tdp.faces[5]=Triangle<Vector<float,3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
@@ -304,7 +307,7 @@ struct TriangularDipyramid
         {
             for(unsigned int t=0; t<6; ++t)
             {
-                Triangle<Vector<float,3>> face=tp1.faces[t];
+                Triangle<Vector<float,3> > face=tp1.faces[t];
                 Vector<float,3> norm=getNormalVector(face);
                 
                 //Calculating min and max of the projection of the first dipyramid 
@@ -1106,7 +1109,7 @@ bool D25ActiveContours::stick_to_adjacent_edge( const HEdgeSeed &e, HPointSeed* 
 }
 
 
-common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3>> &v)
+common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
 {
     set_vertices(v);
 
@@ -1136,14 +1139,14 @@ common::Mesh D25ActiveContours::build_mesh()
 
 inline bool D25ActiveContours::triangle_mesh_3d_intersection( const HTriangleSeed &t )
 {
-    Triangle<Vector<float,3>> t1(t.p1->p,t.p2->p,t.p3->p);
+    Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
 
     std::list<HTriangleSeed>::iterator tit = triangles.begin();
     while(tit!=triangles.end())
     {
         HTriangleSeed tt=*tit;
         
-        Triangle<Vector<float,3>> t2(tt.p1->p,tt.p2->p,tt.p3->p);
+        Triangle<Vector<float,3> > t2(tt.p1->p,tt.p2->p,tt.p3->p);
         
         if(triangles_3d_intersection(t1,t2))return true;
 
@@ -1161,7 +1164,7 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
 
     if(pps1)
     {
-        Triangle<Vector<float,3>> t1(e.p1->p,e.p2->p,pps1->p);
+        Triangle<Vector<float,3> > t1(e.p1->p,e.p2->p,pps1->p);
 
         for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
         {
@@ -1178,7 +1181,7 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
                 
                 if(pps2)
                 {
-                    Triangle<Vector<float,3>> t2(ee.p1->p,ee.p2->p,pps2->p);
+                    Triangle<Vector<float,3> > t2(ee.p1->p,ee.p2->p,pps2->p);
 
                     if(triangles_3d_intersection(t1,t2))
                     {
@@ -1328,7 +1331,8 @@ const std::list<HTriangleSeed>* D25ActiveContours::get_triangles()
 
 
 
-bool D25ActiveContours::triangles_3d_intersection( const Triangle<Vector<float,3>> &t1, const Triangle<Vector<float,3>> &t2 )
+bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vector<float,3> > &t1,
+                                                  const Triangle<Vector<float,3> > &t2)
 {
     const float eps=0.001f;
     float alpha=tetrahedronBaseAngle<eps?eps:tetrahedronBaseAngle;
@@ -1372,7 +1376,7 @@ bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
     else return false;
 }
 
-void D25ActiveContours::set_vertices( std::vector<Vector<float,3>> &v )
+void D25ActiveContours::set_vertices( std::vector<Vector<float,3> > &v )
 {
     //Cleaning all the auxiliary containers
     activeEdges.clear();
