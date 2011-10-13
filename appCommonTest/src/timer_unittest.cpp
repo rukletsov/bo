@@ -1,5 +1,6 @@
 
 #include <cmath>
+#include <ctime>
 #include <gtest/gtest.h>
 
 // Temporary disable warning on conversion (from __int64 to long). This will be fixed
@@ -49,7 +50,11 @@ TYPED_TEST(TimerTest, MeasuringSleep)
 
     // In its current implementation causes C4244 warning. It will be fixed in the
     // next versions of boost.
-    boost::this_thread::sleep(boost::posix_time::seconds(sleep_time));
+//    boost::this_thread::sleep(boost::posix_time::seconds(sleep_time));
+
+    std::clock_t endwait = std::clock() + sleep_time * CLOCKS_PER_SEC ;
+    while (clock() < endwait)
+    { }
 
     double elapsed = timer.elapsed();
 
