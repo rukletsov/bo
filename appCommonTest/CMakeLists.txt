@@ -32,14 +32,25 @@ ADD_EXECUTABLE (AppCommonTest
                 ${AppCommonTest_HDRS}
 )
 
-TARGET_LINK_LIBRARIES (AppCommonTest
-                       LibCommon
-                       debug gtestd optimized gtest
+# On Linux GTest depends on pthread library (so it should be included). On Linux boost
+# doesn't support automatic linking, so we have to explicitly specify the library to
+# link with (on Windows it's not necessary).
+IF (MSVC)
+    TARGET_LINK_LIBRARIES (AppCommonTest
+                           LibCommon
+                           debug gtestd optimized gtest
 )
+ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    TARGET_LINK_LIBRARIES (AppCommonTest
+                           LibCommon
+                           boost_thread-mt
+                           pthread
+                           debug gtestd optimized gtest
+)
+ENDIF (MSVC)
 
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
-
 
 # Copy binary to the directory with test data.
 INSTALL (TARGETS AppCommonTest DESTINATION ${TESTS_OUTPUT_PATH})
