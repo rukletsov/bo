@@ -43,7 +43,6 @@ IF (MSVC)
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     TARGET_LINK_LIBRARIES (AppCommonTest
                            LibCommon
-                           boost_thread-mt
                            pthread
                            debug gtestd optimized gtest
 )

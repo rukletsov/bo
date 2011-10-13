@@ -3,17 +3,6 @@
 #include <ctime>
 #include <gtest/gtest.h>
 
-// Temporary disable warning on conversion (from __int64 to long). This will be fixed
-// in the next versions of boost.
-#ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable:4244)
-#endif // _MSC_VER
-#include <boost/thread.hpp>
-#ifdef _MSC_VER
-#   pragma warning(pop)
-#endif // _MSC_VER
-
 // This allows us to have (and to test) both timers under MSVC: boost::timer through
 // Timer class and a special high-resolution timer through detail::MSVCTimer.
 #define USE_BOOST_TIMER
@@ -48,10 +37,9 @@ TYPED_TEST(TimerTest, MeasuringSleep)
     // Create an instance of some timer, which type is one of the specified above.
     TypeParam timer;
 
-    // In its current implementation causes C4244 warning. It will be fixed in the
-    // next versions of boost.
-//    boost::this_thread::sleep(boost::posix_time::seconds(sleep_time));
-
+    // Perform time queries for a giving period of time. Suspending thread using
+    // boost::this_thread::sleep() doesn't work on Linux, since std::clock() counts
+    // only working time, not sleeping time.
     std::clock_t endwait = std::clock() + sleep_time * CLOCKS_PER_SEC ;
     while (clock() < endwait)
     { }
