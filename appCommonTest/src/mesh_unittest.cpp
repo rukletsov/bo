@@ -64,12 +64,12 @@ TEST_F(MeshTest, SetUp)
 
     // The normal direction can differ, but the normals should be of the same
     // length and collinear.
-    ASSERT_DOUBLE_EQ(1., abs(
+    ASSERT_DOUBLE_EQ(1., std::abs(
         (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis1_])));
 
-    ASSERT_DOUBLE_EQ(1., abs(
+    ASSERT_DOUBLE_EQ(1., std::abs(
         (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis2_])));
 
-    ASSERT_DOUBLE_EQ(sqrt(3.) / 3., abs(
+    ASSERT_DOUBLE_EQ(sqrt(3.) / 3., std::abs(
         (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[slope1_])));
 }

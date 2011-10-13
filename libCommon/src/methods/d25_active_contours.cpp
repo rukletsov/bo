@@ -444,7 +444,7 @@ HPointSeed* D25ActiveContours::get_closest_min_func_point( const HPointSeed &ps1
 
             if(b<maxInitDistance&&c<maxInitDistance&&b>minInitDistance&&c>minInitDistance)
             {
-                double f=abs(a-b)+abs(a-c);
+                double f = std::abs(a-b) + std::abs(a-c);
 
                 if(func==-1||f<func)
                 {

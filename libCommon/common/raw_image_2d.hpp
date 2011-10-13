@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    raw_image_2d.hpp, v 1.1.2 2011.09.26
+    raw_image_2d.hpp, v 1.1.3 2011.10.14
 
     2D image class.
 
@@ -297,8 +297,8 @@ double RawImage2D<ValType>::av_dist(std::size_t col, std::size_t row) const
     Indices indices = get_neighbours(col, row);
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        retvalue += abs(this->operator ()(col, row) -
-                        this->operator ()(it->first, it->second));
+        retvalue += std::abs(this->operator ()(col, row) -
+                             this->operator ()(it->first, it->second));
     }
 
     return (retvalue / indices.size());

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    d25_active_contours.hpp, v 1.0.2 2011.10.01
+    d25_active_contours.hpp, v 1.0.3 2011.10.14
 
 	Modification of the approach by Ye Duan and Hong Qin, "2.5D Active Contour
 	for Surface Reconstruction", Proceedings of the 8th Fall Workshop on Vision,
@@ -262,7 +262,7 @@ protected:
 	*/
 	HPointSeed* get_closest_noncollinear_point(const HPointSeed &ps, const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited);
 	
-	/*! Finds point P that minimizes F(P, \p ps1, \p ps2)=abs(|ps1-ps2|-|P-ps2|)+abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
+    /*! Finds point P that minimizes F(P, \p ps1, \p ps2) = std::abs(|ps1-ps2|-|P-ps2|) + std::abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
 		\param ps1 First reference vertex.
 		\param ps2 Second reference vertex.
 		\param checkNodes A flag. Search among the nodes if true.

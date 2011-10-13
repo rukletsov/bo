@@ -47,5 +47,5 @@ TYPED_TEST(TimerTest, MeasuringSleep)
     double elapsed = timer.elapsed();
 
     // We expect that timer will give an error not more than 20% of the sleep time.
-    EXPECT_GE(0.2 * double(sleep_time), abs(elapsed - double(sleep_time)));
+    EXPECT_GE(0.2 * double(sleep_time), std::abs(elapsed - double(sleep_time)));
 }
