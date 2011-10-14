@@ -110,7 +110,9 @@ protected:
 class PredicateClosestPointNonCollinear
 {
 public:
-    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2, bool checkNodes, bool checkVisited):ce1(ce1),ce2(ce2),checkNodes(checkNodes),checkVisited(checkVisited)
+    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2,
+                                      bool checkNodes, bool checkVisited) :
+        checkNodes(checkNodes),checkVisited(checkVisited), ce1(ce1),ce2(ce2)
     {
         eps=0.5;
         this->ce1=ce1;
@@ -389,11 +391,11 @@ D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistanc
                                      minInitDistance(minInitDistance), 
                                      maxInitDistance(maxInitDistance),
                                      maxProjectionNodeDistance(maxProjectionNodeDistance), 
-                                     normalNeighborhoodRadius(normalNeighborhoodRadius),
                                      maxSurfaceDepth(maxSurfaceDepth),
                                      maxExcludedAngle(maxExcludedAngle),
-                                     maxStitchedAngle(maxStitchedAngle),
+                                     normalNeighborhoodRadius(normalNeighborhoodRadius),
                                      faceSurfaceFactor(faceSurfaceFactor),
+                                     maxStitchedAngle(maxStitchedAngle),
                                      tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
     vertices=0;
@@ -1063,16 +1065,16 @@ bool D25ActiveContours::stick_to_adjacent_edge( const HEdgeSeed &e, HPointSeed* 
         HEdgeSeed ee=*it;
 
         //Excluding the base edge
-        if(e.p1->p==ee.p1->p&&e.p2->p==ee.p2->p||
-            e.p1->p==ee.p2->p&&e.p2->p==ee.p1->p)
+        if(((e.p1->p == ee.p1->p) && (e.p2->p == ee.p2->p)) ||
+           ((e.p1->p == ee.p2->p) && (e.p2->p == ee.p1->p)))
         {
             ++it;
             continue;
         }
 
         //if at least one of the edges is coinciding, quit
-        if((e.p1->p==ee.p1->p||e.p2->p==ee.p1->p)&&ps->p==ee.p2->p||
-            (e.p1->p==ee.p2->p||e.p2->p==ee.p2->p)&&ps->p==ee.p1->p)
+        if(((e.p1->p == ee.p1->p || e.p2->p == ee.p1->p) && (ps->p == ee.p2->p)) ||
+           ((e.p1->p == ee.p2->p || e.p2->p == ee.p2->p) && (ps->p == ee.p1->p)))
         {
             return true;
         }
