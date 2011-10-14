@@ -47,6 +47,25 @@ ENDIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
 
+# Rise warning level to maximum for MSVC and GNUCXX.
+IF (MSVC)
+    IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+        # Replace exisiting warning level with a desired one.
+        STRING (REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    ELSE ()
+        # Set a desired warning level if there was no set previously.
+        ADD_DEFINITIONS ("/W4")
+    ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+
+    # Disable C4512 warning. There are a some boost classes, for which assignment
+    # operator cannot be generated. The warning seems not to be important.
+    ADD_DEFINITIONS ("/wd4512")
+
+ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS
+                           "-Wall -Wextra -pedantic")
+ENDIF (MSVC)
+
 # Copy binary to the directory with test data.
 INSTALL (TARGETS AppCommonTest DESTINATION ${TESTS_OUTPUT_PATH})
 
