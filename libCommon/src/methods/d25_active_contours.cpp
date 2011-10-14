@@ -1156,6 +1156,11 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection( const HTriangleSee
     return false;
 }
 
+// See comments inside function to figure out why C4706 warning is suppressed.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4706)
+#endif // _MSC_VER
 void D25ActiveContours::edge_stitch(HEdgeSeed e )
 {
     HPointSeed* pps1=get_propagated_vertex(e,true);
@@ -1170,13 +1175,22 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
         {
             HEdgeSeed ee=*ite;
 
-            if(e==ee)continue;
+            if (e==ee) continue;
 
-            bool b11=false,b12=false,b21=false,b22=false;
+            bool b11 = false, b12 = false, b21 = false, b22 = false;
 
-            //If the edge is adjacent
-            if((b11=(e.p1==ee.p1))||(b12=(e.p1==ee.p2))||(b21=(e.p2==ee.p1))||(b22=(e.p2==ee.p2)))
+            // The reason to use assignment within conditional expression is to have only
+            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
+            // guarantees left-to-right evaluation; moreover, the second operand is not
+            // evaluated if the first operand evaluates to true". This allows us to have
+            // only one (first non-false) b_ij set to true with others left false.
+            //
+            // Therefore we can safely suppress C4706 warning under MSVC (done before
+            // the function).
+            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
+               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
             {
+                // If the edge is adjacent
                 HPointSeed* pps2=get_propagated_vertex(ee,true);
                 
                 if(pps2)
@@ -1227,24 +1241,21 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
                                 isStitched=true;
 
                                 break;
-                            }
-
-
-                        }
-                    }
-
-                }
-
+                            } // if(!triangle_mesh_3d_intersection(tr))
+                        } // if(get_edges_propagations(ne,nex,nexx))
+                    } // if(triangles_3d_intersection(t1,t2))
+                } // if(pps2)
             }
         }
-    }
-
+    } // if(pps1)
 
     //Add to frozen edges, if wasn't stitched on this step
     if(!isStitched)
         frozenEdges.push_back(e);
-
 }
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float windowRadius )
 {
@@ -1407,6 +1418,11 @@ bool D25ActiveContours::grow_step()
     return true;
 }
 
+// See comments inside function to figure out why C4706 warning is suppressed.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4706)
+#endif // _MSC_VER
 void D25ActiveContours::post_stitch()
 {
     if(frozenEdges.size()==0)return;
@@ -1427,12 +1443,20 @@ void D25ActiveContours::post_stitch()
             HPointSeed* pps2=get_propagated_vertex(ee,true);
             if(!pps2)continue;
 
-            bool b11=false,b12=false,b21=false,b22=false;
+            bool b11 = false, b12 = false, b21 = false, b22 = false;
 
-            //If the edge is adjacent
-            if((b11=(e.p1==ee.p1))||(b12=(e.p1==ee.p2))||(b21=(e.p2==ee.p1))||(b22=(e.p2==ee.p2)))
+            // The reason to use assignment within conditional expression is to have only
+            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
+            // guarantees left-to-right evaluation; moreover, the second operand is not
+            // evaluated if the first operand evaluates to true". This allows us to have
+            // only one (first non-false) b_ij set to true with others left false.
+            //
+            // Therefore we can safely suppress C4706 warning under MSVC (done before
+            // the function).
+            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
+               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
             {
-                //changing all to b11 condition
+                // If the edge is adjacent, change all to b11 condition
                 if(b12)ee.swap();
                 else if(b21)e.swap();
                 else if(b22)
@@ -1482,11 +1506,8 @@ void D25ActiveContours::post_stitch()
 
                             isStitched=true;
                             break;
-
                         }
-
                 }
-
             }
         }
 
@@ -1498,7 +1519,10 @@ void D25ActiveContours::post_stitch()
 
     }
 
-} // namespace surfaces
+}
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 common::Mesh D25ActiveContours::get_mesh()
 {
@@ -1536,8 +1560,6 @@ common::Mesh D25ActiveContours::get_mesh()
     return m;
 }
 
-
 } // namespace surfaces
-
 } // namespace methods
 } // namespace common
