@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    blas.hpp, v 1.0.1 2011.10.01
+    blas.hpp, v 1.0.2 2011.10.14
 
     Basic linear algebra subprograms. 
 
@@ -35,8 +35,16 @@
 #ifndef BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 #define BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/lu.hpp>
+// Suppress boost::numeric::ublas C4127 warning under MSVC.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4127)
+#endif // _MSC_VER
+#   include <boost/numeric/ublas/matrix.hpp>
+#   include <boost/numeric/ublas/lu.hpp>
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 using namespace boost::numeric::ublas;
 
