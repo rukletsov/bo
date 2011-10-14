@@ -43,7 +43,9 @@ int main(int argc, char* argv[])
 
 
 
-
+    //        |
+    // TODO:  |  move this to mesh_unittest.
+    //        V
 
     //// Load mesh.
     //common::Mesh mesh = common::Mesh::from_ply(std::string("..\\data\\mesh.ply"));
@@ -56,6 +58,4 @@ int main(int argc, char* argv[])
     //common::Mesh::Normal normal = mesh.get_vertex_normal(1);
 
     ////mesh.to_ply(std::string("..\\debug\\pts2.ply"));
-
-	return 0;
 }

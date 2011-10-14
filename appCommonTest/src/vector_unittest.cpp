@@ -125,7 +125,7 @@ TEST_F(VectorTest, BoundaryChecks)
     // corresponding tests are placed in a special test case for so-called "death
     // tests". However, valid indices should be always processed without any crashes.
     vec3_[0] = -1.;
-    double double_val = vec3_[vec3_.size() - 1];
+    vec3_[vec3_.size() - 1];
 }
 
 TEST_F(VectorTest, VectorUnaryArithmetic)

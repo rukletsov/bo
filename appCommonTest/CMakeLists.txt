@@ -57,9 +57,10 @@ IF (MSVC)
         ADD_DEFINITIONS ("/W4")
     ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
 
-    # Disable C4512 warning. There are a some boost classes, for which assignment
-    # operator cannot be generated. The warning seems not to be important.
-    ADD_DEFINITIONS ("/wd4512")
+    # Disable C4245 warning. Conversions from negatibe integers to size_t are used
+    # widely within the tests. It's done on purpose in order to test incorrect
+    # indexation.
+    ADD_DEFINITIONS ("/wd4245")
 
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS
