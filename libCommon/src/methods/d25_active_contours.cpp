@@ -225,14 +225,14 @@ struct TriangularDipyramid
         float p=(a+b+c)/2;
 
         //Radius of the incircle.
-        float r=sqrt((p-a)*(p-b)*(p-c)/p);
+        float r = std::sqrt((p-a)*(p-b)*(p-c)/p);
 
         //Center of the incircle.
         tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
 
         //Height of the pyramid such that cos of the angles between the faces
         //and the base are baseAngleCos.
-        float h=r*sqrt(1/(baseAngleCos*baseAngleCos)-1);
+        float h = r * std::sqrt(1/(baseAngleCos*baseAngleCos)-1);
 
         //Height vector
         z=z/float(z.eucl_norm())*h;
@@ -676,15 +676,15 @@ bool D25ActiveContours::get_edges_propagations( HEdgeSeed &e1, HEdgeSeed &e2, HE
     float c=v3.getNorm();
     float pp=(a+b+c)/2;
     //Heron formula
-    initSquare=sqrt(pp*(pp-a)*(pp-b)*(pp-c));
+    initSquare=std::sqrt(pp*(pp-a)*(pp-b)*(pp-c));
 
     //New propagations lengths
     float cosE1=(propagationE1*v1)/a;
     float cosE2=(propagationE2*v2)/b;
     float cosE3=(propagationE3*v3)/c;
-    float normPE1=2*initSquare/(a*sqrt(1-cosE1*cosE1));
-    float normPE2=2*initSquare/(b*sqrt(1-cosE2*cosE2));
-    float normPE3=2*initSquare/(c*sqrt(1-cosE3*cosE3));
+    float normPE1=2*initSquare/(a*std::sqrt(1-cosE1*cosE1));
+    float normPE2=2*initSquare/(b*std::sqrt(1-cosE2*cosE2));
+    float normPE3=2*initSquare/(c*std::sqrt(1-cosE3*cosE3));
 
 #else
 
@@ -1372,7 +1372,10 @@ bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
     float cos2=v2a*v2b/float((v2a.eucl_norm()*v2b.eucl_norm()));
     float cos3=v3a*v3b/float((v3a.eucl_norm()*v3b.eucl_norm()));
 
-    if(fabs(cos1)>maxExcludedAngle||fabs(cos2)>maxExcludedAngle||fabs(cos3)>maxExcludedAngle)return true;
+    if ((std::fabs(cos1) > maxExcludedAngle) ||
+        (std::fabs(cos2) > maxExcludedAngle) ||
+        (std::fabs(cos3) > maxExcludedAngle))
+        return true;
     else return false;
 }
 

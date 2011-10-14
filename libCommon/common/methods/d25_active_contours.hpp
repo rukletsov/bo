@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    d25_active_contours.hpp, v 1.0.3 2011.10.14
+    d25_active_contours.hpp, v 1.0.4 2011.10.14
 
 	Modification of the approach by Ye Duan and Hong Qin, "2.5D Active Contour
 	for Surface Reconstruction", Proceedings of the 8th Fall Workshop on Vision,

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    raw_image_2d.hpp, v 1.1.3 2011.10.14
+    raw_image_2d.hpp, v 1.1.4 2011.10.14
 
     2D image class.
 
@@ -331,9 +331,9 @@ double RawImage2D<ValType>::std_devia(std::size_t col, std::size_t row) const
     // Finally, compute a variance.
     for (typename Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
     {
-        retvalue += pow((*it) - mean, 2.0);
+        retvalue += std::pow((*it) - mean, 2.0);
     }    
-    retvalue = sqrt(retvalue) / (diffs.size() - 1);
+    retvalue = std::sqrt(retvalue) / (diffs.size() - 1);
 
     return retvalue;
 }

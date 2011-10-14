@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    vector.hpp, v 1.1.2 2011.04.12
+    vector.hpp, v 1.1.4 2011.10.14
 
     Multidimensional Vector (Point) class. 
 
@@ -522,13 +522,13 @@ template <typename T, std::size_t N>
 double Vector<T, N>::eucl_norm() const
 {
     return 
-        sqrt(static_cast<double>((*this) * (*this)));
+        std::sqrt(static_cast<double>((*this) * (*this)));
 }
 
 template <typename T, std::size_t N> template <typename RetType> 
 void Vector<T, N>::eucl_norm(RetType& retvar) const
 {
-    retvar = static_cast<RetType>(sqrt(static_cast<double>((*this) * (*this))));
+    retvar = static_cast<RetType>(std::sqrt(static_cast<double>((*this) * (*this))));
 }
 
 template <typename T, std::size_t N> 

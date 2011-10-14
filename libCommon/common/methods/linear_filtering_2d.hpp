@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    linear_filtering_2d.hpp, v 1.0.0 2011.09.26
+    linear_filtering_2d.hpp, v 1.0.1 2011.10.14
 
     Methods and algorithms for applying linear filters for 2D images.
 
@@ -143,8 +143,8 @@ common::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
 
     for (std::size_t col = 0; col < image_width; ++col) {
         for (std::size_t row = 0; row < image.height(); ++row) {
-            filtered_image(col, row) = sqrt(square(sobel_col(col, row)) +
-                                            square(sobel_row(col, row)));
+            filtered_image(col, row) = std::sqrt(square(sobel_col(col, row)) +
+                                                 square(sobel_row(col, row)));
     }   }
 
     return filtered_image;
