@@ -37,12 +37,13 @@ TARGET_LINK_LIBRARIES (AppCommonTest
                        debug gtestd optimized gtest
 )
 
-# On Linux GTest depends on pthread library (so it should be included).
-IF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+# GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
+FIND_PACKAGE (Threads)
+IF (${CMAKE_USE_PTHREADS_INIT})
     TARGET_LINK_LIBRARIES (AppCommonTest
-                           pthread
+                           ${CMAKE_THREAD_LIBS_INIT}
     )
-ENDIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+ENDIF (${CMAKE_USE_PTHREADS_INIT})
 
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES DEBUG_POSTFIX "d")
