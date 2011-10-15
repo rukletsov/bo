@@ -65,7 +65,7 @@ IF (MSVC)
 
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET_TARGET_PROPERTIES (AppCommonTest PROPERTIES COMPILE_FLAGS
-                           "-Wall -Wextra -pedantic")
+                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
 
 # Copy binary to the directory with test data.

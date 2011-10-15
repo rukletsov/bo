@@ -123,7 +123,8 @@ IF (MSVC)
     ADD_DEFINITIONS ("/wd4512")
 
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS "-Wall -Wextra -pedantic")
+    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS
+                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
 
 

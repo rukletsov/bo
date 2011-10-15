@@ -249,6 +249,13 @@ std::ostream& operator <<(std::ostream& os, const Mesh& obj)
 }
 
 // Private utility functions.
+
+// In debug configuration, because BOOST_ASSERT is not used, exist2 variable becomes
+// unused. That makes GCC issue unused-variable warning, which is temporary disabled.
+#ifdef __GNUC__
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wunused-variable"
+#endif // __GNUC__
 bool Mesh::add_edge_(std::size_t vertex1, std::size_t vertex2)
 {
     // If the neighbouring relation between given vertices already exists,
@@ -266,6 +273,9 @@ bool Mesh::add_edge_(std::size_t vertex1, std::size_t vertex2)
     // Since relation is mutual, either exist1 or exist2 can be returned.
     return exist1;
 }
+#ifdef __GNUC__
+#   pragma GCC diagnostic pop
+#endif // __GNUC__
 
 bool Mesh::add_adjacent_face_(std::size_t vertex, std::size_t face)
 {

@@ -85,6 +85,14 @@ namespace io {
 // namespace. First callback is for reading vertex components and the second is
 // for reading face vertices. Both functions use the same context for storing
 // temporary values and for accessing mesh function.
+//
+// Because ntriangles variable is never used, but acts as a placeholder for a return
+// value of a function, GCC issues unused-but-set-variable warning, which is temporary
+// disabled.
+#ifdef __GNUC__
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif // __GNUC__
 common::Mesh mesh_from_ply(const std::string& file_path)
 {
     common::Mesh invalid_mesh(0);
@@ -127,6 +135,9 @@ common::Mesh mesh_from_ply(const std::string& file_path)
 
     return mesh;
 }
+#ifdef __GNUC__
+#   pragma GCC diagnostic pop
+#endif // __GNUC__
 
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
 // Some shitty software doesn't support double type for vertices that's why a
