@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    linear_filtering_2d.hpp, v 1.0.2 2011.10.16
+    linear_filtering_2d.hpp, v 1.0.3 2011.10.19
 
     Methods and algorithms for applying linear filters for 2D images.
 
@@ -119,10 +119,10 @@ common::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image
                     // size_t, that's why simple boundary check condition (pseudo-code):
                     // (0 <= (col + ker_col) < image_width) && <same for height>
                     // transforms into an ugly construction.
-                    if (((ker_col >= 0) || (col > std::size_t(- ker_col))) &&
-                        ((ker_col <= 0) || (col + std::size_t(ker_col) < image_width)) &&
-                        ((ker_row >= 0) || (row > std::size_t(- ker_row))) &&
-                        ((ker_row <= 0) || (row + std::size_t(ker_row) < image_height)))
+                    if (((ker_col >= 0) || (col >= std::size_t(- ker_col))) &&
+                        ((ker_col <= 0) || (std::size_t(ker_col) < image_width - col)) &&
+                        ((ker_row >= 0) || (row >= std::size_t(- ker_row))) &&
+                        ((ker_row <= 0) || (std::size_t(ker_row) < image_height - row)))
                     {
                         std::size_t cur_col = (ker_col >= 0) ? (col + std::size_t(ker_col)) :
                                                                (col - std::size_t(- ker_col));
