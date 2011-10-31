@@ -8,6 +8,7 @@ LIBRARY
 * Add memleak tests (check Application Verifier, Dr. Memory; CTest).
 * Comments in Doxygen style (Qt style?).
 * Suppress warnings in headers using pragma push/pop.
+* Implement Kahan summation (check functors, accumulate, transform, etc).
 
 Mesh class
 ================================================================================
