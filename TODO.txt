@@ -7,6 +7,8 @@ LIBRARY
 * Implement (or find and use) global Logger class.
 * Add memleak tests (check Application Verifier, Dr. Memory; CTest).
 * Comments in Doxygen style (Qt style?).
+* Suppress warnings in headers using pragma push/pop.
+* Implement Kahan summation (check functors, accumulate, transform, etc).
 
 Mesh class
 ================================================================================
@@ -49,6 +51,12 @@ IniReader class
 * Try using fin.peek() != char_traits<char>::eof() instead of while (fin.good()).
 * Write tests. 
 * Add errors handling.
+
+Methods namespace
+================================================================================
+* Add function performing linear filtering for RawImage<> (filter2D).
+* Add kernels for Sobel, Laplacian, Prewitt operators.
+* Create test images and test filtering with several kernels.
 
 
 

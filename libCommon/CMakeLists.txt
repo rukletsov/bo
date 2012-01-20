@@ -31,10 +31,13 @@ SET (LibCommon_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/common/triangle.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/errors.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/performance.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/extended_math.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/raw_image_2d.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/blas/blas.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/d25_active_contours.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/3d_distances.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/methods/linear_filtering_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common/io/raw_image_2d_io.hpp
@@ -103,6 +106,25 @@ ADD_LIBRARY (LibCommon
 
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "d")
+
+# Rise warning level to maximum for MSVC and GNUCXX.
+IF (MSVC)
+    IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+        # Replace exisiting warning level with a desired one.
+        STRING (REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    ELSE ()
+        # Set a desired warning level if there was no set previously.
+        ADD_DEFINITIONS ("/W4")
+    ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+
+    # Disable C4512 warning. There are a some boost classes, for which assignment
+    # operator cannot be generated. The warning seems not to be important.
+    ADD_DEFINITIONS ("/wd4512")
+
+ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS
+                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
+ENDIF (MSVC)
 
 
 # MSVC-specific features and options.

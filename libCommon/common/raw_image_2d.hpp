@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    raw_image_2d.hpp, v 1.1.0 2011.03.14
+    raw_image_2d.hpp, v 1.1.4 2011.10.14
 
     2D image class.
 
@@ -297,8 +297,8 @@ double RawImage2D<ValType>::av_dist(std::size_t col, std::size_t row) const
     Indices indices = get_neighbours(col, row);
     for (Indices::const_iterator it = indices.begin(); it != indices.end(); ++it)
     {
-        retvalue += abs(this->operator ()(col, row) -
-                        this->operator ()(it->first, it->second));
+        retvalue += std::abs(this->operator ()(col, row) -
+                             this->operator ()(it->first, it->second));
     }
 
     return (retvalue / indices.size());
@@ -322,18 +322,18 @@ double RawImage2D<ValType>::std_devia(std::size_t col, std::size_t row) const
 
     // Then obtain a mean.
     ValType mean = 0.0;
-    for (Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
+    for (typename Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
     {
         mean += (*it);
     }
     mean = mean / diffs.size();
 
     // Finally, compute a variance.
-    for (Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
+    for (typename Pixels::const_iterator it = diffs.begin(); it != diffs.end(); ++it)
     {
-        retvalue += pow((*it) - mean, 2.0);
+        retvalue += std::pow((*it) - mean, 2.0);
     }    
-    retvalue = sqrt(retvalue) / (diffs.size() - 1);
+    retvalue = std::sqrt(retvalue) / (diffs.size() - 1);
 
     return retvalue;
 }
@@ -356,4 +356,5 @@ void RawImage2D<ValType>::check_range(std::size_t col, std::size_t row) const
 }
 
 } // namespace common
+
 #endif // RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_

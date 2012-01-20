@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-    mesh_io.hpp, v 1.0.2 2011.10.15
+    extended_math.hpp, v 1.0.0 2011.09.28
 
-    I/O for Mesh class. RPly library is used for working with .ply files.
+    Extension of the standard <cmath> header.
 
-    Copyright (c) 2010, 2011
+    Copyright (c) 2011
     Alexander Rukletsov <rukletsov@gmail.com>
     All rights reserved.
 
@@ -13,10 +13,10 @@
     modification, are permitted provided that the following conditions
     are met:
     1.	Redistributions of source code must retain the above copyright
-	    notice, this list of conditions and the following disclaimer.
+        notice, this list of conditions and the following disclaimer.
     2.	Redistributions in binary form must reproduce the above copyright
-	    notice, this list of conditions and the following disclaimer in the
-	    documentation and/or other materials provided with the distribution.
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
 
     THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -32,21 +32,26 @@
 
 *******************************************************************************/
 
-#ifndef MESH_IO_HPP_C536C1D7_8F7D_4396_90C3_84DFCB3902C5_
-#define MESH_IO_HPP_C536C1D7_8F7D_4396_90C3_84DFCB3902C5_
+#ifndef EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_
+#define EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_
 
-#include <string>
-
-#include <common/mesh.hpp>
+#include <cmath>
+#include <boost/math/tr1.hpp>
 
 namespace common {
-namespace io {
 
-// IO functions, allow to read mesh from and write to a .ply files.
-common::Mesh mesh_from_ply(const std::string& file_path);
-bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path);
+template <typename T> inline
+T square(const T& arg)
+{
+    return (arg * arg);
+}
 
-} // namespace io
+template <typename T> inline
+T cube(const T& arg)
+{
+    return (arg * arg * arg);
+}
+
 } // namespace common
 
-#endif // MESH_IO_HPP_C536C1D7_8F7D_4396_90C3_84DFCB3902C5_
+#endif // EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_

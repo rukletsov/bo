@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    blas.hpp, v 1.0.1 2011.03.16
+    blas.hpp, v 1.0.2 2011.10.14
 
     Basic linear algebra subprograms. 
 
@@ -35,8 +35,16 @@
 #ifndef BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 #define BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/lu.hpp>
+// Suppress boost::numeric::ublas C4127 warning under MSVC.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4127)
+#endif // _MSC_VER
+#   include <boost/numeric/ublas/matrix.hpp>
+#   include <boost/numeric/ublas/lu.hpp>
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 using namespace boost::numeric::ublas;
 
@@ -68,6 +76,24 @@ bool invert_matrix(const matrix<T>& input, matrix<T>& inverse)
 	return true;
 }
 
+// Define the sign of the determinant using the given permutation matrix.
+inline
+int determinant_sign(const permutation_matrix<std::size_t>& pm)
+{
+    int pm_sign=1;
+    std::size_t size = pm.size();
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        if (i != pm(i))
+        {
+            // swap_rows would swap a pair of rows here, so we change sign
+            pm_sign *= -1;
+        }
+    }
+
+    return pm_sign;
+}
+
 // Calculate the determinant of the input matrix.
 template<class T>
 double determinant(const matrix<T>& input )
@@ -96,25 +122,6 @@ double determinant(const matrix<T>& input )
 	}
 
 	return det;
-}
-
-
-// Define the sign of the determinant using the given permutation matrix.
-inline
-int determinant_sign(const permutation_matrix<std::size_t>& pm)
-{
-	int pm_sign=1;
-	std::size_t size = pm.size();
-	for (std::size_t i = 0; i < size; ++i)
-	{
-		if (i != pm(i)) 
-		{
-			// swap_rows would swap a pair of rows here, so we change sign
-			pm_sign *= -1;
-		}
-	}
-
-	return pm_sign;
 }
 
 //TODO: svd

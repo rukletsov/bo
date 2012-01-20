@@ -143,7 +143,7 @@ TEST_F(RawImage2DTest, AssignmentOperator)
 
     // As with copy c-tor, image data is shared among shallow copies.
     image(0, 0) = 74;
-    im3_(0, 6) = -9;
+    im3_(0, 6) = 9;
     int diff = memcmp(image.data(), im3_.data(), image.size());
     EXPECT_EQ(int(0), diff);
 }

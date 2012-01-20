@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-    d25_active_contours.hpp, v 1.0.1 2011.03.17
+    d25_active_contours.hpp, v 1.0.4 2011.10.14
 
 	Modification of the approach by Ye Duan and Hong Qin, "2.5D Active Contour
 	for Surface Reconstruction", Proceedings of the 8th Fall Workshop on Vision,
@@ -177,7 +177,7 @@ public:
 	/*! Load points cloud into the internal vertex container.
 		\param v The list of vertices in 3D.
 	*/
-	void set_vertices(std::vector<common::Vector<float,3>> &v);
+        void set_vertices(std::vector<common::Vector<float, 3> > &v);
 
 	/*! Get vector of point items.
 		\return Vector of point items.
@@ -208,7 +208,7 @@ public:
 		\param v Points cloud.
 		\return Reconstructed mesh.
 	*/
-	common::Mesh build_mesh(std::vector<common::Vector<float,3>> &v);
+        common::Mesh build_mesh(std::vector<common::Vector<float,3> > &v);
 
 	/*! Build the mesh based on the pre-loaded vertices.
 		\return Reconstructed mesh.
@@ -262,7 +262,7 @@ protected:
 	*/
 	HPointSeed* get_closest_noncollinear_point(const HPointSeed &ps, const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited);
 	
-	/*! Finds point P that minimizes F(P, \p ps1, \p ps2)=abs(|ps1-ps2|-|P-ps2|)+abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
+    /*! Finds point P that minimizes F(P, \p ps1, \p ps2) = std::abs(|ps1-ps2|-|P-ps2|) + std::abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
 		\param ps1 First reference vertex.
 		\param ps2 Second reference vertex.
 		\param checkNodes A flag. Search among the nodes if true.
@@ -302,7 +302,7 @@ protected:
 		\param t2 Second input triangle.
 		\return True if an approximation of the pyramidal projection of \p t1 intersects the truncated projection of \p t2 in 3D. Otherwise returns false.
 	*/
-	bool triangles_3d_intersection(const common::Triangle<common::Vector<float,3>> &t1, const common::Triangle<common::Vector<float,3>> &t2);
+        bool triangles_3d_intersection(const common::Triangle<common::Vector<float,3> > &t1, const common::Triangle<common::Vector<float,3> > &t2);
 
 	/*! Tests \p triangle3DIntersection() for the given triangle \p t with all triangles from \p triangles.
 		\param t The input triangle.

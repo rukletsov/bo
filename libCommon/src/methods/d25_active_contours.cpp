@@ -58,13 +58,15 @@ class HVertexContainer
 {
 public:
 
-    HVertexContainer(std::vector<Vector<float,3>>& vertices):tree(D3Tree(std::ptr_fun(bac)))
+    HVertexContainer(std::vector<Vector<float,3> >& vertices):
+        tree(D3Tree(std::ptr_fun(bac)))
     {		
         linear.resize(vertices.size());
 
         //Filling in the 3D Tree
         int cnt=0;
-        for(std::vector<Vector<float,3>>::const_iterator itp=vertices.begin(); itp!=vertices.end(); ++itp)
+        for(std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
+            itp != vertices.end(); ++itp)
         {
             linear[cnt].isNode=false;
             linear[cnt].isVisited=false;
@@ -108,7 +110,9 @@ protected:
 class PredicateClosestPointNonCollinear
 {
 public:
-    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2, bool checkNodes, bool checkVisited):ce1(ce1),ce2(ce2),checkNodes(checkNodes),checkVisited(checkVisited)
+    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2,
+                                      bool checkNodes, bool checkVisited) :
+        checkNodes(checkNodes),checkVisited(checkVisited), ce1(ce1),ce2(ce2)
     {
         eps=0.5;
         this->ce1=ce1;
@@ -178,7 +182,7 @@ Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> 
     \param t The input triangle
     \return The normal vector for \p t
 */
-Vector<float,3> getNormalVector( const Triangle<Vector<float,3>> &t )
+Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
 {
     Vector<float,3> a=t.B()-t.A();
     Vector<float,3> b=t.C()-t.A();
@@ -212,7 +216,7 @@ struct TriangularDipyramid
         TriangularDipyramid tdp;
         
         //Normal calculation.
-        Vector<float,3> z=getNormalVector(t);
+        Vector<float,3> z = getNormalVector(t);
 
         //Sides length.
         float a=float((t.B()-t.C()).eucl_norm());
@@ -223,14 +227,14 @@ struct TriangularDipyramid
         float p=(a+b+c)/2;
 
         //Radius of the incircle.
-        float r=sqrt((p-a)*(p-b)*(p-c)/p);
+        float r = std::sqrt((p-a)*(p-b)*(p-c)/p);
 
         //Center of the incircle.
         tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
 
         //Height of the pyramid such that cos of the angles between the faces
         //and the base are baseAngleCos.
-        float h=r*sqrt(1/(baseAngleCos*baseAngleCos)-1);
+        float h = r * std::sqrt(1/(baseAngleCos*baseAngleCos)-1);
 
         //Height vector
         z=z/float(z.eucl_norm())*h;
@@ -244,18 +248,19 @@ struct TriangularDipyramid
         tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
         //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
+        tdp.faces[0]=Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
+        tdp.faces[1]=Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
+        tdp.faces[2]=Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
+        tdp.faces[3]=Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
+        tdp.faces[4]=Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
+        tdp.faces[5]=Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
 
     //Triangular dipyramid based on the given triangle with the given height
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float,3>> & t, float height)
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
+                                                        float height)
     {
         TriangularDipyramid tdp;
 
@@ -282,12 +287,12 @@ struct TriangularDipyramid
         tdp.vertices[3]=p1; tdp.vertices[4]=p2;
 
         //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3>>(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3>>(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3>>(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3>>(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3>>(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3>>(t.C(), t.A(), p2);
+        tdp.faces[0]=Triangle<Vector<float,3> >(t.A(), t.B(), p1);
+        tdp.faces[1]=Triangle<Vector<float,3> >(t.B(), t.C(), p1);
+        tdp.faces[2]=Triangle<Vector<float,3> >(t.C(), t.A(), p1);
+        tdp.faces[3]=Triangle<Vector<float,3> >(t.A(), t.B(), p2);
+        tdp.faces[4]=Triangle<Vector<float,3> >(t.B(), t.C(), p2);
+        tdp.faces[5]=Triangle<Vector<float,3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
@@ -304,7 +309,7 @@ struct TriangularDipyramid
         {
             for(unsigned int t=0; t<6; ++t)
             {
-                Triangle<Vector<float,3>> face=tp1.faces[t];
+                Triangle<Vector<float,3> > face=tp1.faces[t];
                 Vector<float,3> norm=getNormalVector(face);
                 
                 //Calculating min and max of the projection of the first dipyramid 
@@ -386,11 +391,11 @@ D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistanc
                                      minInitDistance(minInitDistance), 
                                      maxInitDistance(maxInitDistance),
                                      maxProjectionNodeDistance(maxProjectionNodeDistance), 
-                                     normalNeighborhoodRadius(normalNeighborhoodRadius),
                                      maxSurfaceDepth(maxSurfaceDepth),
                                      maxExcludedAngle(maxExcludedAngle),
-                                     maxStitchedAngle(maxStitchedAngle),
+                                     normalNeighborhoodRadius(normalNeighborhoodRadius),
                                      faceSurfaceFactor(faceSurfaceFactor),
+                                     maxStitchedAngle(maxStitchedAngle),
                                      tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
     vertices=0;
@@ -441,7 +446,7 @@ HPointSeed* D25ActiveContours::get_closest_min_func_point( const HPointSeed &ps1
 
             if(b<maxInitDistance&&c<maxInitDistance&&b>minInitDistance&&c>minInitDistance)
             {
-                double f=abs(a-b)+abs(a-c);
+                double f = std::abs(a-b) + std::abs(a-c);
 
                 if(func==-1||f<func)
                 {
@@ -673,15 +678,15 @@ bool D25ActiveContours::get_edges_propagations( HEdgeSeed &e1, HEdgeSeed &e2, HE
     float c=v3.getNorm();
     float pp=(a+b+c)/2;
     //Heron formula
-    initSquare=sqrt(pp*(pp-a)*(pp-b)*(pp-c));
+    initSquare=std::sqrt(pp*(pp-a)*(pp-b)*(pp-c));
 
     //New propagations lengths
     float cosE1=(propagationE1*v1)/a;
     float cosE2=(propagationE2*v2)/b;
     float cosE3=(propagationE3*v3)/c;
-    float normPE1=2*initSquare/(a*sqrt(1-cosE1*cosE1));
-    float normPE2=2*initSquare/(b*sqrt(1-cosE2*cosE2));
-    float normPE3=2*initSquare/(c*sqrt(1-cosE3*cosE3));
+    float normPE1=2*initSquare/(a*std::sqrt(1-cosE1*cosE1));
+    float normPE2=2*initSquare/(b*std::sqrt(1-cosE2*cosE2));
+    float normPE3=2*initSquare/(c*std::sqrt(1-cosE3*cosE3));
 
 #else
 
@@ -1060,16 +1065,16 @@ bool D25ActiveContours::stick_to_adjacent_edge( const HEdgeSeed &e, HPointSeed* 
         HEdgeSeed ee=*it;
 
         //Excluding the base edge
-        if(e.p1->p==ee.p1->p&&e.p2->p==ee.p2->p||
-            e.p1->p==ee.p2->p&&e.p2->p==ee.p1->p)
+        if(((e.p1->p == ee.p1->p) && (e.p2->p == ee.p2->p)) ||
+           ((e.p1->p == ee.p2->p) && (e.p2->p == ee.p1->p)))
         {
             ++it;
             continue;
         }
 
         //if at least one of the edges is coinciding, quit
-        if((e.p1->p==ee.p1->p||e.p2->p==ee.p1->p)&&ps->p==ee.p2->p||
-            (e.p1->p==ee.p2->p||e.p2->p==ee.p2->p)&&ps->p==ee.p1->p)
+        if(((e.p1->p == ee.p1->p || e.p2->p == ee.p1->p) && (ps->p == ee.p2->p)) ||
+           ((e.p1->p == ee.p2->p || e.p2->p == ee.p2->p) && (ps->p == ee.p1->p)))
         {
             return true;
         }
@@ -1106,7 +1111,7 @@ bool D25ActiveContours::stick_to_adjacent_edge( const HEdgeSeed &e, HPointSeed* 
 }
 
 
-common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3>> &v)
+common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
 {
     set_vertices(v);
 
@@ -1136,14 +1141,14 @@ common::Mesh D25ActiveContours::build_mesh()
 
 inline bool D25ActiveContours::triangle_mesh_3d_intersection( const HTriangleSeed &t )
 {
-    Triangle<Vector<float,3>> t1(t.p1->p,t.p2->p,t.p3->p);
+    Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
 
     std::list<HTriangleSeed>::iterator tit = triangles.begin();
     while(tit!=triangles.end())
     {
         HTriangleSeed tt=*tit;
         
-        Triangle<Vector<float,3>> t2(tt.p1->p,tt.p2->p,tt.p3->p);
+        Triangle<Vector<float,3> > t2(tt.p1->p,tt.p2->p,tt.p3->p);
         
         if(triangles_3d_intersection(t1,t2))return true;
 
@@ -1153,6 +1158,11 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection( const HTriangleSee
     return false;
 }
 
+// See comments inside function to figure out why C4706 warning is suppressed.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4706)
+#endif // _MSC_VER
 void D25ActiveContours::edge_stitch(HEdgeSeed e )
 {
     HPointSeed* pps1=get_propagated_vertex(e,true);
@@ -1161,24 +1171,33 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
 
     if(pps1)
     {
-        Triangle<Vector<float,3>> t1(e.p1->p,e.p2->p,pps1->p);
+        Triangle<Vector<float,3> > t1(e.p1->p,e.p2->p,pps1->p);
 
         for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
         {
             HEdgeSeed ee=*ite;
 
-            if(e==ee)continue;
+            if (e==ee) continue;
 
-            bool b11=false,b12=false,b21=false,b22=false;
+            bool b11 = false, b12 = false, b21 = false, b22 = false;
 
-            //If the edge is adjacent
-            if((b11=(e.p1==ee.p1))||(b12=(e.p1==ee.p2))||(b21=(e.p2==ee.p1))||(b22=(e.p2==ee.p2)))
+            // The reason to use assignment within conditional expression is to have only
+            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
+            // guarantees left-to-right evaluation; moreover, the second operand is not
+            // evaluated if the first operand evaluates to true". This allows us to have
+            // only one (first non-false) b_ij set to true with others left false.
+            //
+            // Therefore we can safely suppress C4706 warning under MSVC (done before
+            // the function).
+            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
+               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
             {
+                // If the edge is adjacent
                 HPointSeed* pps2=get_propagated_vertex(ee,true);
                 
                 if(pps2)
                 {
-                    Triangle<Vector<float,3>> t2(ee.p1->p,ee.p2->p,pps2->p);
+                    Triangle<Vector<float,3> > t2(ee.p1->p,ee.p2->p,pps2->p);
 
                     if(triangles_3d_intersection(t1,t2))
                     {
@@ -1224,24 +1243,21 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
                                 isStitched=true;
 
                                 break;
-                            }
-
-
-                        }
-                    }
-
-                }
-
+                            } // if(!triangle_mesh_3d_intersection(tr))
+                        } // if(get_edges_propagations(ne,nex,nexx))
+                    } // if(triangles_3d_intersection(t1,t2))
+                } // if(pps2)
             }
         }
-    }
-
+    } // if(pps1)
 
     //Add to frozen edges, if wasn't stitched on this step
     if(!isStitched)
         frozenEdges.push_back(e);
-
 }
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float windowRadius )
 {
@@ -1328,7 +1344,8 @@ const std::list<HTriangleSeed>* D25ActiveContours::get_triangles()
 
 
 
-bool D25ActiveContours::triangles_3d_intersection( const Triangle<Vector<float,3>> &t1, const Triangle<Vector<float,3>> &t2 )
+bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vector<float,3> > &t1,
+                                                  const Triangle<Vector<float,3> > &t2)
 {
     const float eps=0.001f;
     float alpha=tetrahedronBaseAngle<eps?eps:tetrahedronBaseAngle;
@@ -1368,11 +1385,14 @@ bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
     float cos2=v2a*v2b/float((v2a.eucl_norm()*v2b.eucl_norm()));
     float cos3=v3a*v3b/float((v3a.eucl_norm()*v3b.eucl_norm()));
 
-    if(fabs(cos1)>maxExcludedAngle||fabs(cos2)>maxExcludedAngle||fabs(cos3)>maxExcludedAngle)return true;
+    if ((std::fabs(cos1) > maxExcludedAngle) ||
+        (std::fabs(cos2) > maxExcludedAngle) ||
+        (std::fabs(cos3) > maxExcludedAngle))
+        return true;
     else return false;
 }
 
-void D25ActiveContours::set_vertices( std::vector<Vector<float,3>> &v )
+void D25ActiveContours::set_vertices( std::vector<Vector<float,3> > &v )
 {
     //Cleaning all the auxiliary containers
     activeEdges.clear();
@@ -1400,6 +1420,11 @@ bool D25ActiveContours::grow_step()
     return true;
 }
 
+// See comments inside function to figure out why C4706 warning is suppressed.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4706)
+#endif // _MSC_VER
 void D25ActiveContours::post_stitch()
 {
     if(frozenEdges.size()==0)return;
@@ -1420,12 +1445,20 @@ void D25ActiveContours::post_stitch()
             HPointSeed* pps2=get_propagated_vertex(ee,true);
             if(!pps2)continue;
 
-            bool b11=false,b12=false,b21=false,b22=false;
+            bool b11 = false, b12 = false, b21 = false, b22 = false;
 
-            //If the edge is adjacent
-            if((b11=(e.p1==ee.p1))||(b12=(e.p1==ee.p2))||(b21=(e.p2==ee.p1))||(b22=(e.p2==ee.p2)))
+            // The reason to use assignment within conditional expression is to have only
+            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
+            // guarantees left-to-right evaluation; moreover, the second operand is not
+            // evaluated if the first operand evaluates to true". This allows us to have
+            // only one (first non-false) b_ij set to true with others left false.
+            //
+            // Therefore we can safely suppress C4706 warning under MSVC (done before
+            // the function).
+            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
+               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
             {
-                //changing all to b11 condition
+                // If the edge is adjacent, change all to b11 condition
                 if(b12)ee.swap();
                 else if(b21)e.swap();
                 else if(b22)
@@ -1475,11 +1508,8 @@ void D25ActiveContours::post_stitch()
 
                             isStitched=true;
                             break;
-
                         }
-
                 }
-
             }
         }
 
@@ -1491,7 +1521,10 @@ void D25ActiveContours::post_stitch()
 
     }
 
-} // namespace surfaces
+}
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 common::Mesh D25ActiveContours::get_mesh()
 {
@@ -1529,8 +1562,6 @@ common::Mesh D25ActiveContours::get_mesh()
     return m;
 }
 
-
 } // namespace surfaces
-
 } // namespace methods
 } // namespace common
