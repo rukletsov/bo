@@ -8,6 +8,11 @@
 namespace common {
 namespace io {
 
+void IniReader::set_settings(const IniReaderSettings& settings)
+{
+    settings_ = settings;
+}
+
 void IniReader::read_file(const String& file_name)
 {
     Line line;
@@ -266,33 +271,43 @@ Strings IniReader::split_subsection(const Line& trimmed_line) const
     BOOST_ASSERT(split_result.size() > 1 && 
         "IniReader: subsection name or format is invalid.");
 
-	switch(settings_.section_error_type)
-	{
-    case IniReaderSettings::TAKE_1ST_AND_SECOND:
-		retvalue.push_back(split_result[0]);
+    if (split_result.size() == 2)
+    {
+        // Section.Subsection
+        retvalue.push_back(split_result[0]);
 		retvalue.push_back(split_result[1]);
-		break;
+    }
+    else
+    {
+        // More than delimiter in section name, e.g. Section.Subsection.Subsubsection
+	    switch(settings_.section_error_type)
+	    {
+        case IniReaderSettings::TAKE_1ST_AND_SECOND:
+		    retvalue.push_back(split_result[0]);
+		    retvalue.push_back(split_result[1]);
+		    break;
 
-	case IniReaderSettings::TAKE_1ST_AND_LAST:
-		retvalue.push_back(split_result.front());
-		retvalue.push_back(split_result.back());
-		break;
+	    case IniReaderSettings::TAKE_1ST_AND_LAST:
+		    retvalue.push_back(split_result.front());
+		    retvalue.push_back(split_result.back());
+		    break;
 
-	case IniReaderSettings::IGNORE_SECTION:
-		retvalue.push_back(settings_.ignored_section);
-		retvalue.push_back(trimmed_line);
-		break;
+	    case IniReaderSettings::IGNORE_SECTION:
+		    retvalue.push_back(settings_.ignored_section);
+		    retvalue.push_back(trimmed_line);
+		    break;
 
-	case IniReaderSettings::IGNORE_LINE:
-		retvalue.push_back(settings_.skipped_section);
-		retvalue.push_back(settings_.skipped_section);
-		break;
+	    case IniReaderSettings::IGNORE_LINE:
+		    retvalue.push_back(settings_.skipped_section);
+		    retvalue.push_back(settings_.default_subsection);
+		    break;
 
-	default:
-		// this code should be inaccessible
-		retvalue.push_back(settings_.erroneous_section);
-		retvalue.push_back(trimmed_line);
-	}
+	    default:
+		    // this code should be inaccessible
+		    retvalue.push_back(settings_.erroneous_section);
+		    retvalue.push_back(trimmed_line);
+	    }
+    }
 
 	return retvalue;
 }

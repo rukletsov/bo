@@ -95,7 +95,7 @@ public:
     {
         TAKE_1ST_AND_SECOND,	// --> "Section", "Sub"
         TAKE_1ST_AND_LAST,		// --> "Section", "1"
-        IGNORE_SECTION,			// all parameters till the next section are ignored
+        IGNORE_SECTION,			// all parameters till the next section are placed to the ignored section, whole name is taken as subsection name
         IGNORE_LINE				// all parameters will be appended to the previous section
     };
 
@@ -215,6 +215,8 @@ public:
 
     virtual ~IniReader() 
     { }
+
+    void set_settings(const IniReaderSettings& settings);
 
 	// Parses ini-file and fills 'sections_' with data.
 	void read_file(const String& file_name);
