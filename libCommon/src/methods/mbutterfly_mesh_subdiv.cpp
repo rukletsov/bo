@@ -11,7 +11,18 @@ namespace methods
 Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 {
 	Mesh::Faces f = m.get_all_faces();
+	Mesh::Vertices v = m.get_all_vertices();
+
 	Mesh::AdjacentFacesPerVertex adjacentFaces = m.get_neighbouring_faces_by_vertex(inda);
+	Mesh::AdjacentVerticesPerVertex adjacentVertices = m.get_neighbouring_vertices(inda);
+
+	//If the central vertex is on the boundary, calculate
+	//the average value using the boundary schema
+	if(adjacentFaces.size() != adjacentVertices.size())
+	{
+		//return v[inda]/2;
+		return Mesh::Vertex(0,0,0);
+	}
 		
 	//Array of the sorted adjacent vertices (clockwise or counter clockwise)
 	std::vector<size_t> svert;
@@ -59,10 +70,10 @@ Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 	int k = svert.size();
 
 	//Realize the Modified Butterfly subdivision surface scheme
-	Mesh::Vertices vertices = m.get_all_vertices();
 	Mesh::Vertex average(0,0,0);
-	{
-		if(k == 6) //Regular case
+	{   
+        //Regular case
+        if(k == 6) 
 		{
 			float a, b, c, d;
 			a = 1/2.0f;
@@ -70,16 +81,35 @@ Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 			c = -1/16.0f;
 			d = 0.0f;
 			
-			average = a*svert[0] + b/2*svert[1] + c*svert[2] + d*svert[3] + c*svert[4] + b/2*svert[5];
+			average = a*v[svert[0]] + b/2*v[svert[1]] + c*v[svert[2]]
+					  + d*v[svert[3]] + c*v[svert[4]] + b/2*v[svert[5]];
 		}
-		else if(k >= 5) //Non-regular case
+		//Non-regular cases
+		else if(k >= 5)
 		{
 			float pi = 3.14159f;
 			for(int j = 0; j < k; ++j)
 			{
 				float s_j = (0.25f + cos(2*pi*j/k) + 0.5f*cos(4*pi*j/k))/k;
-				average += s_j*svert[j];
+				average += s_j*v[svert[j]];
 			}
+		}
+		else if(k == 3)
+		{
+			float s_0, s_1, s_2;
+			s_0 = 5/12.0f;
+			s_1 = -1/12.0f;
+			s_2 = s_1;
+			average = s_0*v[svert[0]] + s_1*v[svert[1]] + s_2*v[svert[2]];
+		}
+		else if(k == 4)
+		{
+			float s_0, s_1, s_2, s_3;
+			s_0 = 3/8.0f;
+			s_1 = 0;
+			s_2 = -1/8.0f;
+			s_3 = 0;
+			average = s_0*v[svert[0]] + s_1*v[svert[1]] + s_2*v[svert[2]] + s_2*v[svert[3]];
 		}
 	}
 
@@ -89,10 +119,15 @@ Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 
 Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
 {
-	Mesh::Vertices vertices = m.get_all_vertices();
+	Mesh::Vertex av1 = getAveragedVertex(m, inda, indb);
+	Mesh::Vertex av2 = getAveragedVertex(m, indb, inda);
 
-	
-	return (vertices[inda]+vertices[indb])/2;
+	Mesh::Vertices v = m.get_all_vertices();
+
+	if(av1 == Mesh::Vertex(0,0,0) || av2 == Mesh::Vertex(0,0,0))
+		return (v[inda]+v[indb])/2;
+
+	return getAveragedVertex(m, inda, indb) + getAveragedVertex(m, indb, inda);
 }
 
 
@@ -155,7 +190,7 @@ Mesh surfaces::mButterflySubdivision(const Mesh &source, int iterations)
 			size_t inds_div[3];
 			for(int c = 0; c < 3; ++c)
 			{
-				size_t p1, p2;
+				size_t p1 = 0, p2 = 0;
 				
 				//Get the current edge of the face
 				switch(c)
@@ -172,7 +207,7 @@ Mesh surfaces::mButterflySubdivision(const Mesh &source, int iterations)
 
 				//Generate the "Id" of the current edge
 				std::pair<size_t, size_t> keyEdge(p1 < p2 ? p1 : p2,
-												  p1 > p2 ? p1 : p2);
+                                                  p1 > p2 ? p1 : p2);
 				//Get the index of the corresponding division vertex
 				inds_div[c] = division_map[keyEdge];
 			}
