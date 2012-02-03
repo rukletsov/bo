@@ -1,21 +1,34 @@
 
 #include <stdio.h>
 #include <string>
+#include <boost/algorithm/string.hpp>
 #include <gtest/gtest.h>
 
 #include "common/io/ini_reader.hpp"
 
+extern std::string DataDirectory;
+static const std::string ini_filename = "ini_reader_test.ini";
+
 using namespace common::io;
 
+
 // Create a so-called "text fixture" using base class form GTEST.
+// IniReaderTest requires an input ini file, if the file doesn't exist or a file path is
+// not defined, the first FileExists test fails and other tests are not run.
 class IniReaderTest : public testing::Test
 {
 protected:
     virtual void SetUp()
     {
+        // Get data directory name. Input directory can have or not have trail slashes .
+        std::string full_directory_name = DataDirectory;
+        boost::algorithm::trim_right_if(full_directory_name, boost::algorithm::is_any_of("/\\"));
+        full_directory_name += "/";
+        ini_filepath = full_directory_name + ini_filename;
+
+        // Check, whether the file exists. 
         file_not_found = true;
-        filename = "ini_reader_test.ini";
-        FILE* file = fopen(filename.c_str(), "r");
+        FILE* file = fopen(ini_filepath.c_str(), "r");
         if (file != NULL)
         {
             fclose(file);
@@ -23,14 +36,14 @@ protected:
         }
     }
 
-    std::string filename;
+    std::string ini_filepath;
     bool file_not_found;
 };
 
 TEST_F(IniReaderTest, FileExists)
 {
     EXPECT_TRUE(file_not_found == false) << std::endl
-        << "IniReader test failed. File ini_reader_test.ini not found." << std::endl;
+        << "IniReader test failed. File " + ini_filename + " not found." << std::endl;
 }
 
 TEST_F(IniReaderTest, DefaultConstructor)
@@ -48,7 +61,7 @@ TEST_F(IniReaderTest, DefaultBehaviour)
     if (file_not_found == false)
     {
         IniReader reader;
-        reader.read_file(filename);
+        reader.read_file(ini_filepath);
 
         // Default section, default subsection.
         EXPECT_STREQ("value_no_sec_no_subsec", reader.get_value("key_no_sec_no_subsec", "").c_str());
@@ -144,7 +157,7 @@ TEST_F(IniReaderTest, OtherDelimiters)
         settings.section_right_symbols = ">";
 
         IniReader reader(settings);
-        reader.read_file(filename);
+        reader.read_file(ini_filepath);
 
         EXPECT_STREQ("default_value", 
             reader.get_value("should_be,ignored-it<is>a~comment_with-delimiters", "default_value").c_str());
@@ -168,17 +181,17 @@ TEST_F(IniReaderTest, SectionErrorHandlingType)
         IniReaderSettings settings1;
         settings1.section_error_type = IniReaderSettings::TAKE_1ST_AND_SECOND;        
         IniReader reader1(settings1);
-        reader1.read_file(filename);
+        reader1.read_file(ini_filepath);
 
         IniReaderSettings settings2;
         settings2.section_error_type = IniReaderSettings::IGNORE_LINE;  // parameters should be appended to the previous section      
         IniReader reader2(settings2);
-        reader2.read_file(filename);
+        reader2.read_file(ini_filepath);
 
         IniReaderSettings settings3;
         settings3.section_error_type = IniReaderSettings::IGNORE_SECTION;  // parameters till the next section are ignored    
         IniReader reader3(settings3);
-        reader3.read_file(filename);
+        reader3.read_file(ini_filepath);
 
         // TAKE_1ST_AND_LAST is already tested in DefaultBehaviour test.
 
@@ -210,7 +223,7 @@ TEST_F(IniReaderTest, KeyValueErrorHandlingType)
         IniReaderSettings settings2;
         settings2.keyvalue_error_type = IniReaderSettings::SKIP_ERRONEOUS_KEY_VALUE;  
         IniReader reader2(settings2);
-        reader2.read_file(filename);
+        reader2.read_file(ini_filepath);
 
         EXPECT_STREQ("default_value",
             reader2.get_value(ini::PROHIBITED_KEY, "default_value").c_str()); 

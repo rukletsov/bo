@@ -85,6 +85,7 @@ TestCase(Vector)
 TestCase(Mesh)
 TestCase(Timer)
 TestCase(RawImage2D)
+TestCase(IniReader)
 
 
 # Supress MSVC-specific compiler and linker warnings.
