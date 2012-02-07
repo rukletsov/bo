@@ -79,7 +79,7 @@ public:
 
 public:
     // Creates an empty mesh ready to store initial_count vertices.
-    Mesh(std::size_t initial_count);
+    Mesh(std::size_t initial_count = 0);
 
     // Adds a new vertex to the mesh and return its index.
     std::size_t add_vertex(const Vertex& vertex);
