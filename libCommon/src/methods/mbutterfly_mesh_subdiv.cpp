@@ -8,11 +8,14 @@ namespace common
 namespace methods
 {
 
-Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
+std::vector<size_t> getRelativeStencil(const Mesh &m, size_t inda, size_t indb)
 {
-	Mesh::Faces f = m.get_all_faces();
-	Mesh::Vertices v = m.get_all_vertices();
+    //Array of the sorted adjacent vertices (clockwise or counter clockwise)
+    //that define a stencil
+    std::vector<size_t> svert;
 
+	Mesh::Faces f = m.get_all_faces();
+	
 	Mesh::AdjacentFacesPerVertex adjacentFaces = m.get_neighbouring_faces_by_vertex(inda);
 	Mesh::AdjacentVerticesPerVertex adjacentVertices = m.get_neighbouring_vertices(inda);
 
@@ -20,13 +23,9 @@ Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 	//the average value using the boundary schema
 	if(adjacentFaces.size() != adjacentVertices.size())
 	{
-		//return v[inda]/2;
-		return Mesh::Vertex(0,0,0);
+		return svert;
 	}
 		
-	//Array of the sorted adjacent vertices (clockwise or counter clockwise)
-	std::vector<size_t> svert;
-
 	//Sort the adjacent vertices(edges)
 	{	
 		size_t cur = indb;
@@ -66,68 +65,113 @@ Mesh::Vertex getAveragedVertex(const Mesh &m, size_t inda, size_t indb)
 		}
 	}
 
-	//Get the valence of the stencil center
-	int k = svert.size();
+    return svert;
+}
 
-	//Realize the Modified Butterfly subdivision surface scheme
-	Mesh::Vertex average(0,0,0);
-	{   
-        //Regular case
-        if(k == 6) 
-		{
-			float a, b, c, d;
-			a = 1/2.0f;
-			b = 1/8.0f;
-			c = -1/16.0f;
-			d = 0.0f;
-			
-			average = a*v[svert[0]] + b/2*v[svert[1]] + c*v[svert[2]]
-					  + d*v[svert[3]] + c*v[svert[4]] + b/2*v[svert[5]];
-		}
-		//Non-regular cases
-		else if(k >= 5)
-		{
-			float pi = 3.14159f;
-			for(int j = 0; j < k; ++j)
-			{
-				float s_j = (0.25f + cos(2*pi*j/k) + 0.5f*cos(4*pi*j/k))/k;
-				average += s_j*v[svert[j]];
-			}
-		}
-		else if(k == 3)
-		{
-			float s_0, s_1, s_2;
-			s_0 = 5/12.0f;
-			s_1 = -1/12.0f;
-			s_2 = s_1;
-			average = s_0*v[svert[0]] + s_1*v[svert[1]] + s_2*v[svert[2]];
-		}
-		else if(k == 4)
-		{
-			float s_0, s_1, s_2, s_3;
-			s_0 = 3/8.0f;
-			s_1 = 0;
-			s_2 = -1/8.0f;
-			s_3 = 0;
-			average = s_0*v[svert[0]] + s_1*v[svert[1]] + s_2*v[svert[2]] + s_2*v[svert[3]];
-		}
-	}
+Mesh::Vertex getKStencilAverage(const Mesh &m, std::vector<size_t> sten, Mesh::Vertex center)
+{
+    Mesh::Vertices v = m.get_all_vertices();
+    Mesh::Vertex average(0,0,0);
 
-	return average;
+    size_t k = sten.size();
 
+    //Sub-cases
+    if (k >= 5)
+    {
+        float pi = 3.141592f;
+        for(size_t j = 0; j < k; ++j)
+        {
+            float s_j = (0.25f + cos(2*pi*j/k) + 0.5f*cos(4*pi*j/k))/k;
+            average += s_j*(v[sten[j]]-center);
+        }
+    }
+    else if (k == 4)
+    {
+        float s_0, s_1, s_2, s_3;
+        s_0 = 3/8.0f;
+        s_1 = 0;
+        s_2 = -1/8.0f;
+        s_3 = 0;
+
+        average = s_0*(v[sten[0]]-center) + s_1*(v[sten[1]]-center) +
+                  s_2*(v[sten[2]]-center) + s_3*(v[sten[3]]-center);
+    }
+    else if(k == 3)
+    {
+        float s_0, s_1, s_2;
+        s_0 = 5/12.0f;
+        s_1 = -1/12.0f;
+        s_2 = s_1;
+
+        average = s_0*(v[sten[0]]-center) + s_1*(v[sten[1]]-center) +
+                  s_2*(v[sten[2]]-center);
+    }
+
+    average += center;
+
+    return average;
 }
 
 Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
 {
-	Mesh::Vertex av1 = getAveragedVertex(m, inda, indb);
-	Mesh::Vertex av2 = getAveragedVertex(m, indb, inda);
+    Mesh::Vertices v = m.get_all_vertices();
 
-	Mesh::Vertices v = m.get_all_vertices();
+	std::vector<size_t> sten1 = getRelativeStencil(m, inda, indb);
+	std::vector<size_t> sten2 = getRelativeStencil(m, indb, inda);
 
-	if(av1 == Mesh::Vertex(0,0,0) || av2 == Mesh::Vertex(0,0,0))
-		return (v[inda]+v[indb])/2;
+    //Get the valence of the stencils' centers
+	int k1 = sten1.size();
+    int k2 = sten2.size();
+    
+    Mesh::Vertex average(0,0,0);
 
-	return getAveragedVertex(m, inda, indb) + getAveragedVertex(m, indb, inda);
+	//Modified Butterfly subdivision surface scheme
+    {        
+        bool isOrdered = false;
+
+        //Border case
+        if(k1 == 0 || k2 == 0)
+        {
+            average = (v[inda]+v[indb])/2;
+        }
+	    //Regular case. Two vertices of valence 6
+        else if(k1 == 6 && k2 == 6) 
+	    {
+            //Regular stencil weights
+            float a, b, c, d;
+            a = 1/2.0f;
+            b = 1/8.0f;
+            c = -1/16.0f;
+            d = 0.0f;
+
+		    average = a*(v[inda] + v[indb]) +
+                      b*(v[sten1[1]] + v[sten1[5]]) +
+                      c*(v[sten1[2]] + v[sten1[4]] + v[sten2[2]] + v[sten2[4]]) +
+                      d*(v[sten1[3]] + v[sten2[3]]);
+	    }
+        //Non-regular cases (modification of the Butterfly scheme):
+        //a) 6-vertex and K-vertex, K!=6 
+	    else if((isOrdered = (k1 == 6 && k2 != 6)) == true || (k1 != 6 && k2 == 6)) //a trick with C4706 warning
+	    {
+            if(!isOrdered)
+            {
+                std::vector<size_t> tmp = sten2;
+                sten2 = sten1;
+                sten1 = tmp;
+            }
+
+            average = getKStencilAverage(m, sten2, v[sten1[0]]);
+	    }
+        //b) K-vertex and K-vertex, K!=6
+        else
+        {
+            average = (getKStencilAverage(m, sten2, v[sten1[0]]) + 
+                       getKStencilAverage(m, sten1, v[sten2[0]])) / 2;
+        }
+    }
+
+    return average;
+
 }
 
 
