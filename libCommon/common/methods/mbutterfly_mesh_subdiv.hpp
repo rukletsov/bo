@@ -3,9 +3,10 @@
 
     mbutterfly_mesh_subdiv.hpp, v 1.0.0 2012.01.23
 
-    Implementation of the Modified Butterfly subdivision surface method. 
-	Paper: Zorin, D., Schroeder, P. and Sweldens, W., “Interpolating subdivision 
-	for meshes with arbitrary topology”, Computer Graphics, Ann. Conf.
+    Implementation of the Modified Butterfly subdivision surface method.
+
+	Reference paper: Zorin, D., Schroeder, P. and Sweldens, W., “Interpolating 
+    subdivision for meshes with arbitrary topology”, Computer Graphics, Ann. Conf.
 	Series 30, 189-192 (1996).
 
     Copyright (c) 2012
@@ -49,6 +50,9 @@ namespace methods
 namespace surfaces
 {
 	
+    //Returns a subdivided mesh acquired from the source mesh by application of
+    //the given number of subdivision iterations using the Modified Butterfly 
+    //scheme (see the reference paper)
 	Mesh mButterflySubdivision(const Mesh &source, int iterations);
 		
 } //namespace surfaces

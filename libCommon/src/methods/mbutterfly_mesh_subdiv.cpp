@@ -8,10 +8,11 @@ namespace common
 namespace methods
 {
 
+//Returns a consequence of vertices that defines a stencil (clockwise or 
+//counter-clockwise traversal)
 std::vector<size_t> getRelativeStencil(const Mesh &m, size_t inda, size_t indb)
 {
-    //Array of the sorted adjacent vertices (clockwise or counter clockwise)
-    //that define a stencil
+    //Array of the sorted adjacent vertices that define a stencil
     std::vector<size_t> svert;
 
 	Mesh::Faces f = m.get_all_faces();
@@ -68,14 +69,15 @@ std::vector<size_t> getRelativeStencil(const Mesh &m, size_t inda, size_t indb)
     return svert;
 }
 
+//Returns the average value of vertices for irregular K-stencils
 Mesh::Vertex getKStencilAverage(const Mesh &m, std::vector<size_t> sten, Mesh::Vertex center)
 {
     Mesh::Vertices v = m.get_all_vertices();
     Mesh::Vertex average(0,0,0);
 
     size_t k = sten.size();
-
-    //Sub-cases
+   
+    //These cases are described in the reference paper (see .hpp).
     if (k >= 5)
     {
         float pi = 3.141592f;
@@ -112,10 +114,12 @@ Mesh::Vertex getKStencilAverage(const Mesh &m, std::vector<size_t> sten, Mesh::V
     return average;
 }
 
+//Returns the point that divides the given edge [inda, indb] 
 Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
 {
     Mesh::Vertices v = m.get_all_vertices();
 
+    //Calculate two stencils for the end points of the edge
 	std::vector<size_t> sten1 = getRelativeStencil(m, inda, indb);
 	std::vector<size_t> sten2 = getRelativeStencil(m, indb, inda);
 
@@ -125,11 +129,12 @@ Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
     
     Mesh::Vertex average(0,0,0);
 
-	//Modified Butterfly subdivision surface scheme
+	//The Modified Butterfly subdivision surface scheme implementation
+    //(see the reference paper, .hpp)
     {        
         bool isOrdered = false;
 
-        //Border case
+        //Border case. TODO: need to be improved
         if(k1 == 0 || k2 == 0)
         {
             average = (v[inda]+v[indb])/2;
@@ -174,7 +179,9 @@ Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
 
 }
 
-
+//Returns a subdivided mesh acquired from the source mesh by application of
+//the given number of subdivision iterations using the Modified Butterfly 
+//scheme
 Mesh surfaces::mButterflySubdivision(const Mesh &source, int iterations)
 {	
 	Mesh msrc = source;
