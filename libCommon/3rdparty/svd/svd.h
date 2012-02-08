@@ -22,4 +22,4 @@ void svd(double** A, double* S2, int n);
 }
 #endif
 
-#endif // SVD_H
+#endif /* SVD_H */
