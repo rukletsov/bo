@@ -134,10 +134,25 @@ Mesh::Vertex getDivisionPoint(const Mesh &m, size_t inda, size_t indb)
     {        
         bool isOrdered = false;
 
-        //Border case. TODO: need to be improved
-        if(k1 == 0 || k2 == 0)
+        //Border case: two border vertices. TODO: need to be improved
+        if(k1 == 0 && k2 == 0)
         {
             average = (v[inda]+v[indb])/2;
+        }
+        //Border case: border and inner vertices
+        else if((isOrdered = (k1 == 0 && k2 != 0)) == true || (k1 != 0 && k2 == 0)) //a trick with C4706 warning
+        {
+            size_t indc = indb;
+
+            if(!isOrdered)
+            {
+                std::vector<size_t> tmp = sten2;
+                sten2 = sten1;
+                sten1 = tmp;
+                indc = inda;
+            }
+
+            average = getKStencilAverage(m, sten2, v[indc]);
         }
 	    //Regular case. Two vertices of valence 6
         else if(k1 == 6 && k2 == 6) 
