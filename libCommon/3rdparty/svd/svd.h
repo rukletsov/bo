@@ -12,6 +12,14 @@
 #ifndef SVD_H
 #define SVD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void svd(double** A, double* S2, int n);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SVD_H

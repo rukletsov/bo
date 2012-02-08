@@ -3,7 +3,6 @@
 
 #include "svd.h"
 
-
 void svd(double** A, double* S2, int n)
 {
   int  i, j, k, EstColRank = n, RotCount = n, SweepCount = 0,
