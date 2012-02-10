@@ -15,3 +15,5 @@
 
 **.vcproj = CRLF
 **.sln = CRLF
+
+**.pdf = BIN

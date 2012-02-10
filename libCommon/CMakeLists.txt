@@ -100,7 +100,7 @@ INCLUDE_DIRECTORIES (./
                      ./3rdparty/libkdtree++_0.7.0
 )
 
-# Compile our Library.
+# Compile the library.
 ADD_LIBRARY (LibCommon
              ${LibCommon_HDRS}
              ${LibCommon_SRCS}

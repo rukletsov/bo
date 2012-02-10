@@ -57,7 +57,7 @@ public:
 
     HVertexContainer(std::vector<Vector<float,3> >& vertices):
         tree(D3Tree(std::ptr_fun(bac)))
-    {		
+    {
         linear.resize(vertices.size());
 
         //Filling in the 3D Tree
@@ -89,12 +89,17 @@ public:
 class PredicateClosestPointWithMinDistance
 {
 public:
-    PredicateClosestPointWithMinDistance(HContainerElement const& searchCenter, float minDistance, bool checkNodes, bool checkVisited):searchCenter(*searchCenter.ps),minDistance(minDistance),checkNodes(checkNodes),checkVisited(checkVisited)
+    PredicateClosestPointWithMinDistance(HContainerElement const& searchCenter, float minDistance, 
+                                         bool checkNodes, bool checkVisited):
+        searchCenter(*searchCenter.ps), minDistance(minDistance), 
+        checkNodes(checkNodes), checkVisited(checkVisited)
     {
     }
     inline bool operator()( HContainerElement const& ce ) const
     {
-        return ((!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited))&&((searchCenter.p-ce.ps->p).eucl_norm()>minDistance);
+        return
+            (((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) || (checkVisited && ce.ps->isVisited)) &&
+             ((searchCenter.p-ce.ps->p).eucl_norm()>minDistance));
     }
 protected:
     surfaces::HPointSeed searchCenter;
@@ -130,8 +135,10 @@ public:
         }
         else
         {
-            bool isPretender=(!ce.ps->isVisited)||(checkNodes&&ce.ps->isNode)||(checkVisited&&ce.ps->isVisited);
-            if(!isPretender)return false;
+            bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) ||
+                               (checkVisited && ce.ps->isVisited);
+            if(!isPretender)
+                return false;
         }
 
         if(absBa==0)return false;
@@ -175,7 +182,8 @@ Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> 
     return p;
 }
 
-/*! Calculates the normal vector for the face of the given triangle \p t. Attention: the direction depends on the vertices order
+/*! Calculates the normal vector for the face of the given triangle \p t.
+    Attention: the direction depends on the vertices order
     \param t The input triangle
     \return The normal vector for \p t
 */
@@ -187,7 +195,8 @@ Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
     return getNormalVector(a,b);
 }
 
-/*! Calculates the normal vector for the face of the given triangle \p ts. Attention: the direction depends on the vertices order
+/*! Calculates the normal vector for the face of the given triangle \p ts.
+    Attention: the direction depends on the vertices order
     \param ts The input triangle
     \return The normal vector for \p ts
 */
@@ -382,18 +391,15 @@ D25ActiveContours::D25ActiveContours(float minFaceInitSize)
     vertices=0;
 }
 
-D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance, float maxProjectionNodeDistance,
-                                     float normalNeighborhoodRadius, float maxSurfaceDepth, float maxExcludedAngle,
+D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance,
+                                     float maxProjectionNodeDistance, float normalNeighborhoodRadius,
+                                     float maxSurfaceDepth, float maxExcludedAngle,
                                      float maxStitchedAngle, float faceSurfaceFactor, float tetrahedronBaseAngle):
-                                     minInitDistance(minInitDistance), 
-                                     maxInitDistance(maxInitDistance),
-                                     maxProjectionNodeDistance(maxProjectionNodeDistance), 
-                                     maxSurfaceDepth(maxSurfaceDepth),
-                                     maxExcludedAngle(maxExcludedAngle),
-                                     normalNeighborhoodRadius(normalNeighborhoodRadius),
-                                     faceSurfaceFactor(faceSurfaceFactor),
-                                     maxStitchedAngle(maxStitchedAngle),
-                                     tetrahedronBaseAngle(tetrahedronBaseAngle)
+    minInitDistance(minInitDistance), maxInitDistance(maxInitDistance),
+    maxProjectionNodeDistance(maxProjectionNodeDistance), maxSurfaceDepth(maxSurfaceDepth),
+    maxExcludedAngle(maxExcludedAngle), normalNeighborhoodRadius(normalNeighborhoodRadius),
+    faceSurfaceFactor(faceSurfaceFactor), maxStitchedAngle(maxStitchedAngle),
+    tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
     vertices=0;
 }
@@ -403,18 +409,23 @@ D25ActiveContours::~D25ActiveContours()
     delete vertices;
 }
 
-inline HPointSeed* D25ActiveContours::get_closest_point( const HPointSeed &ps, bool checkNodes, bool checkVisited )
+inline HPointSeed* D25ActiveContours::get_closest_point(const HPointSeed &ps,
+                                                        bool checkNodes, bool checkVisited)
 {
     HContainerElement ce(0);
 
-    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointSeed*>(&ps)),minInitDistance,checkNodes,checkVisited);
-    std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),maxInitDistance,pred);
-    if(nif.first!=vertices->tree.end())ce=*nif.first;
+    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointSeed*>(&ps)),
+                                              minInitDistance,checkNodes,checkVisited);
+    std::pair<D3Tree::const_iterator, float> nif = vertices->tree.find_nearest_if(
+                HContainerElement(const_cast<HPointSeed*>(&ps)),maxInitDistance,pred);
+    if (nif.first != vertices->tree.end())
+        ce=*nif.first;
 
     return ce.ps;
 }
 
-HPointSeed* D25ActiveContours::get_closest_min_func_point( const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited )
+HPointSeed* D25ActiveContours::get_closest_min_func_point(const HPointSeed &ps1,
+    const HPointSeed& ps2, bool checkNodes, bool checkVisited)
 {
     Vector<float,3> v1=ps2.p-ps1.p;
     double a=v1.eucl_norm();
@@ -461,18 +472,23 @@ HPointSeed* D25ActiveContours::get_closest_min_func_point( const HPointSeed &ps1
 }
 
 
-inline HPointSeed* D25ActiveContours::get_closest_noncollinear_point(const HPointSeed &ps, const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+inline HPointSeed* D25ActiveContours::get_closest_noncollinear_point(const HPointSeed &ps,
+    const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
 {
     HContainerElement ce(0);
 
-    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointSeed*>(&ps1)),HContainerElement(const_cast<HPointSeed*>(&ps2)),checkNodes,checkVisited);
+    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointSeed*>(&ps1)),
+                                           HContainerElement(const_cast<HPointSeed*>(&ps2)),
+                                           checkNodes, checkVisited);
     pred.check_only_nodes(true);
-    std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),maxProjectionNodeDistance,pred);
+    std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(
+        HContainerElement(const_cast<HPointSeed*>(&ps)), maxProjectionNodeDistance, pred);
     if(nif.first!=vertices->tree.end())ce=*nif.first;
     else
     {
         pred.check_only_nodes(false);
-        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),maxProjectionNodeDistance,pred);
+        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),
+                                             maxProjectionNodeDistance, pred);
         if(nif.first!=vertices->tree.end())ce=*nif.first;
     }
 
@@ -480,9 +496,7 @@ inline HPointSeed* D25ActiveContours::get_closest_noncollinear_point(const HPoin
 }
 
 
-
-
-inline float D25ActiveContours::get_distance( const HPointSeed &ps1, const HPointSeed &ps2 )
+inline float D25ActiveContours::get_distance(const HPointSeed &ps1, const HPointSeed &ps2)
 {
     return (float)(ps1.p-ps2.p).eucl_norm();
 }
@@ -614,7 +628,7 @@ void D25ActiveContours::model_grow()
         activeEdges.erase(it);
 }
 
-bool D25ActiveContours::get_edge_propagation( HEdgeSeed &e, Vector<float,3> origin)
+bool D25ActiveContours::get_edge_propagation(HEdgeSeed &e, Vector<float,3> origin)
 {           
     //The middle point of the edge
     Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
@@ -665,7 +679,8 @@ bool D25ActiveContours::get_edge_propagation( HEdgeSeed &e, Vector<float,3> orig
     return true;
 }
 
-inline HPointSeed* D25ActiveContours::get_propagated_vertex(const HEdgeSeed &e, bool checkVisited)
+inline HPointSeed* D25ActiveContours::get_propagated_vertex(const HEdgeSeed &e,
+                                                            bool checkVisited)
 {
     HPointSeed p;
 
@@ -779,7 +794,8 @@ inline void D25ActiveContours::add_active_edge(const HEdgeSeed &e )
     activeEdges.splice(activeEdges.end(),segments);
 }
 
-void D25ActiveContours::kill_overlapping_regular_segments( std::list<HEdgeSeed> &segmentParts, std::list<HEdgeSeed> &edgeList )
+void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &segmentParts,
+                                                          std::list<HEdgeSeed> &edgeList)
 {
     std::list<HEdgeSeed> newEdgeList;
 
@@ -966,7 +982,8 @@ void D25ActiveContours::kill_overlapping_regular_segments( std::list<HEdgeSeed> 
 }
 
 
-bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HEdgeSeed &e, float &t)
+bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HEdgeSeed &e,
+                                                  float &t)
 {
     const float eps=0.001f;
 
@@ -1005,7 +1022,8 @@ bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HE
 inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointSeed* &ps )
 {
 
-    if(stick_to_adjacent_edge(e, ps, activeEdges) || stick_to_adjacent_edge(e, ps, frozenEdges) )
+    if (stick_to_adjacent_edge(e, ps, activeEdges) ||
+        stick_to_adjacent_edge(e, ps, frozenEdges))
     {
         return true;
     }
@@ -1013,7 +1031,8 @@ inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointS
     return false;
 }
 
-bool D25ActiveContours::stick_to_adjacent_edge( const HEdgeSeed &e, HPointSeed* &ps, std::list<HEdgeSeed> &edgeList )
+bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeSeed &e, HPointSeed* &ps,
+                                               std::list<HEdgeSeed> &edgeList)
 {
 
     std::list<HEdgeSeed>::const_iterator it=edgeList.begin();
@@ -1096,7 +1115,7 @@ common::Mesh D25ActiveContours::build_mesh()
 
 
 
-inline bool D25ActiveContours::triangle_mesh_3d_intersection( const HTriangleSeed &t )
+inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleSeed &t)
 {
     Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
 
@@ -1214,14 +1233,15 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
 #   pragma warning(pop)
 #endif // _MSC_VER
 
-Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float windowRadius )
+Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float windowRadius)
 {
     //Select points from the neighborhood
     HPointSeed ps;
     ps.p=p;
     std::vector<HContainerElement> neighbours;
     float const range = windowRadius;
-    vertices->tree.find_within_range(HContainerElement(&ps), range, std::back_inserter(neighbours));
+    vertices->tree.find_within_range(HContainerElement(&ps), range,
+                                     std::back_inserter(neighbours));
 
     size_t pointCount = neighbours.size();
 

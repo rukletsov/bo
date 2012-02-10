@@ -27,7 +27,7 @@ LINK_DIRECTORIES ($ENV{GTEST_ROOT}/stage/lib
                   ${LIBRARY_OUTPUT_PATH}
 )
 
-# Compile our Library.
+# Compile the application.
 ADD_EXECUTABLE (AppCommonTest
                 ${AppCommonTest_SRCS}
                 ${AppCommonTest_HDRS}
