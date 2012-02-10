@@ -364,14 +364,10 @@ protected:
 		\return The pointer to the propagated vertex.
 	*/
 	HPointSeed* get_propagated_vertex(const HEdgeSeed &e, bool checkVisited);
-	
-	/*! Calculates propagation vectors for the given edges \p e1, \p e2 and \p e3 and modify the edges with them.
-		\param e1 The first edge.
-		\param e2 The second edge.
-		\param e3 The third edge.
-		\return True if the vectors were successfully calculated and embedded into \p e1,\p e2 and \p e3. Otherwise returns false.
-	*/
-	bool get_edges_propagations(HEdgeSeed &e1, HEdgeSeed &e2, HEdgeSeed &e3);
+
+    //Calculates the propagation vector for the edge e defined by the origin point and insert it into e
+    //returns True if the vector was successfully calculated and embedded into e. Otherwise returns false.
+    bool get_edge_propagation( HEdgeSeed &e, Vector<float,3> origin);
 
 	/*! Calculates an approximation of the normal surface vector in point \p p. The surface is defined by the points' cloud within \p vertices. The Procedure is using PCA for the neighborhood of \p p with radius \p windowRadius. The normal vector is defined as the eigenvector with the smallest eigenvalue.
 		\param p The reference point.

@@ -8,9 +8,6 @@
 #include "common/blas/blas.hpp"
 #include "common/methods/d25_active_contours.hpp"
 
-//Uncomment for equal-square triangles propagation  
-//#define USE_EQUAL_SQUARE_PROPAGATION
-
 using namespace common;
 
 namespace common {
@@ -524,12 +521,14 @@ void D25ActiveContours::model_init()
                     if(!triangle_degenerate(tr)&&!triangle_mesh_3d_intersection(tr))
                     {
                         HEdgeSeed e1, e2, e3;
-
-                        e1.p1=e3.p2=pps1;
-                        e2.p1=e1.p2=pps2;
-                        e3.p1=e2.p2=pps3;
-
-                        if(get_edges_propagations(e1,e2,e3))
+                                                
+                        e1.p1 = pps1; e1.p2 = pps2;
+                        e2.p1 = pps2; e2.p2 = pps3;
+                        e3.p1 = pps3; e3.p2 = pps1;
+                                              
+                        if(get_edge_propagation(e1, pps3->p) &&
+                           get_edge_propagation(e2, pps1->p) &&
+                           get_edge_propagation(e3, pps2->p))
                         {
                             add_active_edge(e1);
                             add_active_edge(e2);
@@ -579,12 +578,12 @@ void D25ActiveContours::model_grow()
         else if(!triangle_mesh_3d_intersection(tr))
         {
             //New edges based on an old one and the propagated point
-            HEdgeSeed e1(e.p2,pps);
-            HEdgeSeed e2(pps,e.p1);
-            HEdgeSeed e3=e; //fictive
-
+            HEdgeSeed e1(pps, e.p1);
+            HEdgeSeed e2(pps, e.p2);
+           
             //If the propagations are successfully calculated
-            if(get_edges_propagations(e1,e2,e3))
+            if(get_edge_propagation(e1, e.p2->p) &&
+               get_edge_propagation(e2, e.p1->p))
             {
                 //Add two new active edges
                 add_active_edge(e1);
@@ -615,98 +614,56 @@ void D25ActiveContours::model_grow()
         activeEdges.erase(it);
 }
 
-bool D25ActiveContours::get_edges_propagations( HEdgeSeed &e1, HEdgeSeed &e2, HEdgeSeed &e3 )
-{
-    if(e1.p1!=e3.p2 || e2.p1!=e1.p2 || e3.p1!=e2.p2)return false;
+bool D25ActiveContours::get_edge_propagation( HEdgeSeed &e, Vector<float,3> origin)
+{           
+    //The middle point of the edge
+    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
 
-    Vector<float,3> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
+    //The median segment[origin, mid]
+    Vector<float,3> median = mid - origin;
 
-    Vector<float,3> v1=e1.p2->p-e1.p1->p;
-    Vector<float,3> v2=e2.p2->p-e2.p1->p;
-    Vector<float,3> v3=e3.p2->p-e3.p1->p;
+    //Propagation norm is sqrt(3)/2 of min distance
+    float pnorm = minInitDistance * 0.87f;
+    
+    //Inertial edge propagation
+    Vector<float,3> p = median / (float)median.eucl_norm() * pnorm;
 
-    Vector<float,3> propagationE1,propagationE2,propagationE3;
-
-    //PCA-based approximation 
-    if(faceSurfaceFactor!=0)
+    //Tangential PCA-based edge propagation 
+    if(faceSurfaceFactor != 0)
     {
-        //PCA-based surface normal calculation
-        Vector<float,3> midNorm=get_surface_normal(mid,normalNeighborhoodRadius);
+        //Surface normal calculation in the middle point of the edge
+        Vector<float,3> midNorm = get_surface_normal(mid, normalNeighborhoodRadius);
 
-        //Propagation directions. Surface normal calculation
-        propagationE1=getNormalVector(v1,midNorm);
-        propagationE2=getNormalVector(v2,midNorm);
-        propagationE3=getNormalVector(v3,midNorm);
+        //Vector parallel to the edge
+        Vector<float,3> v = e.p2->p - e.p1->p;
 
-        //Outer directions correction
-        Vector<float,3> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
-        Vector<float,3> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
-        Vector<float,3> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
+        //Propagation direction as cross product of v and the normal
+        Vector<float,3> prop = v.cross_product(midNorm);
 
-        float cosMP1=(medianE1*propagationE1)/float(medianE1.eucl_norm()*propagationE1.eucl_norm());
-        float cosMP2=(medianE2*propagationE2)/float(medianE2.eucl_norm()*propagationE2.eucl_norm());
-        float cosMP3=(medianE3*propagationE3)/float(medianE3.eucl_norm()*propagationE3.eucl_norm());
+        //The propagation vector is corrected to be directed outward of the triangle
+        //formed by the edge e and the origin point [e, origin].
+        //Warning: may not work in regions with extremely high curvature (corners less than 90grad)
+        {
+            //Check the angle between the median and the propagation vector 
+            float cosa = prop * median;
 
-        if(cosMP1<0)propagationE1=propagationE1*(-1);
-        if(cosMP2<0)propagationE2=propagationE2*(-1);
-        if(cosMP3<0)propagationE3=propagationE3*(-1);
+            //Change the direction of the propagation if it "looks inside"
+            if (cosa < 0 ) 
+                prop = -prop;
+        }
 
-        //Mixture with the PCA-face propagations
-        propagationE1=(propagationE1/float(propagationE1.eucl_norm()))*faceSurfaceFactor+(medianE1/float(medianE1.eucl_norm()))*(1-faceSurfaceFactor);
-        propagationE2=(propagationE2/float(propagationE2.eucl_norm()))*faceSurfaceFactor+(medianE2/float(medianE2.eucl_norm()))*(1-faceSurfaceFactor);
-        propagationE3=(propagationE3/float(propagationE3.eucl_norm()))*faceSurfaceFactor+(medianE3/float(medianE3.eucl_norm()))*(1-faceSurfaceFactor);
-    }
-    //Triangle face based approximation
-    else
-    {
-        propagationE1=(e1.p1->p+e1.p2->p)/2-mid;
-        propagationE2=(e2.p1->p+e2.p2->p)/2-mid;
-        propagationE3=(e3.p1->p+e3.p2->p)/2-mid;
+        //Normalize the propagation vector
+        prop = prop / (float)prop.eucl_norm() * pnorm;
+
+        //Linear combination of the inertial and tangential propagations
+        p = faceSurfaceFactor * prop + (1 - faceSurfaceFactor) * p;
     }
 
-
-    //Normalization
-    propagationE1=propagationE1/float(propagationE1.eucl_norm());
-    propagationE2=propagationE2/float(propagationE2.eucl_norm());
-    propagationE3=propagationE3/float(propagationE3.eucl_norm());
-
-#ifdef USE_EQUAL_SQUARE_PROPAGATION
-
-    //3D propagation triangle square calculation
-    float a=v1.getNorm();
-    float b=v2.getNorm();
-    float c=v3.getNorm();
-    float pp=(a+b+c)/2;
-    //Heron formula
-    initSquare=std::sqrt(pp*(pp-a)*(pp-b)*(pp-c));
-
-    //New propagations lengths
-    float cosE1=(propagationE1*v1)/a;
-    float cosE2=(propagationE2*v2)/b;
-    float cosE3=(propagationE3*v3)/c;
-    float normPE1=2*initSquare/(a*std::sqrt(1-cosE1*cosE1));
-    float normPE2=2*initSquare/(b*std::sqrt(1-cosE2*cosE2));
-    float normPE3=2*initSquare/(c*std::sqrt(1-cosE3*cosE3));
-
-#else
-
-    float normPE1 = (maxInitDistance+minInitDistance)/2;
-    float normPE2 = (maxInitDistance+minInitDistance)/2;
-    float normPE3 = (maxInitDistance+minInitDistance)/2;
-
-#endif
-
-    propagationE1=propagationE1*normPE1;
-    propagationE2=propagationE2*normPE2;
-    propagationE3=propagationE3*normPE3;
-
-    e1.propagationVector=propagationE1;
-    e2.propagationVector=propagationE2;
-    e3.propagationVector=propagationE3;
+    //Insert the calculated propagation into the given edge
+    e.propagationVector = p;
 
     return true;
 }
-
 
 inline HPointSeed* D25ActiveContours::get_propagated_vertex(const HEdgeSeed &e, bool checkVisited)
 {
@@ -910,7 +867,7 @@ void D25ActiveContours::kill_overlapping_regular_segments( std::list<HEdgeSeed> 
                 else if(t1==1)
                 {
                     //a--x2--b,x1
-                    if(t2>0&&t2<1)
+                    if ((t2>0) && (t2<1))
                     {
                         //change edge a--b -> a--x2
                         (*it).p2=(*its).p2;
@@ -1217,11 +1174,9 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
 
                         //stitching
                         HEdgeSeed ne(p2,p3);
-                        HEdgeSeed nex(p3,p1); //fictive
-                        HEdgeSeed nexx(p1,p2); //fictive
+                        
 
-
-                        if(get_edges_propagations(ne,nex,nexx))
+                        if(get_edge_propagation(ne, p1->p))
                         {
                             HTriangleSeed tr;
                             tr.p1=p1;
@@ -1268,12 +1223,24 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
     float const range = windowRadius;
     vertices->tree.find_within_range(HContainerElement(&ps), range, std::back_inserter(neighbours));
 
-    unsigned pointCount = static_cast<unsigned>(neighbours.size());
+    size_t pointCount = neighbours.size();
 
     //Principal Component Analysis (PCA)
-    Vector<float,3> mean(0,0,0);	
-    mean=mean/(float)pointCount;
+    
+    Vector<float,3> mean(0,0,0);
 
+    //Mean calculation
+    std::vector<HContainerElement>::const_iterator itp = neighbours.begin();
+    while(itp != neighbours.end())
+    {
+        Vector<float,3> pp=(*itp).ps->p;
+        mean = mean + pp;
+
+        ++itp;
+    }
+    mean = mean / (float)pointCount;
+   
+    //Extended covariance matrix preparation [COV | Ex]
     double** A=new double*[6]; 
     for(int i=0; i<6; ++i)
     {
@@ -1283,14 +1250,23 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
 
     double* S2=new double[3];
 
-    std::vector<HContainerElement>::const_iterator itp=neighbours.begin();
+    //Covariance matrix calculation
+    itp=neighbours.begin();
     while(itp!=neighbours.end())
     {
         Vector<float,3> pp=(*itp).ps->p;
 
-        A[0][0]+=(pp.x()-mean.x())*(pp.x()-mean.x()); A[1][0]+=(pp.y()-mean.y())*(pp.x()-mean.x()); A[2][0]+=(pp.z()-mean.z())*(pp.x()-mean.x()); 
-        A[0][1]+=(pp.x()-mean.x())*(pp.y()-mean.y()); A[1][1]+=(pp.y()-mean.y())*(pp.y()-mean.y()); A[2][1]+=(pp.z()-mean.z())*(pp.y()-mean.y());
-        A[0][2]+=(pp.x()-mean.x())*(pp.z()-mean.z()); A[1][2]+=(pp.y()-mean.y())*(pp.z()-mean.z()); A[2][2]+=(pp.z()-mean.z())*(pp.z()-mean.z());
+        A[0][0]+=(pp.x()-mean.x())*(pp.x()-mean.x()); 
+        A[1][0]+=(pp.y()-mean.y())*(pp.x()-mean.x()); 
+        A[2][0]+=(pp.z()-mean.z())*(pp.x()-mean.x()); 
+        
+        A[0][1]+=(pp.x()-mean.x())*(pp.y()-mean.y()); 
+        A[1][1]+=(pp.y()-mean.y())*(pp.y()-mean.y()); 
+        A[2][1]+=(pp.z()-mean.z())*(pp.y()-mean.y());
+        
+        A[0][2]+=(pp.x()-mean.x())*(pp.z()-mean.z()); 
+        A[1][2]+=(pp.y()-mean.y())*(pp.z()-mean.z()); 
+        A[2][2]+=(pp.z()-mean.z())*(pp.z()-mean.z());
 
         ++itp;
     }
@@ -1306,9 +1282,10 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
     //Calculate eigenvectors using SVD decomposition
     svd(A,S2,n);
 
-    int maxIndex=(S2[0]<S2[1])?(S2[0]<S2[2]?0:2):(S2[1]<S2[2]?1:2);
+    int minIndex=(S2[0]<S2[1])?(S2[0]<S2[2]?0:2):(S2[1]<S2[2]?1:2);
 
-    Vector<float,3> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
+    //Vector<float,3> v((float)A[3+minIndex][0], (float)A[3+minIndex][1], (float)A[3+minIndex][2]);
+    Vector<float,3> v((float)A[3][minIndex], (float)A[4][minIndex], (float)A[5][minIndex]);
 
     for(int i=0; i<6; ++i)
     {
@@ -1317,7 +1294,7 @@ Vector<float,3> D25ActiveContours::get_surface_normal( Vector<float,3> p, float 
     delete[] A;
     delete[] S2;
 
-    return v/float(v.eucl_norm());
+    return v / float(v.eucl_norm());
 }
 
 
