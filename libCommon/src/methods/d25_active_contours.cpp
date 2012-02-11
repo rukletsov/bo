@@ -15,16 +15,24 @@ namespace methods {
 
 namespace surfaces {
 
-/*! \struct HTreeElement
-\brief HPointSeed wrapper for HVertexContainer utilization 
+bool HTriangleElement::operator==( const HTriangleElement &other ) const
+{
+    return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3); 
+}
+
+
+//Point container implementation
+
+/*! \struct HPointContainerItem
+\brief A wrapper of HPointElement for utilization in HPointContainer 
 */
-struct HContainerElement
+struct HPointContainerItem
 {
     /*! Default constructor */
-    HContainerElement():ps(0){}
+    HPointContainerItem():ps(0){}
 
     /*! Constructor */
-    HContainerElement(surfaces::HPointElement* ps):ps(ps){}
+    HPointContainerItem(HPointElement* ps):ps(ps){}
 
     /*! Access operator */
     inline float operator [] (const size_t t) const 
@@ -33,76 +41,69 @@ struct HContainerElement
     }
 
     /*! Comparison operator */
-    inline bool operator == (const HContainerElement &other) const
+    inline bool operator == (const HPointContainerItem &other) const
     {
         return (*ps)==(*other.ps);
     }
 
-    /*! Pointer to an elementary vertex item*/
-    surfaces::HPointElement* ps;
+    /*! Pointer to the reference point element*/
+    HPointElement* ps;
 };
 
 
-//Brackets accessor
-inline float bac( HContainerElement t, size_t k ) { return t[k]; }
+//HPointContainerItem brackets accessor
+inline float point_bac(HPointContainerItem t, size_t k ) { return t[k]; }
 
 //3D Tree type
-typedef KDTree::KDTree<3, HContainerElement,
-    std::pointer_to_binary_function<HContainerElement,size_t,float> > D3Tree;
+typedef KDTree::KDTree<3, HPointContainerItem,
+    std::pointer_to_binary_function<HPointContainerItem, size_t, float> > D3Tree;
 
-//3D Tree Wrapper
-class HVertexContainer
+//A general container of vertices
+class HPointContainer
 {
 public:
 
-    HVertexContainer(std::vector<Vector<float,3> >& vertices):
-        tree(D3Tree(std::ptr_fun(bac)))
+    HPointContainer(std::vector<Vector<float,3> >& vertices):
+        tree(D3Tree(std::ptr_fun(point_bac)))
     {
-        linear.resize(vertices.size());
-
         //Filling in the 3D Tree
-        int cnt=0;
         for(std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
             itp != vertices.end(); ++itp)
         {
-            linear[cnt].isNode=false;
-            linear[cnt].isVisited=false;
-            linear[cnt].p=*itp;
-
-            HContainerElement ce(&linear[cnt]);
+            HPointElement* pe = new HPointElement(*itp);
+            
+            HPointContainerItem ce(pe);
             tree.insert(ce);
 
-            ++cnt;
         }
         tree.optimise();
     }
 
-    ~HVertexContainer()
+    ~HPointContainer()
     {
     }
 
     D3Tree tree;
-    std::vector<surfaces::HPointElement> linear;
 };
 
 //Predicate for closest point with minimal allowed distance
-class PredicateClosestPointWithMinDistance
+class PredicateClosestPointBeyondMinDistance
 {
 public:
-    PredicateClosestPointWithMinDistance(HContainerElement const& searchCenter, float minDistance, 
+    PredicateClosestPointBeyondMinDistance(HPointContainerItem const& searchCenter, float minDistance, 
                                          bool checkNodes, bool checkVisited):
         searchCenter(*searchCenter.ps), minDistance(minDistance), 
         checkNodes(checkNodes), checkVisited(checkVisited)
     {
     }
-    inline bool operator()( HContainerElement const& ce ) const
+    inline bool operator()( HPointContainerItem const& ce ) const
     {
         return
-            (((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) || (checkVisited && ce.ps->isVisited)) &&
+            (((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) || (checkVisited && ce.ps->isVisited)) &&
              ((searchCenter.p-ce.ps->p).eucl_norm()>minDistance));
     }
 protected:
-    surfaces::HPointElement searchCenter;
+    HPointElement searchCenter;
     float minDistance;
     bool checkNodes;
     bool checkVisited;
@@ -112,7 +113,7 @@ protected:
 class PredicateClosestPointNonCollinear
 {
 public:
-    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2,
+    PredicateClosestPointNonCollinear(const HPointContainerItem &ce1, const HPointContainerItem& ce2,
                                       bool checkNodes, bool checkVisited) :
         checkNodes(checkNodes),checkVisited(checkVisited), ce1(ce1),ce2(ce2)
     {
@@ -127,15 +128,15 @@ public:
     {
         this->only_nodes=only_nodes;
     }
-    inline bool operator()( HContainerElement const& ce ) const
+    inline bool operator()( HPointContainerItem const& ce ) const
     {
         if(only_nodes)
         {
-            if(!ce.ps->isNode)return false;
+            if(!ce.ps->isNode())return false;
         }
         else
         {
-            bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) ||
+            bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) ||
                                (checkVisited && ce.ps->isVisited);
             if(!isPretender)
                 return false;
@@ -160,11 +161,18 @@ protected:
     bool only_nodes;
     bool checkVisited;
     double eps;
-    HContainerElement ce1;
-    HContainerElement ce2;
+    HPointContainerItem ce1;
+    HPointContainerItem ce2;
     Vector<float,3> ba;
     double absBa;
 };
+
+
+
+
+
+//General functions
+
 
 /*! Calculates the normal vector of the plane formed by two given vectors \p v1 and \p v2
     \param v1 The first input vector
@@ -208,7 +216,12 @@ Vector<float,3> getNormalVector(const surfaces::HTriangleElement &ts)
     return getNormalVector(a,b);
 }
 
+
+
+
 //Triangular dipyramid
+
+
 struct TriangularDipyramid
 {
     Vector<float,3> vertices[5];
@@ -369,6 +382,11 @@ struct TriangularDipyramid
 };
 
 
+
+
+//Implementation of D25ActiveContours
+
+
 D25ActiveContours::D25ActiveContours(float averageFaceSide)
 {
     minInitDistance=averageFaceSide;
@@ -407,12 +425,12 @@ D25ActiveContours::~D25ActiveContours()
 inline HPointElement* D25ActiveContours::get_closest_point(const HPointElement &ps,
                                                         bool checkNodes, bool checkVisited)
 {
-    HContainerElement ce(0);
+    HPointContainerItem ce(0);
 
-    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointElement*>(&ps)),
+    PredicateClosestPointBeyondMinDistance pred(HPointContainerItem(const_cast<HPointElement*>(&ps)),
                                               minInitDistance,checkNodes,checkVisited);
     std::pair<D3Tree::const_iterator, float> nif = vertices->tree.find_nearest_if(
-                HContainerElement(const_cast<HPointElement*>(&ps)),maxInitDistance,pred);
+                HPointContainerItem(const_cast<HPointElement*>(&ps)),maxInitDistance,pred);
     if (nif.first != vertices->tree.end())
         ce=*nif.first;
 
@@ -429,17 +447,17 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
     mid.p=(ps1.p+ps2.p)/2;
 
     //Pre-search: choose all points in the range
-    std::vector<HContainerElement> v;
+    std::vector<HPointContainerItem> v;
     float const range = maxInitDistance;
-    vertices->tree.find_within_range(HContainerElement(&mid), range, std::back_inserter(v));
+    vertices->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
 
-    HContainerElement ce(0);
+    HPointContainerItem ce(0);
     double func=-1;
 
-    std::vector<HContainerElement>::const_iterator it = v.begin();
+    std::vector<HPointContainerItem>::const_iterator it = v.begin();
     while(it!=v.end())
     {
-        if((!(*it).ps->isVisited)||(checkNodes&&(*it).ps->isNode)||(checkVisited&&(*it).ps->isVisited))
+        if((!(*it).ps->isVisited)||(checkNodes&&(*it).ps->isNode())||(checkVisited&&(*it).ps->isVisited))
         {	
             Vector<float,3> v2=(*it).ps->p-ps2.p;
             Vector<float,3> v3=ps1.p-(*it).ps->p;
@@ -470,15 +488,15 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
 inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HPointElement &ps,
     const HPointElement &ps1, const HPointElement &ps2, bool checkNodes, bool checkVisited)
 {
-    HContainerElement ce(0);
+    HPointContainerItem ce(0);
 
-    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointElement*>(&ps1)),
-                                           HContainerElement(const_cast<HPointElement*>(&ps2)),
+    PredicateClosestPointNonCollinear pred(HPointContainerItem(const_cast<HPointElement*>(&ps1)),
+                                           HPointContainerItem(const_cast<HPointElement*>(&ps2)),
                                            checkNodes, checkVisited);
     pred.check_only_nodes(true);
 
     std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(
-        HContainerElement(const_cast<HPointElement*>(&ps)), maxProjectionNodeDistance, pred);
+        HPointContainerItem(const_cast<HPointElement*>(&ps)), maxProjectionNodeDistance, pred);
 
     if(nif.first!=vertices->tree.end())
     {
@@ -488,7 +506,7 @@ inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HP
     {
         pred.check_only_nodes(false);
 
-        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointElement*>(&ps)),
+        nif = vertices->tree.find_nearest_if(HPointContainerItem(const_cast<HPointElement*>(&ps)),
                                              maxProjectionNodeDistance, pred);
         if(nif.first!=vertices->tree.end())
         {
@@ -715,10 +733,11 @@ void D25ActiveContours::visit_points( HTriangleElement &tr )
 {
     const float eps=0.001f;
 
-    //Mark the triangle vertices as 'nodes'
-    tr.p1->isNode=true;
-    tr.p2->isNode=true;
-    tr.p3->isNode=true;
+    //Insert the current triangle in the list of adjacent triangles of 
+    //the triangle's nodes
+    tr.p1->adjacentTriangles.push_back(tr);
+    tr.p2->adjacentTriangles.push_back(tr);
+    tr.p3->adjacentTriangles.push_back(tr);
 
     //Select points from the neighborhood. Define the radius
     Vector<float,3> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
@@ -730,8 +749,8 @@ void D25ActiveContours::visit_points( HTriangleElement &tr )
     //Pre-search: choose all points in the range
     HPointElement mids;
     mids.p=mid;
-    std::vector<HContainerElement> v;
-    vertices->tree.find_within_range(HContainerElement(&mids), rad, std::back_inserter(v));
+    std::vector<HPointContainerItem> v;
+    vertices->tree.find_within_range(HPointContainerItem(&mids), rad, std::back_inserter(v));
 
     //Check if the selected points are inside the prism
     //Calculate triangle prism basis matrix
@@ -749,7 +768,7 @@ void D25ActiveContours::visit_points( HTriangleElement &tr )
     
     if( blas::invert_matrix(m,im))
     {
-        std::vector<HContainerElement>::iterator it=v.begin();
+        std::vector<HPointContainerItem>::iterator it=v.begin();
         while(it!=v.end())
         {
             if(!it->ps->isVisited)
@@ -1124,18 +1143,30 @@ common::Mesh D25ActiveContours::build_mesh()
 
 inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElement &t)
 {
+    //Calculate the mass center of the triangle
     Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
+    HPointElement mass((t1.A() + t1.B() + t1.C())/3);
 
-    std::list<HTriangleElement>::iterator tit = triangles.begin();
-    while(tit!=triangles.end())
+    //Calculate the neighbourhood of the mass center
+    std::vector<HPointContainerItem> neighbours;
+    float const range = 3*minInitDistance;
+    vertices->tree.find_within_range(HPointContainerItem(&mass), range, std::back_inserter(neighbours));
+
+    //For all nodes from the neighbourhood check their adjacent triangles for 
+    //intersection with the given triangle
+    std::vector<HPointContainerItem>::const_iterator it = neighbours.begin();
+    while(it != neighbours.end())
     {
-        HTriangleElement tt=*tit;
-        
-        Triangle<Vector<float,3> > t2(tt.p1->p,tt.p2->p,tt.p3->p);
-        
-        if(triangles_3d_intersection(t1,t2))return true;
+        std::list<HTriangleElement>::const_iterator tit = it->ps->adjacentTriangles.begin();
+        while(tit != it->ps->adjacentTriangles.end())
+        {
+            Triangle<Vector<float,3>> t2(tit->p1->p,tit->p2->p,tit->p3->p);
 
-        ++tit;
+            if(triangles_3d_intersection(t1,t2))return true;
+
+            ++tit;
+        }
+        ++it;
     }
 
     return false;
@@ -1245,9 +1276,9 @@ Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float w
     //Select points from the neighborhood
     HPointElement ps;
     ps.p=p;
-    std::vector<HContainerElement> neighbours;
+    std::vector<HPointContainerItem> neighbours;
     float const range = windowRadius;
-    vertices->tree.find_within_range(HContainerElement(&ps), range,
+    vertices->tree.find_within_range(HPointContainerItem(&ps), range,
                                      std::back_inserter(neighbours));
 
     size_t pointCount = neighbours.size();
@@ -1257,7 +1288,7 @@ Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float w
     Vector<float,3> mean(0,0,0);
 
     //Mean calculation
-    std::vector<HContainerElement>::const_iterator itp = neighbours.begin();
+    std::vector<HPointContainerItem>::const_iterator itp = neighbours.begin();
     while(itp != neighbours.end())
     {
         Vector<float,3> pp=(*itp).ps->p;
@@ -1326,9 +1357,19 @@ Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float w
 
 
 
-const std::vector<HPointElement>* D25ActiveContours::get_vertices()
-{
-    return &vertices->linear;
+std::vector<HPointElement> D25ActiveContours::get_vertices()
+{   
+    std::vector<HPointElement> verts;
+
+    D3Tree::mutable_iterator it = vertices->tree.begin();
+    while(it != vertices->tree.end())
+    {
+        HPointContainerItem c = *it;
+        verts.push_back(*c.ps);
+        ++it;
+    }
+
+    return verts;
 }
 
 const std::list<HEdgeElement>* D25ActiveContours::get_active_edges()
@@ -1405,7 +1446,7 @@ void D25ActiveContours::set_vertices( std::vector<Vector<float,3> > &v )
 
     //Create and fill in a vertex container
     if(vertices)delete vertices;
-    vertices=new HVertexContainer(v);
+    vertices=new HPointContainer(v);
 
     unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 }
@@ -1565,6 +1606,7 @@ common::Mesh D25ActiveContours::get_mesh()
 
     return m;
 }
+
 
 } // namespace surfaces
 } // namespace methods

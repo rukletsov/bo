@@ -51,49 +51,82 @@ namespace methods {
 
 namespace surfaces {
 
-/*! \class HVertexContainer.
-    \brief A general container of vertices.
-*/
-class HVertexContainer;
+struct HPointElement;
 
-/*! \struct HPointSeed.
+/*! \class HTriangleElement.
+    \brief An elementary surface item (mesh element).
+*/
+struct  HTriangleElement
+{
+    /*! First triangle's vertex. */
+    HPointElement* p1;
+
+    /*! Second triangle's vertex. */
+    HPointElement* p2;
+
+    /*! Third triangle's vertex. */
+    HPointElement* p3;
+
+    /*! Comparison operator. */
+    inline bool operator == (const HTriangleElement &other) const;
+};
+
+
+/*! \struct HPointElement.
     \brief An elementary point item.
 */
 struct HPointElement
 {
-    /*! 3D Vertex. */
+    HPointElement(common::Vector<float,3> v = common::Vector<float,3>(0,0,0))
+    {
+        p = v;
+        isVisited = false;
+    }
+
+    /*! 3D Point. */
     common::Vector<float,3> p;
 
     /*! Visits flag. */
     bool isVisited;
 
-    /*! Nodes flag. */
-    bool isNode;
+    bool isNode()
+    {
+        return (adjacentTriangles.size() > 0);
+    }
+
+    /*! List of adjacent triangles of a node point */
+    std::list<HTriangleElement> adjacentTriangles;
 
     /*! Access operator. */
     inline float operator [] (const size_t t) const 
     {
-        return t==0?p.x():(t==1?p.y():p.z());
+        return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
     }
 
     /*! Comparison operator. */
     inline bool operator == (const HPointElement &other) const
     {
-        return (p==other.p)&&(isNode==other.isNode)&&(isVisited==other.isVisited);
+        return (p == other.p) && (adjacentTriangles == other.adjacentTriangles) && 
+            (isVisited == other.isVisited);
     }
 };
 
+/*! \class HPointContainer.
+    \brief A general container of vertices.
+*/
+class HPointContainer;
 
-/*! \class HEdgeSeed.
-    \brief An elementary edge propagating item.
+
+/*! \class HEdgeElement.
+    \brief An elementary edge item.
 */
 struct  HEdgeElement
 {
     /*! Default constructor. */
-    HEdgeElement():p1(0),p2(0){}
+    HEdgeElement(): p1(0), p2(0){}
 
     /*! Constructor. */
-    HEdgeElement(HPointElement* p1, HPointElement* p2):p1(p1), p2(p2){}
+    HEdgeElement(HPointElement* p1, HPointElement* p2): p1(p1), p2(p2){}
 
     /*! First node of the edge. */
     HPointElement* p1;
@@ -107,34 +140,20 @@ struct  HEdgeElement
     /*! Comparison operator. */
     bool operator == (const HEdgeElement& other) const
     {
-        return  ((p1==other.p1&&p2==other.p2)||(p1==other.p2&&p2==other.p1))&&
-            (propagationVector==other.propagationVector);
+        return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) &&
+            (propagationVector == other.propagationVector);
     }
 
     /*! Swaps the vertices of the edge. */ 
     void swap()
     {
-        HPointElement* tmp=p1;
-        p1=p2;
-        p2=tmp;
+        HPointElement* tmp = p1;
+        p1 = p2;
+        p2 = tmp;
     }
 };
 
 
-/*! \class HTriangleSeed.
-    \brief An elementary surface item (mesh element).
-*/
-struct  HTriangleElement
-{
-    /*! First triangle's vertex. */
-    HPointElement* p1;
-
-    /*! Second triangle's vertex. */
-    HPointElement* p2;
-
-    /*! Third triangle's vertex. */
-    HPointElement* p3;
-};
 
 
 /*! \class D25ActiveContours.
@@ -185,7 +204,7 @@ public:
     /*! Get vector of point items.
         \return Vector of point items.
     */
-    const std::vector<HPointElement>* get_vertices();
+    std::vector<HPointElement> get_vertices();
 
     /*! Get the current list of edges that are prepared for propagation.   
         \return Active edges list.
@@ -399,8 +418,10 @@ protected:
     */
     common::Vector<float,3> get_surface_normal(common::Vector<float,3> p, float windowRadius);
 
-    //! Container of the input vertices. Internal realization as a k-DTree.
-    HVertexContainer *vertices;
+
+
+    //! Container of input vertices. Internal realization as a k-DTree.
+    HPointContainer *vertices;
 
     //! List of active edges.
     std::list<HEdgeElement> activeEdges;
@@ -408,9 +429,8 @@ protected:
     //! List of passive edges.
     std::list<HEdgeElement> frozenEdges;
 
-    //! List of mesh triangles.
+    //! List of triangles.
     std::list<HTriangleElement> triangles;
-
 
     //! The minimal allowed length of the initial triangle's side.
     float minInitDistance;
