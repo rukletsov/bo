@@ -13,7 +13,7 @@ using namespace common;
 namespace common {
 namespace methods {
 
-namespace {
+namespace surfaces {
 
 /*! \struct HTreeElement
 \brief HPointSeed wrapper for HVertexContainer utilization 
@@ -24,7 +24,7 @@ struct HContainerElement
     HContainerElement():ps(0){}
 
     /*! Constructor */
-    HContainerElement(surfaces::HPointSeed* ps):ps(ps){}
+    HContainerElement(surfaces::HPointElement* ps):ps(ps){}
 
     /*! Access operator */
     inline float operator [] (const size_t t) const 
@@ -39,7 +39,7 @@ struct HContainerElement
     }
 
     /*! Pointer to an elementary vertex item*/
-    surfaces::HPointSeed* ps;
+    surfaces::HPointElement* ps;
 };
 
 
@@ -82,7 +82,7 @@ public:
     }
 
     D3Tree tree;
-    std::vector<surfaces::HPointSeed> linear;
+    std::vector<surfaces::HPointElement> linear;
 };
 
 //Predicate for closest point with minimal allowed distance
@@ -102,7 +102,7 @@ public:
              ((searchCenter.p-ce.ps->p).eucl_norm()>minDistance));
     }
 protected:
-    surfaces::HPointSeed searchCenter;
+    surfaces::HPointElement searchCenter;
     float minDistance;
     bool checkNodes;
     bool checkVisited;
@@ -200,7 +200,7 @@ Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
     \param ts The input triangle
     \return The normal vector for \p ts
 */
-Vector<float,3> getNormalVector(const surfaces::HTriangleSeed &ts)
+Vector<float,3> getNormalVector(const surfaces::HTriangleElement &ts)
 {
     Vector<float,3> a=ts.p2->p-ts.p1->p;
     Vector<float,3> b=ts.p3->p-ts.p1->p;
@@ -368,25 +368,20 @@ struct TriangularDipyramid
     }
 };
 
-} //anonymous namespace
 
-
-namespace surfaces {
-
-D25ActiveContours::D25ActiveContours(float minFaceInitSize)
+D25ActiveContours::D25ActiveContours(float averageFaceSide)
 {
-    minInitDistance=minFaceInitSize;
+    minInitDistance=averageFaceSide;
     
-    maxInitDistance=1.5f*minInitDistance;
-    maxProjectionNodeDistance=0.5f*minInitDistance;
-    normalNeighborhoodRadius=maxInitDistance;
+    maxInitDistance=1.5f*averageFaceSide;
+    maxProjectionNodeDistance=0.8f*minInitDistance;
+    normalNeighborhoodRadius=averageFaceSide;
     maxSurfaceDepth=0.5f;
 
-    maxExcludedAngle=0.90f;
-    maxStitchedAngle=-0.90f;
-    faceSurfaceFactor=0.0;
-
-    tetrahedronBaseAngle=0.7f;
+    maxExcludedAngle=0.92f;
+    maxStitchedAngle=-0.86f;
+    faceSurfaceFactor=0.5;
+    tetrahedronBaseAngle=0.86f;
 
     vertices=0;
 }
@@ -409,28 +404,28 @@ D25ActiveContours::~D25ActiveContours()
     delete vertices;
 }
 
-inline HPointSeed* D25ActiveContours::get_closest_point(const HPointSeed &ps,
+inline HPointElement* D25ActiveContours::get_closest_point(const HPointElement &ps,
                                                         bool checkNodes, bool checkVisited)
 {
     HContainerElement ce(0);
 
-    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointSeed*>(&ps)),
+    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointElement*>(&ps)),
                                               minInitDistance,checkNodes,checkVisited);
     std::pair<D3Tree::const_iterator, float> nif = vertices->tree.find_nearest_if(
-                HContainerElement(const_cast<HPointSeed*>(&ps)),maxInitDistance,pred);
+                HContainerElement(const_cast<HPointElement*>(&ps)),maxInitDistance,pred);
     if (nif.first != vertices->tree.end())
         ce=*nif.first;
 
     return ce.ps;
 }
 
-HPointSeed* D25ActiveContours::get_closest_min_func_point(const HPointSeed &ps1,
-    const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement &ps1,
+    const HPointElement& ps2, bool checkNodes, bool checkVisited)
 {
     Vector<float,3> v1=ps2.p-ps1.p;
     double a=v1.eucl_norm();
 
-    HPointSeed mid;
+    HPointElement mid;
     mid.p=(ps1.p+ps2.p)/2;
 
     //Pre-search: choose all points in the range
@@ -472,31 +467,40 @@ HPointSeed* D25ActiveContours::get_closest_min_func_point(const HPointSeed &ps1,
 }
 
 
-inline HPointSeed* D25ActiveContours::get_closest_noncollinear_point(const HPointSeed &ps,
-    const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HPointElement &ps,
+    const HPointElement &ps1, const HPointElement &ps2, bool checkNodes, bool checkVisited)
 {
     HContainerElement ce(0);
 
-    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointSeed*>(&ps1)),
-                                           HContainerElement(const_cast<HPointSeed*>(&ps2)),
+    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointElement*>(&ps1)),
+                                           HContainerElement(const_cast<HPointElement*>(&ps2)),
                                            checkNodes, checkVisited);
     pred.check_only_nodes(true);
+
     std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(
-        HContainerElement(const_cast<HPointSeed*>(&ps)), maxProjectionNodeDistance, pred);
-    if(nif.first!=vertices->tree.end())ce=*nif.first;
+        HContainerElement(const_cast<HPointElement*>(&ps)), maxProjectionNodeDistance, pred);
+
+    if(nif.first!=vertices->tree.end())
+    {
+        ce = *nif.first;
+    }
     else
     {
         pred.check_only_nodes(false);
-        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),
+
+        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointElement*>(&ps)),
                                              maxProjectionNodeDistance, pred);
-        if(nif.first!=vertices->tree.end())ce=*nif.first;
+        if(nif.first!=vertices->tree.end())
+        {
+            ce = *nif.first;
+        }
     }
 
     return ce.ps;
 }
 
 
-inline float D25ActiveContours::get_distance(const HPointSeed &ps1, const HPointSeed &ps2)
+inline float D25ActiveContours::get_distance(const HPointElement &ps1, const HPointElement &ps2)
 {
     return (float)(ps1.p-ps2.p).eucl_norm();
 }
@@ -504,7 +508,7 @@ inline float D25ActiveContours::get_distance(const HPointSeed &ps1, const HPoint
 
 void D25ActiveContours::model_init()
 {
-    HPointSeed *pps1=0,*pps2=0,*pps3=0;
+    HPointElement *pps1=0,*pps2=0,*pps3=0;
 
     D3Tree::mutable_iterator it = vertices->tree.begin();
     while(it!=vertices->tree.end())
@@ -525,7 +529,7 @@ void D25ActiveContours::model_init()
 
                 if(pps3)
                 {
-                    HTriangleSeed tr;
+                    HTriangleElement tr;
                     tr.p1=pps1;
                     tr.p2=pps2;
                     tr.p3=pps3;
@@ -534,7 +538,7 @@ void D25ActiveContours::model_init()
 
                     if(!triangle_degenerate(tr)&&!triangle_mesh_3d_intersection(tr))
                     {
-                        HEdgeSeed e1, e2, e3;
+                        HEdgeElement e1, e2, e3;
                                                 
                         e1.p1 = pps1; e1.p2 = pps2;
                         e2.p1 = pps2; e2.p2 = pps3;
@@ -570,16 +574,16 @@ void D25ActiveContours::model_grow()
 {
     if(activeEdges.size()==0)return;
 
-    HEdgeSeed e=*activeEdges.begin();
+    HEdgeElement e=*activeEdges.begin();
 
-    HPointSeed* pps=get_propagated_vertex(e, false);
+    HPointElement* pps=get_propagated_vertex(e, false);
 
     if(pps)
     {
         //Exclude small angles
         exclude_small_angles(e, pps);
 
-        HTriangleSeed tr;
+        HTriangleElement tr;
         tr.p1=e.p1;
         tr.p2=e.p2;
         tr.p3=pps;
@@ -592,8 +596,8 @@ void D25ActiveContours::model_grow()
         else if(!triangle_mesh_3d_intersection(tr))
         {
             //New edges based on an old one and the propagated point
-            HEdgeSeed e1(pps, e.p1);
-            HEdgeSeed e2(pps, e.p2);
+            HEdgeElement e1(pps, e.p1);
+            HEdgeElement e2(pps, e.p2);
            
             //If the propagations are successfully calculated
             if(get_edge_propagation(e1, e.p2->p) &&
@@ -623,12 +627,12 @@ void D25ActiveContours::model_grow()
     }
 
     //Delete the processed edge from the active edges if it is yet here
-    std::list<HEdgeSeed>::iterator it=activeEdges.begin();
+    std::list<HEdgeElement>::iterator it=activeEdges.begin();
     if(it!=activeEdges.end()&&e==*it)
         activeEdges.erase(it);
 }
 
-bool D25ActiveContours::get_edge_propagation(HEdgeSeed &e, Vector<float,3> origin)
+bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vector<float,3> origin)
 {           
     //The middle point of the edge
     Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
@@ -679,24 +683,27 @@ bool D25ActiveContours::get_edge_propagation(HEdgeSeed &e, Vector<float,3> origi
     return true;
 }
 
-inline HPointSeed* D25ActiveContours::get_propagated_vertex(const HEdgeSeed &e,
+inline HPointElement* D25ActiveContours::get_propagated_vertex(const HEdgeElement &e,
                                                             bool checkVisited)
 {
-    HPointSeed p;
+    HPointElement p;
 
-    Vector<float,3> mid=(e.p1->p+e.p2->p)/2;
+    //The middle point of the edge
+    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;
 
-    p.p=mid+e.propagationVector;
+    //Estimate the propagated vertex position
+    p.p = mid + e.propagationVector;
 
-    HPointSeed* ps=get_closest_noncollinear_point(p,*e.p1,*e.p2,true, checkVisited);
+    //Find the closest vertex from the point cloud
+    HPointElement* ps=get_closest_noncollinear_point(p,*e.p1,*e.p2,true, checkVisited);
 
     return ps;
 }
 
 
-void D25ActiveContours::visit_points( std::list<HTriangleSeed> &newTriangles )
+void D25ActiveContours::visit_points( std::list<HTriangleElement> &newTriangles )
 {
-    std::list<HTriangleSeed>::iterator tit = newTriangles.begin();
+    std::list<HTriangleElement>::iterator tit = newTriangles.begin();
     while(tit!=newTriangles.end())
     {
         visit_points(*tit);
@@ -704,7 +711,7 @@ void D25ActiveContours::visit_points( std::list<HTriangleSeed> &newTriangles )
     }
 }
 
-void D25ActiveContours::visit_points( HTriangleSeed &tr )
+void D25ActiveContours::visit_points( HTriangleElement &tr )
 {
     const float eps=0.001f;
 
@@ -721,7 +728,7 @@ void D25ActiveContours::visit_points( HTriangleSeed &tr )
     rad=rad>(tmp=float((tr.p3->p-mid).eucl_norm()))?rad:tmp;
 
     //Pre-search: choose all points in the range
-    HPointSeed mids;
+    HPointElement mids;
     mids.p=mid;
     std::vector<HContainerElement> v;
     vertices->tree.find_within_range(HContainerElement(&mids), rad, std::back_inserter(v));
@@ -771,7 +778,7 @@ void D25ActiveContours::visit_points( HTriangleSeed &tr )
     
 }
 
-inline void D25ActiveContours::visit_point( HPointSeed* p )
+inline void D25ActiveContours::visit_point( HPointElement* p )
 {
     if(p->isVisited==false)
     {
@@ -781,10 +788,10 @@ inline void D25ActiveContours::visit_point( HPointSeed* p )
 }
 
 
-inline void D25ActiveContours::add_active_edge(const HEdgeSeed &e )
+inline void D25ActiveContours::add_active_edge(const HEdgeElement &e )
 {
     //Init the list of segments
-    std::list<HEdgeSeed> segments;
+    std::list<HEdgeElement> segments;
     segments.push_back(e);
 
     //Check overlapping of the segments with all existing edges
@@ -794,24 +801,24 @@ inline void D25ActiveContours::add_active_edge(const HEdgeSeed &e )
     activeEdges.splice(activeEdges.end(),segments);
 }
 
-void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &segmentParts,
-                                                          std::list<HEdgeSeed> &edgeList)
+void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeElement> &segmentParts,
+                                                          std::list<HEdgeElement> &edgeList)
 {
-    std::list<HEdgeSeed> newEdgeList;
+    std::list<HEdgeElement> newEdgeList;
 
     if(segmentParts.size()==0)return;
 
-    std::list<HEdgeSeed>::iterator it=edgeList.begin();
+    std::list<HEdgeElement>::iterator it=edgeList.begin();
     while(it!=edgeList.end())
     {
-        HEdgeSeed e=*it;
+        HEdgeElement e=*it;
 
         bool isEdgeDeleted=false;
 
-        std::list<HEdgeSeed>::iterator its=segmentParts.begin();
+        std::list<HEdgeElement>::iterator its=segmentParts.begin();
         while(its!=segmentParts.end())
         {
-            HEdgeSeed es=*its;
+            HEdgeElement es=*its;
 
             float t1,t2;
             if(segment_overlap_parameter(*es.p1,e,t1)&&segment_overlap_parameter(*es.p2,e,t2))
@@ -819,7 +826,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
                 //Set order: t1>=t2
                 if(t1<t2)
                 {
-                    HPointSeed* tmp=(*its).p1;
+                    HPointElement* tmp=(*its).p1;
                     (*its).p1=(*its).p2;
                     (*its).p2=tmp;
 
@@ -833,7 +840,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
                     //a--x2--b--x1
                     if(t2>0&&t2<1)
                     {
-                        HPointSeed* tmp=(*it).p2;
+                        HPointElement* tmp=(*it).p2;
                         //change edge a--b -> a--x2
                         (*it).p2=(*its).p2;
                         //change segment x2--x1 -> b--x1
@@ -856,7 +863,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
                     //x2--a--b--x1
                     else if(t2<0)
                     {
-                        HEdgeSeed s1,s2;
+                        HEdgeElement s1,s2;
 
                         s1.p1=(*its).p1;
                         s1.p2=(*it).p2;
@@ -923,7 +930,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
                     //a--x2--x1--b
                     if(t2>0&&t2<1)
                     {
-                        HEdgeSeed s1,s2;
+                        HEdgeElement s1,s2;
 
                         s1.p1=(*it).p1;
                         s1.p2=(*its).p2;
@@ -960,7 +967,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
                     //x2--a--x1--b
                     else if(t2<0)
                     {
-                        HPointSeed* tmp=(*it).p1;
+                        HPointElement* tmp=(*it).p1;
                         //change edge a--b -> x1--b
                         (*it).p1=(*its).p1;
                         //change segment x2--x1 -> x2--a
@@ -982,7 +989,7 @@ void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &
 }
 
 
-bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HEdgeSeed &e,
+bool D25ActiveContours::segment_overlap_parameter(const HPointElement &ps, const HEdgeElement &e,
                                                   float &t)
 {
     const float eps=0.001f;
@@ -1019,7 +1026,7 @@ bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HE
     return false;
 }
 
-inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointSeed* &ps )
+inline bool D25ActiveContours::exclude_small_angles( const HEdgeElement &e, HPointElement* &ps )
 {
 
     if (stick_to_adjacent_edge(e, ps, activeEdges) ||
@@ -1031,14 +1038,14 @@ inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointS
     return false;
 }
 
-bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeSeed &e, HPointSeed* &ps,
-                                               std::list<HEdgeSeed> &edgeList)
+bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElement* &ps,
+                                               std::list<HEdgeElement> &edgeList)
 {
 
-    std::list<HEdgeSeed>::const_iterator it=edgeList.begin();
+    std::list<HEdgeElement>::const_iterator it=edgeList.begin();
     while(it!=edgeList.end())
     {
-        HEdgeSeed ee=*it;
+        HEdgeElement ee=*it;
 
         //Excluding the base edge
         if(((e.p1->p == ee.p1->p) && (e.p2->p == ee.p2->p)) ||
@@ -1115,14 +1122,14 @@ common::Mesh D25ActiveContours::build_mesh()
 
 
 
-inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleSeed &t)
+inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElement &t)
 {
     Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
 
-    std::list<HTriangleSeed>::iterator tit = triangles.begin();
+    std::list<HTriangleElement>::iterator tit = triangles.begin();
     while(tit!=triangles.end())
     {
-        HTriangleSeed tt=*tit;
+        HTriangleElement tt=*tit;
         
         Triangle<Vector<float,3> > t2(tt.p1->p,tt.p2->p,tt.p3->p);
         
@@ -1139,9 +1146,9 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleSeed
 #   pragma warning(push)
 #   pragma warning(disable:4706)
 #endif // _MSC_VER
-void D25ActiveContours::edge_stitch(HEdgeSeed e )
+void D25ActiveContours::edge_stitch(HEdgeElement e )
 {
-    HPointSeed* pps1=get_propagated_vertex(e,true);
+    HPointElement* pps1=get_propagated_vertex(e,true);
 
     bool isStitched=false;
 
@@ -1149,9 +1156,9 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
     {
         Triangle<Vector<float,3> > t1(e.p1->p,e.p2->p,pps1->p);
 
-        for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
+        for(std::list<HEdgeElement>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
         {
-            HEdgeSeed ee=*ite;
+            HEdgeElement ee=*ite;
 
             if (e==ee) continue;
 
@@ -1169,7 +1176,7 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
                (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
             {
                 // If the edge is adjacent
-                HPointSeed* pps2=get_propagated_vertex(ee,true);
+                HPointElement* pps2=get_propagated_vertex(ee,true);
                 
                 if(pps2)
                 {
@@ -1186,18 +1193,18 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
                             ee.swap();
                         }
 
-                        HPointSeed *p1,*p2,*p3;
+                        HPointElement *p1,*p2,*p3;
                         p1=e.p1;
                         p2=e.p2;
                         p3=ee.p2;
 
                         //stitching
-                        HEdgeSeed ne(p2,p3);
+                        HEdgeElement ne(p2,p3);
                         
 
                         if(get_edge_propagation(ne, p1->p))
                         {
-                            HTriangleSeed tr;
+                            HTriangleElement tr;
                             tr.p1=p1;
                             tr.p2=p2;
                             tr.p3=p3;
@@ -1236,7 +1243,7 @@ void D25ActiveContours::edge_stitch(HEdgeSeed e )
 Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float windowRadius)
 {
     //Select points from the neighborhood
-    HPointSeed ps;
+    HPointElement ps;
     ps.p=p;
     std::vector<HContainerElement> neighbours;
     float const range = windowRadius;
@@ -1319,22 +1326,22 @@ Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float w
 
 
 
-const std::vector<HPointSeed>* D25ActiveContours::get_vertices()
+const std::vector<HPointElement>* D25ActiveContours::get_vertices()
 {
     return &vertices->linear;
 }
 
-const std::list<HEdgeSeed>* D25ActiveContours::get_active_edges()
+const std::list<HEdgeElement>* D25ActiveContours::get_active_edges()
 {
     return &activeEdges;
 }
 
-const std::list<HEdgeSeed>* D25ActiveContours::get_frozen_edges()
+const std::list<HEdgeElement>* D25ActiveContours::get_frozen_edges()
 {
     return &frozenEdges;
 }
 
-const std::list<HTriangleSeed>* D25ActiveContours::get_triangles()
+const std::list<HTriangleElement>* D25ActiveContours::get_triangles()
 {
     return &triangles;
 }
@@ -1367,7 +1374,7 @@ bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vector<float,3>
     }
 }
 
-bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
+bool D25ActiveContours::triangle_degenerate( const HTriangleElement &t )
 {
     Vector<float,3> v1a=t.p2->p-t.p1->p;
     Vector<float,3> v1b=t.p3->p-t.p1->p;
@@ -1426,20 +1433,20 @@ void D25ActiveContours::post_stitch()
 {
     if(frozenEdges.size()==0)return;
 
-    for(std::list<HEdgeSeed>::iterator it=frozenEdges.begin(); it!=frozenEdges.end(); ++it )
+    for(std::list<HEdgeElement>::iterator it=frozenEdges.begin(); it!=frozenEdges.end(); ++it )
     {
-        HEdgeSeed e=*it;
-        HPointSeed* pps1=get_propagated_vertex(e,true);
+        HEdgeElement e=*it;
+        HPointElement* pps1=get_propagated_vertex(e,true);
         if(!pps1)continue;
 
         bool isStitched=false;
 
-        for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite )
+        for(std::list<HEdgeElement>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite )
         {
-            HEdgeSeed ee=*ite;
+            HEdgeElement ee=*ite;
 
             if(e==ee)continue;
-            HPointSeed* pps2=get_propagated_vertex(ee,true);
+            HPointElement* pps2=get_propagated_vertex(ee,true);
             if(!pps2)continue;
 
             bool b11 = false, b12 = false, b21 = false, b22 = false;
@@ -1485,12 +1492,12 @@ void D25ActiveContours::post_stitch()
                     if(sgn1>0&&sgn2>0)
                         if(cosab>maxStitchedAngle)
                         {
-                            HTriangleSeed tr;
+                            HTriangleElement tr;
                             tr.p1=e.p1;
                             tr.p2=e.p2;
                             tr.p3=ee.p2;
 
-                            HEdgeSeed ne;
+                            HEdgeElement ne;
                             ne.p1=e.p2;
                             ne.p2=ee.p2;
 
@@ -1529,13 +1536,13 @@ common::Mesh D25ActiveContours::get_mesh()
     common::Mesh m(triangles.size());
 
     //Create a reference map (from the local triangles nodes to the mesh vertices)
-    std::map<HPointSeed*,size_t> mymap;
-    std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
+    std::map<HPointElement*,size_t> mymap;
+    std::list<HTriangleElement>::const_iterator itt=triangles.begin();
     while(itt!=triangles.end())
     {
         for(int j=0; j<3; ++j)
         {
-            HPointSeed* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
+            HPointElement* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
 
             //If the triangle node is not yet in the map
             if(mymap.find(ps)==mymap.end())

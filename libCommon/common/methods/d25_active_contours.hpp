@@ -48,21 +48,18 @@
 namespace common {
 namespace methods {
 
-namespace {
+
+namespace surfaces {
 
 /*! \class HVertexContainer.
     \brief A general container of vertices.
 */
 class HVertexContainer;
 
-} //anonymous namespace
-
-namespace surfaces {
-
 /*! \struct HPointSeed.
     \brief An elementary point item.
 */
-struct HPointSeed
+struct HPointElement
 {
     /*! 3D Vertex. */
     common::Vector<float,3> p;
@@ -80,7 +77,7 @@ struct HPointSeed
     }
 
     /*! Comparison operator. */
-    inline bool operator == (const HPointSeed &other) const
+    inline bool operator == (const HPointElement &other) const
     {
         return (p==other.p)&&(isNode==other.isNode)&&(isVisited==other.isVisited);
     }
@@ -90,25 +87,25 @@ struct HPointSeed
 /*! \class HEdgeSeed.
     \brief An elementary edge propagating item.
 */
-struct  HEdgeSeed
+struct  HEdgeElement
 {
     /*! Default constructor. */
-    HEdgeSeed():p1(0),p2(0){}
+    HEdgeElement():p1(0),p2(0){}
 
     /*! Constructor. */
-    HEdgeSeed(HPointSeed* p1, HPointSeed* p2):p1(p1), p2(p2){}
+    HEdgeElement(HPointElement* p1, HPointElement* p2):p1(p1), p2(p2){}
 
     /*! First node of the edge. */
-    HPointSeed* p1;
+    HPointElement* p1;
 
     /*! Second node of the edge. */
-    HPointSeed* p2;
+    HPointElement* p2;
 
     /*! Vector of the propagation direction. */
     common::Vector<float,3> propagationVector;
 
     /*! Comparison operator. */
-    bool operator == (const HEdgeSeed& other) const
+    bool operator == (const HEdgeElement& other) const
     {
         return  ((p1==other.p1&&p2==other.p2)||(p1==other.p2&&p2==other.p1))&&
             (propagationVector==other.propagationVector);
@@ -117,7 +114,7 @@ struct  HEdgeSeed
     /*! Swaps the vertices of the edge. */ 
     void swap()
     {
-        HPointSeed* tmp=p1;
+        HPointElement* tmp=p1;
         p1=p2;
         p2=tmp;
     }
@@ -127,16 +124,16 @@ struct  HEdgeSeed
 /*! \class HTriangleSeed.
     \brief An elementary surface item (mesh element).
 */
-struct  HTriangleSeed
+struct  HTriangleElement
 {
     /*! First triangle's vertex. */
-    HPointSeed* p1;
+    HPointElement* p1;
 
     /*! Second triangle's vertex. */
-    HPointSeed* p2;
+    HPointElement* p2;
 
     /*! Third triangle's vertex. */
-    HPointSeed* p3;
+    HPointElement* p3;
 };
 
 
@@ -188,22 +185,22 @@ public:
     /*! Get vector of point items.
         \return Vector of point items.
     */
-    const std::vector<HPointSeed>* get_vertices();
+    const std::vector<HPointElement>* get_vertices();
 
     /*! Get the current list of edges that are prepared for propagation.   
         \return Active edges list.
     */
-    const std::list<HEdgeSeed>* get_active_edges();
+    const std::list<HEdgeElement>* get_active_edges();
 
     /*! Get the current list of edges that couldn't be propagated.
         \return Frozen edges list.
     */
-    const std::list<HEdgeSeed>* get_frozen_edges();
+    const std::list<HEdgeElement>* get_frozen_edges();
 
     /*! Get the current list of generated triangles.
         \return Triangles list.
     */
-    const std::list<HTriangleSeed>* get_triangles();
+    const std::list<HTriangleElement>* get_triangles();
 
     /*! Get the mesh object built from the current list of generated triangles.
         \return Reconstructed mesh.
@@ -214,7 +211,7 @@ public:
         \param v Points cloud.
         \return Reconstructed mesh.
     */
-        common::Mesh build_mesh(std::vector<common::Vector<float,3> > &v);
+    common::Mesh build_mesh(std::vector<common::Vector<float,3> > &v);
 
     /*! Build the mesh based on the pre-loaded vertices.
         \return Reconstructed mesh.
@@ -240,7 +237,7 @@ protected:
         add a triangle based on them if their propagated triangles intersect in 3D.
         \param e The stitched edge.
     */
-    void edge_stitch(HEdgeSeed e);
+    void edge_stitch(HEdgeElement e);
 
     /*! Perform one step of "post-stitching" procedure: connection of adjacent frozen 
         edges into triangles if the angle between them is less than \p maxStitchedAngle. 
@@ -257,7 +254,7 @@ protected:
         \param checkVisited Flag: search among the visited vertices if true.
         \return Pointer to the resulting vertex.
     */
-    HPointSeed* get_closest_point(const HPointSeed &ps, bool checkNodes, bool checkVisited);
+    HPointElement* get_closest_point(const HPointElement &ps, bool checkNodes, bool checkVisited);
 
     /*! Find the closest point P to the given \p ps such that P, \p ps1 and \p ps2 are non-collinear. 
         Search among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
@@ -268,8 +265,8 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return A pointer to the resulting vertex.
     */
-    HPointSeed* get_closest_noncollinear_point(const HPointSeed &ps, const HPointSeed &ps1, 
-        const HPointSeed& ps2, bool checkNodes, bool checkVisited);
+    HPointElement* get_closest_noncollinear_point(const HPointElement &ps, const HPointElement &ps1, 
+        const HPointElement& ps2, bool checkNodes, bool checkVisited);
 
     /*! Finds point P that minimizes F(P, \p ps1, \p ps2) = std::abs(|ps1-ps2|-|P-ps2|) + 
         std::abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among 
@@ -281,31 +278,31 @@ protected:
         \return A pointer to the resulting vertex.
         \see maxInitDistance.
     */
-    HPointSeed* get_closest_min_func_point(const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited);
+    HPointElement* get_closest_min_func_point(const HPointElement &ps1, const HPointElement& ps2, bool checkNodes, bool checkVisited);
 
     /*! Calculates the Euclidean distance between \p ps1 and \p ps2.
         \param ps1 First input vertex.
         \param ps2 Second input vertex.
         \return A non-negative number, the Euclidean distance.
     */
-    float get_distance(const HPointSeed &ps1, const HPointSeed &ps2);
+    float get_distance(const HPointElement &ps1, const HPointElement &ps2);
 
     /*! Makes the points from \p vertices "visited" if they are situated in the 
         truncated projections of the triangles from the given list \p newTriangles.
         \param newTriangles The list of triangles.
     */
-    void visit_points(std::list<HTriangleSeed> &newTriangles);
+    void visit_points(std::list<HTriangleElement> &newTriangles);
 
     /*! Makes the points from \p vertices "visited" if they are situated within the 
         triangle prism of the given \p triangle with the height \p maxSurfaceDepth.
         \param triangle The input triangle.
     */
-    void visit_points(HTriangleSeed &triangle);
+    void visit_points(HTriangleElement &triangle);
 
     /*! Marks \p p as "visited".
         \param p A pointer to a vertex from \p vertices.
     */
-    void visit_point(HPointSeed* p);
+    void visit_point(HPointElement* p);
 
     /*! Indicates intersection of two given triangles \p t1 and \p t2 and their 
         nonconformity to one non-selfintersecting surface.
@@ -323,14 +320,14 @@ protected:
         \see triangles_3d_intersection.
         \see triangles.
     */
-    bool triangle_mesh_3d_intersection(const HTriangleSeed &t);
+    bool triangle_mesh_3d_intersection(const HTriangleElement &t);
 
     /*! Checks whether the given triangle \p t is degenerate (at least one of it's 
         angles is too small). Returns true if so, otherwise returns false.
       \param t The input triangle.
       \return true if the given triangle is degenerate, otherwise returns false.
     */
-    bool triangle_degenerate(const HTriangleSeed &t);
+    bool triangle_degenerate(const HTriangleElement &t);
 
     /*! Adds the given edge \p e to the list of active edges \p activeEdges. Makes new 
         breakup of \p activeEdges and \p frozenEdges (non-overlapping property) 
@@ -339,7 +336,7 @@ protected:
         \see kill_overlapping_regular_segments.
         \see activeEdges.
     */
-    void add_active_edge(const HEdgeSeed &e);
+    void add_active_edge(const HEdgeElement &e);
 
     /*! Calculates segment overlapping parameter.
         \param ps The input vertex.
@@ -348,14 +345,14 @@ protected:
         \return True and writes into \p t value 0<=\p t<=1 if \p ps can be represented 
         as \p ps=t*\p e.beginPoint+(1-t)*\p e.endPoint. Otherwise returns false.
     */
-    bool segment_overlap_parameter(const HPointSeed &ps, const HEdgeSeed &e, float &t);
+    bool segment_overlap_parameter(const HPointElement &ps, const HEdgeElement &e, float &t);
 
     /*! Deletes all overlapping parts from \p edgeList and \p segmentParts. The number 
         of elements in the both lists can decrease or increase after this procedure.
         \param segmentParts First edges list.
         \param edgeList Second edges list.
     */
-    void kill_overlapping_regular_segments(std::list<HEdgeSeed> &segmentParts, std::list<HEdgeSeed> &edgeList);
+    void kill_overlapping_regular_segments(std::list<HEdgeElement> &segmentParts, std::list<HEdgeElement> &edgeList);
 
     /*! Alters the coordinates of \p ps in such a way that the angles between the 
         edges of the triangle built from \p e and \p ps, and the elements of \p edgeList 
@@ -367,7 +364,7 @@ protected:
         \return True if \p ps was changed, otherwise - false.
         \see maxExcludedAngle.
     */
-    bool stick_to_adjacent_edge(const HEdgeSeed &e, HPointSeed* &ps, std::list<HEdgeSeed> &edgeList);
+    bool stick_to_adjacent_edge(const HEdgeElement &e, HPointElement* &ps, std::list<HEdgeElement> &edgeList);
 
     /*! Performs \p stickToAdjacentEdge() for \p activeEdges and \p frozenEdges (if 
         the result for \p activeEdges is false), and returns their OR value.
@@ -377,7 +374,7 @@ protected:
         \see activeEdges.
         \see frozenEdges.
     */
-    bool exclude_small_angles(const HEdgeSeed &e, HPointSeed* &ps);
+    bool exclude_small_angles(const HEdgeElement &e, HPointElement* &ps);
 
     /*! Calculates the element from \p vertices that is nearest to the point of 
         propagation for the given edge \p e. Searches among the visited points if \p checkVisited is true.
@@ -385,11 +382,11 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return The pointer to the propagated vertex.
     */
-    HPointSeed* get_propagated_vertex(const HEdgeSeed &e, bool checkVisited);
+    HPointElement* get_propagated_vertex(const HEdgeElement &e, bool checkVisited);
 
     //Calculates the propagation vector for the edge e defined by the origin point and insert it into e
     //returns True if the vector was successfully calculated and embedded into e. Otherwise returns false.
-    bool get_edge_propagation( HEdgeSeed &e, Vector<float,3> origin);
+    bool get_edge_propagation( HEdgeElement &e, Vector<float,3> origin);
 
 
     /*! Calculates an approximation of the normal surface vector in point \p p. The 
@@ -406,13 +403,13 @@ protected:
     HVertexContainer *vertices;
 
     //! List of active edges.
-    std::list<HEdgeSeed> activeEdges;
+    std::list<HEdgeElement> activeEdges;
 
     //! List of passive edges.
-    std::list<HEdgeSeed> frozenEdges;
+    std::list<HEdgeElement> frozenEdges;
 
     //! List of mesh triangles.
-    std::list<HTriangleSeed> triangles;
+    std::list<HTriangleElement> triangles;
 
 
     //! The minimal allowed length of the initial triangle's side.
