@@ -348,31 +348,6 @@ protected:
     */
     bool triangle_degenerate(const HTriangleElement &t);
 
-    /*! Adds the given edge \p e to the list of active edges \p activeEdges. Makes new 
-        breakup of \p activeEdges and \p frozenEdges (non-overlapping property) 
-        if \p e overlaps any of their members.
-        \param e The input edge.
-        \see kill_overlapping_regular_segments.
-        \see activeEdges.
-    */
-    void add_active_edge(const HEdgeElement &e);
-
-    /*! Calculates segment overlapping parameter.
-        \param ps The input vertex.
-        \param e The reference edge.
-        \param t The output parameter value.
-        \return True and writes into \p t value 0<=\p t<=1 if \p ps can be represented 
-        as \p ps=t*\p e.beginPoint+(1-t)*\p e.endPoint. Otherwise returns false.
-    */
-    bool segment_overlap_parameter(const HPointElement &ps, const HEdgeElement &e, float &t);
-
-    /*! Deletes all overlapping parts from \p edgeList and \p segmentParts. The number 
-        of elements in the both lists can decrease or increase after this procedure.
-        \param segmentParts First edges list.
-        \param edgeList Second edges list.
-    */
-    void kill_overlapping_regular_segments(std::list<HEdgeElement> &segmentParts, std::list<HEdgeElement> &edgeList);
-
     /*! Alters the coordinates of \p ps in such a way that the angles between the 
         edges of the triangle built from \p e and \p ps, and the elements of \p edgeList 
         are not less than \p maxExcludedAngle. This is achieved by superposition of the 
@@ -417,7 +392,6 @@ protected:
         \return The normal vector.
     */
     common::Vector<float,3> get_surface_normal(common::Vector<float,3> p, float windowRadius);
-
 
 
     //! Container of input vertices. Internal realization as a k-DTree.
