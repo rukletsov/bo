@@ -41,18 +41,15 @@
 
 #include <common/mesh.hpp>
 
-namespace common
-{
+namespace common {
+namespace methods {
 
-namespace methods
-{
+namespace surfaces {
 
-namespace surfaces
-{
-    //Returns a subdivided mesh acquired from the source mesh by application of
-    //the given number of subdivision iterations using the Modified Butterfly 
-    //scheme (see the reference paper)
-    Mesh mButterflySubdivision(const Mesh &source, int iterations);
+    // Performs the given number of subdivision iterations on the source mesh
+    // using the Modified Butterfly surface subdivision scheme (see the reference 
+    // paper) and returns the resulted mesh.
+    Mesh mbutterfly_subdivision(const Mesh &source, int iterations);
 
 } //namespace surfaces
 

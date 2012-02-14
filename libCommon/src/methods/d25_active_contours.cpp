@@ -1042,7 +1042,7 @@ common::Mesh D25ActiveContours::build_mesh()
 inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElement &t)
 {
     // Calculate the mass center of the triangle.
-    Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
+    Triangle<Vector<float,3> > t1(t.p1->p, t.p2->p, t.p3->p);
     HPointElement mass((t1.A() + t1.B() + t1.C())/3);
 
     // Calculate the neighbourhood of the mass center.
@@ -1058,9 +1058,9 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElem
         std::list<HTriangleElement>::const_iterator tit = it->ps->adjacentTriangles.begin();
         while(tit != it->ps->adjacentTriangles.end())
         {
-            Triangle<Vector<float,3>> t2(tit->p1->p,tit->p2->p,tit->p3->p);
+            Triangle<Vector<float,3>> t2(tit->p1->p ,tit->p2->p, tit->p3->p);
 
-            if (triangles_3d_intersection(t1,t2))
+            if (triangles_3d_intersection(t1, t2))
                 return true;
 
             ++tit;
@@ -1094,7 +1094,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
             bool b11 = false, b12 = false, b21 = false, b22 = false;
 
             // Test for adjacency.
-            // Supress warning C4706 using the comparison with true.
+            // Suppress warning C4706 using the comparison with true.
             if ( ((b11 = (e.p1 == ee.p1)) == true) || ((b12 = (e.p1 == ee.p2)) == true) ||
                  ((b21 = (e.p2 == ee.p1)) == true) || ((b22 = (e.p2 == ee.p2)) == true) )
             {
