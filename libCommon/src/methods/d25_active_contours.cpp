@@ -15,59 +15,116 @@ namespace methods {
 
 namespace surfaces {
 
-bool HTriangleElement::operator==( const HTriangleElement &other ) const
+
+// HTringleElement implementation.
+
+bool HTriangleElement::operator==(const HTriangleElement &other) const
 {
     return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3); 
 }
 
 
-//Point container implementation
+// HPointElement implementation.
 
-/*! \struct HPointContainerItem
-\brief A wrapper of HPointElement for utilization in HPointContainer 
-*/
+HPointElement::HPointElement(common::Vector<float,3> v /*= common::Vector<float,3>(0,0,0)*/)
+{
+    p = v;
+    isVisited = false;
+}
+
+bool HPointElement::isNode()
+{
+    return (adjacentTriangles.size() > 0);
+}
+
+float HPointElement::operator[](const size_t t) const
+{
+    return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
+}
+
+bool HPointElement::operator==(const HPointElement &other) const
+{
+    return (p == other.p) && (adjacentTriangles == other.adjacentTriangles) && 
+        (isVisited == other.isVisited);
+}
+
+
+// HEdgeElement implementation.
+
+HEdgeElement::HEdgeElement(HPointElement* p1, HPointElement* p2) : p1(p1), p2(p2)
+{
+}
+
+HEdgeElement::HEdgeElement() : p1(0), p2(0)
+{
+}
+
+bool HEdgeElement::operator==(const HEdgeElement& other) const
+{
+    return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) &&
+        (propagationVector == other.propagationVector);
+}
+
+void HEdgeElement::swap()
+{
+    HPointElement* tmp = p1;
+    p1 = p2;
+    p2 = tmp;
+}
+
+
+// Point container implementation.
+// Represents a wrapper of HPointElement for utilization in HPointContainer. 
+
 struct HPointContainerItem
 {
-    /*! Default constructor */
-    HPointContainerItem():ps(0){}
+    // Default constructor.
+    HPointContainerItem() : ps(0)
+    {
+    }
 
-    /*! Constructor */
-    HPointContainerItem(HPointElement* ps):ps(ps){}
+    // Constructor.
+    HPointContainerItem(HPointElement* ps) : ps(ps)
+    {
+    }
 
-    /*! Access operator */
-    inline float operator [] (const size_t t) const 
+    // Access operator.
+    inline float operator[](const size_t t) const 
     {
         return (*ps)[t];
     }
 
-    /*! Comparison operator */
-    inline bool operator == (const HPointContainerItem &other) const
+    // Comparison operator.
+    inline bool operator==(const HPointContainerItem &other) const
     {
-        return (*ps)==(*other.ps);
+        return (*ps) == (*other.ps);
     }
 
-    /*! Pointer to the reference point element*/
+    // Pointer to the reference point element.
     HPointElement* ps;
 };
 
 
-//HPointContainerItem brackets accessor
-inline float point_bac(HPointContainerItem t, size_t k ) { return t[k]; }
+// HPointContainerItem brackets accessor.
+inline float point_bac(HPointContainerItem t, size_t k)
+{ 
+    return t[k]; 
+}
 
-//3D Tree type
+// 3D Tree type.
 typedef KDTree::KDTree<3, HPointContainerItem,
-    std::pointer_to_binary_function<HPointContainerItem, size_t, float> > D3Tree;
+    std::pointer_to_binary_function<HPointContainerItem, size_t, float>> D3Tree;
 
-//A general container of vertices
+// A general container of vertices.
 class HPointContainer
 {
 public:
 
     HPointContainer(std::vector<Vector<float,3> >& vertices):
-        tree(D3Tree(std::ptr_fun(point_bac)))
+                    tree(D3Tree(std::ptr_fun(point_bac)))
     {
-        //Filling in the 3D Tree
-        for(std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
+        // Filling in the 3D Tree.
+        for (std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
             itp != vertices.end(); ++itp)
         {
             HPointElement* pe = new HPointElement(*itp);
@@ -86,87 +143,110 @@ public:
     D3Tree tree;
 };
 
-//Predicate for closest point with minimal allowed distance
+// Predicate for closest point with minimal allowed distance.
 class PredicateClosestPointBeyondMinDistance
 {
 public:
+
     PredicateClosestPointBeyondMinDistance(HPointContainerItem const& searchCenter, float minDistance, 
-                                         bool checkNodes, bool checkVisited):
-        searchCenter(*searchCenter.ps), minDistance(minDistance), 
-        checkNodes(checkNodes), checkVisited(checkVisited)
+                                           bool checkNodes, bool checkVisited):
+                                           searchCenter(*searchCenter.ps), minDistance(minDistance), 
+                                           checkNodes(checkNodes), checkVisited(checkVisited)
     {
     }
-    inline bool operator()( HPointContainerItem const& ce ) const
+
+    inline bool operator()(HPointContainerItem const& ce) const
     {
-        return
-            (((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) || (checkVisited && ce.ps->isVisited)) &&
-             ((searchCenter.p-ce.ps->p).eucl_norm()>minDistance));
+        return ((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) || 
+                (checkVisited && ce.ps->isVisited)) &&
+               ((searchCenter.p-ce.ps->p).eucl_norm() > minDistance);
     }
+
 protected:
+
     HPointElement searchCenter;
+
     float minDistance;
+
     bool checkNodes;
+
     bool checkVisited;
 };
 
-//Predicate for closest point with non-collinearity property
+// Predicate for closest point with non-collinearity property.
 class PredicateClosestPointNonCollinear
 {
 public:
+
     PredicateClosestPointNonCollinear(const HPointContainerItem &ce1, const HPointContainerItem& ce2,
                                       bool checkNodes, bool checkVisited) :
-        checkNodes(checkNodes),checkVisited(checkVisited), ce1(ce1),ce2(ce2)
+                                      checkNodes(checkNodes), checkVisited(checkVisited),
+                                      ce1(ce1), ce2(ce2)
     {
-        eps=0.5;
-        this->ce1=ce1;
-        this->ce2=ce2;
-        ba=ce2.ps->p-ce1.ps->p;
-        absBa=ba.eucl_norm();
-        only_nodes=false;
+        eps = 0.5;
+        this->ce1 = ce1;
+        this->ce2 = ce2;
+        ba = ce2.ps->p - ce1.ps->p;
+        absBa = ba.eucl_norm();
+        only_nodes = false;
     }
+
     inline void check_only_nodes(bool only_nodes)
     {
-        this->only_nodes=only_nodes;
+        this->only_nodes = only_nodes;
     }
-    inline bool operator()( HPointContainerItem const& ce ) const
+
+    inline bool operator()(HPointContainerItem const& ce) const
     {
-        if(only_nodes)
+        if (only_nodes)
         {
-            if(!ce.ps->isNode())return false;
+            if (!ce.ps->isNode())
+                return false;
         }
         else
         {
             bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) ||
                                (checkVisited && ce.ps->isVisited);
-            if(!isPretender)
+            if (!isPretender)
                 return false;
         }
 
-        if(absBa==0)return false;
+        if (absBa == 0)
+            return false;
 
-        //Collinearity test
-        Vector<float,3> ca=ce.ps->p-ce1.ps->p;;
-        double absCa2=ca.x()*ca.x()+ca.y()*ca.y()+ca.z()*ca.z();
+        // Collinearity test.
+        Vector<float,3> ca = ce.ps->p - ce1.ps->p;;
+        double absCa2 = ca.x() * ca.x() + ca.y() * ca.y() + ca.z() * ca.z();
 
-        double scalBaCa=ba*ca;
-        double projCaOnBa=scalBaCa/absBa;
+        double scalBaCa = ba * ca;
+        double projCaOnBa = scalBaCa / absBa;
 
-        double residual2=absCa2-projCaOnBa*projCaOnBa;
+        double residual2 = absCa2 - projCaOnBa * projCaOnBa;
 
-        if(residual2>eps)return true;
+        if(residual2 > eps)
+            return true;
+
         else return false;
     }
+
 protected:
+
     bool checkNodes;
+
     bool only_nodes;
+
     bool checkVisited;
+
     double eps;
+
     HPointContainerItem ce1;
+
     HPointContainerItem ce2;
+
     Vector<float,3> ba;
+
     double absBa;
 };
-
 
 
 
@@ -179,13 +259,13 @@ protected:
     \param v2 The second input vector
     \return The normal vector to <v1,v2>
 */
-Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> b )
+Vector<float,3> getNormalVector(const Vector<float,3> a, const Vector<float,3> b)
 {
     Vector<float,3> p;
 
-    p.x()=a.y()*b.z()-b.y()*a.z();
-    p.y()=a.z()*b.x()-b.z()*a.x();
-    p.z()=a.x()*b.y()-b.x()*a.y();
+    p.x() = a.y() * b.z() - b.y() * a.z();
+    p.y() = a.z() * b.x() - b.z() * a.x();
+    p.z() = a.x() * b.y() - b.x() * a.y();
 
     return p;
 }
@@ -195,12 +275,12 @@ Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> 
     \param t The input triangle
     \return The normal vector for \p t
 */
-Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
+Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3>> &t)
 {
-    Vector<float,3> a=t.B()-t.A();
-    Vector<float,3> b=t.C()-t.A();
+    Vector<float,3> a = t.B() - t.A();
+    Vector<float,3> b = t.C() - t.A();
 
-    return getNormalVector(a,b);
+    return getNormalVector(a, b);
 }
 
 /*! Calculates the normal vector for the face of the given triangle \p ts.
@@ -210,174 +290,174 @@ Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
 */
 Vector<float,3> getNormalVector(const surfaces::HTriangleElement &ts)
 {
-    Vector<float,3> a=ts.p2->p-ts.p1->p;
-    Vector<float,3> b=ts.p3->p-ts.p1->p;
+    Vector<float,3> a = ts.p2->p - ts.p1->p;
+    Vector<float,3> b = ts.p3->p - ts.p1->p;
 
-    return getNormalVector(a,b);
+    return getNormalVector(a, b);
 }
 
 
 
 
-//Triangular dipyramid
+// Triangular dipyramid implmentation.
 
 
 struct TriangularDipyramid
 {
     Vector<float,3> vertices[5];
-    Triangle<Vector<float,3> > faces[6];
+    Triangle<Vector<float,3>> faces[6];
     Vector<float,3> center;
     
-    //Triangular dipyramid based on the given triangle with the given base angle
-    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3> >& t,
+    // Triangular dipyramid based on the given triangle with the given base angle.
+    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3>>& t,
                                                        float baseAngleCos)
     {
         TriangularDipyramid tdp;
         
-        //Normal calculation.
+        // Normal calculation.
         Vector<float,3> z = getNormalVector(t);
 
-        //Sides length.
-        float a=float((t.B()-t.C()).eucl_norm());
-        float b=float((t.C()-t.A()).eucl_norm());
-        float c=float((t.A()-t.B()).eucl_norm());
+        // Sides length.
+        float a = float((t.B() - t.C()).eucl_norm());
+        float b = float((t.C() - t.A()).eucl_norm());
+        float c = float((t.A() - t.B()).eucl_norm());
         
-        //Half-perimeter.
-        float p=(a+b+c)/2;
+        // Half-perimeter.
+        float p = (a + b + c) / 2;
 
-        //Radius of the incircle.
-        float r = std::sqrt((p-a)*(p-b)*(p-c)/p);
+        // Radius of the incircle.
+        float r = std::sqrt((p - a) * (p - b) * ( p - c) / p);
 
-        //Center of the incircle.
-        tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
+        // Center of the incircle.
+        tdp.center = (t.A() * a + t.B() * b + t.C() * c) / (a + b + c);
 
-        //Height of the pyramid such that cos of the angles between the faces
-        //and the base are baseAngleCos.
-        float h = r * std::sqrt(1/(baseAngleCos*baseAngleCos)-1);
+        // Calculate the height of the pyramid such that cos of the angles 
+        // between the faces and the base are baseAngleCos.
+        float h = r * std::sqrt(1 / (baseAngleCos * baseAngleCos)-1);
 
-        //Height vector
-        z=z/float(z.eucl_norm())*h;
+        // Height vector.
+        z = z / float(z.eucl_norm()) * h;
         
-        //Two top-vertices
-        Vector<float,3> p1=tdp.center+z;
-        Vector<float,3> p2=tdp.center-z;
+        // Two top-vertices.
+        Vector<float,3> p1 = tdp.center + z;
+        Vector<float,3> p2 = tdp.center - z;
 
-        //Vertices of the dipyramid
-        tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
-        tdp.vertices[3]=p1; tdp.vertices[4]=p2;
+        // Vertices of the dipyramid.
+        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
+        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
-        //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
+        // Faces of the dipyramid.
+        tdp.faces[0] = Triangle<Vector<float, 3>>(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float, 3>>(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float, 3>>(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float, 3>>(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float, 3>>(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float, 3>>(t.C(), t.A(), p2);
 
         return tdp;
     }
 
-    //Triangular dipyramid based on the given triangle with the given height
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
+    // Triangular dipyramid based on the given triangle with the given height.
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3>>& t,
                                                         float height)
     {
         TriangularDipyramid tdp;
 
-        //Normal calculation.
-        Vector<float,3> z=getNormalVector(t);
+        // Normal calculation.
+        Vector<float,3> z = getNormalVector(t);
 
-        //Sides length.
-        float a=float((t.B()-t.C()).eucl_norm());
-        float b=float((t.C()-t.A()).eucl_norm());
-        float c=float((t.A()-t.B()).eucl_norm());
+        // Sides length.
+        float a = float((t.B() - t.C()).eucl_norm());
+        float b = float((t.C() - t.A()).eucl_norm());
+        float c = float((t.A() - t.B()).eucl_norm());
 
-        //Center of the incircle.
-        tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
+        // Center of the incircle.
+        tdp.center=(t.A() * a + t.B() * b + t.C() * c) / ( a + b + c);
 
-        //Height vector
-        z=z/float(z.eucl_norm())*height;
+        // Height vector.
+        z = z / float(z.eucl_norm()) * height;
 
-        //Two top-vertices
-        Vector<float,3> p1=tdp.center+z;
-        Vector<float,3> p2=tdp.center-z;
+        // Two top-vertices.
+        Vector<float,3> p1 = tdp.center + z;
+        Vector<float,3> p2 = tdp.center - z;
 
-        //Vertices of the dipyramid
-        tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
-        tdp.vertices[3]=p1; tdp.vertices[4]=p2;
+        // Vertices of the dipyramid.
+        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
+        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
-        //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3> >(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3> >(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3> >(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3> >(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3> >(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3> >(t.C(), t.A(), p2);
+        // Faces of the dipyramid.
+        tdp.faces[0] = Triangle<Vector<float,3>>(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float,3>>(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float,3>>(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float,3>>(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float,3>>(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float,3>>(t.C(), t.A(), p2);
 
         return tdp;
     }
 
-    //Check intersection with another triangular dipyramid.
-    //Based on the Separatiing Plane Theorem.
+    // Check intersection with another triangular dipyramid.
+    // Based on the Separating Plane Theorem.
     bool intersects(TriangularDipyramid& other)
     {
         float eps=0.01f;
 
-        TriangularDipyramid tp1=*this, tp2=other;
+        TriangularDipyramid tp1 = *this, tp2 = other;
 
-        for(unsigned i=0; i<2; ++i)
+        for (unsigned i = 0; i < 2; ++i)
         {
-            for(unsigned int t=0; t<6; ++t)
+            for (unsigned int t = 0; t < 6; ++t)
             {
-                Triangle<Vector<float,3> > face=tp1.faces[t];
-                Vector<float,3> norm=getNormalVector(face);
+                Triangle<Vector<float,3>> face = tp1.faces[t];
+                Vector<float,3> norm = getNormalVector(face);
                 
-                //Calculating min and max of the projection of the first dipyramid 
-                //on the current normal vector
-                float t1MinProj=0, t1MaxProj=0;
-                for(int k=0; k<5; ++k)
-                {
-                    Vector<float,3> v=tp1.vertices[k];
-                    float dot=norm*v;
-                    if(k==0)
-                    {
-                        t1MaxProj=t1MinProj=dot;
-                    }
-                    else
-                    {
-                        if(t1MaxProj<dot)t1MaxProj=dot;
-                        if(t1MinProj>dot)t1MinProj=dot;
-                    }
-                }
+                // Calculating min and max of the projection of the first dipyramid 
+                // on the current normal vector.
+                float t1MinProj = 0, t1MaxProj = 0;
+                tp1.get_min_max_projection(norm, t1MinProj, t1MaxProj);
 
-                //Calculating min and max of the projection of the second dipyramid 
-                //on the current normal vector
-                float t2MinProj=0, t2MaxProj=0;
-                for(int k=0; k<5; ++k)
-                {
-                    Vector<float,3> v=tp2.vertices[k];
-                    float dot=norm*v;
-                    if(k==0)
-                    {
-                        t2MaxProj=t2MinProj=dot;
-                    }
-                    else
-                    {
-                        if(t2MaxProj<dot)t2MaxProj=dot;
-                        if(t2MinProj>dot)t2MinProj=dot;
-                    }
-                }
+                // Calculating min and max of the projection of the second dipyramid 
+                // on the current normal vector.
+                float t2MinProj = 0, t2MaxProj = 0;
+                tp2.get_min_max_projection(norm, t2MinProj, t2MaxProj);
 
-                //If the projection intervals do not intersect, than the convex polygons are separated
-                if(t1MaxProj<t2MinProj+eps||t2MaxProj<t1MinProj+eps)return false;
+                // If the projection intervals do not intersect, 
+                // than the convex polygons are separated.
+                if(t1MaxProj < t2MinProj + eps || t2MaxProj < t1MinProj + eps)
+                    return false;
             }
 
-            //swap the dipyramids
-            TriangularDipyramid tmp=tp1;
-            tp1=tp2;
-            tp2=tmp;
+            // Swap the dipyramids.
+            TriangularDipyramid tmp = tp1;
+            tp1 = tp2;
+            tp2 = tmp;
         }
 
         return true;
+    }
+
+    // Calculates minimum and maximum of the dipyramid projection on the vector v.
+    void get_min_max_projection(const Vector<float,3> &v, float &minProjection, float &maxProjection)
+    {
+        minProjection = 0;
+        maxProjection = 0;
+
+        for (int k = 0; k < 5; ++k)
+        {
+            float dot = v * vertices[k];
+           
+            if (k == 0)
+            {
+                minProjection = maxProjection = dot;
+            }
+            else
+            {
+                if (maxProjection < dot)
+                    maxProjection = dot;
+                if (minProjection > dot)
+                    minProjection = dot;
+            }
+        }
     }
 };
 
@@ -385,7 +465,6 @@ struct TriangularDipyramid
 
 
 //Implementation of D25ActiveContours
-
 
 D25ActiveContours::D25ActiveContours(float averageFaceSide)
 {
@@ -446,7 +525,6 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
     HPointElement mid;
     mid.p = (ps1.p + ps2.p) / 2;
 
-    //Pre-search: choose all points in the range
     std::vector<HPointContainerItem> v;
     float const range = maxInitDistance;
     vertices->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
@@ -1366,7 +1444,6 @@ common::Mesh D25ActiveContours::get_mesh()
 
     return m;
 }
-
 
 } // namespace surfaces
 } // namespace methods

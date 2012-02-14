@@ -77,11 +77,7 @@ struct  HTriangleElement
 */
 struct HPointElement
 {
-    HPointElement(common::Vector<float,3> v = common::Vector<float,3>(0,0,0))
-    {
-        p = v;
-        isVisited = false;
-    }
+    HPointElement(common::Vector<float,3> v = common::Vector<float,3>(0,0,0));
 
     /*! 3D Point. */
     common::Vector<float,3> p;
@@ -89,26 +85,17 @@ struct HPointElement
     /*! Visits flag. */
     bool isVisited;
 
-    bool isNode()
-    {
-        return (adjacentTriangles.size() > 0);
-    }
+    /*! Define whether the point element is a mesh node */
+    bool isNode();
 
     /*! List of adjacent triangles of a node point */
     std::list<HTriangleElement> adjacentTriangles;
 
     /*! Access operator. */
-    inline float operator [] (const size_t t) const 
-    {
-        return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
-    }
+    float operator [] (const size_t t) const;
 
     /*! Comparison operator. */
-    inline bool operator == (const HPointElement &other) const
-    {
-        return (p == other.p) && (adjacentTriangles == other.adjacentTriangles) && 
-            (isVisited == other.isVisited);
-    }
+    bool operator == (const HPointElement &other) const;
 };
 
 /*! \class HPointContainer.
@@ -123,10 +110,10 @@ class HPointContainer;
 struct  HEdgeElement
 {
     /*! Default constructor. */
-    HEdgeElement(): p1(0), p2(0){}
+    HEdgeElement();
 
     /*! Constructor. */
-    HEdgeElement(HPointElement* p1, HPointElement* p2): p1(p1), p2(p2){}
+    HEdgeElement(HPointElement* p1, HPointElement* p2);
 
     /*! First node of the edge. */
     HPointElement* p1;
@@ -138,19 +125,10 @@ struct  HEdgeElement
     common::Vector<float,3> propagationVector;
 
     /*! Comparison operator. */
-    bool operator == (const HEdgeElement& other) const
-    {
-        return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) &&
-            (propagationVector == other.propagationVector);
-    }
+    bool operator == (const HEdgeElement& other) const;
 
     /*! Swaps the vertices of the edge. */ 
-    void swap()
-    {
-        HPointElement* tmp = p1;
-        p1 = p2;
-        p2 = tmp;
-    }
+    void swap();
 };
 
 
@@ -159,7 +137,7 @@ struct  HEdgeElement
 /*! \class D25ActiveContours.
     \brief 2.5D active contour based mesh reconstruction.
     \author Dzmitry Hlindzich.
-    \date 2009-2011.
+    \date 2009-2012.
     \details Modification of the approach proposed by Ye Duan and Hong Qin,
     "2.5D Active Contour for Surface Reconstruction", Proceedings of the 8th
     Fall Workshop on Vision, Modeling and Visualization (VMV 2003), Munich,
