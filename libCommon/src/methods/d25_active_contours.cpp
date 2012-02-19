@@ -8,8 +8,6 @@
 #include "common/blas/blas.hpp"
 #include "common/methods/d25_active_contours.hpp"
 
-using namespace common;
-
 namespace common {
 namespace methods {
 
