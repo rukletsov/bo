@@ -6,7 +6,7 @@
   Implementation of the Modified Butterfly subdivision surface method.
 
   Reference paper: Zorin, D., Schroeder, P. and Sweldens, W., 
-  “Interpolating subdivision for meshes with arbitrary topology”, 
+  "Interpolating subdivision for meshes with arbitrary topology", 
   Computer Graphics, Ann. Conf. Series 30, 189-192 (1996).
 
   Copyright (c) 2012
@@ -45,10 +45,10 @@ namespace bo {
 namespace methods {
 namespace surfaces {
 
-// Returns a subdivided mesh acquired from the source mesh by application of
-// the given number of subdivision iterations using the Modified Butterfly
-// scheme (see the reference paper)
-bo::Mesh mButterflySubdivision(const bo::Mesh &source, int iterations);
+// Performs the given number of subdivision iterations on the source mesh
+// using the Modified Butterfly surface subdivision scheme (see the reference 
+// paper) and returns the resulted mesh.
+bo::Mesh mbutterfly_subdivision(const bo::Mesh &source, int iterations);
 
 } // namespace surfaces
 } // namespace methods

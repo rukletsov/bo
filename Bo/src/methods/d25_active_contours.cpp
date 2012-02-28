@@ -8,177 +8,261 @@
 #include "bo/blas/blas.hpp"
 #include "bo/methods/d25_active_contours.hpp"
 
-//Uncomment for equal-square triangles propagation  
-//#define USE_EQUAL_SQUARE_PROPAGATION
-
 namespace bo {
 namespace methods {
+namespace surfaces {
 
-namespace {
 
-/*! \struct HTreeElement
-\brief HPointSeed wrapper for HVertexContainer utilization 
-*/
-struct HContainerElement
+// HTringleElement implementation.
+
+bool HTriangleElement::operator==(const HTriangleElement &other) const
 {
-    /*! Default constructor */
-    HContainerElement():ps(0){}
+    return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3); 
+}
 
-    /*! Constructor */
-    HContainerElement(surfaces::HPointSeed* ps):ps(ps){}
 
-    /*! Access operator */
-    inline float operator [] (const size_t t) const 
+// HPointElement implementation.
+
+HPointElement::HPointElement(bo::Vector<float,3> v /*= bo::Vector<float,3>(0,0,0)*/)
+{
+    p = v;
+    isVisited = false;
+}
+
+bool HPointElement::isNode()
+{
+    return (adjacentTriangles.size() > 0);
+}
+
+float HPointElement::operator[](const size_t t) const
+{
+    return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
+}
+
+bool HPointElement::operator==(const HPointElement &other) const
+{
+    return (p == other.p) && (adjacentTriangles == other.adjacentTriangles) && 
+        (isVisited == other.isVisited);
+}
+
+
+// HEdgeElement implementation.
+
+HEdgeElement::HEdgeElement(HPointElement* p1, HPointElement* p2) : p1(p1), p2(p2)
+{
+}
+
+HEdgeElement::HEdgeElement() : p1(0), p2(0)
+{
+}
+
+bool HEdgeElement::operator==(const HEdgeElement& other) const
+{
+    return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) &&
+        (propagationVector == other.propagationVector);
+}
+
+void HEdgeElement::swap()
+{
+    HPointElement* tmp = p1;
+    p1 = p2;
+    p2 = tmp;
+}
+
+
+// Point container implementation.
+// Represents a wrapper of HPointElement for utilization in HPointContainer. 
+
+struct HPointContainerItem
+{
+    // Default constructor.
+    HPointContainerItem() : ps(0)
+    {
+    }
+
+    // Constructor.
+    HPointContainerItem(HPointElement* ps) : ps(ps)
+    {
+    }
+
+    // Access operator.
+    inline float operator[](const size_t t) const 
     {
         return (*ps)[t];
     }
 
-    /*! Comparison operator */
-    inline bool operator == (const HContainerElement &other) const
+    // Comparison operator.
+    inline bool operator==(const HPointContainerItem &other) const
     {
-        return (*ps)==(*other.ps);
+        return (*ps) == (*other.ps);
     }
 
-    /*! Pointer to an elementary vertex item*/
-    surfaces::HPointSeed* ps;
+    // Pointer to the reference point element.
+    HPointElement* ps;
 };
 
 
-//Brackets accessor
-inline float bac( HContainerElement t, size_t k ) { return t[k]; }
+// HPointContainerItem brackets accessor.
+inline float point_bac(HPointContainerItem t, size_t k)
+{ 
+    return t[k]; 
+}
 
-//3D Tree type
-typedef KDTree::KDTree<3, HContainerElement,
-    std::pointer_to_binary_function<HContainerElement,size_t,float> > D3Tree;
+// 3D Tree type.
+typedef KDTree::KDTree<3, HPointContainerItem,
+    std::pointer_to_binary_function<HPointContainerItem, size_t, float>> D3Tree;
 
-//3D Tree Wrapper
-class HVertexContainer
+// A general container of vertices.
+class HPointContainer
 {
 public:
 
-    HVertexContainer(std::vector<Vector<float,3> >& vertices):
-        tree(D3Tree(std::ptr_fun(bac)))
+    HPointContainer(std::vector<Vector<float,3> >& vertices):
+                    tree(D3Tree(std::ptr_fun(point_bac)))
     {
-        linear.resize(vertices.size());
-
-        //Filling in the 3D Tree
-        int cnt=0;
-        for(std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
+        // Filling in the 3D Tree.
+        for (std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
             itp != vertices.end(); ++itp)
         {
-            linear[cnt].isNode=false;
-            linear[cnt].isVisited=false;
-            linear[cnt].p=*itp;
-
-            HContainerElement ce(&linear[cnt]);
+            HPointElement* pe = new HPointElement(*itp);
+            
+            HPointContainerItem ce(pe);
             tree.insert(ce);
 
-            ++cnt;
         }
         tree.optimise();
     }
 
-    ~HVertexContainer()
+    ~HPointContainer()
     {
     }
 
     D3Tree tree;
-    std::vector<surfaces::HPointSeed> linear;
 };
 
-//Predicate for closest point with minimal allowed distance
-class PredicateClosestPointWithMinDistance
+// Predicate for closest point with minimal allowed distance.
+class PredicateClosestPointBeyondMinDistance
 {
 public:
-    PredicateClosestPointWithMinDistance(HContainerElement const& searchCenter, float minDistance, 
-                                         bool checkNodes, bool checkVisited):
-        searchCenter(*searchCenter.ps), minDistance(minDistance), 
-        checkNodes(checkNodes), checkVisited(checkVisited)
+
+    PredicateClosestPointBeyondMinDistance(HPointContainerItem const& searchCenter, float minDistance, 
+                                           bool checkNodes, bool checkVisited):
+                                           searchCenter(*searchCenter.ps), minDistance(minDistance), 
+                                           checkNodes(checkNodes), checkVisited(checkVisited)
     {
     }
-    inline bool operator()( HContainerElement const& ce ) const
+
+    inline bool operator()(HPointContainerItem const& ce) const
     {
-        return
-            (((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) || (checkVisited && ce.ps->isVisited)) &&
-             ((searchCenter.p-ce.ps->p).eucl_norm()>minDistance));
+        return ((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) || 
+                (checkVisited && ce.ps->isVisited)) &&
+               ((searchCenter.p-ce.ps->p).eucl_norm() > minDistance);
     }
+
 protected:
-    surfaces::HPointSeed searchCenter;
+
+    HPointElement searchCenter;
+
     float minDistance;
+
     bool checkNodes;
+
     bool checkVisited;
 };
 
-//Predicate for closest point with non-collinearity property
+// Predicate for closest point with non-collinearity property.
 class PredicateClosestPointNonCollinear
 {
 public:
-    PredicateClosestPointNonCollinear(const HContainerElement &ce1, const HContainerElement& ce2,
+
+    PredicateClosestPointNonCollinear(const HPointContainerItem &ce1, const HPointContainerItem& ce2,
                                       bool checkNodes, bool checkVisited) :
-        checkNodes(checkNodes),checkVisited(checkVisited), ce1(ce1),ce2(ce2)
+                                      checkNodes(checkNodes), checkVisited(checkVisited),
+                                      ce1(ce1), ce2(ce2)
     {
-        eps=0.5;
-        this->ce1=ce1;
-        this->ce2=ce2;
-        ba=ce2.ps->p-ce1.ps->p;
-        absBa=ba.eucl_norm();
-        only_nodes=false;
+        eps = 0.5;
+        this->ce1 = ce1;
+        this->ce2 = ce2;
+        ba = ce2.ps->p - ce1.ps->p;
+        absBa = ba.eucl_norm();
+        only_nodes = false;
     }
+
     inline void check_only_nodes(bool only_nodes)
     {
-        this->only_nodes=only_nodes;
+        this->only_nodes = only_nodes;
     }
-    inline bool operator()( HContainerElement const& ce ) const
+
+    inline bool operator()(HPointContainerItem const& ce) const
     {
-        if(only_nodes)
+        if (only_nodes)
         {
-            if(!ce.ps->isNode)return false;
+            if (!ce.ps->isNode())
+                return false;
         }
         else
         {
-            bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode) ||
+            bool isPretender = (!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) ||
                                (checkVisited && ce.ps->isVisited);
-            if(!isPretender)
+            if (!isPretender)
                 return false;
         }
 
-        if(absBa==0)return false;
+        if (absBa == 0)
+            return false;
 
-        //Collinearity test
-        Vector<float,3> ca=ce.ps->p-ce1.ps->p;;
-        double absCa2=ca.x()*ca.x()+ca.y()*ca.y()+ca.z()*ca.z();
+        // Collinearity test.
+        Vector<float,3> ca = ce.ps->p - ce1.ps->p;;
+        double absCa2 = ca.x() * ca.x() + ca.y() * ca.y() + ca.z() * ca.z();
 
-        double scalBaCa=ba*ca;
-        double projCaOnBa=scalBaCa/absBa;
+        double scalBaCa = ba * ca;
+        double projCaOnBa = scalBaCa / absBa;
 
-        double residual2=absCa2-projCaOnBa*projCaOnBa;
+        double residual2 = absCa2 - projCaOnBa * projCaOnBa;
 
-        if(residual2>eps)return true;
+        if(residual2 > eps)
+            return true;
+
         else return false;
     }
+
 protected:
+
     bool checkNodes;
+
     bool only_nodes;
+
     bool checkVisited;
+
     double eps;
-    HContainerElement ce1;
-    HContainerElement ce2;
+
+    HPointContainerItem ce1;
+
+    HPointContainerItem ce2;
+
     Vector<float,3> ba;
+
     double absBa;
 };
+
+
+
+
+//General functions
+
 
 /*! Calculates the normal vector of the plane formed by two given vectors \p v1 and \p v2
     \param v1 The first input vector
     \param v2 The second input vector
     \return The normal vector to <v1,v2>
 */
-Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> b )
+Vector<float,3> getNormalVector(const Vector<float,3> a, const Vector<float,3> b)
 {
     Vector<float,3> p;
 
-    p.x()=a.y()*b.z()-b.y()*a.z();
-    p.y()=a.z()*b.x()-b.z()*a.x();
-    p.z()=a.x()*b.y()-b.x()*a.y();
+    p.x() = a.y() * b.z() - b.y() * a.z();
+    p.y() = a.z() * b.x() - b.z() * a.x();
+    p.z() = a.x() * b.y() - b.x() * a.y();
 
     return p;
 }
@@ -188,12 +272,12 @@ Vector<float,3> getNormalVector( const Vector<float,3> a, const Vector<float,3> 
     \param t The input triangle
     \return The normal vector for \p t
 */
-Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
+Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3>> &t)
 {
-    Vector<float,3> a=t.B()-t.A();
-    Vector<float,3> b=t.C()-t.A();
+    Vector<float,3> a = t.B() - t.A();
+    Vector<float,3> b = t.C() - t.A();
 
-    return getNormalVector(a,b);
+    return getNormalVector(a, b);
 }
 
 /*! Calculates the normal vector for the face of the given triangle \p ts.
@@ -201,195 +285,199 @@ Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
     \param ts The input triangle
     \return The normal vector for \p ts
 */
-Vector<float,3> getNormalVector(const surfaces::HTriangleSeed &ts)
+Vector<float,3> getNormalVector(const surfaces::HTriangleElement &ts)
 {
-    Vector<float,3> a=ts.p2->p-ts.p1->p;
-    Vector<float,3> b=ts.p3->p-ts.p1->p;
+    Vector<float,3> a = ts.p2->p - ts.p1->p;
+    Vector<float,3> b = ts.p3->p - ts.p1->p;
 
-    return getNormalVector(a,b);
+    return getNormalVector(a, b);
 }
 
-//Triangular dipyramid
+
+
+
+// Triangular dipyramid implmentation.
+
+
 struct TriangularDipyramid
 {
     Vector<float,3> vertices[5];
-    Triangle<Vector<float,3> > faces[6];
+    Triangle<Vector<float,3>> faces[6];
     Vector<float,3> center;
     
-    //Triangular dipyramid based on the given triangle with the given base angle
-    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3> >& t,
+    // Triangular dipyramid based on the given triangle with the given base angle.
+    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3>>& t,
                                                        float baseAngleCos)
     {
         TriangularDipyramid tdp;
         
-        //Normal calculation.
+        // Normal calculation.
         Vector<float,3> z = getNormalVector(t);
 
-        //Sides length.
-        float a=float((t.B()-t.C()).eucl_norm());
-        float b=float((t.C()-t.A()).eucl_norm());
-        float c=float((t.A()-t.B()).eucl_norm());
+        // Sides length.
+        float a = float((t.B() - t.C()).eucl_norm());
+        float b = float((t.C() - t.A()).eucl_norm());
+        float c = float((t.A() - t.B()).eucl_norm());
         
-        //Half-perimeter.
-        float p=(a+b+c)/2;
+        // Half-perimeter.
+        float p = (a + b + c) / 2;
 
-        //Radius of the incircle.
-        float r = std::sqrt((p-a)*(p-b)*(p-c)/p);
+        // Radius of the incircle.
+        float r = std::sqrt((p - a) * (p - b) * ( p - c) / p);
 
-        //Center of the incircle.
-        tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
+        // Center of the incircle.
+        tdp.center = (t.A() * a + t.B() * b + t.C() * c) / (a + b + c);
 
-        //Height of the pyramid such that cos of the angles between the faces
-        //and the base are baseAngleCos.
-        float h = r * std::sqrt(1/(baseAngleCos*baseAngleCos)-1);
+        // Calculate the height of the pyramid such that cos of the angles 
+        // between the faces and the base are baseAngleCos.
+        float h = r * std::sqrt(1 / (baseAngleCos * baseAngleCos)-1);
 
-        //Height vector
-        z=z/float(z.eucl_norm())*h;
+        // Height vector.
+        z = z / float(z.eucl_norm()) * h;
         
-        //Two top-vertices
-        Vector<float,3> p1=tdp.center+z;
-        Vector<float,3> p2=tdp.center-z;
+        // Two top-vertices.
+        Vector<float,3> p1 = tdp.center + z;
+        Vector<float,3> p2 = tdp.center - z;
 
-        //Vertices of the dipyramid
-        tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
-        tdp.vertices[3]=p1; tdp.vertices[4]=p2;
+        // Vertices of the dipyramid.
+        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
+        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
-        //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
+        // Faces of the dipyramid.
+        tdp.faces[0] = Triangle<Vector<float, 3>>(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float, 3>>(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float, 3>>(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float, 3>>(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float, 3>>(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float, 3>>(t.C(), t.A(), p2);
 
         return tdp;
     }
 
-    //Triangular dipyramid based on the given triangle with the given height
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
+    // Triangular dipyramid based on the given triangle with the given height.
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3>>& t,
                                                         float height)
     {
         TriangularDipyramid tdp;
 
-        //Normal calculation.
-        Vector<float,3> z=getNormalVector(t);
+        // Normal calculation.
+        Vector<float,3> z = getNormalVector(t);
 
-        //Sides length.
-        float a=float((t.B()-t.C()).eucl_norm());
-        float b=float((t.C()-t.A()).eucl_norm());
-        float c=float((t.A()-t.B()).eucl_norm());
+        // Sides length.
+        float a = float((t.B() - t.C()).eucl_norm());
+        float b = float((t.C() - t.A()).eucl_norm());
+        float c = float((t.A() - t.B()).eucl_norm());
 
-        //Center of the incircle.
-        tdp.center=(t.A()*a+t.B()*b+t.C()*c)/(a+b+c);
+        // Center of the incircle.
+        tdp.center=(t.A() * a + t.B() * b + t.C() * c) / ( a + b + c);
 
-        //Height vector
-        z=z/float(z.eucl_norm())*height;
+        // Height vector.
+        z = z / float(z.eucl_norm()) * height;
 
-        //Two top-vertices
-        Vector<float,3> p1=tdp.center+z;
-        Vector<float,3> p2=tdp.center-z;
+        // Two top-vertices.
+        Vector<float,3> p1 = tdp.center + z;
+        Vector<float,3> p2 = tdp.center - z;
 
-        //Vertices of the dipyramid
-        tdp.vertices[0]=t.A(); tdp.vertices[1]=t.B(); tdp.vertices[2]=t.C();
-        tdp.vertices[3]=p1; tdp.vertices[4]=p2;
+        // Vertices of the dipyramid.
+        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
+        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
-        //Faces of the dipyramid
-        tdp.faces[0]=Triangle<Vector<float,3> >(t.A(), t.B(), p1);
-        tdp.faces[1]=Triangle<Vector<float,3> >(t.B(), t.C(), p1);
-        tdp.faces[2]=Triangle<Vector<float,3> >(t.C(), t.A(), p1);
-        tdp.faces[3]=Triangle<Vector<float,3> >(t.A(), t.B(), p2);
-        tdp.faces[4]=Triangle<Vector<float,3> >(t.B(), t.C(), p2);
-        tdp.faces[5]=Triangle<Vector<float,3> >(t.C(), t.A(), p2);
+        // Faces of the dipyramid.
+        tdp.faces[0] = Triangle<Vector<float,3>>(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float,3>>(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float,3>>(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float,3>>(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float,3>>(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float,3>>(t.C(), t.A(), p2);
 
         return tdp;
     }
 
-    //Check intersection with another triangular dipyramid.
-    //Based on the Separatiing Plane Theorem.
+    // Check intersection with another triangular dipyramid.
+    // Based on the Separating Plane Theorem.
     bool intersects(TriangularDipyramid& other)
     {
         float eps=0.01f;
 
-        TriangularDipyramid tp1=*this, tp2=other;
+        TriangularDipyramid tp1 = *this, tp2 = other;
 
-        for(unsigned i=0; i<2; ++i)
+        for (unsigned i = 0; i < 2; ++i)
         {
-            for(unsigned int t=0; t<6; ++t)
+            for (unsigned int t = 0; t < 6; ++t)
             {
-                Triangle<Vector<float,3> > face=tp1.faces[t];
-                Vector<float,3> norm=getNormalVector(face);
+                Triangle<Vector<float,3>> face = tp1.faces[t];
+                Vector<float,3> norm = getNormalVector(face);
                 
-                //Calculating min and max of the projection of the first dipyramid 
-                //on the current normal vector
-                float t1MinProj=0, t1MaxProj=0;
-                for(int k=0; k<5; ++k)
-                {
-                    Vector<float,3> v=tp1.vertices[k];
-                    float dot=norm*v;
-                    if(k==0)
-                    {
-                        t1MaxProj=t1MinProj=dot;
-                    }
-                    else
-                    {
-                        if(t1MaxProj<dot)t1MaxProj=dot;
-                        if(t1MinProj>dot)t1MinProj=dot;
-                    }
-                }
+                // Calculating min and max of the projection of the first dipyramid 
+                // on the current normal vector.
+                float t1MinProj = 0, t1MaxProj = 0;
+                tp1.get_min_max_projection(norm, t1MinProj, t1MaxProj);
 
-                //Calculating min and max of the projection of the second dipyramid 
-                //on the current normal vector
-                float t2MinProj=0, t2MaxProj=0;
-                for(int k=0; k<5; ++k)
-                {
-                    Vector<float,3> v=tp2.vertices[k];
-                    float dot=norm*v;
-                    if(k==0)
-                    {
-                        t2MaxProj=t2MinProj=dot;
-                    }
-                    else
-                    {
-                        if(t2MaxProj<dot)t2MaxProj=dot;
-                        if(t2MinProj>dot)t2MinProj=dot;
-                    }
-                }
+                // Calculating min and max of the projection of the second dipyramid 
+                // on the current normal vector.
+                float t2MinProj = 0, t2MaxProj = 0;
+                tp2.get_min_max_projection(norm, t2MinProj, t2MaxProj);
 
-                //If the projection intervals do not intersect, than the convex polygons are separated
-                if(t1MaxProj<t2MinProj+eps||t2MaxProj<t1MinProj+eps)return false;
+                // If the projection intervals do not intersect, 
+                // than the convex polygons are separated.
+                if(t1MaxProj < t2MinProj + eps || t2MaxProj < t1MinProj + eps)
+                    return false;
             }
 
-            //swap the dipyramids
-            TriangularDipyramid tmp=tp1;
-            tp1=tp2;
-            tp2=tmp;
+            // Swap the dipyramids.
+            TriangularDipyramid tmp = tp1;
+            tp1 = tp2;
+            tp2 = tmp;
         }
 
         return true;
     }
+
+    // Calculates minimum and maximum of the dipyramid projection on the vector v.
+    void get_min_max_projection(const Vector<float,3> &v, float &minProjection, float &maxProjection)
+    {
+        minProjection = 0;
+        maxProjection = 0;
+
+        for (int k = 0; k < 5; ++k)
+        {
+            float dot = v * vertices[k];
+           
+            if (k == 0)
+            {
+                minProjection = maxProjection = dot;
+            }
+            else
+            {
+                if (maxProjection < dot)
+                    maxProjection = dot;
+                if (minProjection > dot)
+                    minProjection = dot;
+            }
+        }
+    }
 };
 
-} //anonymous namespace
 
 
-namespace surfaces {
 
-D25ActiveContours::D25ActiveContours(float minFaceInitSize)
+//Implementation of D25ActiveContours
+
+D25ActiveContours::D25ActiveContours(float averageFaceSide)
 {
-    minInitDistance=minFaceInitSize;
+    minInitDistance = averageFaceSide;
     
-    maxInitDistance=1.5f*minInitDistance;
-    maxProjectionNodeDistance=0.5f*minInitDistance;
-    normalNeighborhoodRadius=maxInitDistance;
-    maxSurfaceDepth=0.5f;
+    maxInitDistance = 1.5f * averageFaceSide;
+    maxProjectionNodeDistance = 0.8f * minInitDistance;
+    normalNeighborhoodRadius = averageFaceSide;
+    maxSurfaceDepth = 0.5f;
 
-    maxExcludedAngle=0.90f;
-    maxStitchedAngle=-0.90f;
-    faceSurfaceFactor=0.0;
+    maxExcludedAngle = 0.92f;
+    maxStitchedAngle = -0.86f;
+    faceSurfaceFactor = 0.5;
+    tetrahedronBaseAngle = 0.86f;
 
-    tetrahedronBaseAngle=0.7f;
-
-    vertices=0;
+    vertices = 0;
 }
 
 D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance,
@@ -402,7 +490,7 @@ D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistanc
     faceSurfaceFactor(faceSurfaceFactor), maxStitchedAngle(maxStitchedAngle),
     tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
-    vertices=0;
+    vertices = 0;
 }
 
 D25ActiveContours::~D25ActiveContours()
@@ -410,57 +498,58 @@ D25ActiveContours::~D25ActiveContours()
     delete vertices;
 }
 
-inline HPointSeed* D25ActiveContours::get_closest_point(const HPointSeed &ps,
+inline HPointElement* D25ActiveContours::get_closest_point(const HPointElement &ps,
                                                         bool checkNodes, bool checkVisited)
 {
-    HContainerElement ce(0);
+    HPointContainerItem ce(0);
 
-    PredicateClosestPointWithMinDistance pred(HContainerElement(const_cast<HPointSeed*>(&ps)),
+    PredicateClosestPointBeyondMinDistance pred(HPointContainerItem(const_cast<HPointElement*>(&ps)),
                                               minInitDistance,checkNodes,checkVisited);
     std::pair<D3Tree::const_iterator, float> nif = vertices->tree.find_nearest_if(
-                HContainerElement(const_cast<HPointSeed*>(&ps)),maxInitDistance,pred);
+                HPointContainerItem(const_cast<HPointElement*>(&ps)),maxInitDistance,pred);
     if (nif.first != vertices->tree.end())
         ce=*nif.first;
 
     return ce.ps;
 }
 
-HPointSeed* D25ActiveContours::get_closest_min_func_point(const HPointSeed &ps1,
-    const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement &ps1,
+    const HPointElement& ps2, bool checkNodes, bool checkVisited)
 {
-    Vector<float,3> v1=ps2.p-ps1.p;
-    double a=v1.eucl_norm();
+    Vector<float,3> v1 = ps2.p - ps1.p;
+    double a = v1.eucl_norm();
 
-    HPointSeed mid;
-    mid.p=(ps1.p+ps2.p)/2;
+    HPointElement mid;
+    mid.p = (ps1.p + ps2.p) / 2;
 
-    //Pre-search: choose all points in the range
-    std::vector<HContainerElement> v;
+    std::vector<HPointContainerItem> v;
     float const range = maxInitDistance;
-    vertices->tree.find_within_range(HContainerElement(&mid), range, std::back_inserter(v));
+    vertices->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
 
-    HContainerElement ce(0);
-    double func=-1;
+    HPointContainerItem ce(0);
+    double func = -1;
 
-    std::vector<HContainerElement>::const_iterator it = v.begin();
-    while(it!=v.end())
+    std::vector<HPointContainerItem>::const_iterator it = v.begin();
+    while (it != v.end())
     {
-        if((!(*it).ps->isVisited)||(checkNodes&&(*it).ps->isNode)||(checkVisited&&(*it).ps->isVisited))
+        if ((!(*it).ps->isVisited) || (checkNodes&&(*it).ps->isNode()) || 
+            (checkVisited&&(*it).ps->isVisited))
         {	
-            Vector<float,3> v2=(*it).ps->p-ps2.p;
-            Vector<float,3> v3=ps1.p-(*it).ps->p;
+            Vector<float,3> v2 = (*it).ps->p - ps2.p;
+            Vector<float,3> v3 = ps1.p - (*it).ps->p;
 
-            double b=v2.eucl_norm();
-            double c=v3.eucl_norm();
+            double b = v2.eucl_norm();
+            double c = v3.eucl_norm();
 
-            if(b<maxInitDistance&&c<maxInitDistance&&b>minInitDistance&&c>minInitDistance)
+            if (b < maxInitDistance && c < maxInitDistance && 
+                b > minInitDistance && c > minInitDistance)
             {
                 double f = std::abs(a-b) + std::abs(a-c);
 
-                if(func==-1||f<func)
+                if (func == -1 || f < func)
                 {
-                    func=f;
-                    ce=*it;
+                    func = f;
+                    ce = *it;
                 }
             }
 
@@ -473,82 +562,112 @@ HPointSeed* D25ActiveContours::get_closest_min_func_point(const HPointSeed &ps1,
 }
 
 
-inline HPointSeed* D25ActiveContours::get_closest_noncollinear_point(const HPointSeed &ps,
-    const HPointSeed &ps1, const HPointSeed& ps2, bool checkNodes, bool checkVisited)
+inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HPointElement &ps,
+    const HPointElement &ps1, const HPointElement &ps2, bool checkNodes, bool checkVisited)
 {
-    HContainerElement ce(0);
+    HPointContainerItem ce(0);
 
-    PredicateClosestPointNonCollinear pred(HContainerElement(const_cast<HPointSeed*>(&ps1)),
-                                           HContainerElement(const_cast<HPointSeed*>(&ps2)),
+    PredicateClosestPointNonCollinear pred(HPointContainerItem(const_cast<HPointElement*>(&ps1)),
+                                           HPointContainerItem(const_cast<HPointElement*>(&ps2)),
                                            checkNodes, checkVisited);
     pred.check_only_nodes(true);
+
     std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(
-        HContainerElement(const_cast<HPointSeed*>(&ps)), maxProjectionNodeDistance, pred);
-    if(nif.first!=vertices->tree.end())ce=*nif.first;
+        HPointContainerItem(const_cast<HPointElement*>(&ps)), maxProjectionNodeDistance, pred);
+
+    if (nif.first != vertices->tree.end())
+    {
+        ce = *nif.first;
+    }
     else
     {
         pred.check_only_nodes(false);
-        nif = vertices->tree.find_nearest_if(HContainerElement(const_cast<HPointSeed*>(&ps)),
+
+        nif = vertices->tree.find_nearest_if(HPointContainerItem(const_cast<HPointElement*>(&ps)),
                                              maxProjectionNodeDistance, pred);
-        if(nif.first!=vertices->tree.end())ce=*nif.first;
+        if(nif.first != vertices->tree.end())
+        {
+            ce = *nif.first;
+        }
     }
 
     return ce.ps;
 }
 
-
-inline float D25ActiveContours::get_distance(const HPointSeed &ps1, const HPointSeed &ps2)
+inline float D25ActiveContours::get_distance(const HPointElement &ps1, const HPointElement &ps2)
 {
-    return (float)(ps1.p-ps2.p).eucl_norm();
+    return (float)(ps1.p - ps2.p).eucl_norm();
 }
 
 
 void D25ActiveContours::model_init()
 {
-    HPointSeed *pps1=0,*pps2=0,*pps3=0;
+    HPointElement *pps1 = 0, *pps2 = 0, *pps3 = 0;
 
     D3Tree::mutable_iterator it = vertices->tree.begin();
-    while(it!=vertices->tree.end())
+    while (it != vertices->tree.end())
     {
-        if(!(*it).ps->isVisited)
+        // Take the first unvisited point from the point cloud.
+        if (!(*it).ps->isVisited)
         {
-            pps1=(*it).ps;
+            pps1 = (*it).ps;
 
+            // Mark it as visited.
             visit_point(pps1);
 
-            pps2=get_closest_point(*pps1, true, false);
+            // Try to find the closest point that lie out of the sphere
+            // with radius minInitialDistance and center in pps1.
+            pps2 = get_closest_point(*pps1, true, false);
 
-            if(pps2)
+            // If the point exists:
+            if (pps2)
             {
+                // Mark it as visited.
                 visit_point(pps2);
 
-                pps3=get_closest_min_func_point(*pps1, *pps2, true, false);
+                // Try to find the point pps3 from the point cloud that makes
+                // the triangle [pps1, pps2, pps3] so equilateral as possible.
+                pps3 = get_closest_min_func_point(*pps1, *pps2, true, false);
 
-                if(pps3)
+                // If such point exists:
+                if (pps3)
                 {
-                    HTriangleSeed tr;
-                    tr.p1=pps1;
-                    tr.p2=pps2;
-                    tr.p3=pps3;
+                    // Create a new triangle.
+                    HTriangleElement tr;
+                    tr.p1 = pps1;
+                    tr.p2 = pps2;
+                    tr.p3 = pps3;
 
+                    // Mark the vertex as visited.
                     visit_point(pps3);
 
-                    if(!triangle_degenerate(tr)&&!triangle_mesh_3d_intersection(tr))
+                    // Test if the triangle is well-shaped and does not
+                    // intersect the mesh. 
+                    if (!triangle_degenerate(tr) && 
+                        !triangle_mesh_3d_intersection(tr))
                     {
-                        HEdgeSeed e1, e2, e3;
-
-                        e1.p1=e3.p2=pps1;
-                        e2.p1=e1.p2=pps2;
-                        e3.p1=e2.p2=pps3;
-
-                        if(get_edges_propagations(e1,e2,e3))
+                        // Create three new edge elements.
+                        HEdgeElement e1, e2, e3;
+                                                
+                        e1.p1 = pps1; e1.p2 = pps2;
+                        e2.p1 = pps2; e2.p2 = pps3;
+                        e3.p1 = pps3; e3.p2 = pps1;
+                        
+                        // Try to calculate propagation vectors for them.
+                        if (get_edge_propagation(e1, pps3->p) &&
+                            get_edge_propagation(e2, pps1->p) &&
+                            get_edge_propagation(e3, pps2->p))
                         {
-                            add_active_edge(e1);
-                            add_active_edge(e2);
-                            add_active_edge(e3);
+                            // Add the edges to the list of active edges.
+                            activeEdges.push_back(e1);
+                            activeEdges.push_back(e2);
+                            activeEdges.push_back(e3);
 
+                            // Process the points from the point cloud that are in the triangle projection 
+                            // (mark as visited). Add the reference of the triangle to its vertices.
                             visit_points(tr);
 
+                            // Add new triangle into the mesh.
                             triangles.push_back(tr);
 
                             return;
@@ -567,180 +686,147 @@ void D25ActiveContours::model_init()
 
 void D25ActiveContours::model_grow()
 {
-    if(activeEdges.size()==0)return;
+    if (activeEdges.size() == 0)
+        return;
 
-    HEdgeSeed e=*activeEdges.begin();
+    // Take the first edge from the list.
+    HEdgeElement e = *activeEdges.begin();
 
-    HPointSeed* pps=get_propagated_vertex(e, false);
+    // Try to calculate the propagated point from the point cloud.
+    HPointElement* pps = get_propagated_vertex(e, false);
 
     if(pps)
     {
-        //Exclude small angles
+        // Exclude small angles by sticking the propagated
+        // point to the ends of adjacent edges.
         exclude_small_angles(e, pps);
 
-        HTriangleSeed tr;
+        // Create a new triangle.
+        HTriangleElement tr;
         tr.p1=e.p1;
         tr.p2=e.p2;
         tr.p3=pps;
 
+        // If the triangle is bad-shaped, put the new edge into
+        // the list of passive edges for further processeng.
         if(triangle_degenerate(tr))
         {
             frozenEdges.push_back(e);
         }
-        //Test for triangles collisions
+        // Test the triangle for collision with the mesh. If does not intersect:
         else if(!triangle_mesh_3d_intersection(tr))
         {
-            //New edges based on an old one and the propagated point
-            HEdgeSeed e1(e.p2,pps);
-            HEdgeSeed e2(pps,e.p1);
-            HEdgeSeed e3=e; //fictive
-
-            //If the propagations are successfully calculated
-            if(get_edges_propagations(e1,e2,e3))
+            // New edges based on the old one and the propagated point.
+            HEdgeElement e1(pps, e.p1);
+            HEdgeElement e2(pps, e.p2);
+           
+            // If the propagation vectors are successfully calculated:
+            if(get_edge_propagation(e1, e.p2->p) &&
+               get_edge_propagation(e2, e.p1->p))
             {
-                //Add two new active edges
-                add_active_edge(e1);
-                add_active_edge(e2);
-
-                //Mark visited and under projection points
+                // Add two new active edges into the processing list.
+                activeEdges.push_back(e1);
+                activeEdges.push_back(e2);
+               
+                // Process the points from the point cloud that are in the triangle projection 
+                // (mark as visited). Add the reference of the triangle to its vertices.
                 visit_points(tr);	
 
-                //Add new triangle to the mesh
+                // Add new triangle into the mesh.
                 triangles.push_back(tr);
             } 
   
         }
+        // If the triangle intersects the mesh:
         else 
         {
-            //"On-the-fly" stitching
+            // "On-the-fly" stitching.
             edge_stitch(e);
         }
     }
+    // If can not calculate the propagated point:
     else 
     {
         frozenEdges.push_back(e);
     }
 
-    //Delete the processed edge from the active edges if it is yet here
-    std::list<HEdgeSeed>::iterator it=activeEdges.begin();
-    if(it!=activeEdges.end()&&e==*it)
+    // Delete the processed (first) edge from the active edges if it is yet here.
+    std::list<HEdgeElement>::iterator it = activeEdges.begin();
+    if(it != activeEdges.end() && e == *it)
         activeEdges.erase(it);
 }
 
-bool D25ActiveContours::get_edges_propagations(HEdgeSeed &e1, HEdgeSeed &e2, HEdgeSeed &e3)
-{
-    if(e1.p1!=e3.p2 || e2.p1!=e1.p2 || e3.p1!=e2.p2)return false;
+bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vector<float,3> origin)
+{           
+    // The middle point of the edge.
+    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
 
-    Vector<float,3> mid=(e1.p1->p+e2.p1->p+e3.p1->p)/3;
+    // The median segment[origin, mid].
+    Vector<float,3> median = mid - origin;
 
-    Vector<float,3> v1=e1.p2->p-e1.p1->p;
-    Vector<float,3> v2=e2.p2->p-e2.p1->p;
-    Vector<float,3> v3=e3.p2->p-e3.p1->p;
+    // Propagation norm is sqrt(3)/2 of min distance.
+    float pnorm = minInitDistance * 0.87f;
+    
+    // Inertial edge propagation.
+    Vector<float,3> p = median / (float)median.eucl_norm() * pnorm;
 
-    Vector<float,3> propagationE1,propagationE2,propagationE3;
-
-    //PCA-based approximation 
-    if(faceSurfaceFactor!=0)
+    // Tangential PCA-based edge propagation. 
+    if (faceSurfaceFactor != 0)
     {
-        //PCA-based surface normal calculation
-        Vector<float,3> midNorm=get_surface_normal(mid,normalNeighborhoodRadius);
+        // Surface normal calculation in the middle point of the edge.
+        Vector<float,3> midNorm = get_surface_normal(mid, normalNeighborhoodRadius);
 
-        //Propagation directions. Surface normal calculation
-        propagationE1=getNormalVector(v1,midNorm);
-        propagationE2=getNormalVector(v2,midNorm);
-        propagationE3=getNormalVector(v3,midNorm);
+        // Vector parallel to the edge.
+        Vector<float,3> v = e.p2->p - e.p1->p;
 
-        //Outer directions correction
-        Vector<float,3> medianE1=(e1.p1->p+e1.p2->p)/2-mid;
-        Vector<float,3> medianE2=(e2.p1->p+e2.p2->p)/2-mid;
-        Vector<float,3> medianE3=(e3.p1->p+e3.p2->p)/2-mid;
+        // Propagation direction as cross product of v and the normal.
+        Vector<float,3> prop = v.cross_product(midNorm);
 
-        float cosMP1=(medianE1*propagationE1)/float(medianE1.eucl_norm()*propagationE1.eucl_norm());
-        float cosMP2=(medianE2*propagationE2)/float(medianE2.eucl_norm()*propagationE2.eucl_norm());
-        float cosMP3=(medianE3*propagationE3)/float(medianE3.eucl_norm()*propagationE3.eucl_norm());
+        // The propagation vector is corrected to be directed outward of the triangle
+        // formed by the edge e and the origin point [e, origin].
+        // Warning: may not work in regions with extremely high curvature (corners less than 90grad).
+        {
+            // Check the angle between the median and the propagation vector. 
+            float cosa = prop * median;
 
-        if(cosMP1<0)propagationE1=propagationE1*(-1);
-        if(cosMP2<0)propagationE2=propagationE2*(-1);
-        if(cosMP3<0)propagationE3=propagationE3*(-1);
+            // Change the direction of the propagation if it "looks inside".
+            if (cosa < 0 ) 
+                prop = -prop;
+        }
 
-        //Mixture with the PCA-face propagations
-        propagationE1=(propagationE1/float(propagationE1.eucl_norm()))*faceSurfaceFactor+
-                (medianE1/float(medianE1.eucl_norm()))*(1-faceSurfaceFactor);
-        propagationE2=(propagationE2/float(propagationE2.eucl_norm()))*faceSurfaceFactor+
-                (medianE2/float(medianE2.eucl_norm()))*(1-faceSurfaceFactor);
-        propagationE3=(propagationE3/float(propagationE3.eucl_norm()))*faceSurfaceFactor+
-                (medianE3/float(medianE3.eucl_norm()))*(1-faceSurfaceFactor);
-    }
-    //Triangle face based approximation
-    else
-    {
-        propagationE1=(e1.p1->p+e1.p2->p)/2-mid;
-        propagationE2=(e2.p1->p+e2.p2->p)/2-mid;
-        propagationE3=(e3.p1->p+e3.p2->p)/2-mid;
+        // Normalize the propagation vector.
+        prop = prop / (float)prop.eucl_norm() * pnorm;
+
+        // Linear combination of the inertial and tangential propagations.
+        p = faceSurfaceFactor * prop + (1 - faceSurfaceFactor) * p;
     }
 
-
-    //Normalization
-    propagationE1=propagationE1/float(propagationE1.eucl_norm());
-    propagationE2=propagationE2/float(propagationE2.eucl_norm());
-    propagationE3=propagationE3/float(propagationE3.eucl_norm());
-
-#ifdef USE_EQUAL_SQUARE_PROPAGATION
-
-    //3D propagation triangle square calculation
-    float a=v1.getNorm();
-    float b=v2.getNorm();
-    float c=v3.getNorm();
-    float pp=(a+b+c)/2;
-    //Heron formula
-    initSquare=std::sqrt(pp*(pp-a)*(pp-b)*(pp-c));
-
-    //New propagations lengths
-    float cosE1=(propagationE1*v1)/a;
-    float cosE2=(propagationE2*v2)/b;
-    float cosE3=(propagationE3*v3)/c;
-    float normPE1=2*initSquare/(a*std::sqrt(1-cosE1*cosE1));
-    float normPE2=2*initSquare/(b*std::sqrt(1-cosE2*cosE2));
-    float normPE3=2*initSquare/(c*std::sqrt(1-cosE3*cosE3));
-
-#else
-
-    float normPE1 = (maxInitDistance+minInitDistance)/2;
-    float normPE2 = (maxInitDistance+minInitDistance)/2;
-    float normPE3 = (maxInitDistance+minInitDistance)/2;
-
-#endif
-
-    propagationE1=propagationE1*normPE1;
-    propagationE2=propagationE2*normPE2;
-    propagationE3=propagationE3*normPE3;
-
-    e1.propagationVector=propagationE1;
-    e2.propagationVector=propagationE2;
-    e3.propagationVector=propagationE3;
+    // Insert the calculated propagation into the given edge.
+    e.propagationVector = p;
 
     return true;
 }
 
-
-inline HPointSeed* D25ActiveContours::get_propagated_vertex(const HEdgeSeed &e,
+inline HPointElement* D25ActiveContours::get_propagated_vertex(const HEdgeElement &e,
                                                             bool checkVisited)
 {
-    HPointSeed p;
+    HPointElement p;
 
-    Vector<float,3> mid=(e.p1->p+e.p2->p)/2;
+    // The middle point of the edge.
+    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;
 
-    p.p=mid+e.propagationVector;
+    // Estimate the propagated vertex position.
+    p.p = mid + e.propagationVector;
 
-    HPointSeed* ps=get_closest_noncollinear_point(p,*e.p1,*e.p2,true, checkVisited);
+    // Find the closest vertex from the point cloud.
+    HPointElement* ps=get_closest_noncollinear_point(p,*e.p1,*e.p2,true, checkVisited);
 
     return ps;
 }
 
-
-void D25ActiveContours::visit_points( std::list<HTriangleSeed> &newTriangles )
+void D25ActiveContours::visit_points( std::list<HTriangleElement> &newTriangles )
 {
-    std::list<HTriangleSeed>::iterator tit = newTriangles.begin();
+    std::list<HTriangleElement>::iterator tit = newTriangles.begin();
     while(tit!=newTriangles.end())
     {
         visit_points(*tit);
@@ -748,324 +834,103 @@ void D25ActiveContours::visit_points( std::list<HTriangleSeed> &newTriangles )
     }
 }
 
-void D25ActiveContours::visit_points( HTriangleSeed &tr )
+void D25ActiveContours::visit_points(HTriangleElement &tr)
 {
-    const float eps=0.001f;
+    const float eps = 0.001f;
 
-    //Mark the triangle vertices as 'nodes'
-    tr.p1->isNode=true;
-    tr.p2->isNode=true;
-    tr.p3->isNode=true;
+    // Insert the current triangle in the list of adjacent triangles of 
+    // the triangle's nodes.
+    tr.p1->adjacentTriangles.push_back(tr);
+    tr.p2->adjacentTriangles.push_back(tr);
+    tr.p3->adjacentTriangles.push_back(tr);
 
-    //Select points from the neighborhood. Define the radius
-    Vector<float,3> mid=(tr.p1->p+tr.p2->p+tr.p3->p)/3;
-    float tmp, rad=maxSurfaceDepth;
-    rad=rad>(tmp=float((tr.p1->p-mid).eucl_norm()))?rad:tmp;
-    rad=rad>(tmp=float((tr.p2->p-mid).eucl_norm()))?rad:tmp;
-    rad=rad>(tmp=float((tr.p3->p-mid).eucl_norm()))?rad:tmp;
+    // The mass center of the triangle.
+    Vector<float,3> mid = (tr.p1->p + tr.p2->p + tr.p3->p) / 3;
 
-    //Pre-search: choose all points in the range
-    HPointSeed mids;
-    mids.p=mid;
-    std::vector<HContainerElement> v;
-    vertices->tree.find_within_range(HContainerElement(&mids), rad, std::back_inserter(v));
+    // Define the neighbourhood radius. Find the maximum of maxSurfaceDepth and 
+    // the distances from the triangle vertices to its mass centre.
+    float tmp, rad = maxSurfaceDepth;
+    rad = rad > (tmp = float((tr.p1->p - mid).eucl_norm())) ? rad : tmp;
+    rad = rad > (tmp = float((tr.p2->p - mid).eucl_norm())) ? rad : tmp;
+    rad = rad > (tmp = float((tr.p3->p - mid).eucl_norm())) ? rad : tmp;
 
-    //Check if the selected points are inside the prism
-    //Calculate triangle prism basis matrix
-    Vector<float,3> X=tr.p2->p-tr.p1->p;
-    Vector<float,3> Y=tr.p3->p-tr.p1->p;
-    Vector<float,3> Z=getNormalVector(tr); Z=Z/float(Z.eucl_norm())*maxSurfaceDepth;
-    Vector<float,3> O=tr.p1->p;
+    // Pre-search: choose all points in the range (sphere with radius = rad).
+    HPointElement mids;
+    mids.p = mid;
+    std::vector<HPointContainerItem> v;
+    vertices->tree.find_within_range(HPointContainerItem(&mids), rad, std::back_inserter(v));
 
-    boost::numeric::ublas::matrix<float> m(3,3);
-    m(0,0)=X.x(); m(0,1)=Y.x(); m(0,2)=Z.x();
-    m(1,0)=X.y(); m(1,1)=Y.y(); m(1,2)=Z.y();
-    m(2,0)=X.z(); m(2,1)=Y.z(); m(2,2)=Z.z();
-    
-    boost::numeric::ublas::matrix<float> im(3,3);  
-    
-    if( blas::invert_matrix(m,im))
+    // Check if the selected points are inside the triangle prism with 
+    // the height = 2*maxSurfaceDepth.
     {
-        std::vector<HContainerElement>::iterator it=v.begin();
-        while(it!=v.end())
+        // Calculate the triangle prism coordinate axes.
+        Vector<float,3> X = tr.p2->p - tr.p1->p;
+        Vector<float,3> Y = tr.p3->p - tr.p1->p;
+        Vector<float,3> Z = getNormalVector(tr); 
+        Z = Z / float(Z.eucl_norm()) * maxSurfaceDepth;
+        Vector<float,3> O = tr.p1->p;
+
+        // Calculate the triangle prism basis matrix.
+        boost::numeric::ublas::matrix<float> m(3,3);
+        m(0,0) = X.x(); m(0,1) = Y.x(); m(0,2) = Z.x();
+        m(1,0) = X.y(); m(1,1) = Y.y(); m(1,2) = Z.y();
+        m(2,0) = X.z(); m(2,1) = Y.z(); m(2,2) = Z.z();
+        
+        boost::numeric::ublas::matrix<float> im(3,3);  
+        
+        // Find the coordinates of the vertices from the range in the calculated
+        // coordinate system using the inverse basis matrix. 
+        if (blas::invert_matrix(m,im))
         {
-            if(!it->ps->isVisited)
+            std::vector<HPointContainerItem>::iterator it = v.begin();
+            while (it!=v.end())
             {
-                boost::numeric::ublas::matrix<float> mp(3,1);
-                mp(0,0)=it->ps->p.x()-O.x();
-                mp(1,0)=it->ps->p.y()-O.y();
-                mp(2,0)=it->ps->p.z()-O.z();
-
-                boost::numeric::ublas::matrix<float> am=prod(im,mp);
-
-                float a=am(0,0);
-                float b=am(1,0);
-                float c=am(2,0);
-
-                if(a+b<=1+eps&&a>=-eps&&b>=-eps&&c>=-1&&c<=1)
+                if (!it->ps->isVisited)
                 {
+                    // The coordinates in the old coordinate system.
+                    boost::numeric::ublas::matrix<float> mp(3,1);
+                    mp(0,0) = it->ps->p.x() - O.x();
+                    mp(1,0) = it->ps->p.y() - O.y();
+                    mp(2,0) = it->ps->p.z() - O.z();
+                    
+                    // Calculate the coordinates in the new (triangle prism)
+                    // coordinate system.
+                    boost::numeric::ublas::matrix<float> am = prod(im,mp);
 
-                    visit_point(it->ps);	
+                    float a = am(0,0);
+                    float b = am(1,0);
+                    float c = am(2,0);
+
+                    // Check if the coordinates are inside the prism.
+                    if ((a + b <= 1 + eps) && (a >= -eps) && (b >= -eps) 
+                        && (c >= -1) && (c <= 1))
+                    {
+                        // If so, mark the point as visited.
+                        visit_point(it->ps);	
+                    }
                 }
+                ++it;
             }
-            ++it;
         }
     }
     
     
+    
 }
 
-inline void D25ActiveContours::visit_point( HPointSeed* p )
+inline void D25ActiveContours::visit_point( HPointElement* p )
 {
-    if(p->isVisited==false)
+    if(p->isVisited == false)
     {
-        p->isVisited=true;
+        p->isVisited = true;
         --unvisitedCount;
     }
 }
 
-
-inline void D25ActiveContours::add_active_edge(const HEdgeSeed &e )
+inline bool D25ActiveContours::exclude_small_angles( const HEdgeElement &e, HPointElement* &ps )
 {
-    //Init the list of segments
-    std::list<HEdgeSeed> segments;
-    segments.push_back(e);
-
-    //Check overlapping of the segments with all existing edges
-    kill_overlapping_regular_segments(segments,activeEdges);
-    kill_overlapping_regular_segments(segments,frozenEdges);
-
-    activeEdges.splice(activeEdges.end(),segments);
-}
-
-void D25ActiveContours::kill_overlapping_regular_segments(std::list<HEdgeSeed> &segmentParts,
-                                                          std::list<HEdgeSeed> &edgeList)
-{
-    std::list<HEdgeSeed> newEdgeList;
-
-    if(segmentParts.size()==0)return;
-
-    std::list<HEdgeSeed>::iterator it=edgeList.begin();
-    while(it!=edgeList.end())
-    {
-        HEdgeSeed e=*it;
-
-        bool isEdgeDeleted=false;
-
-        std::list<HEdgeSeed>::iterator its=segmentParts.begin();
-        while(its!=segmentParts.end())
-        {
-            HEdgeSeed es=*its;
-
-            float t1,t2;
-            if(segment_overlap_parameter(*es.p1,e,t1)&&segment_overlap_parameter(*es.p2,e,t2))
-            {
-                //Set order: t1>=t2
-                if(t1<t2)
-                {
-                    HPointSeed* tmp=(*its).p1;
-                    (*its).p1=(*its).p2;
-                    (*its).p2=tmp;
-
-                    float ttmp=t1;
-                    t1=t2;
-                    t2=ttmp;
-                }
-
-                if(t1>1)
-                {
-                    //a--x2--b--x1
-                    if(t2>0&&t2<1)
-                    {
-                        HPointSeed* tmp=(*it).p2;
-                        //change edge a--b -> a--x2
-                        (*it).p2=(*its).p2;
-                        //change segment x2--x1 -> b--x1
-                        (*its).p2=tmp;
-
-                        break;
-                    }
-                    //a,x2--b--x1
-                    else if(t2==0)
-                    {
-                        //change segment x2--x1 -> b--x1
-                        (*its).p2=(*it).p2;
-
-                        //delete edge a--b
-                        it=edgeList.erase(it);
-                        isEdgeDeleted=true;
-
-                        break;
-                    }
-                    //x2--a--b--x1
-                    else if(t2<0)
-                    {
-                        HEdgeSeed s1,s2;
-
-                        s1.p1=(*its).p1;
-                        s1.p2=(*it).p2;
-                        s1.propagationVector=(*its).propagationVector;
-
-                        s2.p1=(*it).p1;
-                        s2.p2=(*its).p2;
-                        s2.propagationVector=(*its).propagationVector;
-
-                        //delete segment x2--x1
-                        segmentParts.erase(its);
-
-                        //insert segments x2--a, b--x1
-                        segmentParts.push_front(s1);
-                        segmentParts.push_front(s2);
-
-                        //delete edge a--b
-                        it=edgeList.erase(it);
-                        isEdgeDeleted=true;
-
-                        break;
-                    }
-                }
-                else if(t1==1)
-                {
-                    //a--x2--b,x1
-                    if(t2>0&&t2<1)
-                    {
-                        //change edge a--b -> a--x2
-                        (*it).p2=(*its).p2;
-
-                        //delete segment x2--x1
-                        segmentParts.erase(its);
-
-                        break;
-                    }
-                    //a,x2--b,x1
-                    else if(t2==0)
-                    {
-                        //delete segment x2--x1
-                        segmentParts.erase(its);
-
-                        //delete edge a--b
-                        it=edgeList.erase(it);
-                        isEdgeDeleted=true;
-
-                        break;
-                    }
-                    //x2--a--b,x1
-                    else if(t2<0)
-                    {
-                        //change segment x2--x1 -> x2--a
-                        (*its).p1=(*it).p1;
-
-                        //delete edge a--b
-                        it=edgeList.erase(it);
-                        isEdgeDeleted=true;
-
-                        break;
-                    }
-                }
-                else if(t1>0&&t1<1)
-                {
-                    //a--x2--x1--b
-                    if(t2>0&&t2<1)
-                    {
-                        HEdgeSeed s1,s2;
-
-                        s1.p1=(*it).p1;
-                        s1.p2=(*its).p2;
-                        s1.propagationVector=(*it).propagationVector;
-
-                        s2.p1=(*its).p1;
-                        s2.p2=(*it).p2;
-                        s2.propagationVector=(*it).propagationVector;
-
-                        //delete edge a--b
-                        it=edgeList.erase(it);
-                        isEdgeDeleted=true;
-
-                        //insert edges a--x2, x1--b
-                        newEdgeList.push_back(s1);
-                        newEdgeList.push_back(s2);
-
-                        //delete segment x2--x1
-                        segmentParts.erase(its);
-
-                        break;
-                    }
-                    //a,x2--x1--b
-                    else if(t2==0)
-                    {
-                        //change edge a--b -> x1--b
-                        (*it).p1=(*its).p1;
-
-                        //delete segment x2--x1
-                        segmentParts.erase(its);
-
-                        break;
-                    }
-                    //x2--a--x1--b
-                    else if(t2<0)
-                    {
-                        HPointSeed* tmp=(*it).p1;
-                        //change edge a--b -> x1--b
-                        (*it).p1=(*its).p1;
-                        //change segment x2--x1 -> x2--a
-                        (*its).p1=tmp;
-
-                        break;
-                    }
-                }
-            }
-
-            ++its;
-        }
-
-        if(!isEdgeDeleted)++it;
-    }
-
-    if(newEdgeList.size()>0)edgeList.splice(edgeList.end(),newEdgeList);
-
-}
-
-
-bool D25ActiveContours::segment_overlap_parameter(const HPointSeed &ps, const HEdgeSeed &e,
-                                                  float &t)
-{
-    const float eps=0.001f;
-
-    Vector<float,3> v1=ps.p-e.p1->p;
-    Vector<float,3> v2=e.p2->p-e.p1->p;
-
-    if(ps.p==e.p1->p)
-    {
-        t=0;
-        return true;
-    }
-    if(ps.p==e.p2->p)
-    {
-        t=1;
-        return true;
-    }
-    if(e.p1->p==e.p2->p)
-    {
-        return false;
-    }
-
-    float dotProduct=v1*v2;
-    float normV2=float(v2.eucl_norm());
-    float normsProduct=float(v1.eucl_norm())*normV2;
-
-    //If collinear, |cos|~1
-    if(dotProduct>=normsProduct-eps||dotProduct<=-normsProduct+eps)
-    {
-        t=dotProduct/normV2/normV2;
-        return true;
-    }
-
-    return false;
-}
-
-inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointSeed* &ps )
-{
-
+    // Try to connect the given point element ps to the ends of adjacent edges from
+    // the lists of active and passive edges (consiquently).
     if (stick_to_adjacent_edge(e, ps, activeEdges) ||
         stick_to_adjacent_edge(e, ps, frozenEdges))
     {
@@ -1075,298 +940,359 @@ inline bool D25ActiveContours::exclude_small_angles( const HEdgeSeed &e, HPointS
     return false;
 }
 
-bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeSeed &e, HPointSeed* &ps,
-                                               std::list<HEdgeSeed> &edgeList)
-{
-
-    std::list<HEdgeSeed>::const_iterator it=edgeList.begin();
-    while(it!=edgeList.end())
+bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElement* &ps,
+                                               std::list<HEdgeElement> &edgeList)
+{  
+    std::list<HEdgeElement>::const_iterator it = edgeList.begin();
+    while (it != edgeList.end())
     {
-        HEdgeSeed ee=*it;
+        HEdgeElement ee = *it;
 
-        //Excluding the base edge
-        if(((e.p1->p == ee.p1->p) && (e.p2->p == ee.p2->p)) ||
-           ((e.p1->p == ee.p2->p) && (e.p2->p == ee.p1->p)))
+        // Skip the base edge e.
+        if (((e.p1->p == ee.p1->p) && (e.p2->p == ee.p2->p)) ||
+            ((e.p1->p == ee.p2->p) && (e.p2->p == ee.p1->p)))
         {
             ++it;
             continue;
         }
 
-        //if at least one of the edges is coinciding, quit
-        if(((e.p1->p == ee.p1->p || e.p2->p == ee.p1->p) && (ps->p == ee.p2->p)) ||
-           ((e.p1->p == ee.p2->p || e.p2->p == ee.p2->p) && (ps->p == ee.p1->p)))
+        // If at least one of the new edges [e.p1, ps] or [e.p2, ps] is coinciding with
+        // the current edge, finish the procedure (the vertex ps is already sticked).
+        if (((e.p1->p == ee.p1->p || e.p2->p == ee.p1->p) && (ps->p == ee.p2->p)) ||
+            ((e.p1->p == ee.p2->p || e.p2->p == ee.p2->p) && (ps->p == ee.p1->p)))
         {
             return true;
         }
 
-        //Sticking
-        Vector<float,3> p;
-        if((p=e.p1->p)==ee.p1->p||e.p1->p==ee.p2->p||
-            (p=e.p2->p)==ee.p1->p||e.p2->p==ee.p2->p)
+        // Sticking procedure.
         {
-            if(p==ee.p2->p)
-                ee.swap();
-            
-            Vector<float,3> v1=ps->p-p;
-            double normV1=v1.eucl_norm();
+            // The common vertex of e and ee.
+            Vector<float,3> p;
 
-            Vector<float,3> v2=ee.p2->p-p;
-            double normV2=v2.eucl_norm();
-
-            if(normV1==0||normV2==0)return false;
-
-            double cosa=v1*v2/float(normV1*normV2);
-
-            if(cosa>maxExcludedAngle)
+            // Define the adjacent edge.
+            if (((p = e.p1->p) == ee.p1->p) || (e.p1->p == ee.p2->p) ||
+                ((p = e.p2->p) == ee.p1->p) || (e.p2->p == ee.p2->p))
             {
-                ps=ee.p2;
-                return true;
-            }
+                // Order the verices of the adgacent edge.
+                if (p == ee.p2->p)
+                    ee.swap();
+                
+                // Vector [ps, p]. 
+                Vector<float,3> v1 = ps->p - p;
+                double normV1 = v1.eucl_norm();
 
+                // Vector [ee.p2, p].
+                Vector<float,3> v2 = ee.p2->p - p;
+                double normV2 = v2.eucl_norm();
+
+                if(normV1==0 || normV2==0)
+                    return false;
+
+                // Calculate cos of the angle between the adjacent vectors.
+                double cosa = v1 * v2 / float(normV1 * normV2);
+
+                // If the angle is less than minimal allowed, perform sticking.
+                if(cosa > maxExcludedAngle)
+                {
+                    ps = ee.p2;
+                    return true;
+                }
+
+            }
         }
+        
 
         ++it;
     }
+
     return false;
 }
 
 
 bo::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
 {
+    // Initialize the point cloud.
     set_vertices(v);
 
-    //Building the set of triangles
-    while(grow_step());
+    // Build triangles while the growing step is possible.
+    while (grow_step());
 
-    //Generate and return the mesh
+    // Generate and return the mesh.
     return get_mesh();
 }
 
 bo::Mesh D25ActiveContours::build_mesh()
 {
-    //Cleaning all the auxiliary containers
+    // Clean all the auxiliary containers.
     activeEdges.clear();
     frozenEdges.clear();
     triangles.clear();
     unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 
-    //Building the set of triangles
-    while(grow_step());
+    // Build triangles while the growing step is possible.
+    while (grow_step());
 
-    //Generate and return the mesh
+    // Generate and return the mesh.
     return get_mesh();
 }
 
-
-
-inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleSeed &t)
+inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElement &t)
 {
-    Triangle<Vector<float,3> > t1(t.p1->p,t.p2->p,t.p3->p);
+    // Calculate the mass center of the triangle.
+    Triangle<Vector<float,3> > t1(t.p1->p, t.p2->p, t.p3->p);
+    HPointElement mass((t1.A() + t1.B() + t1.C())/3);
 
-    std::list<HTriangleSeed>::iterator tit = triangles.begin();
-    while(tit!=triangles.end())
+    // Calculate the neighbourhood of the mass center.
+    std::vector<HPointContainerItem> neighbours;
+    float const range = 3*minInitDistance;
+    vertices->tree.find_within_range(HPointContainerItem(&mass), range, std::back_inserter(neighbours));
+
+    // For all nodes from the neighbourhood check their adjacent triangles for 
+    // intersection with the given triangle.
+    std::vector<HPointContainerItem>::const_iterator it = neighbours.begin();
+    while(it != neighbours.end())
     {
-        HTriangleSeed tt=*tit;
-        
-        Triangle<Vector<float,3> > t2(tt.p1->p,tt.p2->p,tt.p3->p);
-        
-        if(triangles_3d_intersection(t1,t2))return true;
+        std::list<HTriangleElement>::const_iterator tit = it->ps->adjacentTriangles.begin();
+        while(tit != it->ps->adjacentTriangles.end())
+        {
+            Triangle<Vector<float,3>> t2(tit->p1->p ,tit->p2->p, tit->p3->p);
 
-        ++tit;
+            if (triangles_3d_intersection(t1, t2))
+                return true;
+
+            ++tit;
+        }
+        ++it;
     }
 
     return false;
 }
 
-// See comments inside function to figure out why C4706 warning is suppressed.
-#ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable:4706)
-#endif // _MSC_VER
-void D25ActiveContours::edge_stitch(HEdgeSeed e )
+void D25ActiveContours::edge_stitch(HEdgeElement e )
 {
-    HPointSeed* pps1=get_propagated_vertex(e,true);
+    // Try to calculate the propagation point from the point cloud.
+    HPointElement* pps1 = get_propagated_vertex(e, true);
 
-    bool isStitched=false;
+    bool isStitched = false;
 
-    if(pps1)
+    // If the propagated point exists:
+    if (pps1)
     {
-        Triangle<Vector<float,3> > t1(e.p1->p,e.p2->p,pps1->p);
+        // Create a new triangle based on the given edge and the propagated point.
+        Triangle<Vector<float,3>> t1(e.p1->p, e.p2->p, pps1->p);
 
-        for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite)
+        // Find all adjacent edges to the given one in the list of passive edges.
+        for(std::list<HEdgeElement>::iterator ite = frozenEdges.begin(); ite != frozenEdges.end(); ++ite)
         {
-            HEdgeSeed ee=*ite;
+            HEdgeElement ee = *ite;
 
-            if (e==ee) continue;
+            if (e == ee) continue;
 
             bool b11 = false, b12 = false, b21 = false, b22 = false;
 
-            // The reason to use assignment within conditional expression is to have only
-            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
-            // guarantees left-to-right evaluation; moreover, the second operand is not
-            // evaluated if the first operand evaluates to true". This allows us to have
-            // only one (first non-false) b_ij set to true with others left false.
-            //
-            // Therefore we can safely suppress C4706 warning under MSVC (done before
-            // the function).
-            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
-               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
+            // Test for adjacency.
+            // Suppress warning C4706 using the comparison with true.
+            if ( ((b11 = (e.p1 == ee.p1)) == true) || ((b12 = (e.p1 == ee.p2)) == true) ||
+                 ((b21 = (e.p2 == ee.p1)) == true) || ((b22 = (e.p2 == ee.p2)) == true) )
             {
-                // If the edge is adjacent
-                HPointSeed* pps2=get_propagated_vertex(ee,true);
+                // If the edge is adjacent try to calculate its propagation point
+                // from the point cloud.
+                HPointElement* pps2 = get_propagated_vertex(ee, true);
                 
-                if(pps2)
+                // If the such point exists:
+                if (pps2)
                 {
-                    Triangle<Vector<float,3> > t2(ee.p1->p,ee.p2->p,pps2->p);
+                    // Create a new triangle based on this adjacent edge and the
+                    // propagated point
+                    Triangle<Vector<float,3>> t2(ee.p1->p, ee.p2->p, pps2->p);
 
-                    if(triangles_3d_intersection(t1,t2))
+                    // If these two triangles are concurrent, create one stitch triangle based
+                    // on the considered adjacent edges.
+                    if (triangles_3d_intersection(t1, t2))
                     {
-                        //changing all to b11 condition
-                        if(b12)ee.swap();
-                        else if(b21)e.swap();
-                        else if(b22)
+                        // Changing everything to b11 condition to order the directions
+                        // of the edges.
+                        if (b12)
+                        {
+                            ee.swap();
+                        }
+                        else if (b21)
+                        {
+                            e.swap();
+                        }
+                        else if (b22)
                         {
                             e.swap();
                             ee.swap();
                         }
 
-                        HPointSeed *p1,*p2,*p3;
-                        p1=e.p1;
-                        p2=e.p2;
-                        p3=ee.p2;
+                        // Vertices of the new triangle.
+                        HPointElement *p1, *p2, *p3;
+                        p1 = e.p1;
+                        p2 = e.p2;
+                        p3 = ee.p2;
 
-                        //stitching
-                        HEdgeSeed ne(p2,p3);
-                        HEdgeSeed nex(p3,p1); //fictive
-                        HEdgeSeed nexx(p1,p2); //fictive
+                        // Edge stitching: new edge of the stitch triangle.
+                        HEdgeElement ne(p2, p3);                  
 
-
-                        if(get_edges_propagations(ne,nex,nexx))
+                        // Calculate the propagation vector for the stitch edge.
+                        if (get_edge_propagation(ne, p1->p))
                         {
-                            HTriangleSeed tr;
-                            tr.p1=p1;
-                            tr.p2=p2;
-                            tr.p3=p3;
+                            // Create the stitch triangle.
+                            HTriangleElement tr;
+                            tr.p1 = p1;
+                            tr.p2 = p2;
+                            tr.p3 = p3;
  
-                            //Test for triangles collisions
-                            if(!triangle_mesh_3d_intersection(tr))
+                            // Test for collisions of the triangle with the mesh.
+                            if (!triangle_mesh_3d_intersection(tr))
                             {
-                                //Delete the current frozen neighboring edge
+                                // Delete the current frozen neighboring edge.
                                 frozenEdges.erase(ite);
 
-                                //Add a new active edge
-                                add_active_edge(ne);
+                                // Add a new active edge.
+                                activeEdges.push_back(ne);
 
-                                //Add new triangle to the mesh
+                                // Add new triangle to the mesh.
                                 triangles.push_back(tr);
 
                                 isStitched=true;
 
                                 break;
-                            } // if(!triangle_mesh_3d_intersection(tr))
-                        } // if(get_edges_propagations(ne,nex,nexx))
-                    } // if(triangles_3d_intersection(t1,t2))
+                            } 
+                        } 
+                    } 
                 } // if(pps2)
             }
         }
     } // if(pps1)
 
-    //Add to frozen edges, if wasn't stitched on this step
-    if(!isStitched)
+    // Add the edge to the frozen edges, if it wasn't stitched on this step.
+    if (!isStitched)
         frozenEdges.push_back(e);
 }
-#ifdef _MSC_VER
-#   pragma warning(pop)
-#endif // _MSC_VER
 
 Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float windowRadius)
 {
-    //Select points from the neighborhood
-    HPointSeed ps;
-    ps.p=p;
-    std::vector<HContainerElement> neighbours;
+    // Select points from the neighborhood.
+    HPointElement ps;
+    ps.p = p;
+    std::vector<HPointContainerItem> neighbours;
     float const range = windowRadius;
-    vertices->tree.find_within_range(HContainerElement(&ps), range,
+    vertices->tree.find_within_range(HPointContainerItem(&ps), range,
                                      std::back_inserter(neighbours));
 
-    unsigned pointCount = static_cast<unsigned>(neighbours.size());
+    size_t pointCount = neighbours.size();
 
-    //Principal Component Analysis (PCA)
-    Vector<float,3> mean(0,0,0);	
-    mean=mean/(float)pointCount;
+    // Perform the Principal Component Analysis (PCA):
+    
+    Vector<float,3> mean(0,0,0);
 
-    double** A=new double*[6]; 
-    for(int i=0; i<6; ++i)
+    // The mean calculation.
+    std::vector<HPointContainerItem>::const_iterator itp = neighbours.begin();
+    while(itp != neighbours.end())
     {
-        A[i]=new double[3];
-        A[i][0]=A[i][1]=A[i][2]=0;
-    }
-
-    double* S2=new double[3];
-
-    std::vector<HContainerElement>::const_iterator itp=neighbours.begin();
-    while(itp!=neighbours.end())
-    {
-        Vector<float,3> pp=(*itp).ps->p;
-
-        A[0][0]+=(pp.x()-mean.x())*(pp.x()-mean.x());
-        A[1][0]+=(pp.y()-mean.y())*(pp.x()-mean.x());
-        A[2][0]+=(pp.z()-mean.z())*(pp.x()-mean.x());
-
-        A[0][1]+=(pp.x()-mean.x())*(pp.y()-mean.y());
-        A[1][1]+=(pp.y()-mean.y())*(pp.y()-mean.y());
-        A[2][1]+=(pp.z()-mean.z())*(pp.y()-mean.y());
-
-        A[0][2]+=(pp.x()-mean.x())*(pp.z()-mean.z());
-        A[1][2]+=(pp.y()-mean.y())*(pp.z()-mean.z());
-        A[2][2]+=(pp.z()-mean.z())*(pp.z()-mean.z());
+        Vector<float,3> pp = (*itp).ps->p;
+        mean = mean + pp;
 
         ++itp;
     }
-    for(int i=0; i<3; ++i)
+    mean = mean / (float)pointCount;
+   
+    // The extended covariance matrix preparation [COV | Ex].
+    double** A = new double*[6]; 
+    for (int i = 0; i < 6; ++i)
     {
-        A[i][0]/=pointCount;
-        A[i][1]/=pointCount;
-        A[i][2]/=pointCount;
+        A[i] = new double[3];
+        A[i][0] = A[i][1] = A[i][2] = 0;
     }
 
-    int n=3;
+    double* S2 = new double[3];
 
-    //Calculate eigenvectors using SVD decomposition
+    // The covariance matrix calculation, A[0,0 - 3,3].
+    {
+        itp = neighbours.begin();
+        while (itp != neighbours.end())
+        {
+            Vector<float,3> pp = (*itp).ps->p;
+
+            A[0][0] += (pp.x()-mean.x()) * (pp.x()-mean.x()); 
+            A[1][0] += (pp.y()-mean.y()) * (pp.x()-mean.x()); 
+            A[2][0] += (pp.z()-mean.z()) * (pp.x()-mean.x()); 
+            
+            A[0][1] += (pp.x()-mean.x()) * (pp.y()-mean.y()); 
+            A[1][1] += (pp.y()-mean.y()) * (pp.y()-mean.y()); 
+            A[2][1] += (pp.z()-mean.z()) * (pp.y()-mean.y());
+            
+            A[0][2] += (pp.x()-mean.x()) * (pp.z()-mean.z()); 
+            A[1][2] += (pp.y()-mean.y()) * (pp.z()-mean.z()); 
+            A[2][2] += (pp.z()-mean.z()) * (pp.z()-mean.z());
+
+            ++itp;
+        }
+
+        for (int i = 0; i < 3; ++i)
+        {
+            A[i][0] /= pointCount;
+            A[i][1] /= pointCount;
+            A[i][2] /= pointCount;
+        }
+    }
+ 
+    // Vector dimension.
+    int n = 3;
+
+    // Calculate eigenvectors using SVD decomposition.
     svd(A,S2,n);
 
-    int maxIndex=(S2[0]<S2[1])?(S2[0]<S2[2]?0:2):(S2[1]<S2[2]?1:2);
+    // The index of the minimal element.
+    int minIndex = (S2[0] < S2[1]) ? (S2[0] < S2[2] ? 0 : 2) : (S2[1] < S2[2] ? 1 : 2);
 
-    Vector<float,3> v((float)A[3+maxIndex][0], (float)A[3+maxIndex][1], (float)A[3+maxIndex][2]);
+    // The eigenvector the corresponds to the minimal eigenvalue. This vector is taken
+    // as an approximation the point cloud surface normal.
+    Vector<float,3> v((float)A[3][minIndex], (float)A[4][minIndex], (float)A[5][minIndex]);
 
-    for(int i=0; i<6; ++i)
+    // Release the resources.
+    for (int i = 0; i < 6; ++i)
     {
         delete[] A[i];
     }
     delete[] A;
     delete[] S2;
 
-    return v/float(v.eucl_norm());
+    // Return the normalized normal vector/
+    return v / float(v.eucl_norm());
 }
 
 
 
-const std::vector<HPointSeed>* D25ActiveContours::get_vertices()
-{
-    return &vertices->linear;
+std::vector<HPointElement> D25ActiveContours::get_vertices()
+{   
+    std::vector<HPointElement> verts;
+
+    // Compose a vector from the tree-based container.
+    D3Tree::mutable_iterator it = vertices->tree.begin();
+    while (it != vertices->tree.end())
+    {
+        HPointContainerItem c = *it;
+        verts.push_back(*c.ps);
+        ++it;
+    }
+
+    return verts;
 }
 
-const std::list<HEdgeSeed>* D25ActiveContours::get_active_edges()
+const std::list<HEdgeElement>* D25ActiveContours::get_active_edges()
 {
     return &activeEdges;
 }
 
-const std::list<HEdgeSeed>* D25ActiveContours::get_frozen_edges()
+const std::list<HEdgeElement>* D25ActiveContours::get_frozen_edges()
 {
     return &frozenEdges;
 }
 
-const std::list<HTriangleSeed>* D25ActiveContours::get_triangles()
+const std::list<HTriangleElement>* D25ActiveContours::get_triangles()
 {
     return &triangles;
 }
@@ -1376,44 +1302,54 @@ const std::list<HTriangleSeed>* D25ActiveContours::get_triangles()
 bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vector<float,3> > &t1,
                                                   const Triangle<Vector<float,3> > &t2)
 {
-    const float eps=0.001f;
-    float alpha=tetrahedronBaseAngle<eps?eps:tetrahedronBaseAngle;
+    // Define the minimal error value.
+    const float eps = 0.001f;
+    // Bound the angle from zero by eps.
+    float alpha = tetrahedronBaseAngle < eps ? eps : tetrahedronBaseAngle;
 
-    //if the triangles are adjacent
-    if(t1.A()==t2.A() || t1.A()==t2.B() || t1.A()==t2.C() ||
-        t1.B()==t2.A() || t1.B()==t2.B() || t1.B()==t2.C() ||
-        t1.C()==t2.A() || t1.C()==t2.B() || t1.C()==t2.C())
+    // If the triangles are adjacent:
+    if (t1.A() == t2.A() || t1.A() == t2.B() || t1.A() == t2.C() ||
+        t1.B() == t2.A() || t1.B() == t2.B() || t1.B() == t2.C() ||
+        t1.C() == t2.A() || t1.C() == t2.B() || t1.C() == t2.C())
     {
+        // Create two dypiramids from the given triangles and the base angle alpha.
+        TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_angle(t1, alpha);
+        TriangularDipyramid tdp2 = TriangularDipyramid::from_triangle_and_angle(t2, alpha);
 
-        TriangularDipyramid tdp1=TriangularDipyramid::from_triangle_and_angle(t1,alpha);
-        TriangularDipyramid tdp2=TriangularDipyramid::from_triangle_and_angle(t2,alpha);
-
+        // Test them for intersection.
         return tdp1.intersects(tdp2);
     }
+    // If the triangles are not adjacent:
     else
     {
-        TriangularDipyramid tdp1=TriangularDipyramid::from_triangle_and_height(t1,maxSurfaceDepth);
-        TriangularDipyramid tdp2=TriangularDipyramid::from_triangle_and_height(t2,maxSurfaceDepth);
+        // Create two dypiramids from the given triangles and the pre-set surface depth.
+        TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_height(t1, maxSurfaceDepth);
+        TriangularDipyramid tdp2 = TriangularDipyramid::from_triangle_and_height(t2, maxSurfaceDepth);
 
+        // Test them for intersection.
         return tdp1.intersects(tdp2);
     }
 }
 
-bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
+bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
 {
-    Vector<float,3> v1a=t.p2->p-t.p1->p;
-    Vector<float,3> v1b=t.p3->p-t.p1->p;
-
-    Vector<float,3> v2a=t.p1->p-t.p2->p;
-    Vector<float,3> v2b=t.p3->p-t.p2->p; 
-
-    Vector<float,3> v3a=t.p1->p-t.p3->p;
-    Vector<float,3> v3b=t.p2->p-t.p3->p;
+    // Adjacent vectors of the triangle angles.
+    // Angle a:
+    Vector<float,3> v1a = t.p2->p - t.p1->p;
+    Vector<float,3> v1b = t.p3->p - t.p1->p;
+    // Angle b:
+    Vector<float,3> v2a = t.p1->p - t.p2->p;
+    Vector<float,3> v2b = t.p3->p - t.p2->p; 
+    // Angle c:
+    Vector<float,3> v3a = t.p1->p - t.p3->p;
+    Vector<float,3> v3b = t.p2->p - t.p3->p;
  
-    float cos1=v1a*v1b/float((v1a.eucl_norm()*v1b.eucl_norm()));
-    float cos2=v2a*v2b/float((v2a.eucl_norm()*v2b.eucl_norm()));
-    float cos3=v3a*v3b/float((v3a.eucl_norm()*v3b.eucl_norm()));
+    // Calculate cos of the angles a, b and c.
+    float cos1 = v1a * v1b / float((v1a.eucl_norm() * v1b.eucl_norm()));
+    float cos2 = v2a * v2b / float((v2a.eucl_norm() * v2b.eucl_norm()));
+    float cos3 = v3a * v3b / float((v3a.eucl_norm()*v3b.eucl_norm()));
 
+    // Compare the angles with the minimal allowed value. 
     if ((std::fabs(cos1) > maxExcludedAngle) ||
         (std::fabs(cos2) > maxExcludedAngle) ||
         (std::fabs(cos3) > maxExcludedAngle))
@@ -1423,165 +1359,80 @@ bool D25ActiveContours::triangle_degenerate( const HTriangleSeed &t )
 
 void D25ActiveContours::set_vertices( std::vector<Vector<float,3> > &v )
 {
-    //Cleaning all the auxiliary containers
+    // Cleaning all the auxiliary containers.
     activeEdges.clear();
     frozenEdges.clear();
     triangles.clear();
 
-    //Create and fill in a vertex container
-    if(vertices)delete vertices;
-    vertices=new HVertexContainer(v);
+    // Create and fill in a vertex container.
+    if (vertices)
+        delete vertices;
+    vertices=new HPointContainer(v);
 
     unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 }
 
 bool D25ActiveContours::grow_step()
 {	
-    if(unvisitedCount==0&&activeEdges.size()==0)
+    // If all the points have been processed and the list of the active edges is empty:
+    if (unvisitedCount == 0 && activeEdges.size() == 0)
     {
+        // Perform the post-stitch step and check if new active or passive edges were
+        // added during it (if so, return true).
         unsigned int frozenBefore = static_cast<unsigned>(frozenEdges.size());
         post_stitch();
-        return activeEdges.size()>0 || frozenEdges.size()<frozenBefore;
+        return (activeEdges.size() > 0) || (frozenEdges.size() < frozenBefore);
     }
-    else if(activeEdges.size()>0)model_grow();
+    // If there are active edges in the list:
+    else if (activeEdges.size() > 0)
+    {
+        // Perform a new growing step.
+        model_grow();
+    }
+    // If there are unprocessed points and no active edges in the list
+    // perform the initialization step. 
     else model_init();
 
     return true;
 }
 
-// See comments inside function to figure out why C4706 warning is suppressed.
-#ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable:4706)
-#endif // _MSC_VER
 void D25ActiveContours::post_stitch()
 {
-    if(frozenEdges.size()==0)return;
-
-    for(std::list<HEdgeSeed>::iterator it=frozenEdges.begin(); it!=frozenEdges.end(); ++it )
-    {
-        HEdgeSeed e=*it;
-        HPointSeed* pps1=get_propagated_vertex(e,true);
-        if(!pps1)continue;
-
-        bool isStitched=false;
-
-        for(std::list<HEdgeSeed>::iterator ite=frozenEdges.begin(); ite!=frozenEdges.end(); ++ite )
-        {
-            HEdgeSeed ee=*ite;
-
-            if(e==ee)continue;
-            HPointSeed* pps2=get_propagated_vertex(ee,true);
-            if(!pps2)continue;
-
-            bool b11 = false, b12 = false, b21 = false, b22 = false;
-
-            // The reason to use assignment within conditional expression is to have only
-            // one b_ij evaluated to true. According to C++2003 standard, "operator ||
-            // guarantees left-to-right evaluation; moreover, the second operand is not
-            // evaluated if the first operand evaluates to true". This allows us to have
-            // only one (first non-false) b_ij set to true with others left false.
-            //
-            // Therefore we can safely suppress C4706 warning under MSVC (done before
-            // the function).
-            if((b11 = (e.p1 == ee.p1)) || (b12 = (e.p1 == ee.p2)) ||
-               (b21 = (e.p2 == ee.p1)) || (b22 = (e.p2 == ee.p2)))
-            {
-                // If the edge is adjacent, change all to b11 condition
-                if(b12)ee.swap();
-                else if(b21)e.swap();
-                else if(b22)
-                {
-                    e.swap();
-                    ee.swap();
-                }
-
-                //Check the stitching condition (see the "Red Notebook")
-                {
-                    Vector<float,3> a=e.p2->p-e.p1->p;
-                    Vector<float,3> b=ee.p2->p-ee.p1->p;
-                    Vector<float,3> norm=getNormalVector(a,b);
-
-                    Vector<float,3> n1=getNormalVector(a,norm);
-                    float signCor1=n1*e.propagationVector>0?1.0f:-1.0f;
-                    n1=n1*signCor1;
-
-                    Vector<float,3> n2=getNormalVector(b,norm);
-                    float signCor2=n2*ee.propagationVector>0?1.0f:-1.0f;
-                    n2=n2*signCor2;
-
-                    float sgn1=a*n2;
-                    float sgn2=b*n1;
-                    float cosab=a*b/float((a.eucl_norm()*b.eucl_norm()));
-
-                    if(sgn1>0&&sgn2>0)
-                        if(cosab>maxStitchedAngle)
-                        {
-                            HTriangleSeed tr;
-                            tr.p1=e.p1;
-                            tr.p2=e.p2;
-                            tr.p3=ee.p2;
-
-                            HEdgeSeed ne;
-                            ne.p1=e.p2;
-                            ne.p2=ee.p2;
-
-                            //Delete the current frozen neighboring edge
-                            frozenEdges.erase(ite);
-
-                            //Add a new active edge
-                            add_active_edge(ne);
-
-                            //Add new triangle to the mesh
-                            triangles.push_back(tr);
-
-                            isStitched=true;
-                            break;
-                        }
-                }
-            }
-        }
-
-        if(isStitched)
-        {
-            frozenEdges.remove(e);
-            break;
-        }
-
-    }
-
+    // TODO: complete this step if needed.
+    // Purporse: it performs mutual stich of the frozenEdges based on some rule R(edge1, edge2). 
 }
-#ifdef _MSC_VER
-#   pragma warning(pop)
-#endif // _MSC_VER
+
 
 bo::Mesh D25ActiveContours::get_mesh()
 {
-    //Construct a mesh
+    //Construct a new mesh.
     bo::Mesh m(triangles.size());
 
-    //Create a reference map (from the local triangles nodes to the mesh vertices)
-    std::map<HPointSeed*,size_t> mymap;
-    std::list<HTriangleSeed>::const_iterator itt=triangles.begin();
-    while(itt!=triangles.end())
+    // Create a reference map (from the local triangles nodes to the mesh vertices).
+    std::map<HPointElement*,size_t> mymap;
+    
+    // Fill in the mesh.
+    std::list<HTriangleElement>::const_iterator itt = triangles.begin();
+    while (itt != triangles.end())
     {
-        for(int j=0; j<3; ++j)
+        for (int j = 0; j < 3; ++j)
         {
-            HPointSeed* ps=(j==0)?(itt->p1):(j==1?itt->p2:itt->p3);
+            // Take one of three triangle's vertices. 
+            HPointElement* ps = (j == 0) ? (itt->p1) : (j == 1 ? itt->p2 : itt->p3);
 
-            //If the triangle node is not yet in the map
-            if(mymap.find(ps)==mymap.end())
+            // If the triangle node is not yet in the map:
+            if (mymap.find(ps) == mymap.end())
             {	
-                //Add the vertex/node into the mesh and to the reference map
-                size_t ind=m.add_vertex(bo::Mesh::Vertex(ps->p.x(),ps->p.y(),ps->p.z()));
-                mymap[ps]=ind;
+                // Add the vertex/node into the mesh and into the reference map.
+                size_t ind = m.add_vertex(bo::Mesh::Vertex(ps->p.x(), ps->p.y(), ps->p.z()));
+                mymap[ps] = ind;
             }
         }
 
-        //Add the face from the processed triangle nodes
-        size_t A=mymap[itt->p1];
-        size_t B=mymap[itt->p2];
-        size_t C=mymap[itt->p3];
+        // Add the face from the processed triangle nodes.
+        size_t A = mymap[itt->p1];
+        size_t B = mymap[itt->p2];
+        size_t C = mymap[itt->p3];
 
         m.add_face(bo::Mesh::Face(A,B,C));
 
