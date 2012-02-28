@@ -53,7 +53,7 @@
     #include <iostream>
 #endif
 
-namespace common {
+namespace bo {
 namespace io {
 
 typedef std::string String;
@@ -412,6 +412,6 @@ T IniReader::get_value(const String& key_name,
 }
 
 } // namespace io
-} // namespace common
+} // namespace bo
 
 #endif // INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_

@@ -48,7 +48,7 @@
 
 using namespace boost::numeric::ublas;
 
-namespace common {
+namespace bo {
 namespace blas {
 
 // Matrix inversion routine.
@@ -127,6 +127,6 @@ double determinant(const matrix<T>& input )
 //TODO: svd
 
 } // namespace blas
-} // namespace common
+} // namespace bo
 
 #endif // BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_

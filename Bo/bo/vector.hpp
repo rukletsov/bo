@@ -48,7 +48,7 @@
 #include <boost/format.hpp>
 #include <boost/static_assert.hpp>
 
-namespace common {
+namespace bo {
 
 // Basic n-vector. Some methods, such as x(), y(), cross_product() are available
 // only for certain specializations. A compiler error will be thrown if an 
@@ -588,6 +588,6 @@ void Vector<T, N>::check_range(std::size_t index)
             "%1%-Vector's index \"%2%\" is out of range.") % N % index).str());
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // VECTOR_HPP_4545D406_43E3_4444_8E4B_9B5A10E7AB16_

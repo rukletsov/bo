@@ -6,7 +6,7 @@
 #include "bo/raw_image_2d.hpp"
 #include "debug_alloc.hpp"
 
-using namespace common;
+using namespace bo;
 
 
 // Create a so-called "text fixture" using base class form GTEST.

@@ -5,7 +5,7 @@
 #include "bo/mesh.hpp"
 #include "debug_alloc.hpp"
 
-using namespace common;
+using namespace bo;
 
 // Directory where test data is stored. This variable is set during the configuration
 // of the test environment and should be used to determine where external data for

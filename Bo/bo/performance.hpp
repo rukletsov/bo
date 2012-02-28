@@ -73,7 +73,7 @@
   *
   */
 
-namespace common {
+namespace bo {
 
 #if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
     // Use boost::timer on non-Windows and by default.
@@ -173,6 +173,6 @@ LONGLONG MSVCTimer::get_proc_freq_() const
 
 #endif // _MSC_VER
 
-} // namespace common
+} // namespace bo
 
 #endif // PERFORMANCE_HPP_88D42F69_941B_451A_BC38_DAF8A399F977_

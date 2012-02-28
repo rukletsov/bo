@@ -37,19 +37,19 @@
 
 #include <cmath>
 
-#include "common/raw_image_2d.hpp"
-#include "common/extended_math.hpp"
+#include "bo/raw_image_2d.hpp"
+#include "bo/extended_math.hpp"
 
-namespace common {
+namespace bo {
 namespace methods {
 
 namespace detail {
 
 // Returns Sobel column kernel.
 template <typename ValType>
-common::RawImage2D<ValType> get_sobel_3x3_col_kernel()
+bo::RawImage2D<ValType> get_sobel_3x3_col_kernel()
 {
-    common::RawImage2D<ValType> kernel(3, 3);
+    bo::RawImage2D<ValType> kernel(3, 3);
 
     kernel(1, 0) = kernel(1, 1) = kernel(1, 2) = ValType(0);
     kernel(0, 0) = kernel(0, 2) = ValType(-1);
@@ -62,9 +62,9 @@ common::RawImage2D<ValType> get_sobel_3x3_col_kernel()
 
 // Returns Sobel row kernel.
 template <typename ValType>
-common::RawImage2D<ValType> get_sobel_3x3_row_kernel()
+bo::RawImage2D<ValType> get_sobel_3x3_row_kernel()
 {
-    common::RawImage2D<ValType> kernel(3, 3);
+    bo::RawImage2D<ValType> kernel(3, 3);
 
     kernel(0, 1) = kernel(1, 1) = kernel(2, 1) = ValType(0);
     kernel(0, 0) = kernel(2, 0) = ValType(-1);
@@ -81,7 +81,7 @@ common::RawImage2D<ValType> get_sobel_3x3_row_kernel()
 // image pixel type and kernel pixel type can be different. Current implementation
 // casts kernel pixel type to image's and the performs multiplication.
 template <typename ImValType, typename KerValType>
-common::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image,
+bo::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image,
     const RawImage2D<KerValType> kernel)
 {
     // Cache image's and kernel's dimensions.
@@ -105,7 +105,7 @@ common::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image
     // Create resulting image and run filtering. It is easier to address kernel
     // using center-based indexation. If the considered kernel element is outside
     // image's border, skip it (pretend image pixel is 0 there).
-    common::RawImage2D<ImValType> filtered_image(image_width, image_height);
+    bo::RawImage2D<ImValType> filtered_image(image_width, image_height);
 
     for (std::size_t col = 0; col < image_width; ++col) {
         for (std::size_t row = 0; row < image.height(); ++row) {
@@ -140,17 +140,17 @@ common::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image
 // sqrt(Gx^2 + Gy*2), where Gx and Gy are results of applying filter with Sobel column
 // and row kernels respectively.
 template <typename ValType>
-common::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
+bo::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
 {
-    common::RawImage2D<ValType> sobel_col = linear_filter_2d(image,
+    bo::RawImage2D<ValType> sobel_col = linear_filter_2d(image,
         detail::get_sobel_3x3_col_kernel<ValType>());
 
-    common::RawImage2D<ValType> sobel_row = linear_filter_2d(image,
+    bo::RawImage2D<ValType> sobel_row = linear_filter_2d(image,
         detail::get_sobel_3x3_row_kernel<ValType>());
 
     std::size_t image_width = image.width();
     std::size_t image_height = image.height();
-    common::RawImage2D<ValType> filtered_image(image_width, image_height);
+    bo::RawImage2D<ValType> filtered_image(image_width, image_height);
 
     for (std::size_t col = 0; col < image_width; ++col) {
         for (std::size_t row = 0; row < image.height(); ++row) {
@@ -162,6 +162,6 @@ common::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
 }
 
 } // namespace methods
-} // namespace common
+} // namespace bo
 
 #endif // LINEAR_FILTERING_2D_HPP_5C1DFBBA_B8EF_4105_AD4C_2C3EDE04C862_

@@ -5,7 +5,7 @@
 
   Basic template class for reading and storing data from a config file in 
   the basic UON (UltraOsteon) format (*.conf file). 
-  Supports libCommon vector and matrix types. Suppors Atk library types 
+  Supports Bo's vector and matrix types. Suppors Atk library types
   if the ATK_SUPPORTED directive is defined.
 
   Copyright (c) 2011
@@ -43,9 +43,9 @@
 #include <boost/algorithm/string/detail/trim.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
-#include "common/vector.hpp"
-#include "common/io/ini_reader.hpp"
-#include "common/io/config_parser/basic_configuration.hpp"
+#include "bo/vector.hpp"
+#include "bo/io/ini_reader.hpp"
+#include "bo/io/config_parser/basic_configuration.hpp"
 
 // Enable ATK usage only when requested by the library user.
 #ifdef ATK_SUPPORTED
@@ -65,20 +65,20 @@
 
     std::string filename = "..\\_data\\transform0001.conf";
     
-    // Config Parser for libCommon data types
-    common::io::config_parser::UonBasicConfig uc;
+    // Config Parser for Bo data types
+    bo::io::config_parser::UonBasicConfig uc;
     uc.read_file(filename);
     uc.parse();
 
     // Read data from the parser
     // See UonBasicConfig definition for other datafields
-    std::vector<common::Vector<float, 3>> points_3d = uc.contour_points_3d;
+    std::vector<bo::Vector<float, 3>> points_3d = uc.contour_points_3d;
     boost::numeric::ublas::matrix<float> transform = uc.image_transformation;
     < ... do job with the data here ... >
 
     // Config Parser for Atk data types
     #ifdef ATK_SUPPORTED
-    common::io::config_parser::UonBasicConfigAtk uc_atk;
+    bo::io::config_parser::UonBasicConfigAtk uc_atk;
     uc_atk.read_file(filename);
     uc_atk.parse();
     // Read data from the parser
@@ -91,7 +91,7 @@
 }
 */
 
-namespace common {
+namespace bo {
 namespace io {
 namespace config_parser {
 
@@ -105,8 +105,8 @@ namespace config_parser {
  rotational vectors by X, Y and Z and a translation vector.
 */
 
-// libCommon standard matrix type.
-typedef boost::numeric::ublas::matrix<float> CommonFloatMatrix;
+// Bo's standard matrix type.
+typedef boost::numeric::ublas::matrix<float> BoFloatMatrix;
 
 
 // Namespace uon_config contains definitions of key names for UON configurations.
@@ -208,10 +208,10 @@ template <class VectorType, class MatrixType>
 class UonBasicConfiguration : public UonBasicConfiguration_<VectorType, MatrixType>
 { };
 
-// UonBasicConfiguration<> class specialization for libCommon types.
+// UonBasicConfiguration<> class specialization for Bo's types.
 template <>
-class UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix> : 
-    public UonBasicConfiguration_<Vector<float, 3>, CommonFloatMatrix>
+class UonBasicConfiguration<Vector<float, 3>, BoFloatMatrix> :
+    public UonBasicConfiguration_<Vector<float, 3>, BoFloatMatrix>
 {
 public:
     UonBasicConfiguration()
@@ -225,11 +225,11 @@ public:
                                              const Vector<float, 3>& y_rotation,
                                              const Vector<float, 3>& z_rotation,
                                              const Vector<float, 3>& translation,
-                                             CommonFloatMatrix& transformation_matrix) 
+                                             BoFloatMatrix& transformation_matrix)
                                                 const;
 protected:
     virtual bool string_to_vector(const String& str, Vector<float, 3>& vector) const;
-}; // class UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix>
+}; // class UonBasicConfiguration<Vector<float, 3>, BoFloatMatrix>
 
 #ifdef ATK_SUPPORTED
 template <>
@@ -252,7 +252,7 @@ protected:
 #endif
 
 // Typedefs of configurations.
-typedef UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix> UonBasicConfig;
+typedef UonBasicConfiguration<Vector<float, 3>, BoFloatMatrix> UonBasicConfig;
 #ifdef ATK_SUPPORTED
 typedef UonBasicConfiguration<vec3<float>, mat4<float>> UonBasicConfigAtk;
 #endif
@@ -365,12 +365,12 @@ prepare_parsed_vector(const String& section_name, const String& subsection_name,
 }
 
 inline
-bool UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix>::
+bool UonBasicConfiguration<Vector<float, 3>, BoFloatMatrix>::
 build_transformation_matrix(const Vector<float, 3>& x_rotation, 
                             const Vector<float, 3>& y_rotation,
                             const Vector<float, 3>& z_rotation,
                             const Vector<float, 3>& translation,
-                            CommonFloatMatrix& transformation_matrix) const
+                            BoFloatMatrix& transformation_matrix) const
 {
     bool result = false;
 
@@ -406,7 +406,7 @@ build_transformation_matrix(const Vector<float, 3>& x_rotation,
 }
 
 inline
-bool UonBasicConfiguration<Vector<float, 3>, CommonFloatMatrix>::
+bool UonBasicConfiguration<Vector<float, 3>, BoFloatMatrix>::
 string_to_vector(const String& str, Vector<float, 3>& vector) const
 {
     float x, y, z;
@@ -468,6 +468,6 @@ build_transformation_matrix(const vec3<float>& x_rotation,
 
 } // namespace config_parser
 } // namespace io
-} // namespace common
+} // namespace bo
 
 #endif // UON_BASIC_CONFIGURATION_HPP_7A47DDA3_838A_4177_AFD0_227E7B76FBAB_

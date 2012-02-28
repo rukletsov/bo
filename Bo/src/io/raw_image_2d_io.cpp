@@ -4,10 +4,10 @@
 
 #include "bo/io/raw_image_2d_io.hpp"
 
-namespace common {
+namespace bo {
 namespace io {
 
-void save_raw_image_float_to_8bpps(common::RawImage2D<float> image,
+void save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
                                    const std::string& filename)
 {
     if (image.is_null())
@@ -21,4 +21,4 @@ void save_raw_image_float_to_8bpps(common::RawImage2D<float> image,
 }
 
 } // namespace io
-} // namespace common
+} // namespace bo

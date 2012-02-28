@@ -38,7 +38,7 @@
 
 #include "bo/vector.hpp"
 
-namespace common {
+namespace bo {
 namespace methods {
 
 namespace detail {
@@ -225,8 +225,8 @@ void region4_helper(double& s, double& t, const T& a, const T& c, const T& d, co
 // Computes the distance between two given points. Returns the euclidean norm of
 // the difference between two points.
 template <typename T, std::size_t N>
-double euclidean_distance(const common::Vector<T, N>& point1,
-                          const common::Vector<T, N>& point2)
+double euclidean_distance(const bo::Vector<T, N>& point1,
+                          const bo::Vector<T, N>& point2)
 {
     double distance = (point1 - point2).eucl_norm();
     return distance;
@@ -242,15 +242,15 @@ double euclidean_distance(const common::Vector<T, N>& point1,
 //    http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
 // or check available documents in the "/papers" directory.
 template <typename T>
-common::Vector<T, 3> find_closest_point_on_triangle(const common::Vector<T, 3>& P,
-    const common::Vector<T, 3>& corner1, const common::Vector<T, 3>& corner2,
-    const common::Vector<T, 3>& corner3)
+bo::Vector<T, 3> find_closest_point_on_triangle(const bo::Vector<T, 3>& P,
+    const bo::Vector<T, 3>& corner1, const bo::Vector<T, 3>& corner2,
+    const bo::Vector<T, 3>& corner3)
 {
     // Prepare parametrized representation of the triangle
     // T(s, t) = B + sE0 + tE1.
-    const common::Vector<T, 3> B = corner1;
-    const common::Vector<T, 3> E0 = corner2 - B;
-    const common::Vector<T, 3> E1 = corner3 - B;
+    const bo::Vector<T, 3> B = corner1;
+    const bo::Vector<T, 3> E0 = corner2 - B;
+    const bo::Vector<T, 3> E1 = corner3 - B;
 
     // Prepare coefficients for distance function Q(s, t).
     T a = E0 * E0;
@@ -294,11 +294,11 @@ common::Vector<T, 3> find_closest_point_on_triangle(const common::Vector<T, 3>& 
 
     // After processing the corresponding region, in s and t we have the closest point
     // on the triangle to the given point.
-    common::Vector<T, 3> closest_point = B + T(s) * E0 + T(t) * E1;
+    bo::Vector<T, 3> closest_point = B + T(s) * E0 + T(t) * E1;
     return closest_point;
 }
 
 } // namespace methods
-} // namespace common
+} // namespace bo
 
 #endif // THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_

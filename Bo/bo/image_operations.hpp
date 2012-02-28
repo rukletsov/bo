@@ -39,9 +39,9 @@
 #include <limits>
 #include <boost/cstdint.hpp>
 
-#include "common/raw_image_2d.hpp"
+#include "bo/raw_image_2d.hpp"
 
-namespace common {
+namespace bo {
 
 // Class free functions. These functions strongly depend on pixel type and therefore
 // defined outside the class.
@@ -103,6 +103,6 @@ RawImage2D<boost::uint8_t> invert(const RawImage2D<boost::uint8_t>& image)
     return inverted;
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // IMAGE_OPERATIONS_HPP_38A3CBD4_FAFD_404C_AC16_FC73B68B959B_

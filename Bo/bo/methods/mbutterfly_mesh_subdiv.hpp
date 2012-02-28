@@ -41,17 +41,17 @@
 
 #include <bo/mesh.hpp>
 
-namespace common {
+namespace bo {
 namespace methods {
 namespace surfaces {
 
 // Returns a subdivided mesh acquired from the source mesh by application of
 // the given number of subdivision iterations using the Modified Butterfly
 // scheme (see the reference paper)
-common::Mesh mButterflySubdivision(const common::Mesh &source, int iterations);
+bo::Mesh mButterflySubdivision(const bo::Mesh &source, int iterations);
 
 } // namespace surfaces
 } // namespace methods
-} // namespace common
+} // namespace bo
 
 #endif // MBUTTERFLY_MESH_SUBDIV_HPP_0CE908A8_0799_4C4E_92EC_3DCDAB62386E_

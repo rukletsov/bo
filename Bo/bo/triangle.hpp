@@ -40,7 +40,7 @@
 #include <boost/array.hpp>
 #include <boost/operators.hpp>
 
-namespace common {
+namespace bo {
 
 template <typename PointType>
 class Triangle: boost::equality_comparable1< Triangle<PointType> >
@@ -151,6 +151,6 @@ void Triangle<PointType>::check_range(std::size_t index)
         throw std::out_of_range("Triangle has only 3 vertices.");
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // TRIANGLE_HPP_507AFC96_F3F4_40FF_827C_66F388AEDAD2_

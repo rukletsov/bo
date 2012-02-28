@@ -35,9 +35,9 @@
 #ifndef BASIC_CONFIGURATION_HPP_5F739AB0_F8FE_4996_ABEB_4E3335AA84C8_
 #define BASIC_CONFIGURATION_HPP_5F739AB0_F8FE_4996_ABEB_4E3335AA84C8_
 
-#include "common/io/ini_reader.hpp"
+#include "bo/io/ini_reader.hpp"
 
-namespace common {
+namespace bo {
 namespace io {
 namespace config_parser {
 
@@ -70,6 +70,6 @@ void BasicConfiguration::read_file(const String& file_name)
 
 } // namespace config_parser
 } // namespace io
-} // namespace common
+} // namespace bo
 
 #endif // BASIC_CONFIGURATION_HPP_5F739AB0_F8FE_4996_ABEB_4E3335AA84C8_

@@ -11,9 +11,9 @@ namespace {
 // Context for RPly callbacks. See comments on mesh_from_ply() for more info.
 struct PLYContext
 {
-    common::Mesh* mesh_ptr;
-    common::Mesh::Vertex* vertex;
-    common::Mesh::Face* face;
+    bo::Mesh* mesh_ptr;
+    bo::Mesh::Vertex* vertex;
+    bo::Mesh::Face* face;
 };
 
 // Callback for reading vertex component. Supposes that vertex has only 3 components
@@ -72,7 +72,7 @@ int face_cb(p_ply_argument argument) {
 } // anonymous namespace
 
 
-namespace common {
+namespace bo {
 namespace io {
 
 // RPly library is used for reading and writing meshes to .ply files.
@@ -93,9 +93,9 @@ namespace io {
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif // __GNUC__
-common::Mesh mesh_from_ply(const std::string& file_path)
+bo::Mesh mesh_from_ply(const std::string& file_path)
 {
-    common::Mesh invalid_mesh(0);
+    bo::Mesh invalid_mesh(0);
     long nvertices, ntriangles;
 
     // Open .ply file for reading.
@@ -122,9 +122,9 @@ common::Mesh mesh_from_ply(const std::string& file_path)
     ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, &context, 0);
 
     // Create a mesh and fill the context with values.
-    common::Mesh mesh(static_cast<std::size_t>(nvertices));
-    common::Mesh::Vertex temp_vertex(0.0, 0.0, 0.0);
-    common::Mesh::Face temp_face;
+    bo::Mesh mesh(static_cast<std::size_t>(nvertices));
+    bo::Mesh::Vertex temp_vertex(0.0, 0.0, 0.0);
+    bo::Mesh::Face temp_face;
     context.mesh_ptr = &mesh;
     context.vertex = &temp_vertex;
     context.face = &temp_face;
@@ -142,7 +142,7 @@ common::Mesh mesh_from_ply(const std::string& file_path)
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
 // Some shitty software doesn't support double type for vertices that's why a
 // conversion to float is made, despite the fact that mesh stores double type.
-bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path)
+bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path)
 {
     // Create .ply file in ascii format.
     p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
@@ -185,9 +185,9 @@ bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path)
             return false;
 
         // Add a comment and an obj_info.
-        if (!ply_add_comment(oply, "libCommon generated PLY file"))
+        if (!ply_add_comment(oply, "Bo generated PLY file"))
             return false;
-        if (!ply_add_obj_info(oply, "common::Mesh class dump"))
+        if (!ply_add_obj_info(oply, "bo::Mesh class dump"))
             return false;
 
         // Write .ply header.
@@ -195,9 +195,9 @@ bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path)
             return false;
 
         // Write mesh data in the same order as declared above.
-        common::Mesh::Vertices::const_iterator vertices_end =
+        bo::Mesh::Vertices::const_iterator vertices_end =
                 mesh.get_all_vertices().end();
-        for (common::Mesh::Vertices::const_iterator it = mesh.get_all_vertices().begin();
+        for (bo::Mesh::Vertices::const_iterator it = mesh.get_all_vertices().begin();
              it != vertices_end; ++it)
         {
             if (!ply_write(oply, it->x()))
@@ -208,8 +208,8 @@ bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path)
                 return false;
         }
 
-        common::Mesh::Faces::const_iterator faces_end = mesh.get_all_faces().end();
-        for (common::Mesh::Faces::const_iterator it = mesh.get_all_faces().begin();
+        bo::Mesh::Faces::const_iterator faces_end = mesh.get_all_faces().end();
+        for (bo::Mesh::Faces::const_iterator it = mesh.get_all_faces().begin();
             it != faces_end; ++it)
         {
             // 3 can be hardcoded since Mesh works only with triangle faces.
@@ -230,4 +230,4 @@ bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path)
 }
 
 } // namespace io
-} // namespace common
+} // namespace bo

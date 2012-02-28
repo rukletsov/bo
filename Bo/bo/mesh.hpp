@@ -44,7 +44,7 @@
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
 
-namespace common {
+namespace bo {
 
 // A basic class for a 3D triangular mesh. Consumes more memory than a possible
 // minimum (a standard graph storage) but provides faster access to frequently
@@ -172,6 +172,6 @@ const Mesh::Normals& Mesh::get_all_face_normals() const
     return face_normals_;
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // MESH_HPP_5839D2AB_1DFF_4DCE_A5A2_051A5102190D_

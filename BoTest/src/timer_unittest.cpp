@@ -10,7 +10,7 @@
 
 #include "debug_alloc.hpp"
 
-using namespace common;
+using namespace bo;
 
 
 // Create a fixture class template for all timer classes.

@@ -55,7 +55,7 @@
 // headers should be used. If your OpenCV version is 2.2, define OPENCV_2_2
 // symbol before including this file. If your OpenCV version is either 2.0
 // or 2.1, include this file without defining OPENCV_2_2 symbol.
-#ifdef LIBCOMMON_USE_OPENCV
+#ifdef BO_USE_OPENCV
 #   ifdef OPENCV_2_2
 #       include <opencv2/opencv.hpp>
 #   else
@@ -63,15 +63,15 @@
 #   endif
 #endif
 
-namespace common {
+namespace bo {
 namespace io {
 
 // Saves RawImage2D<float> to a raw file (8 bytes per pixel, row by row).
-void save_raw_image_float_to_8bpps(common::RawImage2D<float> image,
+void save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
                                    const std::string& filename);
 
 // Convertion functions from and to OpenCV format are available on demand.
-#ifdef LIBCOMMON_USE_OPENCV
+#ifdef BO_USE_OPENCV
 
 // Checks if the size of pixel type is the same as in cv::Mat instance.
 template <typename T> inline
@@ -97,11 +97,11 @@ int cv_wait_for_key(int msecs)
 // Converts and normalizes to double a given cv::Mat image. If the supposed size
 // of pixel differs from real size in the given image, returns empty RawImage2D.
 template <typename ValType>
-common::RawImage2D<ValType> raw_image_2d_from_cvmat<ValType>(const cv::Mat& image)
+bo::RawImage2D<ValType> raw_image_2d_from_cvmat<ValType>(const cv::Mat& image)
 {
     if (is_bpps_equal_to<ValType>(image))
     {
-        common::RawImage2D<ValType> retvalue(image.cols, image.rows);
+        bo::RawImage2D<ValType> retvalue(image.cols, image.rows);
 
         ValType factor = std::numeric_limits<ValType>::max();
 
@@ -115,7 +115,7 @@ common::RawImage2D<ValType> raw_image_2d_from_cvmat<ValType>(const cv::Mat& imag
         return retvalue;
     }
     else
-        return common::RawImage2D<ValType>;
+        return bo::RawImage2D<ValType>;
 }
 
 // Converts current state to cv::Mat image. CV_8UC1 flag is used to create an image
@@ -142,6 +142,6 @@ cv::Mat RawImage<ValType>::to_cvmat() const
 #endif
 
 } // namespace io
-} // namespace common
+} // namespace bo
 
 #endif // RAW_IMAGE_2D_IO_HPP_203C45E7_9EA0_4B4C_AE8C_A5600E517560_

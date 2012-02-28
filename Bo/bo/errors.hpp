@@ -38,7 +38,7 @@
 #include <iostream>
 #include <string>
 
-namespace common {
+namespace bo {
 
 inline
 void errprint(const std::string& app_name, const std::string& msg)
@@ -47,6 +47,6 @@ void errprint(const std::string& app_name, const std::string& msg)
               << "Use \"" << app_name << " -h\" for help" << std::endl;
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // ERRORS_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_

@@ -45,7 +45,7 @@
 #include "bo/triangle.hpp"
 #include "bo/mesh.hpp"
 
-namespace common {
+namespace bo {
 namespace methods {
 
 namespace {
@@ -65,7 +65,7 @@ namespace surfaces {
 struct HPointSeed
 {
     /*! 3D Vertex. */
-    common::Vector<float,3> p;
+    bo::Vector<float,3> p;
 
     /*! Visits flag. */
     bool isVisited;
@@ -105,7 +105,7 @@ struct  HEdgeSeed
     HPointSeed* p2;
 
     /*! Vector of the propagation direction. */
-    common::Vector<float,3> propagationVector;
+    bo::Vector<float,3> propagationVector;
 
     /*! Comparison operator. */
     bool operator == (const HEdgeSeed& other) const
@@ -183,7 +183,7 @@ public:
     /*! Load points cloud into the internal vertex container.
         \param v The list of vertices in 3D.
     */
-        void set_vertices(std::vector<common::Vector<float, 3> > &v);
+        void set_vertices(std::vector<bo::Vector<float, 3> > &v);
 
     /*! Get vector of point items.
         \return Vector of point items.
@@ -208,18 +208,18 @@ public:
     /*! Get the mesh object built from the current list of generated triangles.
         \return Reconstructed mesh.
     */
-    common::Mesh get_mesh();
+    bo::Mesh get_mesh();
 
     /*! Load the given points cloud into the internal container and build the mesh based on it.
         \param v Points cloud.
         \return Reconstructed mesh.
     */
-        common::Mesh build_mesh(std::vector<common::Vector<float,3> > &v);
+        bo::Mesh build_mesh(std::vector<bo::Vector<float,3> > &v);
 
     /*! Build the mesh based on the pre-loaded vertices.
         \return Reconstructed mesh.
     */
-    common::Mesh build_mesh();
+    bo::Mesh build_mesh();
 
     /*! Perform one growing iteration. Return true if further growing is possible otherwise return false.
         \return true if further growing is possible otherwise returns false.
@@ -314,8 +314,8 @@ protected:
         \return True if an approximation of the pyramidal projection of \p t1 
         intersects the truncated projection of \p t2 in 3D. Otherwise returns false.
     */
-    bool triangles_3d_intersection(const common::Triangle<common::Vector<float,3> > &t1, 
-                                   const common::Triangle<common::Vector<float,3> > &t2);
+    bool triangles_3d_intersection(const bo::Triangle<bo::Vector<float,3> > &t1,
+                                   const bo::Triangle<bo::Vector<float,3> > &t2);
 
     /*! Tests \p triangle3DIntersection() for the given triangle \p t with all triangles from \p triangles.
         \param t The input triangle.
@@ -405,7 +405,7 @@ protected:
         \param windowRadius The radius of the neighborhood.
         \return The normal vector.
     */
-    common::Vector<float,3> get_surface_normal(common::Vector<float,3> p, float windowRadius);
+    bo::Vector<float,3> get_surface_normal(bo::Vector<float,3> p, float windowRadius);
 
     //! Container of the input vertices. Internal realization as a k-DTree.
     HVertexContainer *vertices;
@@ -466,6 +466,6 @@ protected:
 
 
 } // namespace methods
-} // namespace common
+} // namespace bo
 
 #endif //D25_ACTIVE_CONTOURS_HPP_408B8C5F_B876_4B70_AE3C_4B193F9AEED0_

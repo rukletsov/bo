@@ -8,7 +8,7 @@
 #include "bo/mesh.hpp"
 #include "bo/methods/3d_distances.hpp"
 
-namespace common {
+namespace bo {
 
 Mesh::Mesh(std::size_t initial_count)
 {
@@ -331,4 +331,4 @@ void Mesh::face_rangecheck(std::size_t face_index) const
         throw std::out_of_range("Specified face doesn't exist.");
 }
 
-} // namespace common
+} // namespace bo

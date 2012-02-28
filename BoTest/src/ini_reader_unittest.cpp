@@ -9,7 +9,7 @@
 extern std::string DataDirectory;
 static const std::string ini_filename = "ini_reader_test.ini";
 
-using namespace common::io;
+using namespace bo::io;
 
 
 // Create a so-called "text fixture" using base class form GTEST.

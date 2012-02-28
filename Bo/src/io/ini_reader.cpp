@@ -5,7 +5,7 @@
 
 #include "bo/io/ini_reader.hpp"
 
-namespace common {
+namespace bo {
 namespace io {
 
 void IniReader::set_settings(const IniReaderSettings& settings)
@@ -457,4 +457,4 @@ void IniReader::print_sections_() const
 #endif
 
 } // namespace io
-} // namespace common
+} // namespace bo

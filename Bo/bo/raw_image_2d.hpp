@@ -44,7 +44,7 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
-namespace common {
+namespace bo {
 
 // A class representing a 2D image with a template-dependent pixel type. Image data
 // is stored in a one-dimensional dynamic array under boost::shared_array<>. Access to
@@ -355,6 +355,6 @@ void RawImage2D<ValType>::check_range(std::size_t col, std::size_t row) const
     }
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // RAW_IMAGE_2D_HPP_A9C93511_7D52_457E_9B7A_5CFA9590A8C9_

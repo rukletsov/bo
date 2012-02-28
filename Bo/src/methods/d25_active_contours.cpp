@@ -11,9 +11,7 @@
 //Uncomment for equal-square triangles propagation  
 //#define USE_EQUAL_SQUARE_PROPAGATION
 
-using namespace common;
-
-namespace common {
+namespace bo {
 namespace methods {
 
 namespace {
@@ -1133,7 +1131,7 @@ bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeSeed &e, HPointSeed* &
 }
 
 
-common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
+bo::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
 {
     set_vertices(v);
 
@@ -1144,7 +1142,7 @@ common::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
     return get_mesh();
 }
 
-common::Mesh D25ActiveContours::build_mesh()
+bo::Mesh D25ActiveContours::build_mesh()
 {
     //Cleaning all the auxiliary containers
     activeEdges.clear();
@@ -1557,10 +1555,10 @@ void D25ActiveContours::post_stitch()
 #   pragma warning(pop)
 #endif // _MSC_VER
 
-common::Mesh D25ActiveContours::get_mesh()
+bo::Mesh D25ActiveContours::get_mesh()
 {
     //Construct a mesh
-    common::Mesh m(triangles.size());
+    bo::Mesh m(triangles.size());
 
     //Create a reference map (from the local triangles nodes to the mesh vertices)
     std::map<HPointSeed*,size_t> mymap;
@@ -1575,7 +1573,7 @@ common::Mesh D25ActiveContours::get_mesh()
             if(mymap.find(ps)==mymap.end())
             {	
                 //Add the vertex/node into the mesh and to the reference map
-                size_t ind=m.add_vertex(common::Mesh::Vertex(ps->p.x(),ps->p.y(),ps->p.z()));
+                size_t ind=m.add_vertex(bo::Mesh::Vertex(ps->p.x(),ps->p.y(),ps->p.z()));
                 mymap[ps]=ind;
             }
         }
@@ -1585,7 +1583,7 @@ common::Mesh D25ActiveContours::get_mesh()
         size_t B=mymap[itt->p2];
         size_t C=mymap[itt->p3];
 
-        m.add_face(common::Mesh::Face(A,B,C));
+        m.add_face(bo::Mesh::Face(A,B,C));
 
         ++itt;
     }
@@ -1595,4 +1593,4 @@ common::Mesh D25ActiveContours::get_mesh()
 
 } // namespace surfaces
 } // namespace methods
-} // namespace common
+} // namespace bo

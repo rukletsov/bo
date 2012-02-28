@@ -38,7 +38,7 @@
 #include <cmath>
 #include <boost/math/tr1.hpp>
 
-namespace common {
+namespace bo {
 
 template <typename T> inline
 T square(const T& arg)
@@ -52,6 +52,6 @@ T cube(const T& arg)
     return (arg * arg * arg);
 }
 
-} // namespace common
+} // namespace bo
 
 #endif // EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_

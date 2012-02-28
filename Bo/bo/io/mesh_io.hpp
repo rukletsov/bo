@@ -39,14 +39,14 @@
 
 #include <bo/mesh.hpp>
 
-namespace common {
+namespace bo {
 namespace io {
 
 // IO functions, allow to read mesh from and write to a .ply files.
-common::Mesh mesh_from_ply(const std::string& file_path);
-bool mesh_to_ply(const common::Mesh& mesh, const std::string& file_path);
+bo::Mesh mesh_from_ply(const std::string& file_path);
+bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path);
 
 } // namespace io
-} // namespace common
+} // namespace bo
 
 #endif // MESH_IO_HPP_C536C1D7_8F7D_4396_90C3_84DFCB3902C5_

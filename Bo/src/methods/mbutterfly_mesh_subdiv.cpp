@@ -3,7 +3,7 @@
 #include <map>
 #include <list>
 
-namespace common
+namespace bo
 {
 
 namespace methods
@@ -295,4 +295,4 @@ Mesh surfaces::mButterflySubdivision(const Mesh &source, int iterations)
 }
 
 } //namespace methods
-} //namespace common
+} //namespace bo
