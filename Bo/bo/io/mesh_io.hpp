@@ -37,7 +37,7 @@
 
 #include <string>
 
-#include <common/mesh.hpp>
+#include <bo/mesh.hpp>
 
 namespace common {
 namespace io {

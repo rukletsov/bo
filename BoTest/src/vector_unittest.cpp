@@ -2,7 +2,7 @@
 #include <limits>
 #include <gtest/gtest.h>
 
-#include "common/vector.hpp"
+#include "bo/vector.hpp"
 #include "debug_alloc.hpp"
 
 using namespace common;

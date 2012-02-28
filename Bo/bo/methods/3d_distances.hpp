@@ -36,7 +36,7 @@
 #ifndef THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 #define THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 
-#include "common/vector.hpp"
+#include "bo/vector.hpp"
 
 namespace common {
 namespace methods {

@@ -3,8 +3,8 @@
 #include <boost/scope_exit.hpp>
 
 #include "rply/rply.h"
-#include "common/mesh.hpp"
-#include "common/io/mesh_io.hpp"
+#include "bo/mesh.hpp"
+#include "bo/io/mesh_io.hpp"
 
 namespace {
 

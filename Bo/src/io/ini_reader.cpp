@@ -3,7 +3,7 @@
 #include <boost/assert.hpp>
 #include <boost/regex.hpp>
 
-#include "common/io/ini_reader.hpp"
+#include "bo/io/ini_reader.hpp"
 
 namespace common {
 namespace io {

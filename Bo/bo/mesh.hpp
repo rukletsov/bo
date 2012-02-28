@@ -41,8 +41,8 @@
 #include <string>
 #include <iostream>
 
-#include "common/vector.hpp"
-#include "common/triangle.hpp"
+#include "bo/vector.hpp"
+#include "bo/triangle.hpp"
 
 namespace common {
 

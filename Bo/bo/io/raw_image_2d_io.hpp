@@ -48,7 +48,7 @@
 #include <string>
 #include <boost/cstdint.hpp>
 
-#include "common/raw_image_2d.hpp"
+#include "bo/raw_image_2d.hpp"
 
 // Enable OpenCV usage only when explicitly requested.
 // Depending on the version of OpenCV you link to, one of the following

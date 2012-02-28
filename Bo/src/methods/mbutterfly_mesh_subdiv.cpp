@@ -1,4 +1,5 @@
-#include "common/methods/mbutterfly_mesh_subdiv.hpp"
+
+#include "bo/methods/mbutterfly_mesh_subdiv.hpp"
 #include <map>
 #include <list>
 

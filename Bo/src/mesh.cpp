@@ -5,8 +5,8 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
-#include "common/mesh.hpp"
-#include "common/methods/3d_distances.hpp"
+#include "bo/mesh.hpp"
+#include "bo/methods/3d_distances.hpp"
 
 namespace common {
 

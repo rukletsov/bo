@@ -4,7 +4,7 @@
 #include <boost/algorithm/string.hpp>
 #include <gtest/gtest.h>
 
-#include "common/io/ini_reader.hpp"
+#include "bo/io/ini_reader.hpp"
 
 extern std::string DataDirectory;
 static const std::string ini_filename = "ini_reader_test.ini";

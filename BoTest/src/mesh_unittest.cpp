@@ -2,7 +2,7 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-#include "common/mesh.hpp"
+#include "bo/mesh.hpp"
 #include "debug_alloc.hpp"
 
 using namespace common;

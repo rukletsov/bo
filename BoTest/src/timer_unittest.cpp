@@ -6,7 +6,7 @@
 // This allows us to have (and to test) both timers under MSVC: boost::timer through
 // Timer class and a special high-resolution timer through detail::MSVCTimer.
 #define USE_BOOST_TIMER
-#include "common/performance.hpp"
+#include "bo/performance.hpp"
 
 #include "debug_alloc.hpp"
 

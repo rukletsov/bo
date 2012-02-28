@@ -5,8 +5,8 @@
 
 #include "3rdparty/svd/svd.h"
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/kdtree.hpp"
-#include "common/blas/blas.hpp"
-#include "common/methods/d25_active_contours.hpp"
+#include "bo/blas/blas.hpp"
+#include "bo/methods/d25_active_contours.hpp"
 
 //Uncomment for equal-square triangles propagation  
 //#define USE_EQUAL_SQUARE_PROPAGATION
