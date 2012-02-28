@@ -76,7 +76,7 @@ LIBRARY
 [DONE] * Rename "stdafx" to "pch" in order to make it clear.
 [DONE] * Provide Timer class, which works via Performance Counters on Windows 
   and as boost::timer on all other platforms. This should replace functions 
-  from "common/performance.hpp".
+  from "bo/performance.hpp".
 [DONE] * Put windows-dependent code under #ifdef.
 [DONE] * Write tests for Timer class.
 [DONE] * Use alternative new operator in test application for more verbose 

@@ -2,10 +2,10 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 # User-defined options for the whole project.
-OPTION (BuildTests "Build all of Common's tests" OFF)
+OPTION (BuildTests "Build all of Bo's tests" OFF)
 
 
-PROJECT (Common)
+PROJECT (BoProject)
 
 SET (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 SET (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -19,13 +19,13 @@ LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib
 )
 
 # Projects list with root paths.
-SET (LIBCOMMON_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/libCommon)
-SET (APPCOMMONTEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/appCommonTest)
+SET (BO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Bo)
+SET (BOTEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/BoTest)
 
-ADD_SUBDIRECTORY (${LIBCOMMON_ROOT})
+ADD_SUBDIRECTORY (${BO_ROOT})
 
 # Add test project only if requested.
 IF (BuildTests)
     ENABLE_TESTING()
-    ADD_SUBDIRECTORY (${APPCOMMONTEST_ROOT})
+    ADD_SUBDIRECTORY (${BOTEST_ROOT})
 ENDIF (BuildTests)

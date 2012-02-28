@@ -7,10 +7,10 @@ IF (MSVC)
 ENDIF (MSVC)
 
 
-PROJECT (LibCommon)
+PROJECT (bo)
 
 # Specify project's C++ source files.
-SET (LibCommon_SRCS
+SET (BO_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/mesh_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/raw_image_2d_io.cpp
@@ -20,12 +20,12 @@ SET (LibCommon_SRCS
 )
 
 # A special section for C sources, which should be compiled using C compiler, not C++
-SET (LibCommon_CSRCS
+SET (BO_CSRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.c
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.c
 )
 
-SET (LibCommon_HDRS
+SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/pch.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/common/vector.hpp
@@ -72,18 +72,18 @@ IF (UsePch)
         MESSAGE (STATUS "Precompiled header enabled through \"pch.h\" and \"pch.cpp\"")
 
         # Set "use precompiled header" option for every ".cpp" file.
-        FOREACH (src_file ${LibCommon_SRCS})
+        FOREACH (src_file ${BO_SRCS})
             SET_SOURCE_FILES_PROPERTIES (${src_file} PROPERTIES COMPILE_FLAGS "/Yupch.h")
-        ENDFOREACH (src_file ${LibCommon_SRCS})
+        ENDFOREACH (src_file ${BO_SRCS})
 
         # Set "create precompiled header" option only for "pch.cpp" file.
         SET_SOURCE_FILES_PROPERTIES (${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
                                      PROPERTIES COMPILE_FLAGS "/Ycpch.h")
 
         # Add "pch.cpp" file to the list of C++ sources.
-        SET (LibCommon_SRCS
+        SET (BO_SRCS
             ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
-            ${LibCommon_SRCS})
+            ${BO_SRCS})
 
     ENDIF (MSVC)
 
@@ -101,14 +101,14 @@ INCLUDE_DIRECTORIES (./
 )
 
 # Compile the library.
-ADD_LIBRARY (LibCommon
-             ${LibCommon_HDRS}
-             ${LibCommon_SRCS}
-             ${LibCommon_CSRCS}
+ADD_LIBRARY (bo
+             ${BO_HDRS}
+             ${BO_SRCS}
+             ${BO_CSRCS}
 )
 
 # Specify the name suffix for debug build.
-SET_TARGET_PROPERTIES (LibCommon PROPERTIES DEBUG_POSTFIX "d")
+SET_TARGET_PROPERTIES (bo PROPERTIES DEBUG_POSTFIX "d")
 
 # Rise warning level to maximum for MSVC and GNUCXX.
 IF (MSVC)
@@ -125,7 +125,7 @@ IF (MSVC)
     ADD_DEFINITIONS ("/wd4512")
 
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
 
@@ -143,10 +143,10 @@ IF (MSVC)
     ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
 
     # Supress secure warnings (C4996) for MSVC compiler.
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES COMPILE_FLAGS 
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")                         
   
     # Supress "no public symbols found" MSVC's linker warning (this can occur for
     # the "pch.obj" file when using precompiled headers.
-    SET_TARGET_PROPERTIES (LibCommon PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
+    SET_TARGET_PROPERTIES (bo PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
 ENDIF (MSVC)
