@@ -110,7 +110,7 @@ inline float point_bac(HPointContainerItem t, size_t k)
 
 // 3D Tree type.
 typedef KDTree::KDTree<3, HPointContainerItem,
-    std::pointer_to_binary_function<HPointContainerItem, size_t, float>> D3Tree;
+    std::pointer_to_binary_function<HPointContainerItem, size_t, float> > D3Tree;
 
 // A general container of vertices.
 class HPointContainer
@@ -272,7 +272,7 @@ Vector<float,3> getNormalVector(const Vector<float,3> a, const Vector<float,3> b
     \param t The input triangle
     \return The normal vector for \p t
 */
-Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3>> &t)
+Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
 {
     Vector<float,3> a = t.B() - t.A();
     Vector<float,3> b = t.C() - t.A();
@@ -302,11 +302,11 @@ Vector<float,3> getNormalVector(const surfaces::HTriangleElement &ts)
 struct TriangularDipyramid
 {
     Vector<float,3> vertices[5];
-    Triangle<Vector<float,3>> faces[6];
+    Triangle<Vector<float,3> > faces[6];
     Vector<float,3> center;
     
     // Triangular dipyramid based on the given triangle with the given base angle.
-    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3>>& t,
+    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3> >& t,
                                                        float baseAngleCos)
     {
         TriangularDipyramid tdp;
@@ -344,24 +344,24 @@ struct TriangularDipyramid
         tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
         // Faces of the dipyramid.
-        tdp.faces[0] = Triangle<Vector<float, 3>>(t.A(), t.B(), p1);
-        tdp.faces[1] = Triangle<Vector<float, 3>>(t.B(), t.C(), p1);
-        tdp.faces[2] = Triangle<Vector<float, 3>>(t.C(), t.A(), p1);
-        tdp.faces[3] = Triangle<Vector<float, 3>>(t.A(), t.B(), p2);
-        tdp.faces[4] = Triangle<Vector<float, 3>>(t.B(), t.C(), p2);
-        tdp.faces[5] = Triangle<Vector<float, 3>>(t.C(), t.A(), p2);
+        tdp.faces[0] = Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
 
     // Triangular dipyramid based on the given triangle with the given height.
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3>>& t,
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
                                                         float height)
     {
         TriangularDipyramid tdp;
 
         // Normal calculation.
-        Vector<float,3> z = getNormalVector(t);
+        Vector<float, 3> z = getNormalVector(t);
 
         // Sides length.
         float a = float((t.B() - t.C()).eucl_norm());
@@ -375,20 +375,20 @@ struct TriangularDipyramid
         z = z / float(z.eucl_norm()) * height;
 
         // Two top-vertices.
-        Vector<float,3> p1 = tdp.center + z;
-        Vector<float,3> p2 = tdp.center - z;
+        Vector<float, 3> p1 = tdp.center + z;
+        Vector<float, 3> p2 = tdp.center - z;
 
         // Vertices of the dipyramid.
         tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
         tdp.vertices[3] = p1; tdp.vertices[4] = p2;
 
         // Faces of the dipyramid.
-        tdp.faces[0] = Triangle<Vector<float,3>>(t.A(), t.B(), p1);
-        tdp.faces[1] = Triangle<Vector<float,3>>(t.B(), t.C(), p1);
-        tdp.faces[2] = Triangle<Vector<float,3>>(t.C(), t.A(), p1);
-        tdp.faces[3] = Triangle<Vector<float,3>>(t.A(), t.B(), p2);
-        tdp.faces[4] = Triangle<Vector<float,3>>(t.B(), t.C(), p2);
-        tdp.faces[5] = Triangle<Vector<float,3>>(t.C(), t.A(), p2);
+        tdp.faces[0] = Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
 
         return tdp;
     }
@@ -397,7 +397,7 @@ struct TriangularDipyramid
     // Based on the Separating Plane Theorem.
     bool intersects(TriangularDipyramid& other)
     {
-        float eps=0.01f;
+        float eps = 0.01f;
 
         TriangularDipyramid tp1 = *this, tp2 = other;
 
@@ -405,8 +405,8 @@ struct TriangularDipyramid
         {
             for (unsigned int t = 0; t < 6; ++t)
             {
-                Triangle<Vector<float,3>> face = tp1.faces[t];
-                Vector<float,3> norm = getNormalVector(face);
+                Triangle<Vector<float, 3> > face = tp1.faces[t];
+                Vector<float, 3> norm = getNormalVector(face);
                 
                 // Calculating min and max of the projection of the first dipyramid 
                 // on the current normal vector.
@@ -1055,7 +1055,7 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElem
         std::list<HTriangleElement>::const_iterator tit = it->ps->adjacentTriangles.begin();
         while(tit != it->ps->adjacentTriangles.end())
         {
-            Triangle<Vector<float,3>> t2(tit->p1->p ,tit->p2->p, tit->p3->p);
+            Triangle<Vector<float, 3> > t2(tit->p1->p ,tit->p2->p, tit->p3->p);
 
             if (triangles_3d_intersection(t1, t2))
                 return true;
@@ -1079,7 +1079,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
     if (pps1)
     {
         // Create a new triangle based on the given edge and the propagated point.
-        Triangle<Vector<float,3>> t1(e.p1->p, e.p2->p, pps1->p);
+        Triangle<Vector<float, 3> > t1(e.p1->p, e.p2->p, pps1->p);
 
         // Find all adjacent edges to the given one in the list of passive edges.
         for(std::list<HEdgeElement>::iterator ite = frozenEdges.begin(); ite != frozenEdges.end(); ++ite)
@@ -1104,7 +1104,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
                 {
                     // Create a new triangle based on this adjacent edge and the
                     // propagated point
-                    Triangle<Vector<float,3>> t2(ee.p1->p, ee.p2->p, pps2->p);
+                    Triangle<Vector<float, 3> > t2(ee.p1->p, ee.p2->p, pps2->p);
 
                     // If these two triangles are concurrent, create one stitch triangle based
                     // on the considered adjacent edges.
