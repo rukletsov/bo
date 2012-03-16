@@ -49,6 +49,8 @@ namespace bo {
 namespace methods {
 namespace surfaces {
 
+typedef bo::Vector<float, 3> Vertex;
+
 struct HPointElement;
 
 /*! \class HTriangleElement.
@@ -75,10 +77,10 @@ struct  HTriangleElement
 */
 struct HPointElement
 {
-    HPointElement(bo::Vector<float,3> v = bo::Vector<float,3>(0,0,0));
+    HPointElement(Vertex v = Vertex(0, 0, 0));
 
     /*! 3D Point. */
-    bo::Vector<float,3> p;
+    Vertex p;
 
     /*! Visits flag. */
     bool isVisited;
@@ -120,7 +122,7 @@ struct  HEdgeElement
     HPointElement* p2;
 
     /*! Vector of the propagation direction. */
-    bo::Vector<float,3> propagationVector;
+    Vertex propagationVector;
 
     /*! Comparison operator. */
     bool operator == (const HEdgeElement& other) const;
@@ -175,7 +177,7 @@ public:
     /*! Load points cloud into the internal vertex container.
         \param v The list of vertices in 3D.
     */
-        void set_vertices(std::vector<bo::Vector<float, 3> > &v);
+        void set_vertices(std::vector<Vertex> &v);
 
     /*! Get vector of point items.
         \return Vector of point items.
@@ -206,7 +208,7 @@ public:
         \param v Points cloud.
         \return Reconstructed mesh.
     */
-    bo::Mesh build_mesh(std::vector<bo::Vector<float,3> > &v);
+    bo::Mesh build_mesh(std::vector<Vertex> &v);
 
     /*! Build the mesh based on the pre-loaded vertices.
         \return Reconstructed mesh.
@@ -306,8 +308,8 @@ protected:
         \return True if an approximation of the pyramidal projection of \p t1 
         intersects the truncated projection of \p t2 in 3D. Otherwise returns false.
     */
-    bool triangles_3d_intersection(const bo::Triangle<bo::Vector<float,3> > &t1,
-                                   const bo::Triangle<bo::Vector<float,3> > &t2);
+    bool triangles_3d_intersection(const bo::Triangle<Vertex> &t1,
+                                   const bo::Triangle<Vertex> &t2);
 
     /*! Tests \p triangle3DIntersection() for the given triangle \p t with all triangles from \p triangles.
         \param t The input triangle.
@@ -356,7 +358,7 @@ protected:
 
     //Calculates the propagation vector for the edge e defined by the origin point and insert it into e
     //returns True if the vector was successfully calculated and embedded into e. Otherwise returns false.
-    bool get_edge_propagation( HEdgeElement &e, Vector<float,3> origin);
+    bool get_edge_propagation( HEdgeElement &e, Vertex origin);
 
 
     /*! Calculates an approximation of the normal surface vector in point \p p. The 
@@ -367,7 +369,7 @@ protected:
         \param windowRadius The radius of the neighborhood.
         \return The normal vector.
     */
-    bo::Vector<float,3> get_surface_normal(bo::Vector<float,3> p, float windowRadius);
+    Vertex get_surface_normal(Vertex p, float windowRadius);
 
 
     //! Container of input vertices. Internal realization as a k-DTree.

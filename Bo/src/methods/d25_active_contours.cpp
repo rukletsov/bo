@@ -23,7 +23,7 @@ bool HTriangleElement::operator==(const HTriangleElement &other) const
 
 // HPointElement implementation.
 
-HPointElement::HPointElement(bo::Vector<float,3> v /*= bo::Vector<float,3>(0,0,0)*/)
+HPointElement::HPointElement(Vertex v /*= bo::Vector<float,3>(0,0,0)*/)
 {
     p = v;
     isVisited = false;
@@ -756,7 +756,7 @@ void D25ActiveContours::model_grow()
         activeEdges.erase(it);
 }
 
-bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vector<float,3> origin)
+bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
 {           
     // The middle point of the edge.
     Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
@@ -1009,7 +1009,7 @@ bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElem
 }
 
 
-bo::Mesh D25ActiveContours::build_mesh(std::vector<Vector<float,3> > &v)
+bo::Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
 {
     // Initialize the point cloud.
     set_vertices(v);
@@ -1172,7 +1172,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
         frozenEdges.push_back(e);
 }
 
-Vector<float,3> D25ActiveContours::get_surface_normal(Vector<float,3> p, float windowRadius)
+Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius)
 {
     // Select points from the neighborhood.
     HPointElement ps;
@@ -1299,8 +1299,8 @@ const std::list<HTriangleElement>* D25ActiveContours::get_triangles()
 
 
 
-bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vector<float,3> > &t1,
-                                                  const Triangle<Vector<float,3> > &t2)
+bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vertex> &t1,
+                                                  const Triangle<Vertex> &t2)
 {
     // Define the minimal error value.
     const float eps = 0.001f;
@@ -1357,7 +1357,7 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
     else return false;
 }
 
-void D25ActiveContours::set_vertices( std::vector<Vector<float,3> > &v )
+void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 {
     // Cleaning all the auxiliary containers.
     activeEdges.clear();
