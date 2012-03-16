@@ -107,6 +107,11 @@ ADD_LIBRARY (bo
              ${BO_CSRCS}
 )
 
+TARGET_LINK_LIBRARIES (bo
+                       boost_regex
+)
+
+
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (bo PROPERTIES DEBUG_POSTFIX "d")
 
