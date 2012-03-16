@@ -23,4 +23,4 @@ lib/**
 bin/**
 vs20*/**
 qtcreator/**
-tests/*.*
+tests/**
