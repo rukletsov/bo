@@ -10,6 +10,7 @@ syntax: glob
 *BuildLog.htm
 *.ilk
 *.dep
+.DS_Store
 *.embed.manifest.res
 CMakeCache.txt
 CMakeFiles*
