@@ -3,6 +3,7 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 # User-defined options for the whole project.
 OPTION (BuildTests "Build all of Bo's tests" OFF)
+OPTION (BUILD_SHARED_LIBS "Build shared libraries (DLLs)" OFF)
 
 
 PROJECT (BoProject)

@@ -104,6 +104,11 @@ INCLUDE_DIRECTORIES (./
 # Let the sources know, that this is our own source.
 ADD_DEFINITIONS (-DBO_SOURCE)
 
+# Add shared library support if requested by a user.
+IF (BUILD_SHARED_LIBS)
+    ADD_DEFINITIONS (-DBO_SHARED_LIBRARY)
+ENDIF (BUILD_SHARED_LIBS)
+
 # Compile the library.
 ADD_LIBRARY (bo
              ${BO_HDRS}
