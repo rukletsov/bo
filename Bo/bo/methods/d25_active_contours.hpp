@@ -47,6 +47,16 @@
 #include "bo/triangle.hpp"
 #include "bo/mesh.hpp"
 
+// Suppress C4251 warning under MSVC. It is generated because MSVC cannot correctly
+// handle exported classes, which use member, based on STL templates. Another sulotion
+// is to explicitly export all used STL template instantiations. For more information
+// on the topic see
+//     http://support.microsoft.com/default.aspx?scid=KB;EN-US;168958
+#ifdef _MSC_VER
+#   pragma warning (push)
+#   pragma warning (disable:4251)
+#endif // _MSC_VER
+
 namespace bo {
 namespace methods {
 namespace surfaces {
@@ -427,9 +437,11 @@ protected:
 };
 
 } // namespace surfaces
-
-
 } // namespace methods
 } // namespace bo
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 #endif //D25_ACTIVE_CONTOURS_HPP_408B8C5F_B876_4B70_AE3C_4B193F9AEED0_

@@ -46,6 +46,16 @@
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
 
+// Suppress C4251 warning under MSVC. It is generated because MSVC cannot correctly
+// handle exported classes, which use member, based on STL templates. Another sulotion
+// is to explicitly export all used STL template instantiations. For more information
+// on the topic see
+//     http://support.microsoft.com/default.aspx?scid=KB;EN-US;168958
+#ifdef _MSC_VER
+#   pragma warning (push)
+#   pragma warning (disable:4251)
+#endif // _MSC_VER
+
 namespace bo {
 
 // A basic class for a 3D triangular mesh. Consumes more memory than a possible
@@ -175,5 +185,9 @@ const Mesh::Normals& Mesh::get_all_face_normals() const
 }
 
 } // namespace bo
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 #endif // MESH_HPP_5839D2AB_1DFF_4DCE_A5A2_051A5102190D_

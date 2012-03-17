@@ -46,6 +46,16 @@
 #include <map>
 #include <boost/algorithm/string.hpp>
 
+// Suppress C4251 warning under MSVC. It is generated because MSVC cannot correctly
+// handle exported classes, which use member, based on STL templates. Another sulotion
+// is to explicitly export all used STL template instantiations. For more information
+// on the topic see
+//     http://support.microsoft.com/default.aspx?scid=KB;EN-US;168958
+#ifdef _MSC_VER
+#   pragma warning (push)
+#   pragma warning (disable:4251)
+#endif // _MSC_VER
+
 // Used only in print_sections_() function.
 #ifdef _DEBUG
 #   include <iostream>
@@ -411,5 +421,9 @@ T IniReader::get_value(const String& key_name,
 
 } // namespace io
 } // namespace bo
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 #endif // INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_
