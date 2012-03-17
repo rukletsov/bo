@@ -19,12 +19,12 @@
 
 #endif // _MSC_VER
 
-// Specify headers which will be stored in a precompiled header. USE_PCH variable can
+// Specify headers which will be stored in a precompiled header. BO_USE_PCH macro can
 // be defined by the user during configuration process (with CMake), or explicitly
 // before this line. Note that msvc's pch cannot be used in distributed builds.
 // Note that C++ includes should be separated from C includes in order to let the
 // precompiled header be used also for C source files.
-#ifdef USE_PCH
+#ifdef BO_USE_PCH
 #  include <limits.h>
 #  include <stdlib.h>
 #  include <stddef.h>
@@ -46,6 +46,6 @@
 #    include <boost/format.hpp>
 #  endif // __cplusplus
 
-#endif // USE_PCH
+#endif // BO_USE_PCH
 
 #endif // PCH_H_

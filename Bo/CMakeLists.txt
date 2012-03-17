@@ -64,8 +64,8 @@ SET (BO_HDRS
 # Enable precompiled headers if requested by the user.
 IF (UsePch)
 
-    # Set preprocessor directive USE_PCH so we can use it in code sources.
-    ADD_DEFINITIONS (-DUSE_PCH)
+    # Set preprocessor directive BO_USE_PCH so we can use it in code sources.
+    ADD_DEFINITIONS (-DBO_USE_PCH)
 
     # MSVC-specific handling of precompiled headers.
     IF (MSVC)
@@ -100,6 +100,9 @@ INCLUDE_DIRECTORIES (./
                      ./3rdparty/rply-1.01
                      ./3rdparty/libkdtree++_0.7.0
 )
+
+# Let the sources know, that this is our own source.
+ADD_DEFINITIONS (-DBO_SOURCE)
 
 # Compile the library.
 ADD_LIBRARY (bo
