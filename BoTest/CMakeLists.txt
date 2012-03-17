@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES (./include
      
 # For additional dependencies check the root CMakeLists.
 LINK_DIRECTORIES ($ENV{GTEST_ROOT}/stage/lib
-                  ${LIBRARY_OUTPUT_PATH}
+                  ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
 )
 
 # Compile the application.

@@ -110,9 +110,11 @@ ADD_LIBRARY (bo
              ${BO_CSRCS}
 )
 
-TARGET_LINK_LIBRARIES (bo
-                       boost_regex
-)
+# Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
+IF (NOT MSVC)
+    TARGET_LINK_LIBRARIES (bo
+                           boost_regex)
+ENDIF (NOT MSVC)
 
 
 # Specify the name suffix for debug build.
@@ -136,6 +138,11 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
+
+# Copy shared library to the directory with test data.
+IF (BUILD_SHARED_LIBS)
+    INSTALL (TARGETS bo DESTINATION ${TESTS_OUTPUT_PATH})
+ENDIF (BUILD_SHARED_LIBS)
 
 
 # MSVC-specific features and options.
