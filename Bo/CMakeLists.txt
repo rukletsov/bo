@@ -1,12 +1,6 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
-# User-defined options for the library.
-IF (MSVC)
-    OPTION (UsePch "Enable use of precompiled headers" OFF)
-ENDIF (MSVC)
-
-
 PROJECT (bo)
 
 # Specify project's C++ source files.

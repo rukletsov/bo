@@ -1,9 +1,13 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
-# User-defined options for the whole project.
+# User-defined options for the project.
 OPTION (BuildTests "Build all of Bo's tests" OFF)
 OPTION (BUILD_SHARED_LIBS "Build shared libraries (DLLs)" OFF)
+
+IF (MSVC)
+    OPTION (UsePch "Enable use of precompiled headers" OFF)
+ENDIF (MSVC)
 
 
 PROJECT (BoProject)
@@ -13,11 +17,9 @@ SET (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET (TESTS_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Gloabl dependencies (for all projects).
-INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT}
-)
+INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT})
 
-LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib
-)
+LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib)
 
 # Projects list with root paths.
 SET (BO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Bo)
