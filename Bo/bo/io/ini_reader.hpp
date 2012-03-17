@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  ini_reader.hpp, v 1.0.2 2011.05.16
+  ini_reader.hpp, v 1.0.3 2012.03.17
 
   IniReader implemetation for plain ini-files with common syntax.
 
-  Copyright (c) 2009-2011
+  Copyright (c) 2009 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   Alexander Gusak <fami.alex.lom@gmail.com>
   Alena Bakulina <alena.bakulina@ziti.uni-heidelberg.de>
@@ -37,9 +37,7 @@
 #ifndef INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_
 #define INI_READER_HPP_75719B42_4225_4263_8F0C_29EA63E1A2B5_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+#include "bo/config.hpp"
 
 #include <fstream>
 #include <string>
@@ -50,7 +48,7 @@
 
 // Used only in print_sections_() function.
 #ifdef _DEBUG
-    #include <iostream>
+#   include <iostream>
 #endif
 
 namespace bo {
@@ -206,7 +204,7 @@ static const IniReaderSettings DEFAULT_INI_SETTINGS;
     1. Add handling for multiple keys (multimap?);
 */
 
-class IniReader
+class BO_DECL IniReader
 {
 public:
 

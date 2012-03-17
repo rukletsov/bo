@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  mesh_io.hpp, v 1.0.2 2011.10.15
+  mesh_io.hpp, v 1.0.3 2012.03.17
 
   I/O for Mesh class. RPly library is used for working with .ply files.
 
-  Copyright (c) 2010, 2011
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -37,14 +37,15 @@
 
 #include <string>
 
+#include <bo/config.hpp>
 #include <bo/mesh.hpp>
 
 namespace bo {
 namespace io {
 
 // IO functions, allow to read mesh from and write to a .ply files.
-bo::Mesh mesh_from_ply(const std::string& file_path);
-bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path);
+bo::Mesh BO_DECL mesh_from_ply(const std::string& file_path);
+bool BO_DECL mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path);
 
 } // namespace io
 } // namespace bo

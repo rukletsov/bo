@@ -246,8 +246,6 @@ protected:
 };
 
 
-
-
 //General functions
 
 

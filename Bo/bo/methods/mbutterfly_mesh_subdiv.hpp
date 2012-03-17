@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mbutterfly_mesh_subdiv.hpp, v 1.0.0 2012.02.09
+  mbutterfly_mesh_subdiv.hpp, v 1.0.1 2012.03.17
 
   Implementation of the Modified Butterfly subdivision surface method.
 
@@ -39,6 +39,7 @@
 #ifndef MBUTTERFLY_MESH_SUBDIV_HPP_0CE908A8_0799_4C4E_92EC_3DCDAB62386E_
 #define MBUTTERFLY_MESH_SUBDIV_HPP_0CE908A8_0799_4C4E_92EC_3DCDAB62386E_
 
+#include "bo/config.hpp"
 #include <bo/mesh.hpp>
 
 namespace bo {
@@ -48,7 +49,7 @@ namespace surfaces {
 // Performs the given number of subdivision iterations on the source mesh
 // using the Modified Butterfly surface subdivision scheme (see the reference 
 // paper) and returns the resulted mesh.
-bo::Mesh mbutterfly_subdivision(const bo::Mesh &source, int iterations);
+bo::Mesh BO_DECL mbutterfly_subdivision(const bo::Mesh &source, int iterations);
 
 } // namespace surfaces
 } // namespace methods

@@ -1,14 +1,14 @@
 
 /******************************************************************************
 
-  d25_active_contours.hpp, v 1.0.4 2011.10.14
+  d25_active_contours.hpp, v 1.0.5 2012.03.17
 
   Modification of the approach by Ye Duan and Hong Qin, "2.5D Active Contour
   for Surface Reconstruction", Proceedings of the 8th Fall Workshop on Vision,
   Modeling and Visualization (VMV 2003), Munich, Germany, November 19-21, 2003,
   pages 431 -- 439.
 
-  Copyright (c) 2009-2011
+  Copyright (c) 2009 - 2012
   Dzmitry Hlindzich <hlindzich@gmail.com>
   All rights reserved.
 
@@ -38,6 +38,8 @@
 #ifndef D25_ACTIVE_CONTOURS_HPP_408B8C5F_B876_4B70_AE3C_4B193F9AEED0_
 #define D25_ACTIVE_CONTOURS_HPP_408B8C5F_B876_4B70_AE3C_4B193F9AEED0_
 
+#include "bo/config.hpp"
+
 #include <list>
 #include <vector>
 
@@ -56,7 +58,7 @@ struct HPointElement;
 /*! \class HTriangleElement.
     \brief An elementary surface item (mesh element).
 */
-struct  HTriangleElement
+struct BO_DECL HTriangleElement
 {
     /*! First triangle's vertex. */
     HPointElement* p1;
@@ -75,7 +77,7 @@ struct  HTriangleElement
 /*! \struct HPointElement.
     \brief An elementary point item.
 */
-struct HPointElement
+struct BO_DECL HPointElement
 {
     HPointElement(Vertex v = Vertex(0, 0, 0));
 
@@ -107,7 +109,7 @@ class HPointContainer;
 /*! \class HEdgeElement.
     \brief An elementary edge item.
 */
-struct  HEdgeElement
+struct BO_DECL HEdgeElement
 {
     /*! Default constructor. */
     HEdgeElement();
@@ -132,8 +134,6 @@ struct  HEdgeElement
 };
 
 
-
-
 /*! \class D25ActiveContours.
     \brief 2.5D active contour based mesh reconstruction.
     \author Dzmitry Hlindzich.
@@ -143,7 +143,7 @@ struct  HEdgeElement
     Fall Workshop on Vision, Modeling and Visualization (VMV 2003), Munich,
     Germany, November 19-21, 2003, pages 431 -- 439.
 */
-class  D25ActiveContours
+class BO_DECL D25ActiveContours
 {
 public:
 

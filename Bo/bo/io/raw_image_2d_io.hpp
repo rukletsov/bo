@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  raw_image_2d_io.hpp, v 1.0.0 2011.08.23
+  raw_image_2d_io.hpp, v 1.0.1 2012.03.17
 
   I/O for RawImage2D class. OpenCV library can be used for working with
   image files. This file provides necessary convertion and utility functions
@@ -14,7 +14,7 @@
   users of this file. In other words, if this file is used in a project,
   OpenCV library is needed to be added to the project's dependencies.
 
-  Copyright (c) 2010, 2011
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -44,6 +44,8 @@
 #ifndef RAW_IMAGE_2D_IO_HPP_203C45E7_9EA0_4B4C_AE8C_A5600E517560_
 #define RAW_IMAGE_2D_IO_HPP_203C45E7_9EA0_4B4C_AE8C_A5600E517560_
 
+#include "bo/config.hpp"
+
 #include <limits>
 #include <string>
 #include <boost/cstdint.hpp>
@@ -67,8 +69,8 @@ namespace bo {
 namespace io {
 
 // Saves RawImage2D<float> to a raw file (8 bytes per pixel, row by row).
-void save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
-                                   const std::string& filename);
+void BO_DECL save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
+                                           const std::string& filename);
 
 // Convertion functions from and to OpenCV format are available on demand.
 #ifdef BO_USE_OPENCV
