@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  triangle.hpp, v 1.0.5 2011.06.06
+  triangle.hpp, v 1.0.6 2012.03.17
 
   Triangle class. 
 
-  Copyright (c) 2010, 2011
+  Copyright (c) 2010, 2011, 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
   All rights reserved.
@@ -48,7 +48,7 @@ class Triangle: boost::equality_comparable1< Triangle<PointType> >
 
 public:
     Triangle() { }
-    Triangle(const PointType& _A, const PointType& _B, const PointType& _C);
+    Triangle(const PointType& A, const PointType& B, const PointType& C);
 
     PointType A() const;
     PointType B() const;
@@ -83,12 +83,11 @@ protected:
 
 
 template <typename PointType>
-Triangle<PointType>::Triangle(const PointType& _A, const PointType& _B,
-                              const PointType& _C)
+Triangle<PointType>::Triangle(const PointType& A, const PointType& B, const PointType& C)
 {
-    vertices_[0] = _A;
-    vertices_[1] = _B;
-    vertices_[2] = _C;
+    vertices_[0] = A;
+    vertices_[1] = B;
+    vertices_[2] = C;
 }
 
 template <typename PointType> inline

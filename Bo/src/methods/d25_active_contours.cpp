@@ -1015,7 +1015,8 @@ bo::Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
     set_vertices(v);
 
     // Build triangles while the growing step is possible.
-    while (grow_step());
+    while (grow_step())
+    { }
 
     // Generate and return the mesh.
     return get_mesh();
@@ -1030,7 +1031,8 @@ bo::Mesh D25ActiveContours::build_mesh()
     unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 
     // Build triangles while the growing step is possible.
-    while (grow_step());
+    while (grow_step())
+    { }
 
     // Generate and return the mesh.
     return get_mesh();

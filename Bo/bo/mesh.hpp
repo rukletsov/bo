@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.2.0 2011.07.06
+  mesh.hpp, v 1.2.1 2012.03.17
 
   Triangular mesh class.
 
-  Copyright (c) 2010, 2011
+  Copyright (c) 2010, 2011, 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -35,6 +35,8 @@
 #ifndef MESH_HPP_5839D2AB_1DFF_4DCE_A5A2_051A5102190D_
 #define MESH_HPP_5839D2AB_1DFF_4DCE_A5A2_051A5102190D_
 
+#include "bo/config.hpp"
+
 #include <cstddef>
 #include <vector>
 #include <set>
@@ -49,7 +51,7 @@ namespace bo {
 // A basic class for a 3D triangular mesh. Consumes more memory than a possible
 // minimum (a standard graph storage) but provides faster access to frequently
 // used structures and operations. NOT thread-safe in the current implemetation.
-class Mesh
+class BO_DECL Mesh
 {
 
 public:

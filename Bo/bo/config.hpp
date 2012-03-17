@@ -38,6 +38,7 @@
 #include <boost/config.hpp>
 
 // Shared library support (dll on Windows).
+
 #ifdef BO_SHARED_LIBRARY
 // Export if this is our own source, otherwise import.
 #   ifdef BO_SOURCE
