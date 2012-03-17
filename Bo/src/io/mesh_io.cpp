@@ -87,12 +87,7 @@ namespace io {
 // temporary values and for accessing mesh function.
 //
 // Because ntriangles variable is never used, but acts as a placeholder for a return
-// value of a function, GCC issues unused-but-set-variable warning, which is temporary
-// disabled.
-#ifdef __GNUC__
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#endif // __GNUC__
+// value of a function, GCC issues unused-but-set-variable warning.
 bo::Mesh mesh_from_ply(const std::string& file_path)
 {
     bo::Mesh invalid_mesh(0);
