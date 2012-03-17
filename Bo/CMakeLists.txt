@@ -27,6 +27,7 @@ SET (BO_CSRCS
 
 SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/pch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/config.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/mesh.hpp
