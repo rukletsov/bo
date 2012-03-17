@@ -130,9 +130,6 @@ bo::Mesh mesh_from_ply(const std::string& file_path)
 
     return mesh;
 }
-#ifdef __GNUC__
-#   pragma GCC diagnostic pop
-#endif // __GNUC__
 
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
 // Some shitty software doesn't support double type for vertices that's why a

@@ -269,9 +269,6 @@ bool Mesh::add_edge_(std::size_t vertex1, std::size_t vertex2)
     // Since relation is mutual, either exist1 or exist2 can be returned.
     return exist1;
 }
-#ifdef __GNUC__
-#   pragma GCC diagnostic pop
-#endif // __GNUC__
 
 bool Mesh::add_adjacent_face_(std::size_t vertex, std::size_t face)
 {
