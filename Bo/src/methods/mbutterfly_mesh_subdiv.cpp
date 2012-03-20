@@ -124,8 +124,8 @@ Mesh::Vertex get_division_point(const Mesh &m, size_t inda, size_t indb)
     std::vector<size_t> sten2 = get_relative_stencil(m, indb, inda);
 
     // Get the valence of the stencils' centers.
-    int k1 = sten1.size();
-    int k2 = sten2.size();
+    size_t k1 = sten1.size();
+    size_t k2 = sten2.size();
     
     Mesh::Vertex average(0,0,0);
 
