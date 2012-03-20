@@ -75,16 +75,6 @@
 
 namespace bo {
 
-#if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
-    // Use boost::timer on non-Windows and by default.
-    typedef boost::timer Timer;
-#else 
-    // Use MSVCTimer otherwise.
-    class detail::MSVCTimer;
-    typedef detail::MSVCTimer Timer;
-#endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
-
-
 #ifdef _MSC_VER
 
 namespace detail {
@@ -172,6 +162,16 @@ LONGLONG MSVCTimer::get_proc_freq_() const
 } // namespace detail
 
 #endif // _MSC_VER
+
+
+#if !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
+    // Use boost::timer on non-Windows and by default.
+    typedef boost::timer Timer;
+#else 
+    // Use MSVCTimer otherwise.
+    class detail::MSVCTimer;
+    typedef detail::MSVCTimer Timer;
+#endif // !defined(_MSC_VER) || defined(USE_BOOST_TIMER)
 
 } // namespace bo
 
