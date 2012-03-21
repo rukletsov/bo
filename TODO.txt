@@ -49,7 +49,6 @@ IniReader class
 * Replace IniReaderSettings class with traits.
 * Add default sections to switches (otherwise e.g. GCC will not compile it).
 * Try using fin.peek() != char_traits<char>::eof() instead of while (fin.good()).
-* Write tests. 
 * Add errors handling.
 
 Methods namespace
@@ -111,3 +110,7 @@ Triangle<> class
 Mesh class
 --------------------------------------------------------------------------------
 [DONE] * Move IO-related code: Mesh::to_ply(), Mesh::from_ply() to "io/mesh_io".
+
+IniReader class
+--------------------------------------------------------------------------------
+[DONE] * Write tests. 
