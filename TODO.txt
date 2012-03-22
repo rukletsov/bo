@@ -1,14 +1,11 @@
 
 LIBRARY
 ================================================================================
-* CMake different options for debug/release configuration.
-* Check types compatibility (size_t, int, unsigned, etc).
-* Add CMake option for GTest and, probably, Boost (consider using FindBoost).
-* Implement (or find and use) global Logger class.
-* Add memleak tests (check Application Verifier, Dr. Memory; CTest).
+* Add memleak tests (check Application Verifier, Dr. Memory).
 * Comments in Doxygen style (Qt style?).
-* Suppress warnings in headers using pragma push/pop.
+? Suppress warnings in headers using pragma push/pop.
 * Implement Kahan summation (check functors, accumulate, transform, etc).
+* Make use of FindBoost and FindGTest and allow user to change paths.
 
 Mesh class
 ================================================================================
