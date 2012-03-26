@@ -250,24 +250,20 @@ std::ostream& operator <<(std::ostream& os, const Mesh& obj)
 
 // Private utility functions.
 
-// In release configuration, because BOOST_ASSERT is not used, exist2 variable becomes
-// unused. That makes GCC issue unused-variable warning.
+
 bool Mesh::add_edge_(std::size_t vertex1, std::size_t vertex2)
 {
-    // If the neighbouring relation between given vertices already exists,
+    // If the neighbouring relation between the given vertices already exists,
     // set::insert signal this and won't add a duplicate. A neighbouring relation
-    // should be mutual. In case one vertex has another as a neighbour and another
-    // has not, report error through assertion.
-    bool exist1 = neighbours_[vertex1].insert(vertex2).second;
-    bool exist2 = neighbours_[vertex2].insert(vertex1).second;
+    // must be mutual. In case one vertex has another as a neighbour and another
+    // has not, report an error through assertion. Consider this situation a severe
+    // internal bug, therefore no exception throwing needed.
+    bool exists1 = neighbours_[vertex1].insert(vertex2).second;
+    bool exists2 = neighbours_[vertex2].insert(vertex1).second;
 
-    // No need to throw an exception since we are responsible for maintaining this
-    // condition and it's impossible to break it from the outside. Consider this
-    // situation as a severe internal bug which should be eliminated during testing.
-    BOOST_ASSERT(!(exist1 ^ exist2) && "Neighbouring relation is not mutual.");
+    BOOST_ASSERT(!(exists1 ^ exists2) && "Neighbouring relation is not mutual.");
 
-    // Since relation is mutual, either exist1 or exist2 can be returned.
-    return exist1;
+    return (exists1 && exists2);
 }
 
 bool Mesh::add_adjacent_face_(std::size_t vertex, std::size_t face)
