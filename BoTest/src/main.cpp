@@ -1,4 +1,5 @@
 
+#include <boost/filesystem.hpp>
 #include "gtest/gtest.h"
 
 #include "debug_alloc.hpp"
@@ -34,7 +35,7 @@ int main(int argc, char* argv[])
         DataDirectory.assign(argv[1]);
     else if (argc == 1)
         // Apply default value which is "./data" directory.
-        DataDirectory.assign("./data");
+        DataDirectory.assign((boost::filesystem3::initial_path() /= "data").string());
     else
         DataDirectory.assign("");
 
