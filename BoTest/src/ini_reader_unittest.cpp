@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <gtest/gtest.h>
 
 #include "bo/io/ini_reader.hpp"
@@ -20,26 +21,19 @@ class IniReaderTest : public testing::Test
 protected:
     virtual void SetUp()
     {
-        // Get data directory name. Input directory can have or not have trail slashes .
-        std::string full_directory_name = DataDirectory;
-        boost::algorithm::trim_right_if(full_directory_name, boost::algorithm::is_any_of("/\\"));
-        full_directory_name += "/";
-        ini_filepath = full_directory_name + ini_filename;
-
-        // Check, whether the file exists. 
-        bool file_not_found = true;
-        FILE* file = fopen(ini_filepath.c_str(), "r");
-        if (file != NULL)
-        {
-            fclose(file);
-            file_not_found = false;
-        }
-
-        ASSERT_FALSE(file_not_found) << std::endl
-            << "IniReader test failed. File " + ini_filename + " not found." << std::endl;
+        // Get data directory name. Input directory can have or not have trail slashes.
+        ini_filepath = boost::filesystem3::path(DataDirectory) /= ini_filename;
     }
 
-    std::string ini_filepath;
+    ::testing::AssertionResult IsTestFileAvailable(boost::filesystem3::path filepath)
+    {
+        return
+            (boost::filesystem3::exists(boost::filesystem3::path(filepath))
+             ? ::testing::AssertionSuccess() << "file \"" << filepath.string() << "\" found"
+             : ::testing::AssertionFailure() << "file \"" << filepath.string() << "\" not found");
+    }
+
+    boost::filesystem3::path ini_filepath;
 };
 
 TEST_F(IniReaderTest, DefaultConstructor)
@@ -52,8 +46,11 @@ TEST_F(IniReaderTest, DefaultConstructor)
 
 TEST_F(IniReaderTest, DefaultBehaviour)
 {
+    // Check whether the file exists.
+    ASSERT_TRUE(IsTestFileAvailable(ini_filepath));
+
     IniReader reader;
-    reader.read_file(ini_filepath);
+    reader.read_file(ini_filepath.string());
 
     // Default section, default subsection.
     EXPECT_STREQ("value_no_sec_no_subsec", reader.get_value("key_no_sec_no_subsec", "").c_str());
@@ -142,6 +139,9 @@ TEST_F(IniReaderTest, DefaultBehaviour)
 
 TEST_F(IniReaderTest, OtherDelimiters)
 {
+    // Check whether the file exists.
+    ASSERT_TRUE(IsTestFileAvailable(ini_filepath));
+
     IniReaderSettings settings;
     settings.comment_symbols = "~";
     settings.delimiter_symbols = "=-";
@@ -150,7 +150,7 @@ TEST_F(IniReaderTest, OtherDelimiters)
     settings.section_right_symbols = ">";
 
     IniReader reader(settings);
-    reader.read_file(ini_filepath);
+    reader.read_file(ini_filepath.string());
 
     EXPECT_STREQ("default_value",
         reader.get_value("should_be,ignored-it<is>a~comment_with-delimiters", "default_value").c_str());
@@ -168,22 +168,25 @@ TEST_F(IniReaderTest, OtherDelimiters)
 
 TEST_F(IniReaderTest, SectionErrorHandlingType)
 {
+    // Check. whether the file exists.
+    ASSERT_TRUE(IsTestFileAvailable(ini_filepath));
+
     IniReaderSettings settings1;
     settings1.section_error_type = IniReaderSettings::TAKE_1ST_AND_SECOND;
     IniReader reader1(settings1);
-    reader1.read_file(ini_filepath);
+    reader1.read_file(ini_filepath.string());
 
     IniReaderSettings settings2;
     // Parameters should be appended to the previous section.
     settings2.section_error_type = IniReaderSettings::IGNORE_LINE;
     IniReader reader2(settings2);
-    reader2.read_file(ini_filepath);
+    reader2.read_file(ini_filepath.string());
 
     IniReaderSettings settings3;
     // Parameters till the next section are ignored.
     settings3.section_error_type = IniReaderSettings::IGNORE_SECTION;
     IniReader reader3(settings3);
-    reader3.read_file(ini_filepath);
+    reader3.read_file(ini_filepath.string());
 
     // TAKE_1ST_AND_LAST is already tested in DefaultBehaviour test.
 
@@ -206,13 +209,16 @@ TEST_F(IniReaderTest, SectionErrorHandlingType)
 
 TEST_F(IniReaderTest, KeyValueErrorHandlingType)
 {
+    // Check whether the file exists.
+    ASSERT_TRUE(IsTestFileAvailable(ini_filepath));
+
     // 1. ALLOW_DELIMITERS_IN_VALUE case tested in DefaultBehaviour test.
 
     // 2. SKIP_ERRONEOUS_KEY_VALUE
     IniReaderSettings settings2;
     settings2.keyvalue_error_type = IniReaderSettings::SKIP_ERRONEOUS_KEY_VALUE;
     IniReader reader2(settings2);
-    reader2.read_file(ini_filepath);
+    reader2.read_file(ini_filepath.string());
 
     EXPECT_STREQ("default_value", reader2.get_value(ini::PROHIBITED_KEY, "default_value").c_str());
 }
