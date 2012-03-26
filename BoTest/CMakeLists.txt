@@ -38,6 +38,12 @@ TARGET_LINK_LIBRARIES (BoTest
                        debug gtestd optimized gtest
 )
 
+# Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
+IF (NOT MSVC)
+    TARGET_LINK_LIBRARIES (BoTest
+                           boost_filesystem)
+ENDIF (NOT MSVC)
+
 # GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
 FIND_PACKAGE (Threads)
 IF (${CMAKE_USE_PTHREADS_INIT})
