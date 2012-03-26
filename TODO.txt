@@ -24,6 +24,7 @@ Mesh class
 * Add debug assertions to out-of-range exceptions.
 * Handle normalization of the null-vector.
 * Write tests: out-of-range, assertions, distance, IO (using test data).
+* Provide tsrips for fast rendering.
 
 RawImage<> class
 ================================================================================
