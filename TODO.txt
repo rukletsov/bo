@@ -5,7 +5,8 @@ LIBRARY
 * Comments in Doxygen style (Qt style?).
 ? Suppress warnings in headers using pragma push/pop.
 * Implement Kahan summation (check functors, accumulate, transform, etc).
-* Make use of FindBoost and FindGTest and allow user to change paths.
+* Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
+  user to change paths.
 
 Mesh class
 ================================================================================
