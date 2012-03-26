@@ -1,7 +1,9 @@
   Copyright (c) 2010 - 2012
-  Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>
-  Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
-  Alena Bakulina <alena.bakulina@ziti.uni-heidelberg.de>
+  Alexander Rukletsov <alexander.rukletsov@ziti.uni-heidelberg.de>,
+  Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>,
+  Alena Bakulina <alena.bakulina@ziti.uni-heidelberg.de>,
+  et al.
+  
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -14,7 +16,7 @@
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+  THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
   ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
