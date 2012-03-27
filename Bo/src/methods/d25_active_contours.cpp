@@ -763,6 +763,7 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
     Vector<float,3> median = mid - origin;
 
     // Propagation norm is sqrt(3)/2 of min distance.
+    // Tends to the median length of a equilateral triangle.
     float pnorm = minInitDistance * 0.87f;
     
     // Inertial edge propagation.
@@ -1022,11 +1023,8 @@ bo::Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
 
 bo::Mesh D25ActiveContours::build_mesh()
 {
-    // Clean all the auxiliary containers.
-    activeEdges.clear();
-    frozenEdges.clear();
-    triangles.clear();
-    unvisitedCount = static_cast<unsigned>(vertices->tree.size());
+    // Clean and initialize auxiliary structures.
+    prepare();
 
     // Build triangles while the growing step is possible.
     while (grow_step())
@@ -1359,17 +1357,13 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
 
 void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 {
-    // Cleaning all the auxiliary containers.
-    activeEdges.clear();
-    frozenEdges.clear();
-    triangles.clear();
-
     // Create and fill in a vertex container.
     if (vertices)
         delete vertices;
     vertices=new HPointContainer(v);
 
-    unvisitedCount = static_cast<unsigned>(vertices->tree.size());
+    // Clean and initialize auxiliary structures.
+    prepare();
 }
 
 bool D25ActiveContours::grow_step()
@@ -1440,6 +1434,17 @@ bo::Mesh D25ActiveContours::get_mesh()
     }
 
     return m;
+}
+
+void D25ActiveContours::prepare()
+{
+    // Cleaning all the auxiliary containers.
+    activeEdges.clear();
+    frozenEdges.clear();
+    triangles.clear();
+
+    // Initialize the counter.
+    unvisitedCount = static_cast<unsigned>(vertices->tree.size());
 }
 
 } // namespace surfaces

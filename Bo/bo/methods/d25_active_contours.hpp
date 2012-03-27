@@ -236,6 +236,11 @@ public:
 
 protected:
 
+    /*! Cleans and initializes the inner containers and counters. Vertex container must be 
+        initialized before call of this function.
+    */
+    void prepare();
+
     /*! Try to propagate an element of the active contour (first active edge in the list).
     */
     void model_grow();
