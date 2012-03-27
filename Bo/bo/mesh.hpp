@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.3.0 2012.03.27
+  mesh.hpp, v 1.3.1 2012.03.27
 
   Triangular mesh class.
 
@@ -50,16 +50,6 @@
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
 #include "bo/methods/3d_distances.hpp"
-
-// Suppress C4251 warning under MSVC. It is generated because MSVC cannot correctly
-// handle exported classes, which use member, based on STL templates. Another sulotion
-// is to explicitly export all used STL template instantiations. For more information
-// on the topic see
-//     http://support.microsoft.com/default.aspx?scid=KB;EN-US;168958
-#ifdef _MSC_VER
-#   pragma warning (push)
-#   pragma warning (disable:4251)
-#endif // _MSC_VER
 
 namespace bo {
 
@@ -517,9 +507,5 @@ void Mesh<T>::face_rangecheck(std::size_t face_index) const
 }
 
 } // namespace bo
-
-#ifdef _MSC_VER
-#   pragma warning(pop)
-#endif // _MSC_VER
 
 #endif // MESH_HPP_5839D2AB_1DFF_4DCE_A5A2_051A5102190D_

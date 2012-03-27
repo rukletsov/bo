@@ -30,15 +30,15 @@ int vertex_cb(p_ply_argument argument)
     {
     case 0:
         // Means we scan x-coord of a vertex.
-        context->vertex->x() = ply_get_argument_value(argument);
+        context->vertex->x() = static_cast<float>(ply_get_argument_value(argument));
         break;
     case 1:
         // Means we scan y-coord of a vertex.
-        context->vertex->y() = ply_get_argument_value(argument);
+        context->vertex->y() = static_cast<float>(ply_get_argument_value(argument));
         break;
     case 2:
         // Means we scan z-coord and are ready to store the vertex.
-        context->vertex->z() = ply_get_argument_value(argument);
+        context->vertex->z() = static_cast<float>(ply_get_argument_value(argument));
         context->mesh_ptr->add_vertex(*(context->vertex));
         break;
     default:
@@ -84,9 +84,9 @@ namespace io {
 //
 // Reading is done via callbacks. RPly first reads .ply header and then reads
 // data with known structure and calls defined function for every data unit.
-// In the simplified case which is supposed in our case, data is vertices and
-// a list of triangle faces. So, two callbacks are defined above in an anonymous
-// namespace. First callback is for reading vertex components and the second is
+// In the simplified case which is supposed in our case, data consists from vertices
+// and a list of triangle faces. So, two callbacks are defined above in an anonymous
+// namespace. The first callback is for reading vertex components and the second is
 // for reading face vertices. Both functions use the same context for storing
 // temporary values and for accessing mesh function.
 //
@@ -122,7 +122,7 @@ PlyMesh mesh_from_ply(const std::string& file_path)
 
     // Create a mesh and fill the context with values.
     PlyMesh mesh(static_cast<std::size_t>(nvertices));
-    PlyMesh::Vertex temp_vertex(0.0, 0.0, 0.0);
+    PlyMesh::Vertex temp_vertex(0.f);
     PlyMesh::Face temp_face;
     context.mesh_ptr = &mesh;
     context.vertex = &temp_vertex;
@@ -135,9 +135,7 @@ PlyMesh mesh_from_ply(const std::string& file_path)
     return mesh;
 }
 
-// Writing to .ply files is rather straightforward. The only caveat is vertex type.
-// Some shitty software doesn't support double type for vertices that's why a
-// conversion to float is made, despite the fact that mesh stores double type.
+// Writing to .ply files is rather straightforward.
 bool mesh_to_ply(const PlyMesh& mesh, const std::string& file_path)
 {
     // Create .ply file in ascii format.
