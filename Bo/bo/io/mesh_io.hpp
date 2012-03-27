@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mesh_io.hpp, v 1.0.3 2012.03.17
+  mesh_io.hpp, v 1.1.0 2012.03.27
 
   I/O for Mesh class. RPly library is used for working with .ply files.
 
@@ -43,9 +43,12 @@
 namespace bo {
 namespace io {
 
-// IO functions, allow to read mesh from and write to a .ply files.
-bo::Mesh BO_DECL mesh_from_ply(const std::string& file_path);
-bool BO_DECL mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path);
+// IO functions, allow to read mesh from and write to a .ply files. Currently, only
+// meshes with float vertices are supported, moreover no checks are performed to
+// determine, whether the .ply file has actually floats. That behaviour should be
+// changed. At least two different formats should be supported: integral and double.
+bo::Mesh<float> BO_DECL mesh_from_ply(const std::string& file_path);
+bool BO_DECL mesh_to_ply(const bo::Mesh<float>& mesh, const std::string& file_path);
 
 } // namespace io
 } // namespace bo

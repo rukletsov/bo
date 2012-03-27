@@ -6,19 +6,22 @@
 #include "bo/mesh.hpp"
 #include "bo/io/mesh_io.hpp"
 
+typedef bo::Mesh<float> PlyMesh;
+
 namespace {
 
 // Context for RPly callbacks. See comments on mesh_from_ply() for more info.
 struct PLYContext
 {
-    bo::Mesh* mesh_ptr;
-    bo::Mesh::Vertex* vertex;
-    bo::Mesh::Face* face;
+    PlyMesh* mesh_ptr;
+    PlyMesh::Vertex* vertex;
+    PlyMesh::Face* face;
 };
 
 // Callback for reading vertex component. Supposes that vertex has only 3 components
 // and perform vertex adding after reading the third component.
-int vertex_cb(p_ply_argument argument) {
+int vertex_cb(p_ply_argument argument)
+{
     long type;
     PLYContext* context;
     ply_get_argument_user_data(argument, (void**)&context, &type);
@@ -47,7 +50,8 @@ int vertex_cb(p_ply_argument argument) {
 
 // Callback for reading triangle face point. Works only with triangle faces and
 // rejects other. Adds face after reading the third face point.
-int face_cb(p_ply_argument argument) {
+int face_cb(p_ply_argument argument)
+{
     long length, value_index;
     PLYContext* context;
     ply_get_argument_property(argument, NULL, &length, &value_index);
@@ -88,9 +92,9 @@ namespace io {
 //
 // Because ntriangles variable is never used, but acts as a placeholder for a return
 // value of a function, GCC issues unused-but-set-variable warning.
-bo::Mesh mesh_from_ply(const std::string& file_path)
+PlyMesh mesh_from_ply(const std::string& file_path)
 {
-    bo::Mesh invalid_mesh(0);
+    PlyMesh invalid_mesh(0);
     long nvertices, ntriangles;
 
     // Open .ply file for reading.
@@ -117,9 +121,9 @@ bo::Mesh mesh_from_ply(const std::string& file_path)
     ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, &context, 0);
 
     // Create a mesh and fill the context with values.
-    bo::Mesh mesh(static_cast<std::size_t>(nvertices));
-    bo::Mesh::Vertex temp_vertex(0.0, 0.0, 0.0);
-    bo::Mesh::Face temp_face;
+    PlyMesh mesh(static_cast<std::size_t>(nvertices));
+    PlyMesh::Vertex temp_vertex(0.0, 0.0, 0.0);
+    PlyMesh::Face temp_face;
     context.mesh_ptr = &mesh;
     context.vertex = &temp_vertex;
     context.face = &temp_face;
@@ -134,7 +138,7 @@ bo::Mesh mesh_from_ply(const std::string& file_path)
 // Writing to .ply files is rather straightforward. The only caveat is vertex type.
 // Some shitty software doesn't support double type for vertices that's why a
 // conversion to float is made, despite the fact that mesh stores double type.
-bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path)
+bool mesh_to_ply(const PlyMesh& mesh, const std::string& file_path)
 {
     // Create .ply file in ascii format.
     p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
@@ -187,9 +191,9 @@ bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path)
             return false;
 
         // Write mesh data in the same order as declared above.
-        bo::Mesh::Vertices::const_iterator vertices_end =
+        PlyMesh::Vertices::const_iterator vertices_end =
                 mesh.get_all_vertices().end();
-        for (bo::Mesh::Vertices::const_iterator it = mesh.get_all_vertices().begin();
+        for (PlyMesh::Vertices::const_iterator it = mesh.get_all_vertices().begin();
              it != vertices_end; ++it)
         {
             if (!ply_write(oply, it->x()))
@@ -200,18 +204,18 @@ bool mesh_to_ply(const bo::Mesh& mesh, const std::string& file_path)
                 return false;
         }
 
-        bo::Mesh::Faces::const_iterator faces_end = mesh.get_all_faces().end();
-        for (bo::Mesh::Faces::const_iterator it = mesh.get_all_faces().begin();
+        PlyMesh::Faces::const_iterator faces_end = mesh.get_all_faces().end();
+        for (PlyMesh::Faces::const_iterator it = mesh.get_all_faces().begin();
             it != faces_end; ++it)
         {
             // 3 can be hardcoded since Mesh works only with triangle faces.
             if (!ply_write(oply, 3))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->A())))
+            if (!ply_write(oply, static_cast<float>(it->A())))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->B())))
+            if (!ply_write(oply, static_cast<float>(it->B())))
                 return false;
-            if (!ply_write(oply, static_cast<double>(it->C())))
+            if (!ply_write(oply, static_cast<float>(it->C())))
                 return false;
         }
     } // end of scope with file writing.

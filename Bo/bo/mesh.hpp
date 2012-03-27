@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.2.1 2012.03.17
+  mesh.hpp, v 1.3.0 2012.03.27
 
   Triangular mesh class.
 
-  Copyright (c) 2010, 2011, 2012
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -42,9 +42,14 @@
 #include <set>
 #include <string>
 #include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <boost/assert.hpp>
+#include <boost/format.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
+#include "bo/methods/3d_distances.hpp"
 
 // Suppress C4251 warning under MSVC. It is generated because MSVC cannot correctly
 // handle exported classes, which use member, based on STL templates. Another sulotion
@@ -61,13 +66,14 @@ namespace bo {
 // A basic class for a 3D triangular mesh. Consumes more memory than a possible
 // minimum (a standard graph storage) but provides faster access to frequently
 // used structures and operations. NOT thread-safe in the current implemetation.
-class BO_DECL Mesh
+template <typename T>
+class Mesh
 {
 
 public:
     // Mesh vertices. Their order shouldn't be changed, since other collections 
     // use vertex indices as references.
-    typedef Vector<double, 3> Vertex;
+    typedef Vector<T, 3> Vertex;
     typedef std::vector<Vertex> Vertices;
 
     // Face is a triangle with vertices representing indices of the mesh vertices.
@@ -166,22 +172,348 @@ private:
 };
 
 
-inline
-const Mesh::Vertices& Mesh::get_all_vertices() const
+// Prints formatted mesh data to a given stream. See boost.format library for more
+// details about formatting.
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Mesh<T>& obj)
+{
+    // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
+
+    // Print full vertex info.
+    os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj)
+       << std::endl << "Vertices: " << obj.vertices_.size() << std::endl;
+
+    Mesh<T>::Vertices::const_iterator vertices_end = obj.vertices_.end();
+    for (Mesh<T>::Vertices::const_iterator it = obj.vertices_.begin();
+         it != vertices_end; ++it)
+    {
+        // Print vertex coordinates.
+        std::size_t index = it - obj.vertices_.begin();
+        os << boost::format("vertex %1%: ") % index << std::endl << "\t"
+           << boost::format("x: %1%, %|18t|y: %2%, %|36t|z: %3%,") % it->x()
+           % it->y() % it->z();
+
+        // Print neighbouring vertices.
+        os << std::endl << "\t"
+           << boost::format("neighbours (%1%): ") % obj.neighbours_[index].size();
+
+        Mesh<T>::AdjacentVerticesPerVertex::const_iterator neighbours_end =
+            obj.neighbours_[index].end();
+        for (Mesh<T>::AdjacentVerticesPerVertex::const_iterator neighbour =
+            obj.neighbours_[index].begin(); neighbour != neighbours_end; ++neighbour)
+        {
+            os << boost::format("%1%, %|4t|") % (*neighbour);
+        }
+
+        // Print adjacent faces.
+        os << std::endl << "\t" << boost::format("adjacent faces (%1%): ")
+           % obj.adjacent_faces_[index].size();
+
+        Mesh<T>::AdjacentFacesPerVertex::const_iterator faces_end =
+            obj.adjacent_faces_[index].end();
+        for (Mesh<T>::AdjacentFacesPerVertex::const_iterator face =
+            obj.adjacent_faces_[index].begin(); face != faces_end; ++face)
+        {
+            os << boost::format("%1%, %|4t|") % (*face);
+        }
+
+        os << std::endl;
+    }
+
+    // Print full faces info.
+    os << "Faces: " << obj.faces_.size() << std::endl;
+
+    Mesh<T>::Faces::const_iterator faces_end = obj.faces_.end();
+    for (Mesh<T>::Faces::const_iterator face = obj.faces_.begin();
+        face != faces_end; ++face)
+    {
+        // Print face's vertices.
+        std::size_t index = face - obj.faces_.begin();
+        os << boost::format("face %1%: ") % index << std::endl << "\t"
+           << boost::format("A: %1%, %|18t|B: %2%, %|36t|C: %3%,")
+           % face->A() % face->B() % face->C();
+
+        // Print face's normal.
+        Mesh<T>::Normal normal = obj.face_normals_[index];
+        os << std::endl << "\t"
+           << boost::format("normal: (%1%, %2%, %3%)") % normal.x() % normal.y()
+           % normal.z();
+
+        os << std::endl;
+    }
+
+    // Print footer and return.
+    os << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return os;
+}
+
+template <typename T>
+Mesh<T>::Mesh(std::size_t initial_count)
+{
+    vertices_.reserve(initial_count);
+    faces_.reserve(initial_count);
+    face_normals_.reserve(initial_count);
+    neighbours_.reserve(initial_count);
+    adjacent_faces_.reserve(initial_count);
+}
+
+template <typename T>
+std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
+{
+    // Actually, a syncro primitive should be added here.
+    vertices_.push_back(vertex);
+    std::size_t new_vertex_index = vertices_.size() - 1;
+
+    // Add empty connectivity containers.
+    neighbours_.push_back(AdjacentVerticesPerVertex());
+    adjacent_faces_.push_back(AdjacentFacesPerVertex());
+
+    // Check for post-conditions. These include sizes of connectivity structures
+    // and vertex container. If any of the condition is not satisfied consider
+    // this as an internal bug. Therefore no need to throw.
+    BOOST_ASSERT(((neighbours_.size() == vertices_.size()) ||
+                  (adjacent_faces_.size() == vertices_.size())) &&
+                 "Vertex connectivity structures are of different sizes.");
+
+    return new_vertex_index;
+}
+
+template <typename T>
+std::size_t Mesh<T>::add_face(const Face& face)
+{
+    // Check if all vertices exist in the mesh.
+    if ((vertices_.size() <= face.A()) ||
+        (vertices_.size() <= face.B()) ||
+        (vertices_.size() <= face.C()))
+    {
+        BOOST_ASSERT(false && "Bad vertex indices in the face.");
+        throw std::out_of_range("Face cannot be added to the mesh because it "
+                                "references non-existent vertices.");
+    }
+
+    // Add the face and get its index. Syncro primitive needed.
+    faces_.push_back(face);
+    std::size_t new_face_index = faces_.size() - 1;
+
+    // Update vertex neighbours (insert edges).
+    add_edge_(face.A(), face.B());
+    add_edge_(face.B(), face.C());
+    add_edge_(face.C(), face.A());
+
+    // Update adjacent faces.
+    add_adjacent_face_(face.A(), new_face_index);
+    add_adjacent_face_(face.B(), new_face_index);
+    add_adjacent_face_(face.C(), new_face_index);
+
+    // Compute and save face normal.
+    face_normals_.push_back(compute_face_normal_(face));
+
+    // Check for post-conditions. These include sizes of connectivity structures
+    // and face container. If any of the condition is not satisfied consider this
+    // as an internal bug. Therefore no need to throw.
+    BOOST_ASSERT((face_normals_.size() == faces_.size()) &&
+                 "Vertex connectivity structures are of different sizes.");
+
+    return new_face_index;
+}
+
+template <typename T>
+typename Mesh<T>::Normal Mesh<T>::get_face_normal(std::size_t face_index) const
+{
+    // Check if the given face exists in the mesh.
+    face_rangecheck(face_index);
+
+    return face_normals_[face_index];
+}
+
+template <typename T>
+typename Mesh<T>::Normal Mesh<T>::get_vertex_normal(std::size_t vertex_index) const
+{
+    // TODO: add caching for computed normals.
+
+    // Check if the given vertex exists in the mesh.
+    vertex_rangecheck(vertex_index);
+
+    // A normal of a vertex is a sum of weighted normals of adjacent faces.
+    Normal normal;
+
+    AdjacentFacesPerVertex::const_iterator faces_end =
+        adjacent_faces_[vertex_index].end();
+    for (AdjacentFacesPerVertex::const_iterator face_index =
+        adjacent_faces_[vertex_index].begin(); face_index != faces_end; ++face_index)
+    {
+        // Determine to which face vertex considered vertex belong. Without loss of
+        // generality, suppose, that face[2] == vertex_index.
+        const Face& face = faces_[*face_index];
+        std::size_t pt1 = face[0];
+        std::size_t pt2 = face[1];
+        if (face[0] == vertex_index)
+            pt1 = face[2];
+        else if (face[1] == vertex_index)
+            pt2 = face[2];
+
+        // Compute face's normal weight (multiplied dot products of two edges).
+        Vector<T, 3> edge1 = vertices_[pt1] - vertices_[vertex_index];
+        Vector<T, 3> edge2 = vertices_[pt2] - vertices_[vertex_index];
+        T weight = ((edge1 * edge1) * (edge2 * edge2));
+
+        // Append weighted face's normal.
+        normal += face_normals_[*face_index] * (1.0 / weight);
+    }
+
+    // Face normals can be the null vectors.
+    try {
+        normal = normal.normalized();
+    }
+    catch(const std::logic_error&)
+    { }
+
+    return normal;
+}
+
+template <typename T>
+typename Mesh<T>::Vertex Mesh<T>::get_closest_point(const Vertex& point) const
+{
+    Vertex closest;
+    double min_distance = std::numeric_limits<double>::max();
+
+    std::size_t faces_size = faces_.size();
+    for (std::size_t face_index = 0; face_index < faces_size; ++face_index)
+    {
+        Vertex face_closest = closest_point_on_face(face_index, point);
+        double face_distance = (face_closest - point).eucl_norm();
+        if (face_distance < min_distance)
+        {
+            min_distance = face_distance;
+            closest = face_closest;
+        }
+    }
+
+    return closest;
+}
+
+template <typename T>
+double Mesh<T>::distance(const Vertex& point) const
+{
+    return
+        methods::euclidean_distance(get_closest_point(point), point);
+}
+
+template <typename T>
+const typename Mesh<T>::AdjacentVerticesPerVertex& Mesh<T>::get_neighbouring_vertices(
+    std::size_t vertex_index) const
+{
+    // Check if the given vertex exists in the mesh.
+    vertex_rangecheck(vertex_index);
+
+    return neighbours_[vertex_index];
+}
+
+template <typename T>
+const typename Mesh<T>::AdjacentFacesPerVertex& Mesh<T>::get_neighbouring_faces_by_vertex(
+    std::size_t vertex_index) const
+{
+    // Check if the given vertex exists in the mesh.
+    vertex_rangecheck(vertex_index);
+
+    return adjacent_faces_[vertex_index];
+}
+
+template <typename T> inline
+const typename Mesh<T>::Vertices& Mesh<T>::get_all_vertices() const
 {
     return vertices_;
 }
 
-inline
-const Mesh::Faces& Mesh::get_all_faces() const
+template <typename T> inline
+const typename Mesh<T>::Faces& Mesh<T>::get_all_faces() const
 {
     return faces_;
 }
 
-inline
-const Mesh::Normals& Mesh::get_all_face_normals() const
+template <typename T> inline
+const typename Mesh<T>::Normals& Mesh<T>::get_all_face_normals() const
 {
     return face_normals_;
+}
+
+
+// Private utility functions.
+
+template <typename T>
+bool Mesh<T>::add_edge_(std::size_t vertex1, std::size_t vertex2)
+{
+    // If the neighbouring relation between the given vertices already exists,
+    // set::insert signal this and won't add a duplicate. A neighbouring relation
+    // must be mutual. In case one vertex has another as a neighbour and another
+    // has not, report an error through assertion. Consider this situation a severe
+    // internal bug, therefore no exception throwing needed.
+    bool exists1 = neighbours_[vertex1].insert(vertex2).second;
+    bool exists2 = neighbours_[vertex2].insert(vertex1).second;
+
+    BOOST_ASSERT(!(exists1 ^ exists2) && "Neighbouring relation is not mutual.");
+
+    return (exists1 && exists2);
+}
+
+template <typename T>
+bool Mesh<T>::add_adjacent_face_(std::size_t vertex, std::size_t face)
+{
+    // If the face is already attached to the vertex, set::insert won't add a
+    // duplicate. See set::insert documentation.
+    return
+        adjacent_faces_[vertex].insert(face).second;
+}
+
+template <typename T>
+typename Mesh<T>::Normal Mesh<T>::compute_face_normal_(const Face& face) const
+{
+    // Get two vectors representing the given face.
+    Vector<T, 3> a = vertices_[face.A()] - vertices_[face.B()];
+    Vector<T, 3> b = vertices_[face.B()] - vertices_[face.C()];
+
+    // If these vectors are collinear (face points are lying on the same line) its
+    // cross product will be the null vector and its normalization is meaningless.
+    Normal normal(0);
+    try {
+        Vector<T, 3> cross_pr = a.cross_product(b);
+        normal = cross_pr.normalized();
+    }
+    catch(const std::logic_error&)
+    { }
+
+    return normal;
+}
+
+template <typename T>
+typename Mesh<T>::Vertex Mesh<T>::closest_point_on_face(std::size_t face_index,
+                                                        const Vertex& P) const
+{
+    // No need to check if the given face exists in the mesh since the function is
+    // private and a debug assertion would suffice.
+    BOOST_ASSERT((faces_.size() > face_index) &&
+                 "Specified face doesn't exist.");
+
+    Vertex closest_point = methods::find_closest_point_on_triangle(P,
+        vertices_[faces_[face_index].A()], vertices_[faces_[face_index].B()],
+        vertices_[faces_[face_index].C()]);
+
+    return closest_point;
+}
+
+template <typename T>
+void Mesh<T>::vertex_rangecheck(std::size_t vertex_index) const
+{
+    if (vertices_.size() <= vertex_index)
+        throw std::out_of_range("Specified vertex doesn't exist.");
+}
+
+template <typename T>
+void Mesh<T>::face_rangecheck(std::size_t face_index) const
+{
+    if (faces_.size() <= face_index)
+        throw std::out_of_range("Specified face doesn't exist.");
 }
 
 } // namespace bo

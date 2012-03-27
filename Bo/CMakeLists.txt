@@ -5,7 +5,6 @@ PROJECT (bo)
 
 # Specify project's C++ source files.
 SET (BO_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/mesh_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/raw_image_2d_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ini_reader.cpp
