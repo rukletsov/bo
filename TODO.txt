@@ -8,6 +8,7 @@ LIBRARY
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
 ? Add "real" type which abstracts floating point type.
+? Make KDTree++ visible outside library.
 
 Mesh class
 ================================================================================
