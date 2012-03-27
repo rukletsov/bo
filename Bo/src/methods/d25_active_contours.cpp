@@ -58,8 +58,8 @@ HEdgeElement::HEdgeElement() : p1(0), p2(0)
 
 bool HEdgeElement::operator==(const HEdgeElement& other) const
 {
-    return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) &&
-        (propagationVector == other.propagationVector);
+    // The propagation direction is not considered.
+    return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) ;
 }
 
 void HEdgeElement::swap()
@@ -657,9 +657,9 @@ void D25ActiveContours::model_init()
                             get_edge_propagation(e3, pps2->p))
                         {
                             // Add the edges to the list of active edges.
-                            activeEdges.push_back(e1);
-                            activeEdges.push_back(e2);
-                            activeEdges.push_back(e3);
+                            add_active_edge(e1);
+                            add_active_edge(e2);
+                            add_active_edge(e3);
 
                             // Process the points from the point cloud that are in the triangle projection 
                             // (mark as visited). Add the reference of the triangle to its vertices.
@@ -706,7 +706,7 @@ void D25ActiveContours::model_grow()
         tr.p3=pps;
 
         // If the triangle is bad-shaped, put the new edge into
-        // the list of passive edges for further processeng.
+        // the list of passive edges for further processing.
         if(triangle_degenerate(tr))
         {
             frozenEdges.push_back(e);
@@ -723,8 +723,8 @@ void D25ActiveContours::model_grow()
                get_edge_propagation(e2, e.p1->p))
             {
                 // Add two new active edges into the processing list.
-                activeEdges.push_back(e1);
-                activeEdges.push_back(e2);
+                add_active_edge(e1);
+                add_active_edge(e2);
                
                 // Process the points from the point cloud that are in the triangle projection 
                 // (mark as visited). Add the reference of the triangle to its vertices.
@@ -1149,7 +1149,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
                                 frozenEdges.erase(ite);
 
                                 // Add a new active edge.
-                                activeEdges.push_back(ne);
+                                add_active_edge(ne);
 
                                 // Add new triangle to the mesh.
                                 triangles.push_back(tr);
@@ -1368,6 +1368,11 @@ void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 
 bool D25ActiveContours::grow_step()
 {	
+    if (triangles.size() == 118)
+    {
+        int briak = 0;
+    }
+
     // If all the points have been processed and the list of the active edges is empty:
     if (unvisitedCount == 0 && activeEdges.size() == 0)
     {
@@ -1445,6 +1450,25 @@ void D25ActiveContours::prepare()
 
     // Initialize the counter.
     unvisitedCount = static_cast<unsigned>(vertices->tree.size());
+}
+
+void D25ActiveContours::add_active_edge( HEdgeElement &e )
+{
+    bool isUnique = true;
+
+    std::list<HEdgeElement>::const_iterator it = activeEdges.begin();
+    
+    // Check if the given edge is unique. TODO: optimize!
+    while(it != activeEdges.end() && isUnique)
+    {
+        if (e == *it)
+            isUnique = false;
+
+        ++it;
+    }
+
+    if (isUnique)
+        activeEdges.push_back(e);
 }
 
 } // namespace surfaces

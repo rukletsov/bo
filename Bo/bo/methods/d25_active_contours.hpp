@@ -336,8 +336,8 @@ protected:
 
     /*! Checks whether the given triangle \p t is degenerate (at least one of it's 
         angles is too small). Returns true if so, otherwise returns false.
-      \param t The input triangle.
-      \return true if the given triangle is degenerate, otherwise returns false.
+        \param t The input triangle.
+        \return true if the given triangle is degenerate, otherwise returns false.
     */
     bool triangle_degenerate(const HTriangleElement &t);
 
@@ -385,6 +385,10 @@ protected:
         \return The normal vector.
     */
     Vertex get_surface_normal(Vertex p, float windowRadius);
+
+    /*! Appends the given edge to the list of active edges if it is not yet there. 
+    */
+    inline void add_active_edge(HEdgeElement &e);
 
 
     //! Container of input vertices. Internal realization as a k-DTree.
