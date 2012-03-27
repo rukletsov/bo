@@ -158,7 +158,7 @@ class BO_DECL D25ActiveContours
 public:
 
     /*! Simplified constructor.*/
-    D25ActiveContours(float averageFaceSide);
+    D25ActiveContours(float averageFaceSide = 1.0f);
 
     /*! Full-parameter constructor.
         \param minInitDistance The minimal allowed length of the initial triangle's side.
@@ -170,8 +170,6 @@ public:
         \param maxSurfaceDepth The maximum analyzed depth of the points cloud layer.
         \param maxExcludedAngle The maximum value of angles (cos scale) between mesh edges 
                that will be excluded during the mesh  construction.
-        \param maxStitchedAngle The maximum value of the angles (cos scale) between adjacent 
-               frozen edges, that allows post-stitching of the edges.
         \param faceSurfaceFactor The linear proportion between PCA-based and triangle-based 
                normals: faceSurfaceFactor*<PCA-based>+(1-faceSurfaceFactor)*<triangle-based>.
         \param tetrahedronBaseAngle The angle (cos scale) between the side faces and the 
@@ -179,7 +177,7 @@ public:
     */
     D25ActiveContours(float minInitDistance, float maxInitDistance, float maxProjectionNodeDistance,
                       float normalNeighborhoodRadius, float maxSurfaceDepth, float maxExcludedAngle,
-                      float maxStitchedAngle, float faceSurfaceFactor, float tetrahedronBaseAngle);
+                      float faceSurfaceFactor, float tetrahedronBaseAngle);
 
     /*! Destructor.*/
     ~D25ActiveContours();
@@ -251,10 +249,9 @@ protected:
     */
     void edge_stitch(HEdgeElement e);
 
-    /*! Perform one step of "post-stitching" procedure: connection of adjacent frozen 
-        edges into triangles if the angle between them is less than \p maxStitchedAngle. 
-        With possible addition of new active edges and deletion of the stitched frozen edges.
-    */
+    /*! Perform one step of "post-stitching" procedure.
+        Purpose: performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
+    */  
     void post_stitch();
 
 
@@ -427,11 +424,6 @@ protected:
         faceSurfaceFactor*<PCA-based>+(1-faceSurfaceFactor)*<triangle-based>.
     */   
     float faceSurfaceFactor;
-
-    /*! The maximum value of the angles (cos scale) between adjacent frozen edges, that 
-        allows post-stitching of the edges.
-    */
-    float maxStitchedAngle;
 
     /*! The angle (cos scale) between the side faces and the base face of the 
         tetrahedrons used for 3D triangles intersection analysis. 

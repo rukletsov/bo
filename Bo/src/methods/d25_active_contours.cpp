@@ -471,7 +471,6 @@ D25ActiveContours::D25ActiveContours(float averageFaceSide)
     maxSurfaceDepth = 0.5f;
 
     maxExcludedAngle = 0.92f;
-    maxStitchedAngle = -0.86f;
     faceSurfaceFactor = 0.5;
     tetrahedronBaseAngle = 0.86f;
 
@@ -481,12 +480,11 @@ D25ActiveContours::D25ActiveContours(float averageFaceSide)
 D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance,
                                      float maxProjectionNodeDistance, float normalNeighborhoodRadius,
                                      float maxSurfaceDepth, float maxExcludedAngle,
-                                     float maxStitchedAngle, float faceSurfaceFactor, float tetrahedronBaseAngle):
+                                     float faceSurfaceFactor, float tetrahedronBaseAngle):
     minInitDistance(minInitDistance), maxInitDistance(maxInitDistance),
     maxProjectionNodeDistance(maxProjectionNodeDistance), maxSurfaceDepth(maxSurfaceDepth),
     maxExcludedAngle(maxExcludedAngle), normalNeighborhoodRadius(normalNeighborhoodRadius),
-    faceSurfaceFactor(faceSurfaceFactor), maxStitchedAngle(maxStitchedAngle),
-    tetrahedronBaseAngle(tetrahedronBaseAngle)
+    faceSurfaceFactor(faceSurfaceFactor), tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
     vertices = 0;
 }
@@ -1368,11 +1366,6 @@ void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 
 bool D25ActiveContours::grow_step()
 {	
-    if (triangles.size() == 118)
-    {
-        int briak = 0;
-    }
-
     // If all the points have been processed and the list of the active edges is empty:
     if (unvisitedCount == 0 && activeEdges.size() == 0)
     {
@@ -1398,7 +1391,7 @@ bool D25ActiveContours::grow_step()
 void D25ActiveContours::post_stitch()
 {
     // TODO: complete this step if needed.
-    // Purporse: it performs mutual stich of the frozenEdges based on some rule R(edge1, edge2). 
+    // Purpose: it performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
 }
 
 
