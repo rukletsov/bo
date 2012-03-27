@@ -1006,7 +1006,7 @@ bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElem
 }
 
 
-bo::Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
+Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
 {
     // Initialize the point cloud.
     set_vertices(v);
@@ -1019,7 +1019,7 @@ bo::Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
     return get_mesh();
 }
 
-bo::Mesh D25ActiveContours::build_mesh()
+Mesh D25ActiveContours::build_mesh()
 {
     // Clean and initialize auxiliary structures.
     prepare();
@@ -1395,10 +1395,10 @@ void D25ActiveContours::post_stitch()
 }
 
 
-bo::Mesh D25ActiveContours::get_mesh()
+Mesh D25ActiveContours::get_mesh()
 {
     //Construct a new mesh.
-    bo::Mesh m(triangles.size());
+    Mesh m(triangles.size());
 
     // Create a reference map (from the local triangles nodes to the mesh vertices).
     std::map<HPointElement*,size_t> mymap;
@@ -1416,7 +1416,7 @@ bo::Mesh D25ActiveContours::get_mesh()
             if (mymap.find(ps) == mymap.end())
             {	
                 // Add the vertex/node into the mesh and into the reference map.
-                size_t ind = m.add_vertex(bo::Mesh::Vertex(ps->p.x(), ps->p.y(), ps->p.z()));
+                size_t ind = m.add_vertex(Mesh::Vertex(ps->p.x(), ps->p.y(), ps->p.z()));
                 mymap[ps] = ind;
             }
         }
@@ -1426,7 +1426,7 @@ bo::Mesh D25ActiveContours::get_mesh()
         size_t B = mymap[itt->p2];
         size_t C = mymap[itt->p3];
 
-        m.add_face(bo::Mesh::Face(A,B,C));
+        m.add_face(Mesh::Face(A,B,C));
 
         ++itt;
     }

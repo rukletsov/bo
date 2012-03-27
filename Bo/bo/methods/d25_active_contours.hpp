@@ -62,6 +62,7 @@ namespace methods {
 namespace surfaces {
 
 typedef bo::Vector<float, 3> Vertex;
+typedef bo::Mesh<float> Mesh;
 
 struct HPointElement;
 
@@ -210,18 +211,18 @@ public:
     /*! Get the mesh object built from the current list of generated triangles.
         \return Reconstructed mesh.
     */
-    bo::Mesh get_mesh();
+    Mesh get_mesh();
 
     /*! Load the given points cloud into the internal container and build the mesh based on it.
         \param v Points cloud.
         \return Reconstructed mesh.
     */
-    bo::Mesh build_mesh(std::vector<Vertex> &v);
+    Mesh build_mesh(std::vector<Vertex> &v);
 
     /*! Build the mesh based on the pre-loaded vertices.
         \return Reconstructed mesh.
     */
-    bo::Mesh build_mesh();
+    Mesh build_mesh();
 
     /*! Perform one growing iteration. Return true if further growing is possible otherwise return false.
         \return true if further growing is possible otherwise returns false.

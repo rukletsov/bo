@@ -46,10 +46,12 @@ namespace bo {
 namespace methods {
 namespace surfaces {
 
+typedef bo::Mesh<float> Mesh;
+
 // Performs the given number of subdivision iterations on the source mesh
 // using the Modified Butterfly surface subdivision scheme (see the reference 
 // paper) and returns the resulted mesh.
-bo::Mesh BO_DECL mbutterfly_subdivision(const bo::Mesh &source, int iterations);
+Mesh BO_DECL mbutterfly_subdivision(const Mesh &source, int iterations);
 
 } // namespace surfaces
 } // namespace methods
