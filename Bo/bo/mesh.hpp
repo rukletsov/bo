@@ -125,8 +125,8 @@ public:
     const Normals& get_all_face_normals() const;
 
     // Allow mesh stream operator<< access Mesh members.
-    template <typename V>
-    friend std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj);
+    template <typename T>
+    friend std::ostream& operator<<(std::ostream& os, const Mesh<T>& obj);
 
 private:
     // Adds connectivity relations. Return false in case of new relation leads to
@@ -165,8 +165,8 @@ private:
 
 // Prints formatted mesh data to a given stream. See boost.format library for more
 // details about formatting.
-template <typename V>
-std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Mesh<T>& obj)
 {
     // TODO: Add syncro primitives to stream operator and, perhaps, verbose levels.
 
@@ -174,8 +174,8 @@ std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
     os << boost::format("Mesh object %1$#x, %2% bytes: ") % &obj % sizeof(obj)
        << std::endl << "Vertices: " << obj.vertices_.size() << std::endl;
 
-    typename Mesh<V>::Vertices::const_iterator vertices_end = obj.vertices_.end();
-    for (typename Mesh<V>::Vertices::const_iterator it = obj.vertices_.begin();
+    typename Mesh<T>::Vertices::const_iterator vertices_end = obj.vertices_.end();
+    for (typename Mesh<T>::Vertices::const_iterator it = obj.vertices_.begin();
          it != vertices_end; ++it)
     {
         // Print vertex coordinates.
@@ -188,9 +188,9 @@ std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
         os << std::endl << "\t"
            << boost::format("neighbours (%1%): ") % obj.neighbours_[index].size();
 
-        typename Mesh<V>::AdjacentVerticesPerVertex::const_iterator neighbours_end =
+        typename Mesh<T>::AdjacentVerticesPerVertex::const_iterator neighbours_end =
             obj.neighbours_[index].end();
-        for (typename Mesh<V>::AdjacentVerticesPerVertex::const_iterator neighbour =
+        for (typename Mesh<T>::AdjacentVerticesPerVertex::const_iterator neighbour =
             obj.neighbours_[index].begin(); neighbour != neighbours_end; ++neighbour)
         {
             os << boost::format("%1%, %|4t|") % (*neighbour);
@@ -200,9 +200,9 @@ std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
         os << std::endl << "\t" << boost::format("adjacent faces (%1%): ")
            % obj.adjacent_faces_[index].size();
 
-        typename Mesh<V>::AdjacentFacesPerVertex::const_iterator faces_end =
+        typename Mesh<T>::AdjacentFacesPerVertex::const_iterator faces_end =
             obj.adjacent_faces_[index].end();
-        for (typename Mesh<V>::AdjacentFacesPerVertex::const_iterator face =
+        for (typename Mesh<T>::AdjacentFacesPerVertex::const_iterator face =
             obj.adjacent_faces_[index].begin(); face != faces_end; ++face)
         {
             os << boost::format("%1%, %|4t|") % (*face);
@@ -214,8 +214,8 @@ std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
     // Print full faces info.
     os << "Faces: " << obj.faces_.size() << std::endl;
 
-    typename Mesh<V>::Faces::const_iterator faces_end = obj.faces_.end();
-    for (typename Mesh<V>::Faces::const_iterator face = obj.faces_.begin();
+    typename Mesh<T>::Faces::const_iterator faces_end = obj.faces_.end();
+    for (typename Mesh<T>::Faces::const_iterator face = obj.faces_.begin();
         face != faces_end; ++face)
     {
         // Print face's vertices.
@@ -225,7 +225,7 @@ std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj)
            % face->A() % face->B() % face->C();
 
         // Print face's normal.
-        typename Mesh<V>::Normal normal = obj.face_normals_[index];
+        typename Mesh<T>::Normal normal = obj.face_normals_[index];
         os << std::endl << "\t"
            << boost::format("normal: (%1%, %2%, %3%)") % normal.x() % normal.y()
            % normal.z();
