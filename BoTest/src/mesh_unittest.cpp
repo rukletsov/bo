@@ -13,6 +13,8 @@ using namespace bo;
 extern std::string DataDirectory;
 
 
+typedef Mesh<double> MeshOfDoubles;
+
 // Create a so-called "text fixture" using base class form GTEST.
 class MeshTest: public testing::Test
 {
@@ -24,24 +26,24 @@ protected:
     virtual void SetUp()
     {
         // Add 5 vertices and remember their indices.
-        vertex1_ = mesh1_.add_vertex(Mesh::Vertex(1., 0., 1.));
-        vertex2_ = mesh1_.add_vertex(Mesh::Vertex(2., 1., 1.));
-        vertex3_ = mesh1_.add_vertex(Mesh::Vertex(3., 0., 1.));
-        vertex4_ = mesh1_.add_vertex(Mesh::Vertex(2., -1., 1.));
-        vertex5_ = mesh1_.add_vertex(Mesh::Vertex(2., 0., 2.));
+        vertex1_ = mesh1_.add_vertex(MeshOfDoubles::Vertex(1., 0., 1.));
+        vertex2_ = mesh1_.add_vertex(MeshOfDoubles::Vertex(2., 1., 1.));
+        vertex3_ = mesh1_.add_vertex(MeshOfDoubles::Vertex(3., 0., 1.));
+        vertex4_ = mesh1_.add_vertex(MeshOfDoubles::Vertex(2., -1., 1.));
+        vertex5_ = mesh1_.add_vertex(MeshOfDoubles::Vertex(2., 0., 2.));
 
         // Specify faces in the mesh using previously remembered vertices' indices.
-        basis1_ = mesh1_.add_face(Mesh::Face(vertex1_, vertex2_, vertex4_));
-        basis2_ = mesh1_.add_face(Mesh::Face(vertex2_, vertex3_, vertex4_));
-        slope1_ = mesh1_.add_face(Mesh::Face(vertex1_, vertex2_, vertex5_));
-        mesh1_.add_face(Mesh::Face(vertex1_, vertex4_, vertex5_));
-        mesh1_.add_face(Mesh::Face(vertex3_, vertex2_, vertex5_));
-        mesh1_.add_face(Mesh::Face(vertex3_, vertex4_, vertex5_));
+        basis1_ = mesh1_.add_face(MeshOfDoubles::Face(vertex1_, vertex2_, vertex4_));
+        basis2_ = mesh1_.add_face(MeshOfDoubles::Face(vertex2_, vertex3_, vertex4_));
+        slope1_ = mesh1_.add_face(MeshOfDoubles::Face(vertex1_, vertex2_, vertex5_));
+        mesh1_.add_face(MeshOfDoubles::Face(vertex1_, vertex4_, vertex5_));
+        mesh1_.add_face(MeshOfDoubles::Face(vertex3_, vertex2_, vertex5_));
+        mesh1_.add_face(MeshOfDoubles::Face(vertex3_, vertex4_, vertex5_));
     }
 
     // Create a test mesh object with 5 vertices: a square pyramid with the edge
     // lenght equals sqrt(2). Its basis is parallel to OXY surface (z = 1).
-    Mesh mesh1_;
+    MeshOfDoubles mesh1_;
 
     // Indices of the certain faces and vertices.
     std::size_t vertex1_;
@@ -65,11 +67,11 @@ TEST_F(MeshTest, SetUp)
     // The normal direction can differ, but the normals should be of the same
     // length and collinear.
     ASSERT_DOUBLE_EQ(1., std::abs(
-        (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis1_])));
+        (MeshOfDoubles::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis1_])));
 
     ASSERT_DOUBLE_EQ(1., std::abs(
-        (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis2_])));
+        (MeshOfDoubles::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[basis2_])));
 
     ASSERT_DOUBLE_EQ(std::sqrt(3.) / 3., std::abs(
-        (Mesh::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[slope1_])));
+        (MeshOfDoubles::Normal(0., 0., 1.) * mesh1_.get_all_face_normals()[slope1_])));
 }
