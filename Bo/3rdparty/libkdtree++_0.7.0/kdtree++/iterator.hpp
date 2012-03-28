@@ -9,7 +9,7 @@
 
 #include <iterator>
 
-#include <kdtree++/node.hpp>
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
 
 namespace KDTree
 {

@@ -77,11 +77,11 @@
 #include <cstddef>
 #include <cassert>
 
-#include "function.hpp"
-#include "allocator.hpp"
-#include "iterator.hpp"
-#include "node.hpp"
-#include "region.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/function.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/allocator.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/iterator.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/region.hpp"
 
 namespace KDTree
 {
@@ -92,8 +92,8 @@ namespace KDTree
 
   template <size_t const __K, typename _Val,
             typename _Acc = _Bracket_accessor<_Val>,
-	    typename _Dist = squared_difference<typename _Acc::result_type,
-						typename _Acc::result_type>,
+            typename _Dist = squared_difference<typename _Acc::result_type,
+            typename _Acc::result_type>,
             typename _Cmp = std::less<typename _Acc::result_type>,
             typename _Alloc = std::allocator<_Node<_Val> > >
     class KDTree : protected _Alloc_base<_Val, _Alloc>
@@ -110,8 +110,7 @@ namespace KDTree
       typedef _Node_compare<_Val, _Acc, _Cmp> _Node_compare_;
 
     public:
-      typedef _Region<__K, _Val, typename _Acc::result_type, _Acc, _Cmp>
-        _Region_;
+      typedef _Region<__K, _Val, typename _Acc::result_type, _Acc, _Cmp> _Region_;
       typedef _Val value_type;
       typedef value_type* pointer;
       typedef value_type const* const_pointer;
@@ -123,16 +122,16 @@ namespace KDTree
       typedef ptrdiff_t difference_type;
 
       KDTree(_Acc const& __acc = _Acc(), _Dist const& __dist = _Dist(),
-	     _Cmp const& __cmp = _Cmp(), const allocator_type& __a = allocator_type())
+             _Cmp const& __cmp = _Cmp(), const allocator_type& __a = allocator_type())
         : _Base(__a), _M_header(),
-	  _M_count(0), _M_acc(__acc), _M_cmp(__cmp), _M_dist(__dist)
+                _M_count(0), _M_acc(__acc), _M_cmp(__cmp), _M_dist(__dist)
       {
          _M_empty_initialise();
       }
 
       KDTree(const KDTree& __x)
          : _Base(__x.get_allocator()), _M_header(), _M_count(0),
-	   _M_acc(__x._M_acc), _M_cmp(__x._M_cmp), _M_dist(__x._M_dist)
+                 _M_acc(__x._M_acc), _M_cmp(__x._M_cmp), _M_dist(__x._M_dist)
       {
          _M_empty_initialise();
          // this is slow:

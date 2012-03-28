@@ -91,7 +91,6 @@ ENDIF (UsePch)
 INCLUDE_DIRECTORIES (./
                      ./3rdparty
                      ./3rdparty/rply-1.01
-                     ./3rdparty/libkdtree++_0.7.0
 )
 
 # Let the sources know, that this is our own source.
