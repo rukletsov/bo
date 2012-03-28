@@ -14,8 +14,8 @@
 #include <cstddef>
 #include <cmath>
 
-namespace KDTree
-{
+namespace bo {
+
   struct _Node_base
   {
     typedef _Node_base* _Base_ptr;
@@ -344,7 +344,7 @@ namespace KDTree
   }
 
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 

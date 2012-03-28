@@ -5,7 +5,7 @@
 
   Triangle class. 
 
-  Copyright (c) 2010, 2011, 2012
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
   All rights reserved.

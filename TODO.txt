@@ -8,7 +8,6 @@ LIBRARY
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
 ? Add "real" type which abstracts floating point type.
-? Make KDTree++ visible outside library.
 
 Mesh class
 ================================================================================
@@ -66,6 +65,7 @@ Methods namespace
 
 LIBRARY
 --------------------------------------------------------------------------------
+[DONE] ? Make KDTree++ visible outside library.
 [DONE] * CMake msvc compiler options.
 [DONE] * Supress msvc unsafe CRT warnings.
 [DONE] * Look at CMake's special functions such as FindBoost and, probably, 

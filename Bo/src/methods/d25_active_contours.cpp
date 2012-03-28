@@ -4,7 +4,7 @@
 #include <map>
 
 #include "3rdparty/svd/svd.h"
-#include "3rdparty/libkdtree++_0.7.0/kdtree++/kdtree.hpp"
+#include "bo/kdtree.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/methods/d25_active_contours.hpp"
 
@@ -109,7 +109,7 @@ inline float point_bac(HPointContainerItem t, size_t k)
 }
 
 // 3D Tree type.
-typedef KDTree::KDTree<3, HPointContainerItem,
+typedef bo::KDTree<3, HPointContainerItem,
     std::pointer_to_binary_function<HPointContainerItem, size_t, float> > D3Tree;
 
 // A general container of vertices.

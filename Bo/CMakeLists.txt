@@ -30,6 +30,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_math.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/raw_image_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/kdtree.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/blas.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/d25_active_contours.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/3d_distances.hpp

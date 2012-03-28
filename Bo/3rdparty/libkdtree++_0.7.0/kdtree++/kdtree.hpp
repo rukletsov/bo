@@ -46,7 +46,6 @@
 #ifndef INCLUDE_KDTREE_KDTREE_HPP
 #define INCLUDE_KDTREE_KDTREE_HPP
 
-
 //
 //  This number is guarenteed to change with every release.
 //
@@ -78,13 +77,12 @@
 #include <cassert>
 
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/function.hpp"
+#include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/allocator.hpp"
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/iterator.hpp"
-#include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/region.hpp"
 
-namespace KDTree
-{
+namespace bo {
 
 #ifdef KDTREE_CHECK_PERFORMANCE
    unsigned long long num_dist_calcs = 0;
@@ -1237,7 +1235,7 @@ namespace KDTree
   };
 
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 

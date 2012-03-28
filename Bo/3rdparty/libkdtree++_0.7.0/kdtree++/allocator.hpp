@@ -11,8 +11,7 @@
 
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
 
-namespace KDTree
-{
+namespace bo {
 
   template <typename _Tp, typename _Alloc>
     class _Alloc_base
@@ -78,7 +77,7 @@ namespace KDTree
       }
     };
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 

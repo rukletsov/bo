@@ -11,8 +11,8 @@
 
 #include "3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp"
 
-namespace KDTree
-{
+namespace bo {
+
   template <typename _Val, typename _Ref, typename _Ptr>
     class _Iterator;
 
@@ -253,7 +253,7 @@ namespace KDTree
                _Iterator<_Val, const _Val&, const _Val*> const& __Y)
     { return __X._M_node != __Y._M_node; }
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 

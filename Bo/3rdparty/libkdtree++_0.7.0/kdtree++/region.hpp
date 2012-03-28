@@ -11,8 +11,7 @@
 
 #include <3rdparty/libkdtree++_0.7.0/kdtree++/node.hpp>
 
-namespace KDTree
-{
+namespace bo {
 
   template <size_t const __K, typename _Val, typename _SubVal,
             typename _Acc, typename _Cmp>
@@ -113,7 +112,7 @@ namespace KDTree
       _Cmp _M_cmp;
     };
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 

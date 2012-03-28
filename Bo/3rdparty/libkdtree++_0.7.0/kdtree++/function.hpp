@@ -10,8 +10,8 @@
 
 #include <cstddef>
 
-namespace KDTree
-{
+namespace bo {
+
   template <typename _Val>
   struct _Bracket_accessor
   {
@@ -71,7 +71,7 @@ namespace KDTree
     mutable long _M_count;
   };
 
-} // namespace KDTree
+} // namespace bo
 
 #endif // include guard
 
