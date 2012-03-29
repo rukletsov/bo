@@ -125,8 +125,8 @@ public:
     const Normals& get_all_face_normals() const;
 
     // Allow mesh stream operator<< access Mesh members.
-    template <typename T>
-    friend std::ostream& operator<<(std::ostream& os, const Mesh<T>& obj);
+    template <typename V>
+    friend std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj);
 
 private:
     // Adds connectivity relations. Return false in case of new relation leads to
