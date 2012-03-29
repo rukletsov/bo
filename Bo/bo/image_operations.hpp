@@ -68,9 +68,22 @@ struct invert_brightness: public std::unary_function<ValType, ValType>
 
 } // namespace detail
 
+
+// Returns an inverted image with arbitrary pixels. Supposes pixel values are in
+// [0 .. std::numeric_limits<T>::max()]
+template <typename T>
+RawImage2D<T> invert(const RawImage2D<T>& image)
+{
+    RawImage2D<T> inverted(image.width(), image.height());
+    std::transform(image.data(), image.data() + image.size(), inverted.data(),
+                   detail::invert_brightness<T>(std::numeric_limits<T>::max()));
+
+    return inverted;
+}
+
 // Returns an inverted image with float pixels. Supposes pixel values are in [0..1].
-inline
-RawImage2D<float> invert(const RawImage2D<float>& image)
+template <>
+RawImage2D<float> invert<float>(const RawImage2D<float>& image)
 {
     RawImage2D<float> inverted(image.width(), image.height());
     std::transform(image.data(), image.data() + image.size(), inverted.data(),
@@ -80,25 +93,12 @@ RawImage2D<float> invert(const RawImage2D<float>& image)
 }
 
 // Returns an inverted image with double pixels. Supposes pixel values are in [0..1].
-inline
-RawImage2D<double> invert(const RawImage2D<double>& image)
+template <>
+RawImage2D<double> invert<double>(const RawImage2D<double>& image)
 {
     RawImage2D<double> inverted(image.width(), image.height());
     std::transform(image.data(), image.data() + image.size(), inverted.data(),
                    detail::invert_brightness<double>(1.));
-
-    return inverted;
-}
-
-// Returns an inverted image with boost::uint8_t pixels. Supposes pixel values are in
-// [0..std::numeric_limits<boost::uint8_t>::max()].
-inline
-RawImage2D<boost::uint8_t> invert(const RawImage2D<boost::uint8_t>& image)
-{
-    RawImage2D<boost::uint8_t> inverted(image.width(), image.height());
-    std::transform(image.data(), image.data() + image.size(), inverted.data(),
-                   detail::invert_brightness<boost::uint8_t>(
-                       std::numeric_limits<boost::uint8_t>::max()));
 
     return inverted;
 }
