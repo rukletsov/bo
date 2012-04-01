@@ -58,7 +58,7 @@ namespace methods {
 
 namespace detail{
 
-// Structure for k-d tree based face search.
+// Face centroid and id used for k-d tree based face search.
 template <typename T>
 struct FaceTreeElement
 {
@@ -75,14 +75,18 @@ struct FaceTreeElement
         mCentroid = get_centroid(a, b, c);
     }
 
-    bo::Vector<T, 3> mCentroid;
-    int mFaceId;
-
+    // Calculates the center of mass.
     static inline bo::Vector<T, 3> get_centroid(const bo::Vector<T, 3> &a, const bo::Vector<T, 3> &b,
                                                 const bo::Vector<T, 3> &c)
     {
         return (a + b + c) / 3;
     }
+
+    // Center of mass.
+    bo::Vector<T, 3> mCentroid;
+
+    // Id of the face in the corresponding mesh.
+    int mFaceId;
 };
 
 // FaceTreeElement brackets accessor.
@@ -99,6 +103,7 @@ struct D3Tree
     typedef bo::KDTree<3, FaceTreeElement<T>, std::pointer_to_binary_function<FaceTreeElement<T>, size_t, float> > Type;
 };
 
+// Inserts the faces of the given mesh into the k-d tree structure.
 template <typename T>
 void fill_tree(typename D3Tree<T>::Type &tree, const typename bo::Mesh<T> &mesh)
 {
@@ -119,6 +124,9 @@ void fill_tree(typename D3Tree<T>::Type &tree, const typename bo::Mesh<T> &mesh)
     tree.optimise();
 }
 
+// Calculates the maximal shape radius of the faces from the given mesh.
+// Shape radius of a face is defined as the maximal distance from its
+// vertices to its center of mass.
 template <typename T>
 double get_max_shape_radius(const bo::Mesh<T> &mesh)
 {
@@ -150,6 +158,13 @@ double get_max_shape_radius(const bo::Mesh<T> &mesh)
     return max_shape_radius;
 }
 
+// Auxiliary function, utilizes a pre-calculated k-d tree for face search.
+// For the given vertex calculates a pair (closest_face_id, min_distance), where
+// closest_face_id is the index of the closest face from the given mesh and min_distance
+// is the euclidean distance to it. For k-d tree based face search it is expected that
+// shape radiuses of all faces from the mesh are less or equal to max_shape_radius.
+// If not, the function returns an approximate result. The complexity of search grows with
+// growth of the relation: max_shape_radius / average shape radius of the faces.
 template <typename T>
 std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p,
                                                     const double &max_shape_radius,
@@ -197,7 +212,11 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
 
 } // namespace detail.
 
-
+// For the given vertex calculates a pair (closest_face_id, min_distance), where
+// closest_face_id is the index of the closest face from the given mesh and min_distance
+// is the euclidean distance to it.
+// Creates a k-d tree for the set of mesh faces and returns the result of the function:
+// mesh_closest_face_sr(mesh, p, max_shape_radius, tree).
 template <typename T>
 std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p,
                                                     const double &max_shape_radius)
@@ -212,6 +231,11 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
     return detail::mesh_closest_face_sr<T>(mesh, p, max_shape_radius, tree);
 }
 
+// For the given vertex calculates a pair (closest_face_id, min_distance), where
+// closest_face_id is the index of the closest face from the given mesh and min_distance
+// is the euclidean distance to it.
+// Calculates the maximal shape radius for the mesh faces and returns the result of the function:
+// mesh_closest_face_sr(mesh, p, max_shape_radius).
 template <typename T>
 std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p)
 {
@@ -222,6 +246,11 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
     return mesh_closest_face_sr<T>(mesh, p, max_shape_radius);
 }
 
+// For the given array of vertices in 3D (point cloud) calculates the corresponding array
+// of pairs (closest_face_id, min_distance), where closest_face_id is the index of the closest
+// face from the given mesh and min_distance is the euclidean distance to it.
+// Creates a k-d tree for the set of mesh faces and for each vertex from the point cloud utilizes
+// the result of the function: mesh_closest_face_sr(mesh, p, max_shape_radius, tree).
 template <typename T>
 std::vector<std::pair<std::size_t, double> > mesh_closest_face_sr(const bo::Mesh<T> &mesh,
                                                                   const std::vector<bo::Vector<T, 3> > &point_cloud,
@@ -247,6 +276,11 @@ std::vector<std::pair<std::size_t, double> > mesh_closest_face_sr(const bo::Mesh
     return facesd;
 }
 
+// For the given array of vertices in 3D (point cloud) calculates the corresponding array
+// of pairs (closest_face_id, min_distance), where closest_face_id is the index of the closest
+// face from the given mesh and min_distance is the euclidean distance to it.
+// Calculates the maximal shape radius for the mesh faces and returns the result of the function:
+// mesh_closest_face_sr(mesh, point_cloud, max_shape_radius).
 template <typename T>
 std::vector<std::pair<std::size_t, double> > mesh_closest_face_sr(const bo::Mesh<T> &mesh,
                                                                   const std::vector<bo::Vector<T, 3> > &point_cloud)
