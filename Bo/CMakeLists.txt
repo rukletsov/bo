@@ -36,6 +36,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/3d_distances.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/linear_filtering_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mbutterfly_mesh_subdiv.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mesh_closest_face_sr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/raw_image_2d_io.hpp
