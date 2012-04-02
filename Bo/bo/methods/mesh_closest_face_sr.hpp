@@ -158,6 +158,20 @@ double get_max_shape_radius(const bo::Mesh<T> &mesh)
     return max_shape_radius;
 }
 
+// Calculates the distance from the given vertex in 3D to the face defined by
+// the given face tree element.
+template <typename T>
+inline double get_distance_to_face(const detail::FaceTreeElement<T> &fte, const typename bo::Mesh<T>::Faces &faces,
+                                   const typename bo::Mesh<T>::Vertices &vertices, const bo::Vector<T, 3> &p)
+{
+    typename bo::Mesh<T>::Face face = faces[fte.mFaceId];
+
+    // Calculate the closest vertex to the given one within the given face.
+    bo::Vector<T, 3> closest_vertex = find_closest_point_on_triangle<T>(p, vertices[face.A()], vertices[face.B()],
+                                                                        vertices[face.C()]);
+    return euclidean_distance<T, 3>(p, closest_vertex);
+}
+
 // Auxiliary function, utilizes a pre-calculated k-d tree for face search.
 // For the given vertex calculates a pair (closest_face_id, min_distance), where
 // closest_face_id is the index of the closest face from the given mesh and min_distance
@@ -173,31 +187,31 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
     typename bo::Mesh<T>::Faces faces = mesh.get_all_faces();
     typename bo::Mesh<T>::Vertices vertices = mesh.get_all_vertices();
 
-    // Find the closest centroid to the given vertex.
+    // Find the closest centroid to the given vertex. It is not guaranteed that 
+    // this tree element references to the closest face. So, further search within
+    // the extended range is provided.
     detail::FaceTreeElement<T> search_element(p, -1);
     std::pair<typename detail::D3Tree<T>::Type::const_iterator, double> found = tree.find_nearest(search_element);
+    
+    // Initialize the minimal distance and the closest face with the found value.
+    detail::FaceTreeElement<T> fte = *found.first;
+    double min_distance = get_distance_to_face<T>(fte, faces, vertices, p);;
+    std::size_t closest_face_id = fte.mFaceId;
 
-    // The range within which presense of the closest face centroid is guaranteed.
+    // The extended range within which presence of the closest face centroid
+    // is guaranteed.
     double range = found.second + max_shape_radius / 2;
 
-    // Find all such centroids.
+    // Find all centroids within this range.
     std::vector<detail::FaceTreeElement<T> > centroids;
     tree.find_within_range(search_element, range, std::back_inserter(centroids));
 
-    double min_distance =  std::numeric_limits<double>::infinity();
-    std::size_t closest_face_id = faces.size();
-
-    // Find the minimal distance from the found faces to the given vertex.
+    // Find the minimal distance from the given vertex to the faces from the range.
     typename std::vector<detail::FaceTreeElement<T> >::const_iterator itc;
     for (itc = centroids.begin(); itc != centroids.end(); ++itc)
     {
-        typename bo::Mesh<T>::Face face = faces[itc->mFaceId];
-
-        // Calculate the closest vertex to the given one within the current face.
-        bo::Vector<T, 3> closest_vertex = find_closest_point_on_triangle<T>(p, vertices[face.A()], vertices[face.B()],
-                                                                            vertices[face.C()]);
-        // Calculate the distance to it.
-        double d = euclidean_distance<T, 3>(p, closest_vertex);
+        // Calculate the distance from the given vertex to the current face.
+        double d = get_distance_to_face<T>(*itc, faces, vertices, p);
 
         // Accumulate minimum.
         if (d < min_distance)
@@ -227,7 +241,7 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
     // Fill in the tree.
     detail::fill_tree<T>(tree, mesh);
 
-    // Calclulate the closest face and the distance to it.
+    // Calculate the closest face and the distance to it.
     return detail::mesh_closest_face_sr<T>(mesh, p, max_shape_radius, tree);
 }
 
@@ -242,7 +256,7 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
     // Calculate the maximal shape radius for the mesh faces.
     double max_shape_radius = get_max_shape_radius(mesh);
 
-    // Calclulate the closest face and the distance to it.
+    // Calculate the closest face and the distance to it.
     return mesh_closest_face_sr<T>(mesh, p, max_shape_radius);
 }
 
