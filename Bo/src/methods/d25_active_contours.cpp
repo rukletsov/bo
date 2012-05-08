@@ -59,7 +59,7 @@ HEdgeElement::HEdgeElement() : p1(0), p2(0)
 bool HEdgeElement::operator==(const HEdgeElement& other) const
 {
     // The propagation direction is not considered.
-    return  ( (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1) ) ;
+    return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
 }
 
 void HEdgeElement::swap()
@@ -1371,7 +1371,7 @@ bool D25ActiveContours::grow_step()
     {
         // Perform the post-stitch step and check if new active or passive edges were
         // added during it (if so, return true).
-        unsigned int frozenBefore = static_cast<unsigned>(frozenEdges.size());
+        std::size_t frozenBefore = frozenEdges.size();
         post_stitch();
         return (activeEdges.size() > 0) || (frozenEdges.size() < frozenBefore);
     }
@@ -1452,10 +1452,17 @@ void D25ActiveContours::add_active_edge( HEdgeElement &e )
     std::list<HEdgeElement>::const_iterator it = activeEdges.begin();
     
     // Check if the given edge is unique. TODO: optimize!
-    while(it != activeEdges.end() && isUnique)
+    while(it != activeEdges.end())
     {
         if (e == *it)
+        {
             isUnique = false;
+            
+            // Two equal active edges kill themselves. 
+            activeEdges.erase(it);
+            
+            break;
+        }
 
         ++it;
     }
