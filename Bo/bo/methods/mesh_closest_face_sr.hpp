@@ -182,7 +182,7 @@ inline double get_distance_to_face(const detail::FaceTreeElement<T> &fte, const 
 template <typename T>
 std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p,
                                                     const double &max_shape_radius,
-                                                    typename detail::D3Tree<T>::Type &tree)
+                                                    const typename detail::D3Tree<T>::Type &tree)
 {
     typename bo::Mesh<T>::Faces faces = mesh.get_all_faces();
     typename bo::Mesh<T>::Vertices vertices = mesh.get_all_vertices();

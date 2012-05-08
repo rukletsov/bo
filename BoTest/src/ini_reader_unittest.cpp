@@ -1,4 +1,6 @@
 
+#define BOOST_FILESYSTEM_VERSION 3
+
 #include <cstdio>
 #include <string>
 #include <boost/algorithm/string.hpp>
