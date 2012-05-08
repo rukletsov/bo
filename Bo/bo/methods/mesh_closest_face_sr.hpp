@@ -200,7 +200,7 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
 
     // The extended range within which presence of the closest face centroid
     // is guaranteed.
-    double range = found.second + max_shape_radius / 2;
+    double range = found.second + max_shape_radius;
 
     // Find all centroids within this range.
     std::vector<detail::FaceTreeElement<T> > centroids;
