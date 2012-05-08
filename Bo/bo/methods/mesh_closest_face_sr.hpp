@@ -3,11 +3,12 @@
 
   mesh_closest_face_sr.hpp, v 1.0.1 2012.03.31
 
-  Method calculates the closest face (considering the euclidean norm)
-  of a given mesh to a given point in 3D-space. The method utilizes the 
-  maximal shape radius of the mesh faces for a k-d tree based face search.
-  Shape radius is the maximal distance of a figure's points to its center
-  of mass (centroid).
+  For the given mesh the method calculates the set of closest faces 
+  (and the corresponding distances, considering the euclidean norm) to
+  a given point cloud in 3D-space. The method utilizes the maximal 
+  shape radius of the mesh faces for a k-d tree based face search.
+  Shape radius of a figure is the maximal distance of the figure's
+  points to its center of mass (centroid).
   ATTENTION: The maximal shape radius can be defined by a user as an
   external parameter. In this case the method calculates an APPROXIMATE
   closest face, if the given radius is less than the actual one. If the
@@ -226,38 +227,42 @@ std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, con
 
 } // namespace detail.
 
-// For the given vertex calculates a pair (closest_face_id, min_distance), where
-// closest_face_id is the index of the closest face from the given mesh and min_distance
-// is the euclidean distance to it.
-// Creates a k-d tree for the set of mesh faces and returns the result of the function:
-// mesh_closest_face_sr(mesh, p, max_shape_radius, tree).
-template <typename T>
-std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p,
-                                                    const double &max_shape_radius)
-{
-    // Create a k-d tree.
-    typename detail::D3Tree<T>::Type tree(std::ptr_fun(detail::face_bac<T>));
-
-    // Fill in the tree.
-    detail::fill_tree<T>(tree, mesh);
-
-    // Calculate the closest face and the distance to it.
-    return detail::mesh_closest_face_sr<T>(mesh, p, max_shape_radius, tree);
-}
 
 // For the given vertex calculates a pair (closest_face_id, min_distance), where
 // closest_face_id is the index of the closest face from the given mesh and min_distance
 // is the euclidean distance to it.
-// Calculates the maximal shape radius for the mesh faces and returns the result of the function:
-// mesh_closest_face_sr(mesh, p, max_shape_radius).
+// ATTENTION: This function is added for completeness of functionality. Exhaustive search
+// is performed: the function iterates over all faces of the mesh and selects the closest
+// one (can be slow).
 template <typename T>
-std::pair<std::size_t, double> mesh_closest_face_sr(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p)
-{
-    // Calculate the maximal shape radius for the mesh faces.
-    double max_shape_radius = get_max_shape_radius(mesh);
+std::pair<std::size_t, double> mesh_closest_face_exh(const bo::Mesh<T> &mesh, const bo::Vector<T, 3> &p)
+{    
+    std::pair<std::size_t, double> optimal;
 
-    // Calculate the closest face and the distance to it.
-    return mesh_closest_face_sr<T>(mesh, p, max_shape_radius);
+    typename bo::Mesh<T>::Faces faces = mesh.get_all_faces();
+    typename bo::Mesh<T>::Vertices vertices = mesh.get_all_vertices();
+
+    // Calculate the closest face among all the faces of the mesh.
+    for (std::size_t faceid = 0; faceid < faces.size(); ++faceid)
+    { 
+        // Current face.
+        typename bo::Mesh<T>::Face face = faces[faceid];
+
+        // Calculate the closest vertex to the given one within the given face.
+        bo::Vector<T, 3> closest_vertex = find_closest_point_on_triangle<T>(p, vertices[face.A()], vertices[face.B()],
+            vertices[face.C()]);
+        
+        double dist = euclidean_distance<T, 3>(p, closest_vertex);
+
+        // Update the face id and distance.
+        if (faceid == 0 || optimal.second > dist)
+        {
+            optimal.first = faceid;
+            optimal.second = dist;
+        }
+    }
+
+    return optimal;
 }
 
 // For the given array of vertices in 3D (point cloud) calculates the corresponding array
