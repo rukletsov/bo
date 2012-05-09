@@ -1302,29 +1302,14 @@ bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vertex> &t1,
     const float eps = 0.001f;
     // Bound the angle from zero by eps.
     float alpha = tetrahedronBaseAngle < eps ? eps : tetrahedronBaseAngle;
+    
+    // Create two dypiramids from the given triangles and the base angle alpha.
+    TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_angle(t1, alpha);
+    TriangularDipyramid tdp2 = TriangularDipyramid::from_triangle_and_angle(t2, alpha);
 
-    // If the triangles are adjacent:
-    if (t1.A() == t2.A() || t1.A() == t2.B() || t1.A() == t2.C() ||
-        t1.B() == t2.A() || t1.B() == t2.B() || t1.B() == t2.C() ||
-        t1.C() == t2.A() || t1.C() == t2.B() || t1.C() == t2.C())
-    {
-        // Create two dypiramids from the given triangles and the base angle alpha.
-        TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_angle(t1, alpha);
-        TriangularDipyramid tdp2 = TriangularDipyramid::from_triangle_and_angle(t2, alpha);
-
-        // Test them for intersection.
-        return tdp1.intersects(tdp2);
-    }
-    // If the triangles are not adjacent:
-    else
-    {
-        // Create two dypiramids from the given triangles and the pre-set surface depth.
-        TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_height(t1, maxSurfaceDepth);
-        TriangularDipyramid tdp2 = TriangularDipyramid::from_triangle_and_height(t2, maxSurfaceDepth);
-
-        // Test them for intersection.
-        return tdp1.intersects(tdp2);
-    }
+    // Test them for intersection.
+    return tdp1.intersects(tdp2);
+   
 }
 
 bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
