@@ -1434,7 +1434,7 @@ void D25ActiveContours::add_active_edge( HEdgeElement &e )
 {
     bool isUnique = true;
 
-    std::list<HEdgeElement>::const_iterator it = activeEdges.begin();
+    std::list<HEdgeElement>::iterator it = activeEdges.begin();
     
     // Check if the given edge is unique. TODO: optimize!
     while(it != activeEdges.end())
