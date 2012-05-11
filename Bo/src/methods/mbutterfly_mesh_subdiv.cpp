@@ -19,18 +19,20 @@ std::vector<size_t> get_relative_stencil(const Mesh &m, size_t inda, size_t indb
     Mesh::AdjacentFacesPerVertex adjacentFaces = m.get_neighbouring_faces_by_vertex(inda);
     Mesh::AdjacentVerticesPerVertex adjacentVertices = m.get_neighbouring_vertices(inda);
 
-    // If the central vertex is on the boundary, calculate
-    // the average value using the boundary schema.
+    // If the central vertex is on the boundary, interrupt the procedure
+    // (further, calculate the average value using the boundary schema).
     if (adjacentFaces.size() != adjacentVertices.size())
     {
-        return svert;
+        return std::vector<size_t>();
     }
 
     // Sort the adjacent vertices(edges).
     {
         size_t cur = indb;
 
-        while (adjacentFaces.size() > 0)
+        size_t adjacentFacesBefore;
+
+        while ((adjacentFacesBefore = adjacentFaces.size()) > 0)
         {
             // Walk through the set of the adjacent faces of inda consequently in 
             // (counter) clockwise order beginning from the face that contains intb,
@@ -62,6 +64,13 @@ std::vector<size_t> get_relative_stencil(const Mesh &m, size_t inda, size_t indb
                 }
 
                 ++it;
+            }
+
+            // If the local stencil can not be traversed (e.g. it is not planar),
+            // interrupt the procedure.
+            if (adjacentFacesBefore == adjacentFaces.size())
+            {
+                return std::vector<size_t>();
             }
         }
     }
