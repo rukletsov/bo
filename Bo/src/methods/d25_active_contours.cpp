@@ -466,13 +466,13 @@ D25ActiveContours::D25ActiveContours(float averageFaceSide)
     minInitDistance = averageFaceSide;
     
     maxInitDistance = 1.5f * averageFaceSide;
-    maxProjectionNodeDistance = 0.8f * minInitDistance;
-    normalNeighborhoodRadius = averageFaceSide;
+    maxProjectionNodeDistance = 0.8f * averageFaceSide;
+    normalNeighborhoodRadius = 0.8f * averageFaceSide;
     maxSurfaceDepth = 0.5f;
 
-    maxExcludedAngle = 0.92f;
+    maxExcludedAngle = 0.99f;
     faceSurfaceFactor = 0.5;
-    tetrahedronBaseAngle = 0.86f;
+    tetrahedronBaseAngle = 0.95f;
 
     vertices = 0;
 }
@@ -1328,7 +1328,7 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
     // Calculate cos of the angles a, b and c.
     float cos1 = v1a * v1b / float((v1a.eucl_norm() * v1b.eucl_norm()));
     float cos2 = v2a * v2b / float((v2a.eucl_norm() * v2b.eucl_norm()));
-    float cos3 = v3a * v3b / float((v3a.eucl_norm()*v3b.eucl_norm()));
+    float cos3 = v3a * v3b / float((v3a.eucl_norm() * v3b.eucl_norm()));
 
     // Compare the angles with the minimal allowed value. 
     if ((std::fabs(cos1) > maxExcludedAngle) ||
