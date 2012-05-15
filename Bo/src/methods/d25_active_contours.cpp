@@ -392,20 +392,22 @@ struct TriangularDipyramid
     }
 
     // Check intersection with another triangular dipyramid.
-    // Based on the Separating Plane Theorem.
+    // Based on the Separating Axis Theorem.
     bool intersects(TriangularDipyramid& other)
     {
-        float eps = 0.01f;
+        float eps = 0.1f;
 
         TriangularDipyramid tp1 = *this, tp2 = other;
 
+        // Search for the separating axis among the face normals
+        // of the both dipyramids.
         for (unsigned i = 0; i < 2; ++i)
         {
             for (unsigned int t = 0; t < 6; ++t)
             {
-                Triangle<Vector<float, 3> > face = tp1.faces[t];
-                Vector<float, 3> norm = getNormalVector(face);
-                
+                bo::Triangle<Vertex > face = tp1.faces[t];
+                Vertex norm = getNormalVector(face);
+
                 // Calculating min and max of the projection of the first dipyramid 
                 // on the current normal vector.
                 float t1MinProj = 0, t1MaxProj = 0;
@@ -427,6 +429,34 @@ struct TriangularDipyramid
             tp1 = tp2;
             tp2 = tmp;
         }
+
+        // Search for the separating axis among cross products of all pairs of edges
+        // from different dipyramids.
+        for (unsigned i1 = 0; i1 < 3; ++i1)
+            for (unsigned i2 = i1 + 1; i2 < 5; ++i2) // 9 edges from this.
+                for (unsigned j1 = 0; j1 < 3; ++j1)
+                    for (unsigned j2 = j1 + 1; j2 < 5; ++j2) // 9 edges from other.
+                    {
+                        Vertex e1 = vertices[i2] - vertices[i1];
+                        Vertex e2 = other.vertices[j2] - other.vertices[j1];
+
+                        Vertex norm = getNormalVector(e1, e2);
+
+                        // Calculating min and max of the projection of the first dipyramid 
+                        // on the current normal vector.
+                        float t1MinProj = 0, t1MaxProj = 0;
+                        tp1.get_min_max_projection(norm, t1MinProj, t1MaxProj);
+
+                        // Calculating min and max of the projection of the second dipyramid 
+                        // on the current normal vector.
+                        float t2MinProj = 0, t2MaxProj = 0;
+                        tp2.get_min_max_projection(norm, t2MinProj, t2MaxProj);
+
+                        // If the projection intervals do not intersect, 
+                        // than the convex polygons are separated.
+                        if(t1MaxProj < t2MinProj + eps || t2MaxProj < t1MinProj + eps)
+                            return false;
+                    }
 
         return true;
     }
