@@ -171,14 +171,15 @@ public:
         \param maxSurfaceDepth The maximum analyzed depth of the points cloud layer.
         \param maxExcludedAngle The maximum value of angles (cos scale) between mesh edges 
                that will be excluded during the mesh  construction.
-        \param faceSurfaceFactor The linear proportion between PCA-based and triangle-based 
-               normals: faceSurfaceFactor*<PCA-based>+(1-faceSurfaceFactor)*<triangle-based>.
+        \param inertialFactor The linear proportion between PCA-based and triangle-based 
+               normals: (1-inertialFactor) * <Tangential propagation> +
+               inertialFactor * <Inertial propagation>.
         \param tetrahedronBaseAngle The angle (cos scale) between the side faces and the 
                base face of the tetrahedrons used for 3D triangles intersection analysis. 
     */
     D25ActiveContours(float minInitDistance, float maxInitDistance, float maxProjectionNodeDistance,
                       float normalNeighborhoodRadius, float maxSurfaceDepth, float maxExcludedAngle,
-                      float faceSurfaceFactor, float tetrahedronBaseAngle);
+                      float inertialFactor, float tetrahedronBaseAngle);
 
     /*! Destructor.*/
     ~D25ActiveContours();
@@ -380,9 +381,10 @@ protected:
         vector is defined as the eigenvector with the smallest eigenvalue.
         \param p The reference point.
         \param windowRadius The radius of the neighborhood.
+        \param neighbourCount The number of neighbors within the radius.
         \return The normal vector.
     */
-    Vertex get_surface_normal(Vertex p, float windowRadius);
+    Vertex get_surface_normal(Vertex p, float windowRadius, std::size_t &neighbourCount);
 
     /*! Appends the given edge to the list of active edges if it is not yet there. 
     */
@@ -422,9 +424,9 @@ protected:
     float normalNeighborhoodRadius;
 
     /*! The linear proportion between PCA-based and triangle-based normals:
-        faceSurfaceFactor*<PCA-based>+(1-faceSurfaceFactor)*<triangle-based>.
+        (1-inertialFactor) * <Tangential propagation> + inertialFactor * <Inertial propagation>.
     */   
-    float faceSurfaceFactor;
+    float inertialFactor;
 
     /*! The angle (cos scale) between the side faces and the base face of the 
         tetrahedrons used for 3D triangles intersection analysis. 

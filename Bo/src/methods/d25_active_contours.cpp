@@ -510,7 +510,7 @@ D25ActiveContours::D25ActiveContours(float averageFaceSide)
     maxSurfaceDepth = 0.5f;
 
     maxExcludedAngle = 0.99f;
-    faceSurfaceFactor = 0.5;
+    inertialFactor = 0.5;
     tetrahedronBaseAngle = 0.95f;
 
     vertices = 0;
@@ -523,7 +523,7 @@ D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistanc
     minInitDistance(minInitDistance), maxInitDistance(maxInitDistance),
     maxProjectionNodeDistance(maxProjectionNodeDistance), maxSurfaceDepth(maxSurfaceDepth),
     maxExcludedAngle(maxExcludedAngle), normalNeighborhoodRadius(normalNeighborhoodRadius),
-    faceSurfaceFactor(faceSurfaceFactor), tetrahedronBaseAngle(tetrahedronBaseAngle)
+    inertialFactor(inertialFactor), tetrahedronBaseAngle(tetrahedronBaseAngle)
 {
     vertices = 0;
 }
@@ -803,14 +803,16 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
     // Tends to the median length of a equilateral triangle.
     float pnorm = minInitDistance * 0.87f;
     
-    // Inertial edge propagation.
+    // If (inertialFactor >= 1): Inertial edge propagation.
     Vector<float,3> p = median / (float)median.eucl_norm() * pnorm;
 
-    // Tangential PCA-based edge propagation. 
-    if (faceSurfaceFactor != 0)
+    // If (inertialFactor < 1): Tangential PCA-based or adaptive (complex) edge propagation. 
+    if (inertialFactor < 1)
     {
+        size_t neighbourCount = 0;
+
         // Surface normal calculation in the middle point of the edge.
-        Vector<float,3> midNorm = get_surface_normal(mid, normalNeighborhoodRadius);
+        Vector<float,3> midNorm = get_surface_normal(mid, normalNeighborhoodRadius, neighbourCount);
 
         // Vector parallel to the edge.
         Vector<float,3> v = e.p2->p - e.p1->p;
@@ -833,8 +835,21 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
         // Normalize the propagation vector.
         prop = prop / (float)prop.eucl_norm() * pnorm;
 
-        // Linear combination of the inertial and tangential propagations.
-        p = faceSurfaceFactor * prop + (1 - faceSurfaceFactor) * p;
+        // Tangential PCA-based edge propagation.
+        if (inertialFactor >= 0)
+        {
+            // Linear combination of the inertial and tangential propagations.
+            p = (1 - inertialFactor) * prop + inertialFactor * p;
+        }
+        // Adaptive (complex) edge propagation. Lambda is defined as -inertialFactor.
+        else 
+        {            
+            // Adaptive saturation.
+            float alpha = neighbourCount > -inertialFactor ? 1 : neighbourCount / (-inertialFactor);
+
+            // Linear combination of the inertial and tangential propagations.
+            p = (1 - alpha) * p + alpha * prop;
+        }
     }
 
     // Insert the calculated propagation into the given edge.
@@ -1207,7 +1222,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
         frozenEdges.push_back(e);
 }
 
-Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius)
+Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::size_t &neighbourCount)
 {
     // Select points from the neighborhood.
     HPointElement ps;
@@ -1218,6 +1233,7 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius)
                                      std::back_inserter(neighbours));
 
     size_t pointCount = neighbours.size();
+    neighbourCount = pointCount;
 
     // Perform the Principal Component Analysis (PCA):
     
