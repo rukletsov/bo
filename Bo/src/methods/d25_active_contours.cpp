@@ -519,7 +519,7 @@ D25ActiveContours::D25ActiveContours(float averageFaceSide)
 D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance,
                                      float maxProjectionNodeDistance, float normalNeighborhoodRadius,
                                      float maxSurfaceDepth, float maxExcludedAngle,
-                                     float faceSurfaceFactor, float tetrahedronBaseAngle):
+                                     float inertialFactor, float tetrahedronBaseAngle):
     minInitDistance(minInitDistance), maxInitDistance(maxInitDistance),
     maxProjectionNodeDistance(maxProjectionNodeDistance), maxSurfaceDepth(maxSurfaceDepth),
     maxExcludedAngle(maxExcludedAngle), normalNeighborhoodRadius(normalNeighborhoodRadius),
@@ -804,7 +804,10 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
     float pnorm = minInitDistance * 0.87f;
     
     // If (inertialFactor >= 1): Inertial edge propagation.
-    Vector<float,3> p = median / (float)median.eucl_norm() * pnorm;
+    Vector<float,3> p(0, 0, 0);
+    float nmedian = (float)median.eucl_norm();
+    if (nmedian != 0)
+        p = median / nmedian * pnorm;
 
     // If (inertialFactor < 1): Tangential PCA-based or adaptive (complex) edge propagation. 
     if (inertialFactor < 1)
@@ -833,7 +836,9 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
         }
 
         // Normalize the propagation vector.
-        prop = prop / (float)prop.eucl_norm() * pnorm;
+        float nprop = (float)prop.eucl_norm();
+        if (nprop != 0)
+            prop = prop / nprop * pnorm;
 
         // Tangential PCA-based edge propagation.
         if (inertialFactor >= 0)
@@ -1234,6 +1239,10 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
 
     size_t pointCount = neighbours.size();
     neighbourCount = pointCount;
+
+    // Important.
+    if (pointCount == 0)
+        return Vertex(0, 0, 0);
 
     // Perform the Principal Component Analysis (PCA):
     
