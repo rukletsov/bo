@@ -444,7 +444,7 @@ struct TriangularDipyramid
                         Vertex norm = getNormalVector(e1, e2);
                         
                         // For non-zero cross products perform the test.
-                        float d = norm.eucl_norm();
+                        float d = static_cast<float>(norm.eucl_norm());
                         if (d > float_zero_eps)
                         {
                             // Normalize, just for order.
