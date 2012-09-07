@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf.hpp, v 0.0.1 2012.09.06
+  mrf.hpp, v 0.0.2 2012.09.07
 
   Markov random field model for regular 2D lattice.
 
@@ -37,7 +37,9 @@
 
 #include <cmath>
 #include <functional>
+#include <stdexcept>
 #include <boost/random.hpp>
+#include <boost/assert.hpp>
 
 #include "bo/raw_image_2d.hpp"
 
@@ -47,436 +49,164 @@ template <typename NodeType, typename DataType, typename RealType>
 class MRF2D
 {
 public:
-    static const int kError = -1;
+    typedef NodeType& reference;
+    typedef const NodeType& const_reference;
 
-public:
     typedef RawImage2D<NodeType> RandomLattice;
     typedef RawImage2D<DataType> DataLattice;
     typedef std::binary_function<DataType, NodeType, RealType> LikelihoodEnergy;
     typedef std::binary_function<NodeType, NodeType, RealType> PriorEnergy;
 
-//    typedef boost::variate_generator<boost::mt19937&, boost::uniform_real<double> >
-//        Generator;
-
     MRF2D(const RandomLattice& initial_configuration, const DataLattice& observation,
           LikelihoodEnergy likelihood, PriorEnergy prior);
 
-    const Image& current() const;
+    RealType compute_full_energy() const;
+    RealType compute_local_energy(NodeType val, std::size_t col, std::size_t row) const;
 
-    double next_icm_iteration();
-    double next_mmd_iteration(Generator& rng, const double& temperature,
-                              bool is_modified, const double& mmd_probab);
-
-    double p() const;
-    double compute_full_energy() const;
-    double compute_local_energy(ValType new_val, size_t row, size_t col);
-
-    static ValType diff(const Image& image, co::Index ind1, co::Index ind2);
-    static double pow2(ValType val);
-    static ValType abs(ValType val);
-    static double fi_gm(ValType val);
-    static double fi_gr(ValType val);
-    static double tau_threshold(ValType val, double tau);
+    const_reference operator()(std::size_t col, std::size_t row) const;
+    reference operator()(std::size_t col, std::size_t row);
 
 protected:
-    double compute_alpha_(const Image& model) const;
-    double compute_beta_(const Image& model) const;
+    RealType right_clique_(NodeType val, std::size_t col, std::size_t row) const;
+    RealType down_clique_(NodeType val, std::size_t col, std::size_t row) const;
+    RealType left_clique_(NodeType val, std::size_t col, std::size_t row) const;
+    RealType up_clique_(NodeType val, std::size_t col, std::size_t row) const;
 
-    double right_clique_(const Image& model, size_t row, size_t col) const;
-    double down_clique_(const Image& model, size_t row, size_t col) const;
-    double left_clique_(const Image& model, size_t row, size_t col) const;
-    double up_clique_(const Image& model, size_t row, size_t col) const;
-
-    double diff_clique_(const Image& model, const Image& initial,
-                        size_t row, size_t col) const;
-
-    double clique_fun_(const Image& image, co::Index ind1, co::Index ind2) const;
-
-    double neighb_penalty(const Image& model, co::Index ind1, co::Index ind2) const;
-    double edge_penalty(const Image& model, co::Index ind1, co::Index ind2) const;
-
-    Pixels get_values() const;
-    Pixels get_neighbour_values(const Image& image, size_t row, size_t col) const;
+    RealType prior_fun_(NodeType val, std::size_t neigh_col, std::size_t neigh_row) const;
+    RealType likelihood_fun_(NodeType val, std::size_t col, std::size_t row) const;
 
 private:
-    Image observation_;
-    Image current_;
+    RandomLattice configuration_;
+    DataLattice observation_;
+    LikelihoodEnergy likelihood_;
+    PriorEnergy prior_;
 
-    // Disallow copy and construct
+    // Disallow copy and construct.
     MRF2D(const MRF2D&);
     MRF2D& operator=(const MRF2D&);
 };
 
 
-template <typename ValType>
-GibbsModel<ValType>::GibbsModel(const Image& observation, const Image& model,
-                                const double& alpha, const double& beta,
-                                const double& gamma, int colours,
-                                const double& thres_border):
+template <typename NodeType, typename DataType, typename RealType>
+MRF2D<NodeType, DataType, RealType>::MRF2D(const RandomLattice& initial_configuration,
+                                           const DataLattice& observation,
+    LikelihoodEnergy likelihood, PriorEnergy prior):
+    configuration_(initial_configuration),
     observation_(observation),
-    current_(model),
-    alpha_(alpha),
-    beta_(beta),
-    gamma_(gamma),
-    colours_(colours),
-    thres_border_(thres_border)
-{ }
-
-template <typename ValType> inline
-typename const GibbsModel<ValType>::Image& GibbsModel<ValType>::current() const
+    likelihood_(likelihood),
+    prior_(prior)
 {
-    return current_;
-}
-
-// Implements an iteration of the ICM algorithm
-template <typename ValType>
-double GibbsModel<ValType>::next_icm_iteration()
-{
-    // Clone a previous state.
-    Image new_state = current_;
-
-    // Determine a set of intensities to use in the ICM algorithm.
-    Pixels values = get_values();
-
-    // Do an inner iteration pixelwise.
-    for (size_t row = 0; row < current_.size(); ++row)
+    // Check if the dimensions of observation and configuration are the same.
+    if ((configuration_.width() != observation_.width()) ||
+        (configuration_.height() != configuration_.height()))
     {
-        for (size_t col = 0; col < current_[row].size(); ++col)
-        {   // Search for a value which gives the minimum of energy.
-            double min_energy = std::numeric_limits<double>::max();
-            int min_value_index = -1;
-            //Pixels values = get_neighbour_values(current_, row, col);
-
-            for (size_t i = 0; i < values.size(); ++i)
-            {
-                double energy = compute_local_energy(values[i], row, col);
-                if (energy < min_energy)
-                {
-                    min_energy = energy;
-                    min_value_index = static_cast<int>(i);
-                }
-            }
-
-            // Apply the best value.
-            new_state[row][col] = values[min_value_index];
-        }
+        BOOST_ASSERT(false && "Dimensions of the configuration and observation do not coincide.");
+        throw std::logic_error("MRF2D: dimensions of the random field lattice and the "
+                               "observation data must be the same.");
     }
-
-    // Compute an improved difference and proceed to a new state.
-    double old_p = p();
-    current_ = new_state;
-    double new_p = p();
-
-    return
-        (new_p - old_p);
 }
 
-// Implements an iteration of the MMD algorithm.
-template <typename ValType>
-double GibbsModel<ValType>::next_mmd_iteration(Generator& rng, const double& temperature,
-                                               bool is_modified, const double& mmd_probab)
+// Computes full energy of the current MRF state. It takes sum over all zero order
+// (single node) and first order (every two adjacent nodes) cliques using corresponding
+// clique functions. In order to iterate over all first order cliques, for every
+// node we can consider only right and down neighbour except for some border nodes.
+template <typename NodeType, typename DataType, typename RealType>
+RealType MRF2D<NodeType, DataType, RealType>::compute_full_energy() const
 {
-    // Clone a previous state.
-    Image new_state = current_;
+    RealType energy(0);
 
-    // If a modified version of MD algo (MMD) is used, then the decision probability is
-    // fixed and obtained as a parameter. Otherwise, it is generated every time.
-    double decision_probab = log(mmd_probab);
-
-    // Current temperature. See algorithm description for details.
-    double t = temperature;
-
-    // Determine a set of intensities (possible values) for each pixel.
-    Pixels values = get_values();
-
-    // Do an inner iteration pixelwise.
-    for (size_t row = 0; row < current_.size(); ++row)
-    {
-        for (size_t col = 0; col < current_[row].size(); ++col)
-        {   // Randomly generate a new state for the current pixel.
-            size_t index = static_cast<size_t>(co::round(rng() * (values.size() - 1)));
-            ValType new_val = values[index];
-
-            // if classical version is used, generate the decision probability.
-            if (!is_modified)
-                decision_probab = log(rng());
-
-            // Compute local energy and accept it or reject.
-            if (decision_probab <=
-                    (compute_local_energy(current_[row][col], row, col) -
-                    compute_local_energy(new_val, row, col)) / t
-               )
-            {   // Accept new state.
-                new_state[row][col] = new_val;
-            }
-        }
-    }
-
-    // Compute an improved difference and proceed to a new state.
-    double old_energy = compute_full_energy();
-    current_ = new_state;
-    double new_energy = compute_full_energy();
-
-    return
-        (new_energy - old_energy);
-}
-
-// Returns a probability of a current MRF state.
-template <typename ValType> inline
-double GibbsModel<ValType>::p() const
-{
-    return
-        exp(static_cast<double>(0.0 - compute_full_energy()));
-}
-
-// Computes energy of a current MRF state.
-template <typename ValType>
-double GibbsModel<ValType>::compute_full_energy() const
-{
-    double alphagamma_item = compute_alpha_(current_);
-    double beta_item = compute_beta_(current_);
-    double energy = alphagamma_item + beta_item;
+    for (std::size_t col = 0; col < configuration_.width(); ++col) {
+        for (std::size_t row = 0; row < configuration_.height(); ++row) {
+            NodeType value = configuration_(col, row);
+            energy += (data_clique_(value, col, row) +
+                       right_clique_(value, col, row) +
+                       down_clique_(value, col, row));
+    }   }
 
     return energy;
 }
 
-// Computes an energy of a state with one pixel [row, col] intensity changed to "new_val".
-// Border checks for pixel's border belonging are done inside necessary clique functions.
-template <typename ValType>
-double GibbsModel<ValType>::compute_local_energy(ValType new_val, size_t row, size_t col)
+// Computes a local energy of the neighbourhood of the given node with provided value.
+// Border checks are done inside corresponding clique functions.
+template <typename NodeType, typename DataType, typename RealType>
+RealType MRF2D<NodeType, DataType, RealType>::compute_local_energy(NodeType val,
+    std::size_t col, std::size_t row) const
 {
-    double energy = 0.0;
+    // Compute likelihood energy for the given value at the given position.
+    RealType energy = data_clique_(val, col, row);
 
-    // IMPORTANT: in order to minimize computational time by avoiding copying
-    // we temporary modify the current MRF state (current_). Before the function
-    // returns the state is restored. This can lead to memory corruption in case
-    // of concurrent usage. To make this function thread-safe, make it const
-    // (either copy data or rewrite clique functions so they support values).
-    ValType old_val = current_[row][col];
-    current_[row][col] = new_val;
-
-    // Compute a difference of pixel intensity of model and observation.
-    energy += diff_clique_(current_, observation_, row, col);
-
-    // Compute a difference of neighbour pixel intensities. Border overrun is checeked
-    // inside clique functions.
-    energy += right_clique_(current_, row, col);
-    energy += down_clique_(current_, row, col);
-    energy += left_clique_(current_, row, col);
-    energy += up_clique_(current_, row, col);
-
-    // Restore the state.
-    current_[row][col] = old_val;
+    // Compute prior energy of the given node given its neighbours.
+    energy += right_clique_(val, col, row);
+    energy += down_clique_(val, col, row);
+    energy += left_clique_(val, col, row);
+    energy += up_clique_(val, col, row);
 
     return energy;
 }
 
-// This function computes first item of energy which goes with coefficient "alpha".
-// It takes the sum over all first order cliques (every two adjacent pixels),
-// performing subtraction of pixel intensities and then squaring the result.
-// In order to iterate over all first order cliques we can for every pixel
-// consider RIGHT and DOWN neighbour except for border right and border down ones.
-// For down-right pixel we should do nothing. Since clique functions check border
-// overrun we can simply compute right and down cliques for every pixel. For the
-// undefined results zero energy is returned.
-template <typename ValType>
-double GibbsModel<ValType>::compute_alpha_(const Image& model) const
+template <typename NodeType, typename DataType, typename RealType> inline
+typename MRF2D<NodeType, DataType, RealType>::const_reference
+MRF2D<NodeType, DataType, RealType>::operator()(std::size_t col, std::size_t row) const
 {
-    double sum = 0.0;
-
-    // Process rows excluding the last one. Exclusion is done inside the clique functions.
-    for (size_t row = 0; row < model.size(); ++row)
-    {
-        // Process a row till (last-1) pixel. See the note above.
-        for (size_t col = 0; col < model[row].size(); ++col)
-        {
-            sum += right_clique_(model, row, col);
-            sum += down_clique_(model, row, col);
-        }
-    }
-
-    return sum;
+    return configuration_(col, row);
 }
 
-// This function computes second item of energy which goes with coefficient "beta".
-// It squares the difference between pixel intensity on input image and on current
-// MRF model.
-template <typename ValType>
-double GibbsModel<ValType>::compute_beta_(const Image& model) const
+template <typename NodeType, typename DataType, typename RealType> inline
+typename MRF2D<NodeType, DataType, RealType>::reference
+MRF2D<NodeType, DataType, RealType>::operator()(std::size_t col, std::size_t row)
 {
-    // Check if the dimentions of observed image and MRF model are the same.
-    if ( (model.size() != observation_.size()) ||
-         (model[0].size() != observation_[0].size()) )
-    {
-        co::errprint(kAppName, "Input image and MRF model are of different sizes.");
-        return kError;
-    }
-
-    double sum = 0.0;
-
-    // Process pixel by pixel
-    for (size_t row = 0; row < observation_.size(); ++row)
-        for (size_t col = 0; col < observation_[row].size(); ++col)
-            sum += diff_clique_(model, observation_, row, col);
-
-    return sum;
+    return configuration_(col, row);
 }
 
-// Next five functions compute neighbouring cliques. First four (right, down, left, up)
-// count the difference of intensities of given and a neighbour pixel of an image.
-// Fifth one counts the difference of intensities of the same pixel on two different
-// images. It is supposed, that one image is the current state of MRF model and the other
-// one is an initial observation. All these functions do check border overrun.
-template <typename ValType> inline
-double GibbsModel<ValType>::right_clique_(const Image& model, size_t row, size_t col) const
-{
-    if (col != model[row].size() - 1)
-    {
-        return
-            clique_fun_(model, std::make_pair(row, col), std::make_pair(row, col + 1));
-    }
-    else
-        return 0.0;
-}
 
-template <typename ValType> inline
-double GibbsModel<ValType>::down_clique_(const Image& model, size_t row, size_t col) const
-{
-    if (row != model.size() - 1)
-    {
-        return
-            clique_fun_(model, std::make_pair(row, col), std::make_pair(row + 1, col));
-    }
-    else
-        return 0.0;
-}
-
-template <typename ValType> inline
-double GibbsModel<ValType>::left_clique_(const Image& model, size_t row, size_t col) const
-{
-    if (col != 0)
-    {
-        return
-            clique_fun_(model, std::make_pair(row, col), std::make_pair(row, col - 1));
-    }
-    else
-        return 0.0;
-}
-
-template <typename ValType> inline
-double GibbsModel<ValType>::up_clique_(const Image& model, size_t row, size_t col) const
-{
-    if (row != 0)
-    {
-        return
-            clique_fun_(model, std::make_pair(row, col), std::make_pair(row - 1, col));
-    }
-    else
-        return 0.0;
-}
-
-template <typename ValType> inline
-double GibbsModel<ValType>::diff_clique_(const Image& model, const Image& initial,
-                                         size_t row, size_t col) const
-{
-    // Either
-    //    pow2(val) or
-    //    abs(val) or
-    //    fi_gm(val).
-    //return
-    //    fi_gm(initial[row][col] - model[row][col]);
-
-    double retvalue = abs(initial[row][col] - model[row][col]);
-
-    return
-        (beta_ * retvalue);
-}
-
-template <typename ValType> inline
-double GibbsModel<ValType>::clique_fun_(const Image& image, co::Index ind1, co::Index ind2) const
+// Next four functions represent cliques and neighbourhood relations in the model.
+// They check for border overrun and call the associated clique function.
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::right_clique_(NodeType val,
+    std::size_t col, std::size_t row) const
 {
     return
-        (alpha_ * neighb_penalty(image, ind1, ind2) +
-         gamma_ * edge_penalty(image, ind1, ind2));
+        (col < configuration_.width() - 1) ? prior_fun_(val, col + 1, row) : RealType(0);
 }
 
-// Next function represents mathematical functionals applied to couplings in
-// the GibbsModel.
-template <typename ValType> inline
-double GibbsModel<ValType>::neighb_penalty(const Image& model, co::Index ind1, co::Index ind2) const
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::down_clique_(NodeType val,
+    std::size_t col, std::size_t row) const
 {
     return
-        pow2(diff(model, ind1, ind2));
+        (row < configuration_.height() - 1) ? prior_fun_(val, col, row + 1) : RealType(0);
 }
 
-template <typename ValType> inline
-double GibbsModel<ValType>::edge_penalty(const Image& model, co::Index ind1, co::Index ind2) const
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::left_clique_(NodeType val,
+    std::size_t col, std::size_t row) const
 {
     return
-        tau_threshold(diff(model, ind1, ind2), thres_border_);
+        (col > 0) ? prior_fun_(val, col - 1, row) : RealType(0);
 }
 
-// Determines a set of possible intensities for the underlying image.
-template <typename ValType>
-typename GibbsModel<ValType>::Pixels GibbsModel<ValType>::get_values() const
-{
-    Pixels retvalue;
-
-    int values_quantity = colours_;
-    int max_val = values_quantity - 1;
-
-    retvalue.reserve(values_quantity);
-    for (int i = 0; i < values_quantity; ++i)
-        retvalue.push_back(static_cast<ValType>(i) / static_cast<ValType>(max_val));
-
-    return retvalue;
-}
-
-template <typename ValType> inline
-ValType GibbsModel<ValType>::diff(const Image& image, co::Index ind1, co::Index ind2)
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::up_clique_(NodeType val,
+    std::size_t col, std::size_t row) const
 {
     return
-        (image[ind1.first][ind1.second] - image[ind2.first][ind2.second]);
+        (row > 0) ? prior_fun_(val, col, row - 1) : RealType(0);
 }
 
-template <typename ValType> inline
-double GibbsModel<ValType>::pow2(ValType val)
+// Computes prior energy for two nodes.
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::prior_fun_(NodeType val,
+    std::size_t neigh_col, std::size_t neigh_row) const
 {
-    return
-        pow(static_cast<double>(val), 2);
+    return prior_(val, configuration_(neigh_col, neigh_row));
 }
 
-template <typename ValType> inline
-ValType GibbsModel<ValType>::abs(ValType val)
+// Computes likelihood energy for the given node.
+template <typename NodeType, typename DataType, typename RealType> inline
+RealType MRF2D<NodeType, DataType, RealType>::likelihood_fun_(NodeType val,
+    std::size_t col, std::size_t row) const
 {
-    return
-        ::abs(static_cast<double>(val));
-}
-
-// Returns "(x^2) / (1+x^2)".
-template <typename ValType> inline
-double GibbsModel<ValType>::fi_gm(ValType val)
-{
-    return
-        (static_cast<double>(val * val) / static_cast<double>(1.0 + val * val));
-}
-
-// Returns "2ln(cosh(x))".
-template <typename ValType> inline
-double GibbsModel<ValType>::fi_gr(ValType val)
-{
-    return
-        2.0 * log(
-            (exp(static_cast<double>(val)) + exp(static_cast<double>(0.0 - val))) / 2.0);
-}
-
-// Returns "|x|*(1-psi(s,t)) + tau * psi(s,t)",
-// where "psi(s,t) = 1, if |x| > tau,
-//                   0, if |x| <= tau".
-template <typename ValType> inline
-double GibbsModel<ValType>::tau_threshold(ValType val, double tau)
-{
-    return std::min(abs(val), tau);
+    return likelihood_(val, observation_(col, row));
 }
 
 } // namespace bo
