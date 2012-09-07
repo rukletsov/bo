@@ -25,6 +25,7 @@ INCLUDE_DIRECTORIES (./include
 # For additional dependencies check the root CMakeLists.
 LINK_DIRECTORIES ($ENV{GTEST_ROOT}/stage/lib
                   ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
+                  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
 )
 
 # Compile the application.
@@ -41,7 +42,8 @@ TARGET_LINK_LIBRARIES (BoTest
 # Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
 IF (NOT MSVC)
     TARGET_LINK_LIBRARIES (BoTest
-                           boost_filesystem)
+                           boost_filesystem
+                           boost_system)
 ENDIF (NOT MSVC)
 
 # GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
