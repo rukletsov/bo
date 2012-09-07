@@ -29,7 +29,6 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/performance.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_math.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/raw_image_2d.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/bo/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/kdtree.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/blas.hpp
@@ -38,6 +37,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/linear_filtering_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mbutterfly_mesh_subdiv.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mesh_closest_face_sr.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/raw_image_2d_io.hpp
