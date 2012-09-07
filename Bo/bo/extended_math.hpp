@@ -52,6 +52,22 @@ T cube(const T& arg)
     return (arg * arg * arg);
 }
 
+// Returns "2 ln(cosh(t))".
+template <typename RealType> inline
+RealType fi_gr(RealType value)
+{
+    return
+        RealType(2) * log(exp(value) + exp(RealType(0) - value) / RealType(2));
+}
+
+// Returns "(t^2) / (1+t^2)".
+template <typename RealType> inline
+RealType fi_gm(RealType value)
+{
+    return
+        (val * val) / (RealType(1) + val * val);
+}
+
 } // namespace bo
 
 #endif // EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_
