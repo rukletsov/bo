@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_2d.hpp, v 0.0.2 2012.09.07
+  mrf_2d.hpp, v 0.0.3 2012.09.07
 
   Markov random field model for regular 2D lattice.
 
@@ -35,6 +35,7 @@
 #ifndef MRF_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
 #define MRF_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
 
+#include <cstddef>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
@@ -69,6 +70,9 @@ public:
 
     const_reference operator()(std::size_t col, std::size_t row) const;
     reference operator()(std::size_t col, std::size_t row);
+
+    std::size_t width() const;
+    std::size_t height() const;
 
 private:
     RealType right_clique_(NodeType val, std::size_t col, std::size_t row) const;
@@ -154,6 +158,18 @@ typename MRF2D<NodeType, DataType, RealType>::reference
 MRF2D<NodeType, DataType, RealType>::operator()(std::size_t col, std::size_t row)
 {
     return configuration_(col, row);
+}
+
+template <typename NodeType, typename DataType, typename RealType> inline
+std::size_t MRF2D<NodeType, DataType, RealType>::width()() const
+{
+    return configuration_.width();
+}
+
+template <typename NodeType, typename DataType, typename RealType> inline
+std::size_t MRF2D<NodeType, DataType, RealType>::height()() const
+{
+    return configuration_.height();
 }
 
 
