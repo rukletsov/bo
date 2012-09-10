@@ -57,7 +57,7 @@ template <typename RealType> inline
 RealType fi_gr(RealType value)
 {
     return
-        RealType(2) * log(exp(value) + exp(RealType(0) - value) / RealType(2));
+        RealType(2) * std::log(std::exp(value) + std::exp(RealType(0) - value) / RealType(2));
 }
 
 // Returns "(t^2) / (1+t^2)".
@@ -65,7 +65,7 @@ template <typename RealType> inline
 RealType fi_gm(RealType value)
 {
     return
-        (val * val) / (RealType(1) + val * val);
+        (value * value) / (RealType(1) + value * value);
 }
 
 } // namespace bo
