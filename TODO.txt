@@ -8,6 +8,11 @@ LIBRARY
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
 ? Add "real" type which abstracts floating point type.
+* Add tests for extended math functions.
+
+MRF class collection
+================================================================================
+* Provide checks for template types' signatures in clique functions.
 
 Mesh class
 ================================================================================
