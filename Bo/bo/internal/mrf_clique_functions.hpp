@@ -41,7 +41,8 @@
 
 namespace bo {
 
-// Standard smoothness prior energy on two-node clique.
+// Standard smoothness prior energy on two-node clique. Minus operator for NodeType
+// should return RealType.
 template <typename NodeType, typename RealType>
 struct SmoothnessPriorEnergy: public std::binary_function<NodeType, NodeType, RealType>
 {
@@ -53,18 +54,22 @@ struct SmoothnessPriorEnergy: public std::binary_function<NodeType, NodeType, Re
         return multiplier * square(arg1 - arg2) / RealType(2);
     }
 
+    virtual ~SmoothnessPriorEnergy()
+    { }
+
     // Weighting coefficient for the function response.
     RealType multiplier;
 };
 
 // Smoothness prior with additional edge preserving functional. Tau controls the
-// threshold penalty for node values' differency.
+// threshold penalty for node values' differency. Minus operator for NodeType should
+// return RealType.
 template <typename NodeType, typename RealType>
 struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, RealType>
 {
     SmoothingWithEdgesPriorEnergy(RealType response_weight, RealType edge_weight,
-        RealType tau):
-        multiplier(response_weight), edge_coefficient(edge_weight), thres_border(tau)
+        RealType tau): SmoothnessPriorEnergy(response_weight),
+        edge_coefficient(edge_weight), thres_border(tau)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2)
@@ -74,9 +79,50 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
                           edge_coefficient * std::min(std::abs(arg1 - arg2), thres_border));
     }
 
+    virtual ~SmoothingWithEdgesPriorEnergy()
+    { }
+
     // Weighting coefficient for edge preserving functional.
     RealType edge_coefficient;
     RealType thres_border;
+};
+
+// Minus operator for NodeType should accept DataType as a parameter and return RealType.
+template <typename DataType, typename NodeType, typename RealType>
+struct GaussianLikelihood: public std::binary_function<DataType, NodeType, RealType>
+{
+    GaussianLikelihood(RealType response_weight): multiplier(response_weight)
+    { }
+
+    RealType operator()(DataType observ_val, NodeType configur_val)
+    {
+        return
+            multiplier * square(configur_val - observ_val);
+    }
+
+    // Weighting coefficient for the function response.
+    RealType multiplier;
+};
+
+// NodeType should provide accessors to the parameters of Gamma distribution for the
+// corresponding configuration value (class label). This includes .k() and .theta()
+// for shape and scale respectively and .a() for the additional item, depending
+// only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
+template <typename DataType, typename NodeType, typename RealType>
+struct GammaLikelihood: public std::binary_function<DataType, NodeType, RealType>
+{
+    GammaLikelihood(RealType response_weight): multiplier(response_weight)
+    { }
+
+    RealType operator()(DataType observ_val, NodeType configur_val)
+    {
+        return
+            multiplier * ((configur_val.k() - 1) * std::log(observ_val) -
+                          observ_val / configur_val.theta() - configur_val.a());
+    }
+
+    // Weighting coefficient for the function response.
+    RealType multiplier;
 };
 
 } // namespace bo
