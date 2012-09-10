@@ -136,10 +136,8 @@ RealType MRF2D<NodeType, DataType, RealType>::compute_local_energy(NodeType val,
     RealType energy = data_clique_(val, col, row);
 
     // Compute prior energy of the given node given its neighbours.
-    energy += right_clique_(val, col, row);
-    energy += down_clique_(val, col, row);
-    energy += left_clique_(val, col, row);
-    energy += up_clique_(val, col, row);
+    energy += (right_clique_(val, col, row) + down_clique_(val, col, row) +
+               left_clique_(val, col, row) + up_clique_(val, col, row));
 
     return energy;
 }
