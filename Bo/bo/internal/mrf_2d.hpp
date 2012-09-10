@@ -40,13 +40,17 @@
 #include <stdexcept>
 #include <boost/random.hpp>
 #include <boost/assert.hpp>
+#include <boost/noncopyable.hpp>
 
 #include "bo/raw_image_2d.hpp"
 
 namespace bo {
 
+// A class representing a Markov random field on a regular 2D lattice. Operates on
+// random field configuration using given observation and clique functions. Only first
+// order (pairwise) neighbourhood is supproted. No copies of an instance are allowed.
 template <typename NodeType, typename DataType, typename RealType>
-class MRF2D
+class MRF2D: public boost::noncopyable
 {
 public:
     typedef NodeType& reference;
@@ -66,7 +70,7 @@ public:
     const_reference operator()(std::size_t col, std::size_t row) const;
     reference operator()(std::size_t col, std::size_t row);
 
-protected:
+private:
     RealType right_clique_(NodeType val, std::size_t col, std::size_t row) const;
     RealType down_clique_(NodeType val, std::size_t col, std::size_t row) const;
     RealType left_clique_(NodeType val, std::size_t col, std::size_t row) const;
@@ -80,10 +84,6 @@ private:
     DataLattice observation_;
     LikelihoodEnergy likelihood_;
     PriorEnergy prior_;
-
-    // Disallow copy and construct.
-    MRF2D(const MRF2D&);
-    MRF2D& operator=(const MRF2D&);
 };
 
 

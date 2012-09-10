@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.0.1 2012.09.07
+  mrf_clique_functions.hpp, v 0.0.3 2012.09.07
 
   Various likelihood and prior energy functions for MRF models.
 
