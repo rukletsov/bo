@@ -16,7 +16,6 @@
   and returns the precise closest face. 
   ATTENTION: The complexity of the algorithm grows with growth of the
   relation: (maximal shape radius) / (average shape radius).
-    
 
   Copyright (c) 2012
   Dzmitry Hlindzich <hlindzich@gmail.com>

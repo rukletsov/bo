@@ -37,6 +37,7 @@
 
 #include <iostream>
 #include <string>
+#include <boost/date_time.hpp>
 
 namespace bo {
 
@@ -45,6 +46,14 @@ void errprint(const std::string& app_name, const std::string& msg)
 {
     std::cout << "Error: " << msg << std::endl << std::endl
               << "Use \"" << app_name << " -h\" for help" << std::endl;
+}
+
+inline
+void logprint(const std::string& msg)
+{
+    std::cout << "[" << boost::posix_time::second_clock::local_time().time_of_day()
+              << "] " << msg << std::endl;
+    std::cout.flush();
 }
 
 } // namespace bo

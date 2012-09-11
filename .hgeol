@@ -8,6 +8,7 @@
 **.pl = native
 **.py = native
 **.txt = native
+**.ui = native
 
 .hgignore = native
 .hgtags = native
