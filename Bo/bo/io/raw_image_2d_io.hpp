@@ -72,7 +72,7 @@ namespace io {
 void BO_DECL save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
                                            const std::string& filename);
 
-// Convertion functions from and to OpenCV format are available on demand.
+// Helper functions for OpenCV library are available on demand.
 #ifdef BO_USE_OPENCV
 
 // Checks if the size of pixel type is the same as in cv::Mat instance.
@@ -94,51 +94,6 @@ inline
 int cv_wait_for_key(int msecs)
 {
     return cv::waitKey(msecs);
-}
-
-// Converts and normalizes to double a given cv::Mat image. If the supposed size
-// of pixel differs from real size in the given image, returns empty RawImage2D.
-template <typename ValType>
-bo::RawImage2D<ValType> raw_image_2d_from_cvmat<ValType>(const cv::Mat& image)
-{
-    if (is_bpps_equal_to<ValType>(image))
-    {
-        bo::RawImage2D<ValType> retvalue(image.cols, image.rows);
-
-        ValType factor = std::numeric_limits<ValType>::max();
-
-        for(int i = 0; i < image.rows; ++i)
-        {
-            for(int j = 0; j < image.cols; ++j)
-                retvalue(i, j) = static_cast<ValType>(image.at<ValType>(i, j)) /
-                                     static_cast<ValType>(factor);
-        }
-
-        return retvalue;
-    }
-    else
-        return bo::RawImage2D<ValType>;
-}
-
-// Converts current state to cv::Mat image. CV_8UC1 flag is used to create an image
-// with 1 byte per pixel intensities.
-template <typename ValType>
-cv::Mat RawImage<ValType>::to_cvmat() const
-{
-    cv::Mat retvalue(static_cast<int>(image_.size()),
-                     static_cast<int>(image_[0].size()),
-                     CV_8UC1);
-
-    boost::uint8_t factor = std::numeric_limits<boost::uint8_t>::max();
-
-    for(int i = 0; i < retvalue.rows; ++i)
-    {
-        for(int j = 0; j < retvalue.cols; ++j)
-            retvalue.at<boost::uint8_t>(i, j) = static_cast<boost::uint8_t>
-                                                    (image_[i][j] * factor);
-    }
-
-    return retvalue;
 }
 
 #endif
