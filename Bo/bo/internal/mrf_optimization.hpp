@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.0.1 2012.09.10
+  mrf_optimization.hpp, v 0.1.1 2012.09.11
 
   Various energy minimization algorithms for MRF models.
 
@@ -40,6 +40,7 @@
 #include <functional>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/random.hpp>
 
 #include "bo/internal/mrf_2d.hpp"
 
@@ -101,6 +102,34 @@ public:
     }
 
 private:
+    NodePossibleLabelsPtr values_;
+};
+
+// A class implementing Metropolis dynamics algorithm minimization algorithm.
+template <typename NodeType, typename DataType, typename RealType>
+class MD2D: boost::noncopyable
+{
+public:
+    typedef TypePossibleValues<NodeType> NodePossibleLabels;
+    typedef boost::scoped_ptr<NodePossibleLabels> NodePossibleLabelsPtr;
+    typedef boost::variate_generator<boost::mt19937&, boost::uniform_real<RealType> >
+        Generator;
+
+    MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta):
+        values_(possible_values), t_(temp), t_delta_(temp_delta),
+        rng_(boost::mt19937(static_cast<boost::uint32_t>(time(NULL))),
+            boost::uniform_real<RealType>(0, 1))
+    {    }
+
+    void next_iteration(MRF2D<NodeType, DataType, RealType>& mrf)
+    {
+
+    }
+
+private:
+    Generator rng_;
+    RealType t_;
+    RealType t_delta_;
     NodePossibleLabelsPtr values_;
 };
 

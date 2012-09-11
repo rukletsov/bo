@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.0.3 2012.09.07
+  mrf_clique_functions.hpp, v 0.1.0 2012.09.11
 
   Various likelihood and prior energy functions for MRF models.
 
@@ -74,9 +74,10 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
+        // Note that base class already multiplies in the response weight.
         return
-            multiplier * (SmoothnessPriorEnergy::operator ()(arg1, arg2) +
-                          edge_coefficient * std::min(std::abs(arg1 - arg2), thres_border));
+            (SmoothnessPriorEnergy::operator ()(arg1, arg2) +
+             multiplier * edge_coefficient * std::min(std::abs(arg1 - arg2), thres_border));
     }
 
     virtual ~SmoothingWithEdgesPriorEnergy()
