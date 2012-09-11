@@ -25,7 +25,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/vector.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/mesh.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/triangle.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/bo/errors.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/logging.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/performance.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_math.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/raw_image_2d.hpp

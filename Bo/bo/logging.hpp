@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  errors.hpp, v 1.0.0 2010.03.05
+  logging.hpp, v 1.0.3 2012.09.11
 
-  Error handling utilities. 
+  Routines for logging messages and errors.
 
-  Copyright (c) 2010
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -32,8 +32,8 @@
 
 *******************************************************************************/
 
-#ifndef ERRORS_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
-#define ERRORS_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
+#ifndef LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
+#define LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
 
 #include <iostream>
 #include <string>
@@ -58,4 +58,4 @@ void logprint(const std::string& msg)
 
 } // namespace bo
 
-#endif // ERRORS_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
+#endif // LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
