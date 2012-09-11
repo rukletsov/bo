@@ -44,12 +44,12 @@ namespace bo {
 // Standard smoothness prior energy on two-node clique. Minus operator for NodeType
 // should return RealType.
 template <typename NodeType, typename RealType>
-struct SmoothnessPriorEnergy: public std::binary_function<NodeType, NodeType, RealType>
+struct SmoothnessPriorEnergy
 {
     SmoothnessPriorEnergy(RealType response_weight): multiplier(response_weight)
     { }
 
-    virtual RealType operator()(NodeType arg1, NodeType arg2)
+    virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
         return multiplier * square(arg1 - arg2) / RealType(2);
     }
@@ -72,7 +72,7 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
         edge_coefficient(edge_weight), thres_border(tau)
     { }
 
-    virtual RealType operator()(NodeType arg1, NodeType arg2)
+    virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
         return
             multiplier * (SmoothnessPriorEnergy::operator ()(arg1, arg2) +
@@ -89,12 +89,12 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
 
 // Minus operator for NodeType should accept DataType as a parameter and return RealType.
 template <typename DataType, typename NodeType, typename RealType>
-struct GaussianLikelihood: public std::binary_function<DataType, NodeType, RealType>
+struct GaussianLikelihood
 {
     GaussianLikelihood(RealType response_weight): multiplier(response_weight)
     { }
 
-    RealType operator()(DataType observ_val, NodeType configur_val)
+    RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
             multiplier * square(configur_val - observ_val);
@@ -109,12 +109,12 @@ struct GaussianLikelihood: public std::binary_function<DataType, NodeType, RealT
 // for shape and scale respectively and .a() for the additional item, depending
 // only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
 template <typename DataType, typename NodeType, typename RealType>
-struct GammaLikelihood: public std::binary_function<DataType, NodeType, RealType>
+struct GammaLikelihood
 {
     GammaLikelihood(RealType response_weight): multiplier(response_weight)
     { }
 
-    RealType operator()(DataType observ_val, NodeType configur_val)
+    RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
             multiplier * ((configur_val.k() - 1) * std::log(observ_val) -

@@ -43,6 +43,8 @@
 
 #include "bo/internal/mrf_2d.hpp"
 
+namespace bo {
+
 // A class representing possible values for a given type. It can be used to reduce
 // the range of a built-in type or to specify the set of possible values for a
 // custom type. Method next() should always return a correct value (e.g. cyclically).
@@ -52,6 +54,8 @@ struct TypePossibleValues
     virtual void reset() = 0;
     virtual std::size_t count() = 0;
     virtual NodeType next() = 0;
+    virtual ~TypePossibleValues()
+    { }
 };
 
 // A class impementing iterated conditional modes minimization algorithm. Takes
@@ -67,21 +71,23 @@ public:
     ICM2D(NodePossibleLabels* possible_values): values_(possible_values)
     { }
 
-    void next_iteration(const MRF2D<NodeType, DataType, RealType>& mrf)
+    void next_iteration(MRF2D<NodeType, DataType, RealType>& mrf)
     {
         for (std::size_t col = 0; col < mrf.width(); ++col) {
             for (std::size_t row = 0; row < mrf.height(); ++row) {
                 RealType min_energy = std::numeric_limits<RealType>::max();
-                NodeType min_value;
+                NodeType min_value = values_->next();
 
                 // Reset the possible labels so we can iterate through the whole
                 // variety only once.
-                values_.reset();
-                std::size_t count = values_.count();
+                values_->reset();
+                std::size_t count = values_->count();
+
                 while (count--)
                 {
-                    NodeType value = values_.next();
-                    RealType energy = mrf.compute_local_energy(value, row, col);
+                    NodeType value = values_->next();
+                    RealType energy = mrf.compute_local_energy(value, col, row);
+
                     if (energy < min_energy)
                     {
                         min_energy = energy;
@@ -90,12 +96,14 @@ public:
                 }
 
                 // Apply the "best" value.
-                mrf(col, row) = value;
+                mrf(col, row) = min_value;
         }   }
     }
 
 private:
     NodePossibleLabelsPtr values_;
 };
+
+} // namespace bo
 
 #endif // MRF_OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_

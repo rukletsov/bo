@@ -37,11 +37,11 @@
 
 #include <cstddef>
 #include <cmath>
-#include <functional>
 #include <stdexcept>
 #include <boost/random.hpp>
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/function.hpp>
 
 #include "bo/raw_image_2d.hpp"
 
@@ -59,8 +59,8 @@ public:
 
     typedef RawImage2D<NodeType> RandomLattice;
     typedef RawImage2D<DataType> DataLattice;
-    typedef std::binary_function<DataType, NodeType, RealType> LikelihoodEnergy;
-    typedef std::binary_function<NodeType, NodeType, RealType> PriorEnergy;
+    typedef boost::function<RealType (DataType, NodeType)> LikelihoodEnergy;
+    typedef boost::function<RealType (NodeType, NodeType)> PriorEnergy;
 
     MRF2D(const RandomLattice& initial_configuration, const DataLattice& observation,
           LikelihoodEnergy likelihood, PriorEnergy prior);
@@ -93,8 +93,7 @@ private:
 
 template <typename NodeType, typename DataType, typename RealType>
 MRF2D<NodeType, DataType, RealType>::MRF2D(const RandomLattice& initial_configuration,
-                                           const DataLattice& observation,
-    LikelihoodEnergy likelihood, PriorEnergy prior):
+    const DataLattice& observation, LikelihoodEnergy likelihood, PriorEnergy prior):
     configuration_(initial_configuration),
     observation_(observation),
     likelihood_(likelihood),
@@ -122,7 +121,7 @@ RealType MRF2D<NodeType, DataType, RealType>::compute_full_energy() const
     for (std::size_t col = 0; col < configuration_.width(); ++col) {
         for (std::size_t row = 0; row < configuration_.height(); ++row) {
             NodeType value = configuration_(col, row);
-            energy += (data_clique_(value, col, row) +
+            energy += (likelihood_fun_(value, col, row) +
                        right_clique_(value, col, row) +
                        down_clique_(value, col, row));
     }   }
@@ -137,7 +136,7 @@ RealType MRF2D<NodeType, DataType, RealType>::compute_local_energy(NodeType val,
     std::size_t col, std::size_t row) const
 {
     // Compute likelihood energy for the given value at the given position.
-    RealType energy = data_clique_(val, col, row);
+    RealType energy = likelihood_fun_(val, col, row);
 
     // Compute prior energy of the given node given its neighbours.
     energy += (right_clique_(val, col, row) + down_clique_(val, col, row) +
@@ -161,13 +160,13 @@ MRF2D<NodeType, DataType, RealType>::operator()(std::size_t col, std::size_t row
 }
 
 template <typename NodeType, typename DataType, typename RealType> inline
-std::size_t MRF2D<NodeType, DataType, RealType>::width()() const
+std::size_t MRF2D<NodeType, DataType, RealType>::width() const
 {
     return configuration_.width();
 }
 
 template <typename NodeType, typename DataType, typename RealType> inline
-std::size_t MRF2D<NodeType, DataType, RealType>::height()() const
+std::size_t MRF2D<NodeType, DataType, RealType>::height() const
 {
     return configuration_.height();
 }
