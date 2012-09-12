@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.1.2 2012.09.12
+  mrf_optimization.hpp, v 0.1.3 2012.09.12
 
   Various energy minimization algorithms for MRF models.
 
@@ -49,17 +49,35 @@
 
 namespace bo {
 
-// A class impementing iterated conditional modes minimization algorithm. Takes
-// (and captures sole ownership over it) an istance of TypePossibleValues<NodeType>
-// to sanple possible values during optimization.
+// A basic class for MRF minimization algorithms. Takes (and captures sole ownership
+// over it) an istance of TypePossibleValues<NodeType> to let its descendants sample
+// possible values of type NodeType during optimization.
 template <typename NodeType, typename DataType, typename RealType>
-class ICM2D: boost::noncopyable
+class MRF2DOptimizer: boost::noncopyable
 {
 public:
     typedef TypePossibleValues<NodeType> NodePossibleLabels;
     typedef boost::scoped_ptr<NodePossibleLabels> NodePossibleLabelsPtr;
 
-    ICM2D(NodePossibleLabels* possible_values): values_(possible_values)
+    MRF2DOptimizer(NodePossibleLabels* possible_values): values_(possible_values)
+    { }
+
+    virtual void next_iteration(MRF2D<NodeType, DataType, RealType>&) = 0;
+
+    virtual ~MRF2DOptimizer()
+    { }
+
+protected:
+    NodePossibleLabelsPtr values_;
+};
+
+// A class impementing iterated conditional modes minimization algorithm. As its
+// parent, captures sole ownership over an istance of TypePossibleValues<NodeType>.
+template <typename NodeType, typename DataType, typename RealType>
+class ICM2D: MRF2DOptimizer<NodeType, DataType, RealType>
+{
+public:
+    ICM2D(NodePossibleLabels* possible_values): MRF2DOptimizer(possible_values)
     { }
 
     void next_iteration(MRF2D<NodeType, DataType, RealType>& mrf)
@@ -90,24 +108,22 @@ public:
                 mrf(col, row) = min_value;
         }   }
     }
-
-private:
-    NodePossibleLabelsPtr values_;
 };
 
-// A class implementing Metropolis dynamics algorithm minimization algorithm.
+// A class implementing Metropolis dynamics algorithm minimization algorithm. As its
+// parent, captures sole ownership over an istance of TypePossibleValues<NodeType>.
+// Additionally takes initial temperature and decreasing multiplier for it, and
+// precomputed probability for MMD modification if this modification was requested.
 template <typename NodeType, typename DataType, typename RealType>
-class MD2D: boost::noncopyable
+class MD2D: MRF2DOptimizer<NodeType, DataType, RealType>
 {
 public:
-    typedef TypePossibleValues<NodeType> NodePossibleLabels;
-    typedef boost::scoped_ptr<NodePossibleLabels> NodePossibleLabelsPtr;
     typedef boost::uniform_real<RealType> RealDistribution;
     typedef boost::variate_generator<boost::mt19937, RealDistribution> Generator;
 
     MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta,
          bool is_modified, RealType mmd_probability):
-        values_(possible_values), t_(temp), t_delta_(temp_delta),
+        MRF2DOptimizer(possible_values), t_(temp), t_delta_(temp_delta),
         is_modified_(is_modified), mmd_probab_(std::log(mmd_probability)),
         rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))), RealDistribution(0, 1))
     { }
@@ -148,7 +164,6 @@ private:
     RealType t_delta_;
     bool is_modified_;
     RealType mmd_probab_;
-    NodePossibleLabelsPtr values_;
 };
 
 } // namespace bo
