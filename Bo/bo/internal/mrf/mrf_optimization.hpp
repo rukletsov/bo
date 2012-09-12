@@ -44,8 +44,8 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/random.hpp>
 
-#include "bo/internal/mrf_2d.hpp"
-#include "bo/internal/mrf_node_types.hpp"
+#include "bo/internal/mrf/mrf_2d.hpp"
+#include "bo/internal/mrf/mrf_node_types.hpp"
 
 namespace bo {
 
