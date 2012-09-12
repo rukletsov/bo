@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.3 2012.09.11
+  logging.hpp, v 1.0.4 2012.09.12
 
   Routines for logging messages and errors.
 
@@ -37,7 +37,13 @@
 
 #include <iostream>
 #include <string>
-#include <boost/date_time.hpp>
+// Suppress C4127 warning under MSVC while including boost date_time headers.
+#ifdef _MSC_VER
+#   pragma warning (push)
+#   pragma warning (disable:4127)
+#   include <boost/date_time.hpp>
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 namespace bo {
 

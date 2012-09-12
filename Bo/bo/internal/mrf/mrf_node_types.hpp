@@ -63,16 +63,16 @@ public:
     typedef boost::uniform_int<std::size_t> UintDistribution;
     typedef boost::variate_generator<boost::mt19937, UintDistribution> Generator;
 
-    RealFiniteSet(std::size_t colour_depth):
+    RealFiniteSet(std::size_t classes_count):
         rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))),
-             UintDistribution(0, colour_depth - 1))
+             UintDistribution(0, classes_count - 1))
     {
         // Construct a collection of possible values.
-        values_.reserve(colour_depth);
-        NodeType maxval = static_cast<NodeType>(colour_depth - 1);
+        values_.reserve(classes_count);
+        NodeType maxval = static_cast<NodeType>(classes_count - 1);
 
-        while (colour_depth-- > 0)
-            values_.push_back(static_cast<NodeType>(colour_depth) / maxval);
+        while (classes_count-- > 0)
+            values_.push_back(static_cast<NodeType>(classes_count) / maxval);
 
         // Reset iterator state.
         reset();
