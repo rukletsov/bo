@@ -37,6 +37,7 @@
 
 #include "bo/internal/mrf_2d.hpp"
 #include "bo/internal/mrf_clique_functions.hpp"
+#include "bo/internal/mrf_node_types.hpp"
 #include "bo/internal/mrf_optimization.hpp"
 
 #endif // MRF_HPP_D6DF51CD_3A03_4E43_8CB7_9BA9D6667F08_

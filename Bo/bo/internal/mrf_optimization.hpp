@@ -45,22 +45,9 @@
 #include <boost/random.hpp>
 
 #include "bo/internal/mrf_2d.hpp"
+#include "bo/internal/mrf_node_types.hpp"
 
 namespace bo {
-
-// A class representing possible values for a given type. It can be used to reduce
-// the range of a built-in type or to specify the set of possible values for a
-// custom type. Method next() should always return a correct value (e.g. cyclically).
-template<typename NodeType>
-struct TypePossibleValues
-{
-    virtual void reset() = 0;
-    virtual std::size_t count() = 0;
-    virtual NodeType next() = 0;
-    virtual NodeType random() = 0;
-    virtual ~TypePossibleValues()
-    { }
-};
 
 // A class impementing iterated conditional modes minimization algorithm. Takes
 // (and captures sole ownership over it) an istance of TypePossibleValues<NodeType>
