@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.1.1 2012.09.11
+  mrf_optimization.hpp, v 0.1.2 2012.09.12
 
   Various energy minimization algorithms for MRF models.
 
@@ -36,6 +36,8 @@
 #define MRF_OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
 
 #include <cstddef>
+#include <cmath>
+#include <ctime>
 #include <limits>
 #include <functional>
 #include <boost/noncopyable.hpp>
@@ -55,6 +57,7 @@ struct TypePossibleValues
     virtual void reset() = 0;
     virtual std::size_t count() = 0;
     virtual NodeType next() = 0;
+    virtual NodeType random() = 0;
     virtual ~TypePossibleValues()
     { }
 };
@@ -112,24 +115,52 @@ class MD2D: boost::noncopyable
 public:
     typedef TypePossibleValues<NodeType> NodePossibleLabels;
     typedef boost::scoped_ptr<NodePossibleLabels> NodePossibleLabelsPtr;
-    typedef boost::variate_generator<boost::mt19937&, boost::uniform_real<RealType> >
-        Generator;
+    typedef boost::uniform_real<RealType> RealDistribution;
+    typedef boost::variate_generator<boost::mt19937, RealDistribution> Generator;
 
-    MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta):
+    MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta,
+         bool is_modified, RealType mmd_probability):
         values_(possible_values), t_(temp), t_delta_(temp_delta),
-        rng_(boost::mt19937(static_cast<boost::uint32_t>(time(NULL))),
-            boost::uniform_real<RealType>(0, 1))
-    {    }
+        is_modified_(is_modified), mmd_probab_(std::log(mmd_probability)),
+        rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))), RealDistribution(0, 1))
+    { }
 
     void next_iteration(MRF2D<NodeType, DataType, RealType>& mrf)
     {
+        // If a modified version of MD algo (MMD) is used, then the decision probability
+        // is fixed and obtained as a parameter. Otherwise, it is generated every time.
+        RealType decision_probab = mmd_probab_;
 
+        // Update current temperature. See algorithm description for details.
+        t_ *= t_delta_;
+
+        // Do an inner iteration pixelwise.
+        for (std::size_t col = 0; col < mrf.width(); ++col) {
+            for (std::size_t row = 0; row < mrf.height(); ++row) {
+                // Randomly generate a new state for the current pixel.
+                NodeType old_value = mrf(col, row);
+                NodeType new_value = values_->random();
+
+                // if classical version is used, generate the decision probability.
+                if (!is_modified_)
+                    decision_probab = std::log(rng_());
+
+                // Compute local energy and accept it or reject.
+                if (decision_probab <=
+                    (mrf.compute_local_energy(old_value, col, row) -
+                     mrf.compute_local_energy(new_value, col, row)) / t_)
+                {   // Accept new state.
+                    mrf(col, row) = new_value;
+                }
+        }   }
     }
 
 private:
     Generator rng_;
     RealType t_;
     RealType t_delta_;
+    bool is_modified_;
+    RealType mmd_probab_;
     NodePossibleLabelsPtr values_;
 };
 
