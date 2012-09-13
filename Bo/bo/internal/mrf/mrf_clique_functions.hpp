@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.1.2 2012.09.13
+  mrf_clique_functions.hpp, v 0.1.3 2012.09.13
 
   Various likelihood and prior energy functions for MRF models.
 
@@ -61,9 +61,9 @@ protected:
 // Standard smoothness prior energy on two-node clique. Minus operator for NodeType
 // should return RealType.
 template <typename NodeType, typename RealType>
-struct SmoothnessPriorEnergy: public GenericPrior<NodeType, RealType>
+struct SmoothnessPrior: public GenericPrior<NodeType, RealType>
 {
-    SmoothnessPriorEnergy(RealType response_weight): GenericPrior(response_weight)
+    SmoothnessPrior(RealType response_weight): GenericPrior(response_weight)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
@@ -71,7 +71,7 @@ struct SmoothnessPriorEnergy: public GenericPrior<NodeType, RealType>
         return multiplier * square(arg1 - arg2) / RealType(2);
     }
 
-    virtual ~SmoothnessPriorEnergy()
+    virtual ~SmoothnessPrior()
     { }
 };
 
@@ -79,10 +79,10 @@ struct SmoothnessPriorEnergy: public GenericPrior<NodeType, RealType>
 // threshold penalty for node values' differency. Minus operator for NodeType should
 // return RealType.
 template <typename NodeType, typename RealType>
-struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, RealType>
+struct SmoothingWithEdgesPrior: public SmoothnessPrior<NodeType, RealType>
 {
-    SmoothingWithEdgesPriorEnergy(RealType response_weight, RealType edge_weight,
-        RealType tau): SmoothnessPriorEnergy(response_weight),
+    SmoothingWithEdgesPrior(RealType response_weight, RealType edge_weight,
+        RealType tau): SmoothnessPrior(response_weight),
         edge_coefficient(edge_weight), thres_border(tau)
     { }
 
@@ -90,11 +90,11 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
     {
         // Note that base class already multiplies in the response weight.
         return
-            (SmoothnessPriorEnergy::operator ()(arg1, arg2) +
+            (SmoothnessPrior::operator ()(arg1, arg2) +
              multiplier * edge_coefficient * std::min(std::abs(arg1 - arg2), thres_border));
     }
 
-    virtual ~SmoothingWithEdgesPriorEnergy()
+    virtual ~SmoothingWithEdgesPrior()
     { }
 
 protected:
