@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.1.0 2012.09.11
+  mrf_clique_functions.hpp, v 0.1.1 2012.09.13
 
   Various likelihood and prior energy functions for MRF models.
 
@@ -88,11 +88,29 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
     RealType thres_border;
 };
 
+
+// Base class for likelihood functions.
+template <typename DataType, typename NodeType, typename RealType>
+struct GenericLikelihood
+{
+    GenericLikelihood(RealType response_weight): multiplier(response_weight)
+    { }
+
+    virtual RealType operator()(DataType observ_val, NodeType configur_val) const = 0;
+
+    virtual ~GenericLikelihood()
+    { }
+
+protected:
+    // Weighting coefficient for the function response.
+    RealType multiplier;
+};
+
 // Minus operator for NodeType should accept DataType as a parameter and return RealType.
 template <typename DataType, typename NodeType, typename RealType>
-struct GaussianLikelihood
+struct GaussianLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
 {
-    GaussianLikelihood(RealType response_weight): multiplier(response_weight)
+    GaussianLikelihood(RealType response_weight): GenericLikelihood(response_weight)
     { }
 
     RealType operator()(DataType observ_val, NodeType configur_val) const
@@ -100,9 +118,6 @@ struct GaussianLikelihood
         return
             multiplier * square(configur_val - observ_val);
     }
-
-    // Weighting coefficient for the function response.
-    RealType multiplier;
 };
 
 // NodeType should provide accessors to the parameters of Gamma distribution for the
@@ -110,9 +125,9 @@ struct GaussianLikelihood
 // for shape and scale respectively and .a() for the additional item, depending
 // only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
 template <typename DataType, typename NodeType, typename RealType>
-struct GammaLikelihood
+struct GammaLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
 {
-    GammaLikelihood(RealType response_weight): multiplier(response_weight)
+    GammaLikelihood(RealType response_weight): GenericLikelihood(response_weight)
     { }
 
     RealType operator()(DataType observ_val, NodeType configur_val) const
@@ -121,9 +136,6 @@ struct GammaLikelihood
             multiplier * ((configur_val.k() - 1) * std::log(observ_val) -
                           observ_val / configur_val.theta() - configur_val.a());
     }
-
-    // Weighting coefficient for the function response.
-    RealType multiplier;
 };
 
 } // namespace bo
