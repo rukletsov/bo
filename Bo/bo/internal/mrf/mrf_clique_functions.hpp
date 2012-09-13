@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.1.1 2012.09.13
+  mrf_clique_functions.hpp, v 0.1.2 2012.09.13
 
   Various likelihood and prior energy functions for MRF models.
 
@@ -41,12 +41,29 @@
 
 namespace bo {
 
+// Base class for prior energy functions.
+template <typename NodeType, typename RealType>
+struct GenericPrior
+{
+    GenericPrior(RealType response_weight): multiplier(response_weight)
+    { }
+
+    virtual RealType operator()(NodeType arg1, NodeType arg2) const = 0;
+
+    virtual ~GenericPrior()
+    { }
+
+protected:
+    // Weighting coefficient for the function response.
+    RealType multiplier;
+};
+
 // Standard smoothness prior energy on two-node clique. Minus operator for NodeType
 // should return RealType.
 template <typename NodeType, typename RealType>
-struct SmoothnessPriorEnergy
+struct SmoothnessPriorEnergy: public GenericPrior<NodeType, RealType>
 {
-    SmoothnessPriorEnergy(RealType response_weight): multiplier(response_weight)
+    SmoothnessPriorEnergy(RealType response_weight): GenericPrior(response_weight)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
@@ -56,9 +73,6 @@ struct SmoothnessPriorEnergy
 
     virtual ~SmoothnessPriorEnergy()
     { }
-
-    // Weighting coefficient for the function response.
-    RealType multiplier;
 };
 
 // Smoothness prior with additional edge preserving functional. Tau controls the
@@ -83,13 +97,14 @@ struct SmoothingWithEdgesPriorEnergy: public SmoothnessPriorEnergy<NodeType, Rea
     virtual ~SmoothingWithEdgesPriorEnergy()
     { }
 
+protected:
     // Weighting coefficient for edge preserving functional.
     RealType edge_coefficient;
     RealType thres_border;
 };
 
 
-// Base class for likelihood functions.
+// Base class for likelihood energy functions.
 template <typename DataType, typename NodeType, typename RealType>
 struct GenericLikelihood
 {
