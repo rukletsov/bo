@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_type_values.hpp, v 0.2.2 2012.09.14
+  mrf_type_values.hpp, v 0.2.3 2012.09.14
 
   Collection of classes specifying and providing access to possible values for
   types used as MRF nodes.
@@ -42,55 +42,10 @@
 #include <boost/cstdint.hpp>
 #include <boost/random.hpp>
 #include <boost/math/special_functions/gamma.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/operators.hpp>
-#include <boost/shared_ptr.hpp>
+
+#include "bo/internal/mrf/mrf_node_types.hpp"
 
 namespace bo {
-
-template <typename RealType>
-class GammaDistrClasses: boost::equality_comparable1<GammaDistrClasses<RealType> >
-{
-public:
-    // Class label and a set of Gamma distribution parameters (k, theta, a), where
-    // a = -ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
-    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
-    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
-    typedef boost::shared_ptr<ClassParams> ClassParamsPtr;
-
-public:
-    GammaDistrClasses(ClassParamsPtr class_params): class_params_(class_params)
-    { }
-
-    //  Generated copy c-tor, d-tor and assignment operator are fine.
-
-    // Accessors for class label and class parameters.
-    int label() const
-    { return class_params_->get<0>(); }
-
-    RealType k() const
-    { return class_params_->get<1>(); }
-
-    RealType theta() const
-    { return class_params_->get<2>(); }
-
-    RealType a() const
-    { return class_params_->get<3>(); }
-
-    // Returns the difference between class labels. This may or may not tell us how
-    // "far" the classes are using some metric. The meaning of this operation depends
-    // on the actual design on classes and their parameters.
-    RealType operator-(const GammaDistrClasses<RealType>& other) const
-    { return RealType(label() - other.label()); }
-
-    // Classes are equal when their parameters are equal.
-    bool operator==(const GammaDistrClasses<RealType>& other) const
-    { return (class_params_ == other.class_params_); }
-
-protected:
-    ClassParamsPtr class_params_;
-};
-
 
 // An abstract class representing possible values for a given type. Descendant of
 // this class can be used to reduce the range of a built-in type or to specify the
