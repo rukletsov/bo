@@ -58,7 +58,6 @@ std::string str(const std::vector<T>& obj)
 
     // Print last element (if any) separately in order to avoid last comma and spaces.
     (obj.empty() ? (oss << " )") : (oss << boost::format("%1%)") % obj.back())) << std::endl
-//    oss << (obj.empty() ? " )" : (boost::format("%1%)") % obj.back())) << std::endl
         << boost::format("end of object %1$#x.") % &obj << std::endl;
 
     return oss.str();
