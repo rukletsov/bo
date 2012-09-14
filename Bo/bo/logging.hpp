@@ -1,9 +1,9 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.5 2012.09.14
+  logging.hpp, v 1.0.4 2012.09.12
 
-  Routines for logging classes, messages and errors.
+  Routines for logging messages and errors.
 
   Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
