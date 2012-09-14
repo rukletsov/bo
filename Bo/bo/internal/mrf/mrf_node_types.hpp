@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.1.2 2012.09.12
+  mrf_node_types.hpp, v 0.2.1 2012.09.14
 
   Basic node type (class lables) and several ready-to-use types for MRF models.
 
@@ -36,52 +36,89 @@
 #define MRF_NODE_TYPES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
 
 #include <ctime>
+#include <cmath>
 #include <vector>
 #include <boost/cstdint.hpp>
 #include <boost/random.hpp>
+#include <boost/math/special_functions/gamma.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/operators.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace bo {
 
-// A class representing possible values for a given type. It can be used to reduce
-// the range of a built-in type or to specify the set of possible values for a
-// custom type. Method next() should always return a correct value (e.g. cyclically).
+template <typename RealType>
+class GammaDistrClasses: boost::equality_comparable1<GammaDistrClasses<RealType> >
+{
+public:
+    // Class label and a set of Gamma distribution parameters (k, theta, a), where
+    // a = -ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
+    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
+    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
+    typedef boost::shared_ptr<ClassParams> ClassParamsPtr;
+
+public:
+    GammaDistrClasses(ClassParamsPtr class_params): class_params_(class_params)
+    { }
+
+    //  Generated copy c-tor, d-tor and assignment operator are fine.
+
+    // Accessors for class label and class parameters.
+    int label() const
+    { return class_params_->get<0>(); }
+
+    RealType k() const
+    { return class_params_->get<1>(); }
+
+    RealType theta() const
+    { return class_params_->get<2>(); }
+
+    RealType a() const
+    { return class_params_->get<3>(); }
+
+    // Returns the difference between class labels. This may or may not tell us how
+    // "far" the classes are using some metric. The meaning of this operation depends
+    // on the actual design on classes and their parameters.
+    RealType operator-(const GammaDistrClasses<RealType>& other) const
+    { return RealType(label() - other.label()); }
+
+    // Classes are equal when their parameters are equal.
+    bool operator==(const GammaDistrClasses<RealType>& other) const
+    { return (class_params_ == other.class_params_); }
+
+protected:
+    ClassParamsPtr class_params_;
+};
+
+
+// An abstract class representing possible values for a given type. Descendant of
+// this class can be used to reduce the range of a built-in type or to specify the
+// set of possible values for a custom type. Method next() should always return a
+// correct value (e.g. cyclically).
 template<typename NodeType>
-struct TypePossibleValues
+struct TypeValues
 {
     virtual void reset() = 0;
-    virtual std::size_t count() = 0;
+    virtual std::size_t count() const = 0;
     virtual NodeType next() = 0;
     virtual NodeType random() = 0;
-    virtual ~TypePossibleValues()
+    virtual ~TypeValues()
     { }
 };
 
-template <typename NodeType>
-class RealFiniteSet: public TypePossibleValues<NodeType>
+// An abstract class representing a finite set of values with cyclic iterator and
+// predefined random numbers generator. The class is almost ready to use, except
+// actual values of NodeType, which must be added in descendant's c-tor.
+template<typename NodeType>
+struct FiniteSetValues: public TypeValues<NodeType>
 {
-public:
     typedef boost::uniform_int<std::size_t> UintDistribution;
     typedef boost::variate_generator<boost::mt19937, UintDistribution> Generator;
-
-    RealFiniteSet(std::size_t classes_count):
-        rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))),
-             UintDistribution(0, classes_count - 1))
-    {
-        // Construct a collection of possible values.
-        values_.reserve(classes_count);
-        NodeType maxval = static_cast<NodeType>(classes_count - 1);
-
-        while (classes_count-- > 0)
-            values_.push_back(static_cast<NodeType>(classes_count) / maxval);
-
-        // Reset iterator state.
-        reset();
-    }
 
     virtual void reset()
     { next_index_ = 0; }
 
-    virtual std::size_t count()
+    virtual std::size_t count() const
     { return values_.size(); }
 
     // Cyclic iterator over possible values.
@@ -91,13 +128,84 @@ public:
     virtual NodeType random()
     { return values_[rng_()]; }
 
-    virtual ~RealFiniteSet()
+    virtual ~FiniteSetValues()
     { }
 
-private:
+protected:
+    FiniteSetValues(std::size_t classes_count):
+        rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))),
+             UintDistribution(0, classes_count - 1))
+    {
+        // Reset iterator state and reserve memory for values.
+        reset();
+        values_.reserve(classes_count);
+    }
+
+protected:
     std::vector<NodeType> values_;
     std::size_t next_index_;
     Generator rng_;
+};
+
+// A class restricting [0, 1] real domain to a certain quantity of equally distant
+// values from [0, 1].
+template <typename NodeType>
+struct RealFiniteSetValues: public FiniteSetValues<NodeType>
+{
+    // Constructs a set of possible values.
+    RealFiniteSetValues(std::size_t classes_count): FiniteSetValues(classes_count)
+    {
+        NodeType maxval = static_cast<NodeType>(classes_count - 1);
+        while (classes_count-- > 0)
+            values_.push_back(static_cast<NodeType>(classes_count) / maxval);
+    }
+
+    virtual ~RealFiniteSetValues()
+    { }
+};
+
+// A class representing a finite set of GammaDistrClasses values. Each value gets
+// a class label from [0, classes_count-1] and a corresponding set of class
+// parameters (see GammaDistrClasses for more information).
+template <typename RealType>
+struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealType> >
+{
+    typedef GammaDistrClasses<RealType> NodeType;
+    typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
+    typedef typename NodeType::ClassParams ClassParams;
+    typedef typename NodeType::GammaParamsPair GammaParamsPair;
+    typedef typename std::vector<GammaParamsPair> GammaParams;
+
+    // Constructs a set of possible values with default parameters.
+    GammaDistrClassesValues(std::size_t classes_count): FiniteSetValues(classes_count)
+    {
+        while (classes_count-- > 0)
+        {
+            ClassParamsPtr class_params(new ClassParams(classes_count));
+            values_.push_back(NodeType(class_params));
+        }
+
+    }
+
+    // Constructs a set of possible values from a collection of Gamma distribution
+    // parameters (k, theta).
+    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues(classes_count)
+    {
+        std::size_t classes_count = gamma_params.size();
+        for (GammaParams::const_iterator it = gamma_params.begin();
+             it != gamma_params.end(); ++it)
+        {
+            --classes_count;
+            RealType k = it->get<0>();
+            RealType theta = it->get<1>();
+            RealType a = k * std::log(theta) - boost::math::lgamma(k);
+            ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
+            values_.push_back(NodeType(class_params));
+        }
+    }
+
+    virtual ~GammaDistrClassesValues()
+    { }
 };
 
 } // namespace bo

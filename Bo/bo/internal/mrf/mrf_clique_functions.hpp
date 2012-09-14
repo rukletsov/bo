@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_clique_functions.hpp, v 0.1.3 2012.09.13
+  mrf_clique_functions.hpp, v 0.1.4 2012.09.14
 
   Various likelihood and prior energy functions for MRF models.
 
@@ -138,7 +138,7 @@ struct GaussianLikelihood: public GenericLikelihood<DataType, NodeType, RealType
 // NodeType should provide accessors to the parameters of Gamma distribution for the
 // corresponding configuration value (class label). This includes .k() and .theta()
 // for shape and scale respectively and .a() for the additional item, depending
-// only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
+// only on k and theta (and therefore precomputed): -ln(G(k)) + k ln(theta).
 template <typename DataType, typename NodeType, typename RealType>
 struct GammaLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
 {
@@ -149,7 +149,7 @@ struct GammaLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
     {
         return
             multiplier * ((configur_val.k() - 1) * std::log(observ_val) -
-                          observ_val / configur_val.theta() - configur_val.a());
+                          observ_val / configur_val.theta() + configur_val.a());
     }
 };
 

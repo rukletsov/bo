@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.1.3 2012.09.12
+  mrf_optimization.hpp, v 0.1.4 2012.09.14
 
   Various energy minimization algorithms for MRF models.
 
@@ -56,7 +56,7 @@ template <typename NodeType, typename DataType, typename RealType>
 class MRF2DOptimizer: boost::noncopyable
 {
 public:
-    typedef TypePossibleValues<NodeType> NodePossibleLabels;
+    typedef TypeValues<NodeType> NodePossibleLabels;
     typedef boost::scoped_ptr<NodePossibleLabels> NodePossibleLabelsPtr;
 
     MRF2DOptimizer(NodePossibleLabels* possible_values): values_(possible_values)
