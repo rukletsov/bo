@@ -93,7 +93,7 @@ bo::RawImage2D<ImValType> linear_filter_2d(const RawImage2D<ImValType> image,
     // Kernel's dimensions should be odd.
     if ((kernel_width % 2 == 0) || (kernel_height % 2 == 0))
     {
-        BOOST_ASSERT(false && "Kernel's dimensions are not odd.");
+        BOOST_ASSERT_MSG(false, "Kernel's dimensions are not odd.");
         throw std::logic_error("Linear filter cannot be applied with the given"
                                "kernel because kernel's dimensions are not odd.");
     }

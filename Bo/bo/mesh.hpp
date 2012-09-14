@@ -263,9 +263,9 @@ std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
     // Check for post-conditions. These include sizes of connectivity structures
     // and vertex container. If any of the condition is not satisfied consider
     // this as an internal bug. Therefore no need to throw.
-    BOOST_ASSERT(((neighbours_.size() == vertices_.size()) ||
-                  (adjacent_faces_.size() == vertices_.size())) &&
-                 "Vertex connectivity structures are of different sizes.");
+    BOOST_ASSERT_MSG(((neighbours_.size() == vertices_.size()) ||
+                      (adjacent_faces_.size() == vertices_.size())),
+                     "Vertex connectivity structures are of different sizes.");
 
     return new_vertex_index;
 }
@@ -278,7 +278,7 @@ std::size_t Mesh<T>::add_face(const Face& face)
         (vertices_.size() <= face.B()) ||
         (vertices_.size() <= face.C()))
     {
-        BOOST_ASSERT(false && "Bad vertex indices in the face.");
+        BOOST_ASSERT_MSG(false, "Bad vertex indices in the face.");
         throw std::out_of_range("Face cannot be added to the mesh because it "
                                 "references non-existent vertices.");
     }
@@ -303,8 +303,8 @@ std::size_t Mesh<T>::add_face(const Face& face)
     // Check for post-conditions. These include sizes of connectivity structures
     // and face container. If any of the condition is not satisfied consider this
     // as an internal bug. Therefore no need to throw.
-    BOOST_ASSERT((face_normals_.size() == faces_.size()) &&
-                 "Vertex connectivity structures are of different sizes.");
+    BOOST_ASSERT_MSG((face_normals_.size() == faces_.size()),
+                     "Vertex connectivity structures are of different sizes.");
 
     return new_face_index;
 }
@@ -443,7 +443,7 @@ bool Mesh<T>::add_edge_(std::size_t vertex1, std::size_t vertex2)
     bool exists1 = neighbours_[vertex1].insert(vertex2).second;
     bool exists2 = neighbours_[vertex2].insert(vertex1).second;
 
-    BOOST_ASSERT(!(exists1 ^ exists2) && "Neighbouring relation is not mutual.");
+    BOOST_ASSERT_MSG(!(exists1 ^ exists2), "Neighbouring relation is not mutual.");
 
     return (exists1 && exists2);
 }
@@ -483,8 +483,7 @@ typename Mesh<T>::Vertex Mesh<T>::closest_point_on_face(std::size_t face_index,
 {
     // No need to check if the given face exists in the mesh since the function is
     // private and a debug assertion would suffice.
-    BOOST_ASSERT((faces_.size() > face_index) &&
-                 "Specified face doesn't exist.");
+    BOOST_ASSERT_MSG((faces_.size() > face_index), "Specified face doesn't exist.");
 
     Vertex closest_point = methods::find_closest_point_on_triangle(P,
         vertices_[faces_[face_index].A()], vertices_[faces_[face_index].B()],
