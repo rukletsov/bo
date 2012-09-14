@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  extended_std.hpp, v 1.0.0 2012.09.14
+  extended_std.hpp, v 1.0.1 2012.09.14
 
   Extension of the STL I/O streaming.
 
@@ -53,11 +53,12 @@ std::string str(const std::vector<T>& obj)
     oss << boost::format("std::vector of size %1%, object %2$#x: ")
             % size % &obj << std::endl << "    (";
 
-    for (std::size_t i = 0; i < size - 1; ++i)
+    for (std::size_t i = 0; i + 1 < size; ++i)
         oss << boost::format("%1%, %|4t|") % obj[i];
 
-    // Print last element separately in order to avoid last comma and spaces.
-    oss << boost::format("%1%)") % obj[size - 1] << std::endl
+    // Print last element (if any) separately in order to avoid last comma and spaces.
+    (obj.empty() ? (oss << " )") : (oss << boost::format("%1%)") % obj.back())) << std::endl
+//    oss << (obj.empty() ? " )" : (boost::format("%1%)") % obj.back())) << std::endl
         << boost::format("end of object %1$#x.") % &obj << std::endl;
 
     return oss.str();

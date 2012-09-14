@@ -28,6 +28,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/logging.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/performance.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_math.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_std.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/raw_image_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/mrf.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
