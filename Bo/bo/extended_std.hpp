@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.5 2012.09.14
+  extended_std.hpp, v 1.0.0 2012.09.14
 
-  Routines for logging classes, messages and errors.
+  Extension of the STL I/O streaming.
 
-  Copyright (c) 2010 - 2012
+  Copyright (c) 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -32,36 +32,50 @@
 
 *******************************************************************************/
 
-#ifndef LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
-#define LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
+#ifndef EXTENDED_STD_HPP_3122E01D_B758_4638_911C_3F2EF44FC364_
+#define EXTENDED_STD_HPP_3122E01D_B758_4638_911C_3F2EF44FC364_
 
 #include <iostream>
+#include <sstream>
 #include <string>
-// Suppress C4127 warning under MSVC while including boost date_time headers.
-#ifdef _MSC_VER
-#   pragma warning (push)
-#   pragma warning (disable:4127)
-#   include <boost/date_time.hpp>
-#   pragma warning(pop)
-#endif // _MSC_VER
+#include <vector>
+#include <boost/format.hpp>
 
 namespace bo {
 
-inline
-void errprint(const std::string& app_name, const std::string& msg)
+// Streams std::vector<T> contents into a std::string using T::operator<<.
+template <typename T>
+std::string str(const std::vector<T>& obj)
 {
-    std::cout << "Error: " << msg << std::endl << std::endl
-              << "Use \"" << app_name << " -h\" for help" << std::endl;
-}
+    std::stringstream oss;
 
-inline
-void logprint(const std::string& msg)
-{
-    std::cout << "[" << boost::posix_time::second_clock::local_time().time_of_day()
-              << "] " << msg << std::endl;
-    std::cout.flush();
+    std::size_t size = obj.size();
+    oss << boost::format("std::vector of size %1%, object %2$#x: ")
+            % size % &obj << std::endl << "    (";
+
+    for (std::size_t i = 0; i < size - 1; ++i)
+        oss << boost::format("%1%, %|4t|") % obj[i];
+
+    // Print last element separately in order to avoid last comma and spaces.
+    oss << boost::format("%1%)") % obj[size - 1] << std::endl
+        << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return oss.str();
 }
 
 } // namespace bo
 
-#endif // LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
+
+namespace std {
+
+// Implementation of stream operator<< for std::vector<T>. T must support operator<<.
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& obj)
+{
+    os << bo::str(obj);
+    return os;
+}
+
+} // namespace std
+
+#endif // EXTENDED_STD_HPP_3122E01D_B758_4638_911C_3F2EF44FC364_
