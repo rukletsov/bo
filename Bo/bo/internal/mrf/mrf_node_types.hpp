@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.2.4 2012.09.14
+  mrf_node_types.hpp, v 0.2.5 2012.09.14
 
   Non-trivial node types (class lables) for MRF models.
 
@@ -92,12 +92,6 @@ public:
 
     RealType mean() const
     { return (k() * theta()); }
-
-    // Returns the difference between class labels. This may or may not tell us how
-    // "far" the classes are using some metric. The meaning of this operation depends
-    // on the actual design on classes and their parameters.
-    RealType operator-(const GammaDistrClasses<RealType>& other) const
-    { return RealType(label() - other.label()); }
 };
 
 } // namespace bo
