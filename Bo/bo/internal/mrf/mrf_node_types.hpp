@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.2.2 2012.09.14
+  mrf_node_types.hpp, v 0.2.3 2012.09.14
 
   Non-trivial node types (class lables) for MRF models.
 
@@ -69,6 +69,9 @@ public:
 
     RealType a() const
     { return class_params_->get<3>(); }
+
+    RealType mean() const
+    { return (k() * theta()); }
 
     // Returns the difference between class labels. This may or may not tell us how
     // "far" the classes are using some metric. The meaning of this operation depends
