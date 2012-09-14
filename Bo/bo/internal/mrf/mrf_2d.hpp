@@ -32,8 +32,8 @@
 
 *******************************************************************************/
 
-#ifndef MRF_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
-#define MRF_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
+#ifndef MRF_2D_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
+#define MRF_2D_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
 
 #include <cstddef>
 #include <cmath>
@@ -224,4 +224,4 @@ RealType MRF2D<NodeType, DataType, RealType>::likelihood_fun_(NodeType val,
 
 } // namespace bo
 
-#endif // MRF_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_
+#endif // MRF_2D_HPP_1140ED81_1E3E_4AEB_AFBB_6CA70FE3EF9B_

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_type_values.hpp, v 0.2.3 2012.09.14
+  type_values.hpp, v 0.2.3 2012.09.14
 
   Collection of classes specifying and providing access to possible values for
   types used as MRF nodes.
@@ -33,8 +33,8 @@
 
 *******************************************************************************/
 
-#ifndef MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
-#define MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#ifndef TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#define TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
 
 #include <ctime>
 #include <cmath>
@@ -43,7 +43,7 @@
 #include <boost/random.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
-#include "bo/internal/mrf/mrf_node_types.hpp"
+#include "bo/internal/mrf/node_types.hpp"
 
 namespace bo {
 
@@ -166,4 +166,4 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
 
 } // namespace bo
 
-#endif // MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#endif // TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.1.5 2012.09.14
+  optimization.hpp, v 0.1.5 2012.09.14
 
   Various energy minimization algorithms for MRF models.
 
@@ -32,8 +32,8 @@
 
 *******************************************************************************/
 
-#ifndef MRF_OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
-#define MRF_OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
+#ifndef OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
+#define OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
 
 #include <cstddef>
 #include <cmath>
@@ -45,7 +45,7 @@
 #include <boost/random.hpp>
 
 #include "bo/internal/mrf/mrf_2d.hpp"
-#include "bo/internal/mrf/mrf_type_values.hpp"
+#include "bo/internal/mrf/type_values.hpp"
 
 namespace bo {
 
@@ -168,4 +168,4 @@ private:
 
 } // namespace bo
 
-#endif // MRF_OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_
+#endif // OPTIMIZATION_HPP_40C9F0DC_7E18_4316_A594_63DAFD793CCA_

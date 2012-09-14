@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.2.5 2012.09.14
+  node_types.hpp, v 0.2.5 2012.09.14
 
   Non-trivial node types (class lables) for MRF models.
 
@@ -32,8 +32,8 @@
 
 *******************************************************************************/
 
-#ifndef MRF_NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
-#define MRF_NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
+#ifndef NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
+#define NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/operators.hpp>
@@ -96,4 +96,4 @@ public:
 
 } // namespace bo
 
-#endif // MRF_NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
+#endif // NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
