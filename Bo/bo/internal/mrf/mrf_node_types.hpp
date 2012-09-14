@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.2.3 2012.09.14
+  mrf_node_types.hpp, v 0.2.4 2012.09.14
 
   Non-trivial node types (class lables) for MRF models.
 
@@ -41,21 +41,41 @@
 
 namespace bo {
 
-template <typename RealType>
-class GammaDistrClasses: boost::equality_comparable1<GammaDistrClasses<RealType> >
+template <typename P>
+class ParametricNodeType: boost::equality_comparable1<ParametricNodeType<P> >
 {
 public:
-    // Class label and a set of Gamma distribution parameters (k, theta, a), where
-    // a = -ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
-    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
-    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
-    typedef boost::shared_ptr<ClassParams> ClassParamsPtr;
+    typedef boost::shared_ptr<P> ClassParamsPtr;
 
-public:
-    GammaDistrClasses(ClassParamsPtr class_params): class_params_(class_params)
+    ParametricNodeType(ClassParamsPtr class_params): class_params_(class_params)
     { }
 
-    //  Generated copy c-tor, d-tor and assignment operator are fine.
+    //  Generated copy c-tor and assignment operator are fine.
+
+    virtual ~ParametricNodeType()
+    { }
+
+    // Classes are equal when their parameters are equal.
+    virtual bool operator==(const ParametricNodeType<P>& other) const
+    { return (class_params_ == other.class_params_); }
+
+protected:
+    ClassParamsPtr class_params_;
+};
+
+// A class representing a value (class label) with associated Gamma distribution
+// parameters. Parameters structure is represented as a tuple with 4 elements:
+// class label and a set of Gamma distribution parameters (k, theta, a), where
+// a = -ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
+template <typename RealType>
+class GammaDistrClasses: ParametricNodeType<boost::tuples::tuple<int, RealType, RealType, RealType> >
+{
+public:
+    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
+
+public:
+    GammaDistrClasses(ClassParamsPtr class_params): ParametricNodeType(class_params)
+    { }
 
     // Accessors for class label and class parameters.
     int label() const
@@ -78,13 +98,6 @@ public:
     // on the actual design on classes and their parameters.
     RealType operator-(const GammaDistrClasses<RealType>& other) const
     { return RealType(label() - other.label()); }
-
-    // Classes are equal when their parameters are equal.
-    bool operator==(const GammaDistrClasses<RealType>& other) const
-    { return (class_params_ == other.class_params_); }
-
-protected:
-    ClassParamsPtr class_params_;
 };
 
 } // namespace bo
