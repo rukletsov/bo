@@ -1,9 +1,9 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.4 2012.09.12
+  logging.hpp, v 1.0.5 2012.09.12
 
-  Routines for logging messages and errors.
+  Routines for logging classes, messages and errors.
 
   Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
@@ -36,7 +36,10 @@
 #define LOGGING_HPP_39EEE9C8_E33D_4FF4_9D06_6672AAF8B295_
 
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
+#include <boost/format.hpp>
 // Suppress C4127 warning under MSVC while including boost date_time headers.
 #ifdef _MSC_VER
 #   pragma warning (push)
@@ -60,6 +63,26 @@ void logprint(const std::string& msg)
     std::cout << "[" << boost::posix_time::second_clock::local_time().time_of_day()
               << "] " << msg << std::endl;
     std::cout.flush();
+}
+
+// Streams std::vector<T> contents into a std::string using T::operator<<.
+template <typename T>
+std::string str(const std::vector<T>& obj)
+{
+    std::stringstream oss;
+
+    std::size_t size = obj.size();
+    oss << boost::format("std::vector of size %1%, object %2$#x: ")
+            % size % &obj << std::endl << "    (";
+
+    for (std::size_t i = 0; i < size - 1; ++i)
+        oss << boost::format("%1%, %|4t|") % obj[i];
+
+    // Print last element separately in order to avoid last comma and spaces.
+    oss << boost::format("%1%)") % obj[size - 1] << std::endl
+        << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return oss.str();
 }
 
 } // namespace bo
