@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf.hpp, v 1.0.2 2012.09.14
+  mrf.hpp, v 1.0.3 2012.09.14
 
   A collection of classes and helpers for defining MRFs.
 
@@ -38,7 +38,8 @@
 #include "bo/internal/mrf/mrf_2d.hpp"
 #include "bo/internal/mrf/mrf_node_types.hpp"
 #include "bo/internal/mrf/mrf_type_values.hpp"
-#include "bo/internal/mrf/mrf_clique_functions.hpp"
+#include "bo/internal/mrf/likelihood_functions.hpp"
+#include "bo/internal/mrf/prior_functions.hpp"
 #include "bo/internal/mrf/mrf_optimization.hpp"
 
 #endif // MRF_HPP_D6DF51CD_3A03_4E43_8CB7_9BA9D6667F08_

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_optimization.hpp, v 0.1.4 2012.09.14
+  mrf_optimization.hpp, v 0.1.5 2012.09.14
 
   Various energy minimization algorithms for MRF models.
 
@@ -45,7 +45,7 @@
 #include <boost/random.hpp>
 
 #include "bo/internal/mrf/mrf_2d.hpp"
-#include "bo/internal/mrf/mrf_node_types.hpp"
+#include "bo/internal/mrf/mrf_type_values.hpp"
 
 namespace bo {
 
