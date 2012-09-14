@@ -41,7 +41,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_clique_functions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_optimization.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_node_types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_type_values.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/raw_image_2d_io.hpp

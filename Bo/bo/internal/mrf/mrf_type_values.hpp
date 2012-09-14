@@ -1,9 +1,10 @@
 
 /******************************************************************************
 
-  mrf_node_types.hpp, v 0.2.1 2012.09.14
+  mrf_type_values.hpp, v 0.2.2 2012.09.14
 
-  Basic node type (class lables) and several ready-to-use types for MRF models.
+  Collection of classes specifying and providing access to possible values for
+  types used as MRF nodes.
 
   Copyright (c) 2012
   Alexander Rukletsov <rukletsov@gmail.com>
@@ -32,8 +33,8 @@
 
 *******************************************************************************/
 
-#ifndef MRF_NODE_TYPES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
-#define MRF_NODE_TYPES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#ifndef MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#define MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
 
 #include <ctime>
 #include <cmath>
@@ -210,4 +211,4 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
 
 } // namespace bo
 
-#endif // MRF_NODE_TYPES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#endif // MRF_TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
