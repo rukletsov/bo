@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.2 2012.09.15
+  transformation_3d.hpp, v 0.0.3 2012.09.15
 
   3D space transformations.
 
@@ -87,13 +87,13 @@ std::ostream& operator<<(std::ostream& os, const Transformation3D<RealType>& obj
 {
     // Print full vertex info.
     os << boost::format("Transformation3D object %1$#x, %2% bytes: ") % &obj % sizeof(obj)
-       << std::endl << boost::format("    (%1% %|23t|%2% %|41t|%3% %|59t|%4%")
+       << std::endl << boost::format("    %1% %|22t|%2% %|40t|%3% %|58t|%4%")
           % obj.matrix_(0, 0) % obj.matrix_(0, 1) % obj.matrix_(0, 2) % obj.matrix_(0, 3)
-       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+       << std::endl << boost::format("    %1% %|22t|%2% %|40t|%3% %|58t|%4%")
           % obj.matrix_(1, 0) % obj.matrix_(1, 1) % obj.matrix_(1, 2) % obj.matrix_(1, 3)
-       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+       << std::endl << boost::format("    %1% %|22t|%2% %|40t|%3% %|58t|%4%")
           % obj.matrix_(2, 0) % obj.matrix_(2, 1) % obj.matrix_(2, 2) % obj.matrix_(2, 3)
-       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+       << std::endl << boost::format("    %1% %|22t|%2% %|40t|%3% %|58t|%4%")
           % obj.matrix_(3, 0) % obj.matrix_(3, 1) % obj.matrix_(3, 2) % obj.matrix_(3, 3)
        << std::endl << boost::format("end of object %1$#x.") % &obj << std::endl;
 
