@@ -36,6 +36,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/blas.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/d25_active_contours.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/3d_distances.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/icp_3d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/linear_filtering_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mbutterfly_mesh_subdiv.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mesh_closest_face_sr.hpp
