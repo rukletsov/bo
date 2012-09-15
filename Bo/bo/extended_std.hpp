@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  extended_std.hpp, v 1.0.1 2012.09.14
+  extended_std.hpp, v 1.0.2 2012.09.15
 
   Extension of the STL I/O streaming.
 
@@ -48,17 +48,7 @@ template <typename T>
 std::string str(const std::vector<T>& obj)
 {
     std::stringstream oss;
-
-    std::size_t size = obj.size();
-    oss << boost::format("std::vector of size %1%, object %2$#x: ")
-            % size % &obj << std::endl << "    (";
-
-    for (std::size_t i = 0; i + 1 < size; ++i)
-        oss << boost::format("%1%, %|4t|") % obj[i];
-
-    // Print last element (if any) separately in order to avoid last comma and spaces.
-    (obj.empty() ? (oss << " )") : (oss << boost::format("%1%)") % obj.back())) << std::endl
-        << boost::format("end of object %1$#x.") % &obj << std::endl;
+    oss << obj;
 
     return oss.str();
 }
@@ -72,7 +62,17 @@ namespace std {
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& obj)
 {
-    os << bo::str(obj);
+    std::size_t size = obj.size();
+    os << boost::format("std::vector of size %1%, object %2$#x: ")
+            % size % &obj << std::endl << "    (";
+
+    for (std::size_t i = 0; i + 1 < size; ++i)
+        os << boost::format("%1%, %|4t|") % obj[i];
+
+    // Print last element (if any) separately in order to avoid last comma and spaces.
+    (obj.empty() ? (os << " )") : (os << boost::format("%1%)") % obj.back())) << std::endl
+        << boost::format("end of object %1$#x.") % &obj << std::endl;
+
     return os;
 }
 
