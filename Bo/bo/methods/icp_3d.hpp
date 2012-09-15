@@ -45,6 +45,7 @@
 #include <boost/function.hpp>
 
 #include "bo/vector.hpp"
+#include "bo/blas/blas.hpp"
 
 namespace bo {
 namespace methods {
@@ -64,7 +65,6 @@ public:
     typedef std::vector<Correspondence> Correspondences;
     typedef boost::shared_ptr<Correspondences> CorrespondencesPtr;
     typedef boost::function<RealType (Point3D, Point3D)> DistanceFunction;
-    typedef boost::array<boost::array<RealType, 4> > Matrix4x4;
 
 public:
     ICP3D(const PointCloud& source, PointCloudPtr target, DistanceFunction dist_fun,
@@ -78,8 +78,9 @@ public:
 private:
     void overlay_();
     Point3D centroid_(PointCloud* cloud) const;
-    Matrix4x4 cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
-        Point3D centroid1, Point3D centroid2, Correspondences* corresp) const;
+    matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+        const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const;
+    RealType distance_(PointCloud* cloud1, PointCloud* cloud2, Correspondences* corresp) const;
 
 private:
     PointCloudPtr target_cloud_;
@@ -90,11 +91,11 @@ private:
     Transformation3D current_trans_;
 };
 
-
 template <typename RealType>
 ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
     DistanceFunction dist_fun, bool is_preprocess):
-    current_cloud_(source), target_cloud(target), dist_fun_(dist_fun)
+    current_cloud_(source), target_cloud(target), dist_fun_(dist_fun), 
+    current_trans_()
 {
     // Cache centroid for the target point cloud.
     target_centroid_ = centroid_(target);
@@ -110,11 +111,74 @@ ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
 template <typename RealType>
 RealType ICP3D<RealType>::next()
 {
-    RealType error(0);
+    Point3D current_centroid = centroid_(current_cloud_);
 
-    // TODO: implement ICP iteration here.
+    matrix<RealType> Spx = cross_covariance_(current_cloud_, target_cloud_, current_centroid,
+        target_centroid_, current_corresp_);
 
-    return error;
+    matrix<RealType> SpxT = trans(Spx);
+
+    // Create the asymmetrical matrix.
+    matrix<RealType> Apx = Spx - SpxT;
+
+    // Calculate the matrix trace.
+    RealType traceSpx = Spx(0, 0) + Spx(1, 1) + Spx(2, 2);
+
+    matrix<RealType> Bpx = Spx + SpxT + traceSpx * identity_matrix<RealType>(3);
+
+    // Create the 4x4 matrix.
+    matrix<RealType> Qpx(4, 4);
+    
+    // Fill in the matrix.
+    // Block 1.
+    Qpx(0, 0) = traceSpx;
+    // Block 2.
+    Qpx(0, 1) = Apx(1, 2); 
+    Qpx(0, 2) = Apx(2, 0);
+    Qpx(0, 3) = Apx(0, 1);
+    // Block 3.
+    Qpx(1, 0) = Apx(1, 2); 
+    Qpx(2, 0) = Apx(2, 0);
+    Qpx(3, 0) = Apx(0, 1);
+    // Block 4.
+    Qpx(1, 1) = Bpx(0, 0);
+    Qpx(1, 2) = Bpx(0, 1);
+    Qpx(1, 3) = Bpx(0, 2);
+    Qpx(2, 1) = Bpx(1, 0);
+    Qpx(2, 2) = Bpx(1, 1);
+    Qpx(2, 3) = Bpx(1, 2);
+    Qpx(3, 1) = Bpx(2, 0);
+    Qpx(3, 2) = Bpx(2, 1);
+    Qpx(3, 3) = Bpx(2, 2);
+
+    eigen_analysis(Qpx);
+
+    // Quaternion that defines the optimal rotation.
+    Vector<RealType, 4> quaternion;
+    quaternion[0] = Qpx(3, 0);
+    quaternion[1] = Qpx(3, 1);
+    quaternion[2] = Qpx(3, 2);
+    quaternion[3] = Qpx(3, 3);
+    Vector<RealType, 3> t(0);
+
+    // Optimal translation. 
+    Point3D translation = target_centroid_ - Transformation3D(quaternion, t) * current_centroid;
+
+    // Create the optimal transformation.
+    Transformation3D optimal_trans(quaternion, translation);
+
+    // Update the current transformation.
+    current_trans_ = optimal_trans * current_trans_;
+
+    // Update the current point cloud.
+    PointCloud::iterator it = current_cloud_.begin();
+    while (it != current_cloud_.end())
+    {
+        *it = current_trans_ * (*it);
+        ++it;
+    }
+
+    return distance_(current_cloud_, target_cloud_, current_corresp_);
 }
 
 template <typename RealType>
@@ -144,14 +208,79 @@ void ICP3D<RealType>::overlay_()
 template <typename RealType>
 typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) const
 {
-    // TODO: return centroid for a given point cloud.
+    Point3D mass_center(0);
+    
+    PointCloud::const_iterator it = cloud->begin();
+    
+    while (it != cloud->end())
+    {
+        mass_center += *it;    
+        ++it;
+    }
+
+    BOOST_ASSERT(cloud->size() != 0);
+
+    mass_center /= cloud->size();
+
+    return mass_center;
 }
 
 template <typename RealType>
-typename ICP3D<RealType>::Matrix4x4 ICP3D<RealType>::cross_covariance_(PointCloud* cloud1,
-    PointCloud* cloud2, Point3D centroid1, Point3D centroid2, Correspondences* corresp) const
+matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+    const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const
 {
-    // TODO: return a 4x4 cross-covariance matrix for given point clouds.
+    matrix<RealType> m(3, 3) = zero_matrix<RealType>(3, 3);
+    matrix<RealType> p(3, 1);
+    matrix<RealType> x(1, 3);   
+
+    Correspondences::const_iterator it = corresp->begin();
+
+    // Calculate cross-covariance.
+    while (it != corresp->end())
+    {       
+        Point3D a = cloud1->at(it->first);
+        Point3D b = cloud2->at(it->second);
+
+        p(0, 0) = a[0] - centroid1[0];
+        p(1, 0) = a[1] - centroid1[1];
+        p(2, 0) = a[2] - centroid1[2];
+
+        x(0, 0) = b[0] - centroid2[0];
+        x(0, 1) = b[1] - centroid2[1];
+        x(0, 2) = b[2] - centroid2[2];
+
+        m = m + prod(p, x);
+        
+        ++it;
+    }
+
+    BOOST_ASSERT(corresp->size() != 0);
+
+    m = m / corresp->size();
+
+    return m;
+}
+
+template <typename RealType>
+RealType bo::methods::ICP3D<RealType>::distance_( PointCloud* cloud1, PointCloud* cloud2, 
+    Correspondences* corresp ) const
+{
+    RealType sum(0);
+
+    Correspondences::const_iterator it = corresp->begin();
+
+    // Calculate the integral distance.
+    while (it != corresp->end())
+    {       
+        Point3D a = cloud1->at(it->first);
+        Point3D b = cloud2->at(it->second);
+
+        sum += dist_fun_(a, b);
+
+        ++it;
+    }
+
+    return sum;
 }
 
 } // namespace methods
