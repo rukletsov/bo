@@ -1,12 +1,12 @@
 
 /******************************************************************************
 
-  3d_distances.hpp, v 1.0.1 2011.07.06
+  distances_3d.hpp, v 1.0.2 2012.09.15
 
   Methods and algorithms for calculating distances between varios objects in
   a 3D-space.
 
-  Copyright (c) 2011
+  Copyright (c) 2011, 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -33,8 +33,8 @@
 
 *******************************************************************************/
 
-#ifndef THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
-#define THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
+#ifndef DISTANCES_3D_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
+#define DISTANCES_3D_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 
 #include "bo/vector.hpp"
 
@@ -301,4 +301,4 @@ bo::Vector<T, 3> find_closest_point_on_triangle(const bo::Vector<T, 3>& P,
 } // namespace methods
 } // namespace bo
 
-#endif // THREE_D_DISTANCES_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
+#endif // DISTANCES_3D_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_

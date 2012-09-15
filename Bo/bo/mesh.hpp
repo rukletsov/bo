@@ -49,7 +49,7 @@
 
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
-#include "bo/methods/3d_distances.hpp"
+#include "bo/methods/distances_3d.hpp"
 
 namespace bo {
 
