@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.1 2012.09.15
+  transformation_3d.hpp, v 0.0.2 2012.09.15
 
   3D space transformations.
 
@@ -34,6 +34,8 @@
 
 #ifndef TRANSFORMATION_3D_HPP_23877F3F_5EB9_4221_A422_C239EC9AA5D6_
 #define TRANSFORMATION_3D_HPP_23877F3F_5EB9_4221_A422_C239EC9AA5D6_
+
+#include <iostream>
 
 #include <bo/vector.hpp>
 #include <bo/extended_math.hpp>
@@ -70,10 +72,33 @@ public:
     // Resets current transformation to identity.
     void reset();
 
+    // Allow stream operator<< access Transformation3D members.
+    template <typename V>
+    friend std::ostream& operator<<(std::ostream& os, const Transformation3D<V>& obj);
+
 private:
     matrix<RealType> matrix_;
 };
 
+
+// Prints formatted transformation to the given stream.
+template <typename RealType>
+std::ostream& operator<<(std::ostream& os, const Transformation3D<RealType>& obj)
+{
+    // Print full vertex info.
+    os << boost::format("Transformation3D object %1$#x, %2% bytes: ") % &obj % sizeof(obj)
+       << std::endl << boost::format("    (%1% %|23t|%2% %|41t|%3% %|59t|%4%")
+          % obj.matrix_(0, 0) % obj.matrix_(0, 1) % obj.matrix_(0, 2) % obj.matrix_(0, 3)
+       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+          % obj.matrix_(1, 0) % obj.matrix_(1, 1) % obj.matrix_(1, 2) % obj.matrix_(1, 3)
+       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+          % obj.matrix_(2, 0) % obj.matrix_(2, 1) % obj.matrix_(2, 2) % obj.matrix_(2, 3)
+       << std::endl << boost::format("     %1% %|23t|%2% %|41t|%3% %|59t|%4%")
+          % obj.matrix_(3, 0) % obj.matrix_(3, 1) % obj.matrix_(3, 2) % obj.matrix_(3, 3)
+       << std::endl << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return os;
+}
 
 template <typename RealType> inline
 Transformation3D<RealType>::Transformation3D()
@@ -119,8 +144,19 @@ template <typename RealType> inline
 typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operator*(
     Point3D point) const
 {
+    // Convert Point3D to boost BLAS vector. Add forth 1 component.
+    bounded_vector<RealType, 4> source;
+    source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
+
+    // Perfrom multiplication.
+    bounded_vector<RealType, 4> result = prod(matrix_, source);
+
+    // Convert back from boost BLAS vector to Point3D. Ignore last 1.
+    Point3D retvalue;
+    retvalue[0] = result(0); retvalue[1] = result(1); retvalue[2] = result(2);
+
     return
-        prod(matrix_, point);
+        retvalue;
 }
 
 template <typename RealType> inline
