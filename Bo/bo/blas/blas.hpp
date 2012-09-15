@@ -386,7 +386,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
         e[l] = T(0);
     }
 
-    // Sort
+    // Sort.
     for (int i = 0; i < n - 1; ++i)
     {
         int k = i;
@@ -408,7 +408,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
 
         for (int j = 0; j < n; ++j)
         {
-            p = A(j, i);;
+            p = A(j, i);
             A(j, i) = A(j, k);
             A(j, k) = p;
         }
