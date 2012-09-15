@@ -30,6 +30,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_math.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/extended_std.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/raw_image_2d.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/transformation_3d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/mrf.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/kdtree.hpp
