@@ -37,6 +37,7 @@
 #define DISTANCES_3D_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 
 #include "bo/vector.hpp"
+#include "bo/extended_math.hpp"
 
 namespace bo {
 namespace methods {
@@ -222,13 +223,25 @@ void region4_helper(double& s, double& t, const T& a, const T& c, const T& d, co
 } // namespace detail
 
 
-// Computes the distance between two given points. Returns the euclidean norm of
-// the difference between two points.
+// Computes the euclidean distance between two given points in arbitrary space.
+// Points may be of integer type, however the result is always double.
 template <typename T, std::size_t N>
-double euclidean_distance(const bo::Vector<T, N>& point1,
+double euclidean_distance_d(const bo::Vector<T, N>& point1,
                           const bo::Vector<T, N>& point2)
 {
     double distance = (point1 - point2).eucl_norm();
+    return distance;
+}
+
+// Computes the euclidean distance between two given points in 3D space. Points are
+// supposed to be of some real type.
+template <typename RealType>
+RealType euclidean_distance(const bo::Vector<RealType, 3>& point1,
+                            const bo::Vector<RealType, 3>& point2)
+{
+    RealType distance = std::sqrt(square(point1.x() - point2.x()) +
+                                  square(point1.y() - point2.y()) +
+                                  square(point1.z() - point2.z()));
     return distance;
 }
 

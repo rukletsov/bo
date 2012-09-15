@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.3.1 2012.03.27
+  mesh.hpp, v 1.3.2 2012.09.16
 
   Triangular mesh class.
 
@@ -388,7 +388,7 @@ template <typename T>
 double Mesh<T>::distance(const Vertex& point) const
 {
     return
-        methods::euclidean_distance(get_closest_point(point), point);
+        methods::euclidean_distance_d(get_closest_point(point), point);
 }
 
 template <typename T>
