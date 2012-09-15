@@ -98,7 +98,7 @@ int determinant_sign(const permutation_matrix<std::size_t>& pm)
 
 // Calculate the determinant of the input matrix.
 template<class T>
-double determinant(const matrix<T>& input )
+double determinant(const matrix<T>& input)
 {
     // create a working copy of the input
     matrix<T> A(input);
