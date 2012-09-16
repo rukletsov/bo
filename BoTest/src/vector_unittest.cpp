@@ -285,23 +285,14 @@ TEST_F(VectorTest, Normalization)
     EXPECT_EQ(int(18), int_retval);
 
     // Check taxicab norm.
-    EXPECT_DOUBLE_EQ(0., vec1_.taxicab_norm());
+    EXPECT_FLOAT_EQ(0.f, vec1_.taxicab_norm());
     EXPECT_DOUBLE_EQ(15., vec2_.taxicab_norm());
     EXPECT_DOUBLE_EQ(21.3, vec3_.taxicab_norm());
-    EXPECT_DOUBLE_EQ(36., vec4_.taxicab_norm());
+    EXPECT_EQ(int(36), vec4_.taxicab_norm());
 
     EXPECT_DOUBLE_EQ(17.7, (vec3_ - vec2_).taxicab_norm());
     EXPECT_DOUBLE_EQ(17.7, (vec2_ - vec3_).taxicab_norm());
     EXPECT_DOUBLE_EQ(0., (vec3_ - vec3_).taxicab_norm());
-
-    vec3_.taxicab_norm(float_retval);
-    EXPECT_FLOAT_EQ(21.3f, float_retval);
-
-    vec2_.taxicab_norm(int_retval);
-    EXPECT_EQ(int(15), int_retval);
-
-    vec4_.taxicab_norm(int_retval);
-    EXPECT_EQ(int(36), int_retval);
 
     // Normalization of the null vector is expected to throw an exception. This is
     // a requested feature, not a bug.

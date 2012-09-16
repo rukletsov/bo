@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.1.5 2012.09.16
+  vector.hpp, v 1.1.6 2012.09.16
 
   Multidimensional Vector (Point) class. 
 
@@ -169,10 +169,9 @@ public:
     double eucl_norm() const;
     template <typename RetType> void eucl_norm(RetType& retvar) const;
 
-    // Compute taxicab (or L1) norm of the vector. The result is always double,
-    // unless the return variable of certain type is given.
-    double taxicab_norm() const;
-    template <typename RetType> void taxicab_norm(RetType& retvar) const;
+    // Compute taxicab (or L1) norm of the vector. Uses std::abs(T), which implies
+    // T is a built-in type or cutom type, for which abs() is provided in std namespace.
+    T taxicab_norm() const;
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
@@ -537,20 +536,14 @@ void Vector<T, N>::eucl_norm(RetType& retvar) const
 }
 
 template <typename T, std::size_t N>
-double Vector<T, N>::taxicab_norm() const
+T Vector<T, N>::taxicab_norm() const
 {
-    double retvalue(0);
+    T retvalue(0);
 
     for (std::size_t i = 0; i < N; ++i)
-        retvalue += std::abs(static_cast<double>(components_[i]));
+        retvalue += std::abs(components_[i]);
 
     return retvalue;
-}
-
-template <typename T, std::size_t N> template <typename RetType>
-void Vector<T, N>::taxicab_norm(RetType& retvar) const
-{
-    retvar = static_cast<RetType>(taxicab_norm());
 }
 
 template <typename T, std::size_t N> 
