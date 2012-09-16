@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  distances_3d.hpp, v 1.0.2 2012.09.15
+  distances_3d.hpp, v 1.0.3 2012.09.16
 
   Methods and algorithms for calculating distances between varios objects in
   a 3D-space.
@@ -227,21 +227,21 @@ void region4_helper(double& s, double& t, const T& a, const T& c, const T& d, co
 // Points may be of integer type, however the result is always double.
 template <typename T, std::size_t N>
 double euclidean_distance_d(const bo::Vector<T, N>& point1,
-                          const bo::Vector<T, N>& point2)
+                            const bo::Vector<T, N>& point2)
 {
     double distance = (point1 - point2).eucl_norm();
     return distance;
 }
 
-// Computes the euclidean distance between two given points in 3D space. Points are
-// supposed to be of some real type.
-template <typename RealType>
-RealType euclidean_distance(const bo::Vector<RealType, 3>& point1,
-                            const bo::Vector<RealType, 3>& point2)
+// Computes the euclidean distance between two given points in arbitrary space.
+// Points are supposed to be of some real type, which is supported by std::sqrt
+// function. Otherwise ambiguous call or undefined function for RealType may happen.
+template <typename RealType, std::size_t N>
+RealType euclidean_distance(const bo::Vector<RealType, N>& point1,
+                            const bo::Vector<RealType, N>& point2)
 {
-    RealType distance = std::sqrt(square(point1.x() - point2.x()) +
-                                  square(point1.y() - point2.y()) +
-                                  square(point1.z() - point2.z()));
+    bo::Vector<RealType, N> point_diff = (point1 - point2);
+    RealType distance = std::sqrt(point_diff * point_diff);
     return distance;
 }
 
