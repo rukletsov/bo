@@ -1,12 +1,13 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.0 2012.09.16
+  blas.hpp, v 1.1.1 2012.09.16
 
   Basic linear algebra subprograms. 
 
   Copyright (c) 2011, 2012
   Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
+  Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -35,7 +36,9 @@
 #ifndef BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 #define BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 
+#include <iostream>
 #include <vector>
+#include <boost/format.hpp>
 // Suppress boost::numeric::ublas C4127 warning under MSVC.
 #ifdef _MSC_VER
 #   pragma warning(push)
@@ -46,6 +49,37 @@
 #endif // _MSC_VER
 
 #include "bo/extended_math.hpp"
+
+// Dirty hack: add stream operator for matrix<T> type into boost namespace.
+namespace boost {
+namespace numeric {
+namespace ublas {
+
+// Prints formatted matrix to the given stream. T must support operator<<.
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const matrix<T>& obj)
+{
+    // Print full vertex info.
+    os << boost::format("%1%x%2% boost::numeric::ublas::matrix, object %3$#x, %4% bytes: ")
+          % obj.size1() % obj.size2() % &obj % sizeof(obj) << std::endl;
+
+    for (std::size_t i = 0; i < obj.size1(); ++i)
+    {
+        for (std::size_t j = 0; j < obj.size2(); ++j)
+        {
+            os << "\t " << obj(i, j);
+        }
+        os << std::endl;
+    }
+
+    os << boost::format("end of object %1$#x.") % &obj << std::endl;
+
+    return os;
+}
+
+} // namespace ublas
+} // namespace numeric
+} // namespace boost
 
 using namespace boost::numeric::ublas;
 
