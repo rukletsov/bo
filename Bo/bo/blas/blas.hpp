@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.0.2 2011.10.14
+  blas.hpp, v 1.1.0 2012.09.16
 
   Basic linear algebra subprograms. 
 
-  Copyright (c) 2011
+  Copyright (c) 2011, 2012
   Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
   All rights reserved.
 
@@ -35,14 +35,13 @@
 #ifndef BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 #define BLAS_HPP_F74A6974_6444_4C40_BFE7_75ADEC15B7E6_
 
+#include <vector>
 // Suppress boost::numeric::ublas C4127 warning under MSVC.
 #ifdef _MSC_VER
 #   pragma warning(push)
 #   pragma warning(disable:4127)
-#endif // _MSC_VER
 #   include <boost/numeric/ublas/matrix.hpp>
 #   include <boost/numeric/ublas/lu.hpp>
-#ifdef _MSC_VER
 #   pragma warning(pop)
 #endif // _MSC_VER
 
@@ -126,16 +125,13 @@ double determinant(const matrix<T>& input)
     return det;
 }
 
-
-// Eigenvector decomposition for real symmetric matrices.
-// Returns a vector of the eigenvalues, sorted in non-decreasing order.
-// The corresponding eigenvectors are stored in the columns of the
-// matrix A.
+// Eigenvector decomposition for real symmetric matrices. Returns a vector of the
+// eigenvalues, sorted in non-decreasing order. The corresponding eigenvectors are
+// stored in the columns of the matrix A.
 template <class T>
 std::vector<T> eigen_analysis(matrix<T>& A)
 {
     unsigned int n = A.size1();
-
     std::vector<T> d(n);
 
     // Initialize the vector.
@@ -161,7 +157,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
 
         for (int k = 0; k < i; ++k)
         {
-            scale += std::fabs(d[k]);
+            scale += std::abs(d[k]);
         }
 
         if (scale == T(0))
@@ -302,9 +298,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
     }
 
     e[n - 1] = T(0);
-
     T f(0), tmp(0);
-
     const T eps = T(std::pow(T(2), -52));
 
     for (int l = 0; l < n; l++) 
