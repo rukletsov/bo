@@ -263,10 +263,12 @@ TEST_F(VectorTest, AggregationFunctions)
 
 TEST_F(VectorTest, Normalization)
 {
+    // Check euclidean norm.
     EXPECT_DOUBLE_EQ(0., vec1_.eucl_norm());
     EXPECT_NEAR(8.66025, vec2_.eucl_norm(), 0.00001);
     EXPECT_NEAR(17.46682, vec3_.eucl_norm(), 0.00001);
     EXPECT_DOUBLE_EQ(18., vec4_.eucl_norm());
+    EXPECT_DOUBLE_EQ(0., (vec2_ - vec2_).taxicab_norm());
 
     float float_retval;
     vec2_.eucl_norm(float_retval);
@@ -281,6 +283,25 @@ TEST_F(VectorTest, Normalization)
 
     vec4_.eucl_norm(int_retval);
     EXPECT_EQ(int(18), int_retval);
+
+    // Check taxicab norm.
+    EXPECT_DOUBLE_EQ(0., vec1_.taxicab_norm());
+    EXPECT_DOUBLE_EQ(15., vec2_.taxicab_norm());
+    EXPECT_DOUBLE_EQ(21.3, vec3_.taxicab_norm());
+    EXPECT_DOUBLE_EQ(36., vec4_.taxicab_norm());
+
+    EXPECT_DOUBLE_EQ(17.7, (vec3_ - vec2_).taxicab_norm());
+    EXPECT_DOUBLE_EQ(17.7, (vec2_ - vec3_).taxicab_norm());
+    EXPECT_DOUBLE_EQ(0., (vec3_ - vec3_).taxicab_norm());
+
+    vec3_.taxicab_norm(float_retval);
+    EXPECT_FLOAT_EQ(21.3f, float_retval);
+
+    vec2_.taxicab_norm(int_retval);
+    EXPECT_EQ(int(15), int_retval);
+
+    vec4_.taxicab_norm(int_retval);
+    EXPECT_EQ(int(36), int_retval);
 
     // Normalization of the null vector is expected to throw an exception. This is
     // a requested feature, not a bug.

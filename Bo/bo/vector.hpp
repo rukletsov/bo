@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.1.4 2011.10.14
+  vector.hpp, v 1.1.5 2012.09.16
 
   Multidimensional Vector (Point) class. 
 
-  Copyright (c) 2010, 2011
+  Copyright (c) 2010 - 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -164,10 +164,15 @@ public:
     std::size_t min_index() const;
     std::size_t max_index() const;
 
-    // Compute euclidean norm of the vectors. If the return variable is given,
+    // Compute euclidean norm of the vector. If the return variable is given,
     // try to convert the result to retvar's type.
     double eucl_norm() const;
     template <typename RetType> void eucl_norm(RetType& retvar) const;
+
+    // Compute taxicab (or L1) norm of the vector. The result is always double,
+    // unless the return variable of certain type is given.
+    double taxicab_norm() const;
+    template <typename RetType> void taxicab_norm(RetType& retvar) const;
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
@@ -528,7 +533,24 @@ double Vector<T, N>::eucl_norm() const
 template <typename T, std::size_t N> template <typename RetType> 
 void Vector<T, N>::eucl_norm(RetType& retvar) const
 {
-    retvar = static_cast<RetType>(std::sqrt(static_cast<double>((*this) * (*this))));
+    retvar = static_cast<RetType>(eucl_norm());
+}
+
+template <typename T, std::size_t N>
+double Vector<T, N>::taxicab_norm() const
+{
+    double retvalue(0);
+
+    for (std::size_t i = 0; i < N; ++i)
+        retvalue += std::abs(static_cast<double>(components_[i]));
+
+    return retvalue;
+}
+
+template <typename T, std::size_t N> template <typename RetType>
+void Vector<T, N>::taxicab_norm(RetType& retvar) const
+{
+    retvar = static_cast<RetType>(taxicab_norm());
 }
 
 template <typename T, std::size_t N> 
