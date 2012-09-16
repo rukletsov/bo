@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  distances_3d.hpp, v 1.0.5 2012.09.16
+  distances_3d.hpp, v 1.0.6 2012.09.16
 
   Methods and algorithms for calculating distances between varios objects in
   a 3D-space.
@@ -248,10 +248,18 @@ RealType euclidean_distance(const bo::Vector<RealType, N>& point1,
 // Computes the taxicab (or L1) distance between two given points in arbitrary space.
 // Points may be of any type T, for which bo::Vector<T, N>::taxicab_norm() works.
 template <typename T, std::size_t N>
-T taxicab_distance(const bo::Vector<T, N>& point1,
-                   const bo::Vector<T, N>& point2)
+T taxicab_distance(const bo::Vector<T, N>& point1, const bo::Vector<T, N>& point2)
 {
     T distance = (point1 - point2).taxicab_norm();
+    return distance;
+}
+
+// Computes Chebyshev (or L inf) distance between two given points in arbitrary space.
+// Points may be of any type T, for which bo::Vector<T, N>::maximum_norm() works.
+template <typename T, std::size_t N>
+T chebyshev_distance(const bo::Vector<T, N>& point1, const bo::Vector<T, N>& point2)
+{
+    T distance = (point1 - point2).maximum_norm();
     return distance;
 }
 
