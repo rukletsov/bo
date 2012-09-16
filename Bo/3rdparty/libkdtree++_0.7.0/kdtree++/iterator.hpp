@@ -192,6 +192,12 @@ namespace bo {
         return ret;
       }
 
+// Suppress C4396 warning under MSVC. This is not a specialization of a function
+// template, but rather a friend declaration of a previously declared template function.
+#ifdef _MSC_VER
+#   pragma warning (push)
+#   pragma warning (disable:4396)
+#endif // _MSC_VER
       friend bool
       operator== <>(_Iterator<_Val, _Ref, _Ptr> const&,
                     _Iterator<_Val, _Ref, _Ptr> const&);
@@ -215,6 +221,9 @@ namespace bo {
       friend bool
       operator!= <>(_Iterator<_Val, _Val&, _Val*> const&,
                     _Iterator<_Val, const _Val&, const _Val*> const&);
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
     };
 
   template<typename _Val, typename _Ref, typename _Ptr>
