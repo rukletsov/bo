@@ -10,6 +10,12 @@ LIBRARY
 ? Add "real" type which abstracts floating point type.
 * Add tests for extended math functions.
 
+Transformation3D<> class
+================================================================================
+* Add getters for trasformation matrix in various formats.
+* Add tests.
+? Optimize vector-matrix multiplication (remove vector conversion).
+
 MRF class collection
 ================================================================================
 * Provide checks for template types' signatures in clique functions.
@@ -61,6 +67,7 @@ Methods namespace
 * Add function performing linear filtering for RawImage<> (filter2D).
 * Add kernels for Sobel, Laplacian, Prewitt operators.
 * Create test images and test filtering with several kernels.
+* Add tests for distances.
 
 
 
