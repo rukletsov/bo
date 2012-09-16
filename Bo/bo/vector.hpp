@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.1.6 2012.09.16
+  vector.hpp, v 1.1.7 2012.09.16
 
   Multidimensional Vector (Point) class. 
 
@@ -164,14 +164,18 @@ public:
     std::size_t min_index() const;
     std::size_t max_index() const;
 
-    // Compute euclidean norm of the vector. If the return variable is given,
+    // Computes euclidean (L2) norm of the vector. If the return variable is given,
     // try to convert the result to retvar's type.
     double eucl_norm() const;
     template <typename RetType> void eucl_norm(RetType& retvar) const;
 
-    // Compute taxicab (or L1) norm of the vector. Uses std::abs(T), which implies
+    // Computes taxicab (L1) norm of the vector. Uses std::abs(T), which implies
     // T is a built-in type or cutom type, for which abs() is provided in std namespace.
     T taxicab_norm() const;
+
+    // Computes maximum (L inf) norm of the vector. Uses std::abs(T), which implies
+    // T is a built-in type or cutom type, for which abs() is provided in std namespace.
+    T maximum_norm() const;
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
@@ -544,6 +548,17 @@ T Vector<T, N>::taxicab_norm() const
         retvalue += std::abs(components_[i]);
 
     return retvalue;
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::maximum_norm() const
+{
+    Vector<T, N> nonnegative;
+    std::transform(components_.begin(), components_.end(),
+                   nonnegative.components_.begin(), (T (*)(T))std::abs);
+
+    return
+        nonnegative.max_element();
 }
 
 template <typename T, std::size_t N> 

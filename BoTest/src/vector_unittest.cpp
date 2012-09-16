@@ -294,6 +294,16 @@ TEST_F(VectorTest, Normalization)
     EXPECT_DOUBLE_EQ(17.7, (vec2_ - vec3_).taxicab_norm());
     EXPECT_DOUBLE_EQ(0., (vec3_ - vec3_).taxicab_norm());
 
+    // Check maximum norm.
+    EXPECT_FLOAT_EQ(0.f, vec1_.maximum_norm());
+    EXPECT_DOUBLE_EQ(5., vec2_.maximum_norm());
+    EXPECT_DOUBLE_EQ(17., vec3_.maximum_norm());
+    EXPECT_EQ(int(9), vec4_.maximum_norm());
+
+    EXPECT_DOUBLE_EQ(12, (vec3_ - vec2_).maximum_norm());
+    EXPECT_DOUBLE_EQ(12, (vec2_ - vec3_).maximum_norm());
+    EXPECT_DOUBLE_EQ(0., (vec3_ - vec3_).maximum_norm());
+
     // Normalization of the null vector is expected to throw an exception. This is
     // a requested feature, not a bug.
     EXPECT_THROW(vec1_.normalized(), std::logic_error);
