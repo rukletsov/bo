@@ -341,6 +341,43 @@ TEST_F(VectorTest, SwapFillAssign)
     EXPECT_DOUBLE_EQ(0., vec2_[2]);
 }
 
+#include "bo/performance.hpp"
+TEST_F(VectorTest, OperationPerformance)
+{
+    Vector<int, 10000>* vec1 = new Vector<int, 10000>(-569);
+    Vector<int, 10000>* vec2 = new Vector<int, 10000>(9899);
+    Vector<int, 10000>* vec3 = new Vector<int, 10000>(98999);
+
+    bo::Timer timer;
+    for (int i = 0; i < 100000; ++i)
+        (*vec1) += 879556;
+    std::cout << "Vector += Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec2) = *vec1 + 879556;
+    std::cout << "Vector + Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec1) /= 49;
+    std::cout << "Vector /= Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        *vec3 -= *vec1;
+    std::cout << "Vector -= Vector took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        *vec3 = *vec1 + *vec2;
+    std::cout << "Vector + Vector took " << timer.elapsed() << std::endl;
+
+    delete vec1;
+    delete vec2;
+    delete vec3;
+}
+
 
 // An aliased fixture for so-called "death tests".
 typedef VectorTest VectorDeathTest;
