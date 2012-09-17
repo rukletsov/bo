@@ -927,12 +927,12 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
         Vector<float,3> O = tr.p1->p;
 
         // Calculate the triangle prism basis matrix.
-        boost::numeric::ublas::matrix<float> m(3,3);
+        blas::matrix<float> m(3,3);
         m(0,0) = X.x(); m(0,1) = Y.x(); m(0,2) = Z.x();
         m(1,0) = X.y(); m(1,1) = Y.y(); m(1,2) = Z.y();
         m(2,0) = X.z(); m(2,1) = Y.z(); m(2,2) = Z.z();
         
-        boost::numeric::ublas::matrix<float> im(3,3);  
+        blas::matrix<float> im(3,3);
         
         // Find the coordinates of the vertices from the range in the calculated
         // coordinate system using the inverse basis matrix. 
@@ -944,14 +944,14 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
                 if (!it->ps->isVisited)
                 {
                     // The coordinates in the old coordinate system.
-                    boost::numeric::ublas::matrix<float> mp(3,1);
+                    blas::matrix<float> mp(3,1);
                     mp(0,0) = it->ps->p.x() - O.x();
                     mp(1,0) = it->ps->p.y() - O.y();
                     mp(2,0) = it->ps->p.z() - O.z();
                     
                     // Calculate the coordinates in the new (triangle prism)
                     // coordinate system.
-                    boost::numeric::ublas::matrix<float> am = prod(im,mp);
+                    blas::matrix<float> am = prod(im,mp);
 
                     float a = am(0,0);
                     float b = am(1,0);

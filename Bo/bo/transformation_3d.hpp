@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.3 2012.09.15
+  transformation_3d.hpp, v 0.0.4 2012.09.16
 
   3D space transformations.
 
@@ -77,7 +77,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Transformation3D<V>& obj);
 
 private:
-    matrix<RealType> matrix_;
+    blas::matrix<RealType> matrix_;
 };
 
 
@@ -149,7 +149,7 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
 
     // Perfrom multiplication.
-    bounded_vector<RealType, 4> result = prod(matrix_, source);
+    bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
 
     // Convert back from boost BLAS vector to Point3D. Ignore last 1.
     Point3D retvalue;
@@ -170,14 +170,14 @@ Transformation3D<RealType> Transformation3D<RealType>::operator*(const self_type
 template <typename RealType> inline
 const Transformation3D<RealType>& Transformation3D<RealType>::operator*=(const self_type& other)
 {
-    matrix_ = prod(matrix_, other.matrix_);
+    matrix_ = blas::prod(matrix_, other.matrix_);
     return *this;
 }
 
 template <typename RealType> inline
 void Transformation3D<RealType>::reset()
 {
-    matrix_ = identity_matrix<RealType>(4);
+    matrix_ = blas::identity_matrix<RealType>(4);
 }
 
 } // namespace bo

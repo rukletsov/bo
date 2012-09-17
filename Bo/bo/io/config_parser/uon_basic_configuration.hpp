@@ -73,7 +73,7 @@
     // Read data from the parser
     // See UonBasicConfig definition for other datafields
     std::vector<bo::Vector<float, 3>> points_3d = uc.contour_points_3d;
-    boost::numeric::ublas::matrix<float> transform = uc.image_transformation;
+    blas::matrix<float> transform = uc.image_transformation;
     < ... do job with the data here ... >
 
     // Config Parser for Atk data types
@@ -106,7 +106,7 @@ namespace config_parser {
 */
 
 // Bo's standard matrix type.
-typedef boost::numeric::ublas::matrix<float> BoFloatMatrix;
+typedef blas::matrix<float> BoFloatMatrix;
 
 
 // Namespace uon_config contains definitions of key names for UON configurations.

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  icp_3d.hpp, v 0.0.1 2012.09.15
+  icp_3d.hpp, v 0.0.2 2012.09.17
 
   Point-to-point implementation of the ICP registration algorithm for 3D point
   clouds.
@@ -43,8 +43,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
+#include <boost/assert.hpp>
 
 #include "bo/vector.hpp"
+#include "bo/transformation_3d.hpp"
 #include "bo/blas/blas.hpp"
 
 namespace bo {
@@ -78,7 +80,7 @@ public:
 private:
     void overlay_();
     Point3D centroid_(PointCloud* cloud) const;
-    matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+    blas::matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
         const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const;
     RealType distance_(PointCloud* cloud1, PointCloud* cloud2, Correspondences* corresp) const;
 
@@ -113,21 +115,21 @@ RealType ICP3D<RealType>::next()
 {
     Point3D current_centroid = centroid_(current_cloud_);
 
-    matrix<RealType> Spx = cross_covariance_(current_cloud_, target_cloud_, current_centroid,
+    blas::matrix<RealType> Spx = cross_covariance_(current_cloud_, target_cloud_, current_centroid,
         target_centroid_, current_corresp_);
 
-    matrix<RealType> SpxT = trans(Spx);
+    blas::matrix<RealType> SpxT = blas::trans(Spx);
 
     // Create the asymmetrical matrix.
-    matrix<RealType> Apx = Spx - SpxT;
+    blas::matrix<RealType> Apx = Spx - SpxT;
 
     // Calculate the matrix trace.
     RealType traceSpx = Spx(0, 0) + Spx(1, 1) + Spx(2, 2);
 
-    matrix<RealType> Bpx = Spx + SpxT + traceSpx * identity_matrix<RealType>(3);
+    blas::matrix<RealType> Bpx = Spx + SpxT + traceSpx * blas::identity_matrix<RealType>(3);
 
     // Create the 4x4 matrix.
-    matrix<RealType> Qpx(4, 4);
+    blas::matrix<RealType> Qpx(4, 4);
     
     // Fill in the matrix.
     // Block 1.
@@ -151,7 +153,7 @@ RealType ICP3D<RealType>::next()
     Qpx(3, 2) = Bpx(2, 1);
     Qpx(3, 3) = Bpx(2, 2);
 
-    eigen_analysis(Qpx);
+    blas::eigen_analysis(Qpx);
 
     // Quaternion that defines the optimal rotation.
     Vector<RealType, 4> quaternion;
@@ -226,12 +228,12 @@ typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) 
 }
 
 template <typename RealType>
-matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
     const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const
 {
-    matrix<RealType> m(3, 3) = zero_matrix<RealType>(3, 3);
-    matrix<RealType> p(3, 1);
-    matrix<RealType> x(1, 3);   
+    blas::matrix<RealType> m(3, 3) = blas::zero_matrix<RealType>(3, 3);
+    blas::matrix<RealType> p(3, 1);
+    blas::matrix<RealType> x(1, 3);
 
     Correspondences::const_iterator it = corresp->begin();
 
@@ -249,7 +251,7 @@ matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointClo
         x(0, 1) = b[1] - centroid2[1];
         x(0, 2) = b[2] - centroid2[2];
 
-        m = m + prod(p, x);
+        m = m + blas::prod(p, x);
         
         ++it;
     }

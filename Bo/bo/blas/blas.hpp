@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.1 2012.09.16
+  blas.hpp, v 1.1.2 2012.09.17
 
   Basic linear algebra subprograms. 
 
@@ -81,10 +81,10 @@ std::ostream& operator<<(std::ostream& os, const matrix<T>& obj)
 } // namespace numeric
 } // namespace boost
 
-using namespace boost::numeric::ublas;
-
 namespace bo {
 namespace blas {
+
+using namespace boost::numeric::ublas;
 
 // Matrix inversion routine.
 // Use lu_factorize and lu_substitute in uBLAS to invert a matrix. 
