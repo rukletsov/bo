@@ -19,10 +19,10 @@ Getting Started
 ## Getting Bö
 No pre-built binaries are currently available. Use the following command to get the source code:
 
-      $ hg pull https://bitbucket.org/rukletsov/b
+    $ hg pull https://bitbucket.org/rukletsov/b
 
 ## Building Bö
 CMake is currently used to build Bö and its tests. If you use cmake from command line, you may find the following options useful:
 
-      -DCMAKE_BUILD_TYPE=Debug -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=ON
-      -DCMAKE_BUILD_TYPE=Release -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=OFF
+    -DCMAKE_BUILD_TYPE=Debug -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=ON
+    -DCMAKE_BUILD_TYPE=Release -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=OFF
