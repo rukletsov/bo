@@ -144,14 +144,15 @@ template <typename RealType> inline
 typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operator*(
     Point3D point) const
 {
-    // Convert Point3D to boost BLAS vector. Add forth 1 component.
+    // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
     bounded_vector<RealType, 4> source;
     source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
 
     // Perfrom multiplication.
     bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
 
-    // Convert back from boost BLAS vector to Point3D. Ignore last 1.
+    // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
+    // coordinates.
     Point3D retvalue;
     retvalue[0] = result(0); retvalue[1] = result(1); retvalue[2] = result(2);
 

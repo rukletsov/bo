@@ -3,11 +3,19 @@
 --------------------------------------------------------------------------------
 Bö is a collection of basic and advanced methods and data structures for image processing and 3D reconstruction. Written entirely in C++, the library provides loosely-coupled though completely compatible modules for various problems in computer vision. Bö is [BSD licensed](http://opensource.org/licenses/bsd-license.php).
 
-The code has been compiled with, tested and run on
-
- * Ubuntu Linux with gcc, Fedora Linux with gcc;
- * Mac OS X Lion (10.7) with gcc and clang;
- * Windows XP with msvc2005, Windows XP with msvc2008, Windows 7 with msvc2010.
+## Features
+ * Highly customizable [Markov random field (MRF)](http://en.wikipedia.org/wiki/Markov_random_field) representation for regular 2D lattices, as well as several predefined prior and likelihood energy functionals ready to use in MRF models.
+ * Optimization algorithms for Markov random fields: [Metropolis–Hastings algorithm](http://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm), [Modified Metropolis Dynamics (MMD)](http://www.sciencedirect.com/science/article/pii/0262885695010726), [Iterated conditional modes (ICM)](http://en.wikipedia.org/wiki/Iterated_conditional_modes).
+ * [Modified Butterfly](http://mrl.nyu.edu/~dzorin/papers/zorin1996ism.pdf) surface subdivision method.
+ * [Robust surface reconstruction](http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=1353243) method.
+ * [Iterative closest point (ICP)](http://en.wikipedia.org/wiki/Iterative_closest_point) registration algorithm.
+ * Generic representation of multidimensional vectors and points.
+ * Triangular mesh with support of export/import to [PLY file format](http://en.wikipedia.org/wiki/PLY_%28file_format%29).
+ * Various point-to-point and point-to-plane metrics in 3D.
+ * Transformations in 3D space based on quaternions or transformation matrices.
+ * Generic representation of 2D images.
+ * Linear filtering for 2D images.
+ * Matrix operations (e.g. matrix inversion, eigenvectors and eigenvalues of real matrices).
 
 # Project Dependencies
 --------------------------------------------------------------------------------
@@ -27,3 +35,9 @@ CMake is currently used to build Bö and its tests. If you use cmake from comman
 
     -DCMAKE_BUILD_TYPE=Debug -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=ON
     -DCMAKE_BUILD_TYPE=Release -DBuildTests=ON -DUsePch=OFF -DBUILD_SHARED_LIBS=OFF
+
+The code has been successfully compiled with, tested and run on
+
+ * Ubuntu Linux with gcc, Fedora Linux with gcc.
+ * Mac OS X Lion (10.7) with gcc and clang.
+ * Windows XP with msvc2005, Windows XP with msvc2008, Windows 7 with msvc2010.
