@@ -3,7 +3,7 @@
 
   mbutterfly_mesh_subdiv.hpp, v 1.0.1 2012.03.17
 
-  Implementation of the Modified Butterfly surface subdivision method.
+  Implementation of the Modified Butterfly subdivision surface method.
 
   Reference paper: Zorin, D., Schroeder, P. and Sweldens, W., 
   "Interpolating subdivision for meshes with arbitrary topology", 
