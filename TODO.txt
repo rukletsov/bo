@@ -3,7 +3,7 @@ LIBRARY
 ================================================================================
 * Add memleak tests (check Application Verifier, Dr. Memory).
 * Comments in Doxygen style (Qt style?).
-? Suppress warnings in headers using pragma push/pop.
+
 * Implement Kahan summation (check functors, accumulate, transform, etc).
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
@@ -64,8 +64,7 @@ IniReader class
 
 Methods namespace
 ================================================================================
-* Add function performing linear filtering for RawImage<> (filter2D).
-* Add kernels for Sobel, Laplacian, Prewitt operators.
+* Add kernels for Laplacian, Prewitt operators.
 * Create test images and test filtering with several kernels.
 * Add tests for distances.
 
@@ -77,6 +76,7 @@ Methods namespace
 
 LIBRARY
 --------------------------------------------------------------------------------
+[DONE] ? Suppress warnings in headers using pragma push/pop.
 [DONE] ? Make KDTree++ visible outside library.
 [DONE] * CMake msvc compiler options.
 [DONE] * Supress msvc unsafe CRT warnings.
@@ -127,3 +127,7 @@ Mesh class
 IniReader class
 --------------------------------------------------------------------------------
 [DONE] * Write tests. 
+
+Methods namespace
+--------------------------------------------------------------------------------
+[DONE] * Add function performing linear filtering for RawImage<> (filter2D).

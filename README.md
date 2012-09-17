@@ -7,7 +7,7 @@ Bö is a collection of basic and advanced methods and data structures for 2D ima
  * Highly customizable [Markov random field (MRF)](http://en.wikipedia.org/wiki/Markov_random_field) representation for regular 2D lattices, as well as several predefined prior and likelihood energy functionals ready to use in MRF models.
  * Optimization algorithms for Markov random fields: [Metropolis–Hastings algorithm](http://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm), [Modified Metropolis Dynamics (MMD)](http://www.sciencedirect.com/science/article/pii/0262885695010726), [Iterated conditional modes (ICM)](http://en.wikipedia.org/wiki/Iterated_conditional_modes).
  * [Modified Butterfly](http://mrl.nyu.edu/~dzorin/papers/zorin1996ism.pdf) subdivision surface method.
- * [Robust surface reconstruction](http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=1353243) method.
+ * Robust [mesh-growing surface reconstruction](http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=1353243) method.
  * [Iterative closest point (ICP)](http://en.wikipedia.org/wiki/Iterative_closest_point) registration algorithm.
  * Triangular mesh with support of export/import to [PLY file format](http://en.wikipedia.org/wiki/PLY_%28file_format%29).
  * Various point-to-point and point-to-plane metrics in 3D.
