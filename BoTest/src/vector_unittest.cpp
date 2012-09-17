@@ -348,6 +348,7 @@ TEST_F(VectorTest, OperationPerformance)
     Vector<int, 10000>* vec2 = new Vector<int, 10000>(9899);
     Vector<int, 10000>* vec3 = new Vector<int, 10000>(98999);
 
+    // Vector-Scalar operations.
     bo::Timer timer;
     for (int i = 0; i < 100000; ++i)
         (*vec1) += 879556;
@@ -360,8 +361,44 @@ TEST_F(VectorTest, OperationPerformance)
 
     timer.restart();
     for (int i = 0; i < 100000; ++i)
-        (*vec1) /= 49;
+        (*vec1) -= 879556;
+    std::cout << "Vector -= Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec2) = *vec1 - 879556;
+    std::cout << "Vector - Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec1) *= 29;
+    std::cout << "Vector *= Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec2) = *vec1 * 29;
+    std::cout << "Vector * Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec1) /= 29;
     std::cout << "Vector /= Scalar took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        (*vec2) = *vec1 / 29;
+    std::cout << "Vector / Scalar took " << timer.elapsed() << std::endl;
+
+    // Vector-Vector operations.
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        *vec3 += *vec1;
+    std::cout << "Vector += Vector took " << timer.elapsed() << std::endl;
+
+    timer.restart();
+    for (int i = 0; i < 100000; ++i)
+        *vec3 = *vec1 + *vec2;
+    std::cout << "Vector + Vector took " << timer.elapsed() << std::endl;
 
     timer.restart();
     for (int i = 0; i < 100000; ++i)
@@ -370,8 +407,8 @@ TEST_F(VectorTest, OperationPerformance)
 
     timer.restart();
     for (int i = 0; i < 100000; ++i)
-        *vec3 = *vec1 + *vec2;
-    std::cout << "Vector + Vector took " << timer.elapsed() << std::endl;
+        *vec3 = *vec1 - *vec2;
+    std::cout << "Vector - Vector took " << timer.elapsed() << std::endl;
 
     delete vec1;
     delete vec2;
