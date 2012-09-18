@@ -35,9 +35,11 @@
 #ifndef NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
 #define NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
 
+#include <cmath>
 #include <boost/tuple/tuple.hpp>
 #include <boost/operators.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 
 namespace bo {
 
@@ -45,6 +47,7 @@ template <typename P>
 class ParametricNodeType: boost::equality_comparable1<ParametricNodeType<P> >
 {
 public:
+    typedef P ClassParams;
     typedef boost::shared_ptr<P> ClassParamsPtr;
 
     ParametricNodeType(ClassParamsPtr class_params): class_params_(class_params)
@@ -77,6 +80,9 @@ public:
     GammaDistrClasses(ClassParamsPtr class_params): ParametricNodeType(class_params)
     { }
 
+    static GammaDistrClasses CreateInstance(int idx, RealType k, RealType theta)
+    { return (GammaDistrClasses(ClassParamsPtr(new ClassParams(idx, k, theta, compute_a(k, theta))))); }
+
     // Accessors for class label and class parameters.
     int label() const
     { return class_params_->get<0>(); }
@@ -92,6 +98,9 @@ public:
 
     RealType mean() const
     { return (k() * theta()); }
+
+    static RealType compute_a(RealType k, RealType theta)
+    { return (k * std::log(theta) - boost::math::lgamma(k)); }
 };
 
 } // namespace bo

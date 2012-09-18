@@ -37,11 +37,9 @@
 #define TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
 
 #include <ctime>
-#include <cmath>
 #include <vector>
 #include <boost/cstdint.hpp>
 #include <boost/random.hpp>
-#include <boost/math/special_functions/gamma.hpp>
 
 #include "bo/internal/mrf/node_types.hpp"
 
@@ -127,8 +125,8 @@ template <typename RealType>
 struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealType> >
 {
     typedef GammaDistrClasses<RealType> NodeType;
-    typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
     typedef typename NodeType::ClassParams ClassParams;
+    typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
     typedef typename NodeType::GammaParamsPair GammaParamsPair;
     typedef typename std::vector<GammaParamsPair> GammaParams;
 
@@ -154,7 +152,7 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
             --classes_count;
             RealType k = it->get<0>();
             RealType theta = it->get<1>();
-            RealType a = k * std::log(theta) - boost::math::lgamma(k);
+            RealType NodeType::compute_a(k, theta);
             ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
             values_.push_back(NodeType(class_params));
         }
