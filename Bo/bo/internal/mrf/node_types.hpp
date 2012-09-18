@@ -71,7 +71,7 @@ protected:
 // class label and a set of Gamma distribution parameters (k, theta, a), where
 // a = -ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
 template <typename RealType>
-class GammaDistrClasses: ParametricNodeType<boost::tuples::tuple<int, RealType, RealType, RealType> >
+class GammaDistrClasses: public ParametricNodeType<boost::tuples::tuple<int, RealType, RealType, RealType> >
 {
 public:
     typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
