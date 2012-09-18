@@ -3,7 +3,6 @@ LIBRARY
 ================================================================================
 * Add memleak tests (check Application Verifier, Dr. Memory).
 * Comments in Doxygen style (Qt style?).
-
 * Implement Kahan summation (check functors, accumulate, transform, etc).
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
@@ -47,7 +46,7 @@ RawImage<> class
 
 Vector<> class
 ================================================================================
-* Consider using std algorithms (std::copy, std::swap, etc) instead of cycles.
+* Consider using std algorithms (std::copy, std::swap, etc) instead of loops.
 * Write tests: conversion from/to Vectors of different types; operations with
   converted vectors.
 
