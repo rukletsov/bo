@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  type_values.hpp, v 0.2.3 2012.09.14
+  type_values.hpp, v 0.2.4 2012.09.20
 
   Collection of classes specifying and providing access to possible values for
   types used as MRF nodes.
@@ -143,7 +143,7 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
 
     // Constructs a set of possible values from a collection of Gamma distribution
     // parameters (k, theta).
-    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues(classes_count)
+    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues(gamma_params.size())
     {
         std::size_t classes_count = gamma_params.size();
         for (GammaParams::const_iterator it = gamma_params.begin();
@@ -152,7 +152,7 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
             --classes_count;
             RealType k = it->get<0>();
             RealType theta = it->get<1>();
-            RealType NodeType::compute_a(k, theta);
+            RealType a = NodeType::compute_a(k, theta);
             ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
             values_.push_back(NodeType(class_params));
         }

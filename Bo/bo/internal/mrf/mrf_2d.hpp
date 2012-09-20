@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_2d.hpp, v 0.1.0 2012.09.11
+  mrf_2d.hpp, v 0.1.1 2012.09.20
 
   Markov random field model for regular 2D lattice.
 
@@ -219,7 +219,7 @@ template <typename NodeType, typename DataType, typename RealType> inline
 RealType MRF2D<NodeType, DataType, RealType>::likelihood_fun_(NodeType val,
     std::size_t col, std::size_t row) const
 {
-    return likelihood_(val, observation_(col, row));
+    return likelihood_(observation_(col, row), val);
 }
 
 } // namespace bo
