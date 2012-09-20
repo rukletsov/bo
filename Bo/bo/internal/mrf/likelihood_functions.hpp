@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  likelihood_functions.hpp, v 0.1.4 2012.09.14
+  likelihood_functions.hpp, v 0.1.5 2012.09.20
 
   Various likelihood energy functions for MRF models.
 
@@ -40,7 +40,7 @@
 namespace bo {
 
 // Base class for likelihood energy functions.
-template <typename DataType, typename NodeType, typename RealType>
+template <typename NodeType, typename DataType, typename RealType>
 struct GenericLikelihood
 {
     GenericLikelihood(RealType response_weight): multiplier(response_weight)
@@ -57,8 +57,8 @@ protected:
 };
 
 // Minus operator for NodeType should accept DataType as a parameter and return RealType.
-template <typename DataType, typename NodeType, typename RealType>
-struct GaussianLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
+template <typename NodeType, typename DataType, typename RealType>
+struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 {
     GaussianLikelihood(RealType response_weight): GenericLikelihood(response_weight)
     { }
@@ -73,9 +73,9 @@ struct GaussianLikelihood: public GenericLikelihood<DataType, NodeType, RealType
 // NodeType should provide accessors to the parameters of Gamma distribution for the
 // corresponding configuration value (class label). This includes .k() and .theta()
 // for shape and scale respectively and .a() for the additional item, depending
-// only on k and theta (and therefore precomputed): -ln(G(k)) + k ln(theta).
-template <typename DataType, typename NodeType, typename RealType>
-struct GammaLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
+// only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
+template <typename NodeType, typename DataType, typename RealType>
+struct GammaLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 {
     GammaLikelihood(RealType response_weight): GenericLikelihood(response_weight)
     { }
@@ -83,7 +83,7 @@ struct GammaLikelihood: public GenericLikelihood<DataType, NodeType, RealType>
     RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
-            multiplier * ((configur_val.k() - 1) * std::log(observ_val) -
+            multiplier * ((1 - configur_val.k()) * std::log(observ_val) +
                           observ_val / configur_val.theta() + configur_val.a());
     }
 };
