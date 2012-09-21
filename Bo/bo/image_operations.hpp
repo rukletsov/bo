@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  image_operations.hpp, v 1.0.0 2011.09.28
+  image_operations.hpp, v 1.0.1 2012.09.20
 
   Common operations on images.
 
-  Copyright (c) 2011
+  Copyright (c) 2011, 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <limits>
 #include <boost/cstdint.hpp>
+#include <boost/function.hpp>
 
 #include "bo/raw_image_2d.hpp"
 
@@ -64,6 +65,32 @@ struct invert_brightness: public std::unary_function<ValType, ValType>
     }
 
     ValType max_value_;
+};
+
+// Functor returning either a given value or a substituion in case provided comparison
+// operator returns true for value and threshold. Note that comparison operator is
+// called like comp(value, threshold), e.g. in case of std::less this means
+// value < threshold.
+template <typename ValType>
+struct threshold_value: public std::unary_function<ValType, ValType>
+{
+    typedef boost::function<bool (ValType, ValType)> ComparisonOperation;
+
+    explicit
+    threshold_value(const ValType& threshold, const ValType& substitution,
+                    ComparisonOperation comparison):
+        threshold_(threshold), substitution_(substitution), comp_(comparison)
+    { }
+
+    ValType operator()(const ValType& value) const
+    {
+        return
+            (comp_(value, threshold_) ? substitution_ : value);
+    }
+
+    ValType threshold_;
+    ValType substitution_;
+    ComparisonOperation comp_;
 };
 
 } // namespace detail
@@ -101,6 +128,20 @@ RawImage2D<double> invert<double>(const RawImage2D<double>& image)
                    detail::invert_brightness<double>(1.));
 
     return inverted;
+}
+
+// Returns a thresholded image based on given image, threshold, substitution value
+// and probe function.
+template <typename T, typename Comp>
+RawImage2D<T> threshold(const RawImage2D<T>& image, const T& threshold,
+                        const T& substitution, Comp comp)
+{
+
+    RawImage2D<T> thresholded(image.width(), image.height());
+    std::transform(image.data(), image.data() + image.size(), thresholded.data(),
+                   detail::threshold_value<T>(threshold, substitution, comp));
+
+    return thresholded;
 }
 
 } // namespace bo
