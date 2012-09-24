@@ -49,12 +49,16 @@
 #include "bo/transformation_3d.hpp"
 #include "bo/blas/blas.hpp"
 
+#include "bo/kdtree.hpp"
+
 namespace bo {
 namespace methods {
 
 namespace detail {
 
 } // namespace detail
+
+using namespace boost::numeric::ublas;
 
 template <typename RealType>
 class ICP3D: public boost::noncopyable
@@ -63,48 +67,60 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> PointCloud;
     typedef boost::shared_ptr<PointCloud> PointCloudPtr;
-    typedef std::pair<std::size_t, std::size_t> Correspondence;
-    typedef std::vector<Correspondence> Correspondences;
-    typedef boost::shared_ptr<Correspondences> CorrespondencesPtr;
-    typedef boost::function<RealType (Point3D, Point3D)> DistanceFunction;
+    typedef boost::function<RealType (Point3D, Point3D)> Metric;
+    typedef Transformation3D<RealType> Transformation;
 
 public:
-    ICP3D(const PointCloud& source, PointCloudPtr target, DistanceFunction dist_fun,
+    ICP3D(const PointCloud& source, PointCloudPtr target, Metric dist_fun,
           bool is_preprocess = true);
 
     RealType next();
-    Transformation3D current_transformation() const;
-    PointCloudPtr current_cloud() const;
-    CorrespondencesPtr current_correspondence() const;
+    const Transformation& current_transformation() const;
+    const PointCloud& current_cloud() const;
+    const PointCloud& current_correspondence() const;
 
 private:
+
+    typedef bo::KDTree<3, Point3D, std::pointer_to_binary_function
+        <const Point3D&, std::size_t, RealType> > Point3DTree;
+    static RealType point_bac(const Point3D& p, std::size_t k);
+
     void overlay_();
     Point3D centroid_(PointCloud* cloud) const;
-    blas::matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
-        const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const;
-    RealType distance_(PointCloud* cloud1, PointCloud* cloud2, Correspondences* corresp) const;
+    // Attention: the elements cloud2[i] must correspond to the elements cloud1[i].  
+    matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+        const Point3D& centroid1, const Point3D& centroid2) const;
+    // Attention: the elements cloud2[i] must correspond to the elements cloud1[i].  
+    RealType distance_(PointCloud* cloud1, PointCloud* cloud2) const;
+    void update_current_transform_and_cloud_(const Transformation& m);
 
 private:
     PointCloudPtr target_cloud_;
     Point3D target_centroid_;
-    DistanceFunction dist_fun_;
+    Metric dist_fun_;
     PointCloud current_cloud_;
-    CorrespondencesPtr current_corresp_;
-    Transformation3D current_trans_;
+    Transformation current_trans_;
+    Point3DTree tree_;
+    PointCloud corresp_cloud_;
 };
 
 template <typename RealType>
 ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
-    DistanceFunction dist_fun, bool is_preprocess):
-    current_cloud_(source), target_cloud(target), dist_fun_(dist_fun), 
-    current_trans_()
+    Metric dist_fun, bool is_preprocess):
+    current_cloud_(source), target_cloud_(target), dist_fun_(dist_fun), 
+    current_trans_(), tree_(Point3DTree(std::ptr_fun(ICP3D<RealType>::point_bac)))
 {
     // Cache centroid for the target point cloud.
-    target_centroid_ = centroid_(target);
+    target_centroid_ = centroid_(target.get());
 
-    // Precompute a kd-tree for the target point cloud.
-
-    // TODO: prepare for ICP iterations.
+    // Compute a kd-tree for the target point cloud.
+    PointCloud::const_iterator it = target->begin();
+    while (it != target->end())
+    {
+        tree_.insert(*it);
+        ++it;
+    }
+    tree_.optimise();
 
     if (is_preprocess)
         overlay_();
@@ -113,23 +129,32 @@ ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
 template <typename RealType>
 RealType ICP3D<RealType>::next()
 {
-    Point3D current_centroid = centroid_(current_cloud_);
+    Point3D current_centroid = centroid_(&current_cloud_);
 
-    blas::matrix<RealType> Spx = cross_covariance_(current_cloud_, target_cloud_, current_centroid,
-        target_centroid_, current_corresp_);
+    // Update the correspondence.
+    corresp_cloud_.clear();
+    for (PointCloud::const_iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
+    {
+        std::pair<Point3DTree::const_iterator, RealType> closest = tree_.find_nearest(*it);
+        corresp_cloud_.push_back(*closest.first);
+    }
+    
+    // Calculate the cross covariance for the current points and the target ones.
+    matrix<RealType> Spx = cross_covariance_(&current_cloud_, &corresp_cloud_, current_centroid,
+        target_centroid_);
 
-    blas::matrix<RealType> SpxT = blas::trans(Spx);
+    matrix<RealType> SpxT = trans(Spx);
 
     // Create the asymmetrical matrix.
-    blas::matrix<RealType> Apx = Spx - SpxT;
+    matrix<RealType> Apx = Spx - SpxT;
 
     // Calculate the matrix trace.
     RealType traceSpx = Spx(0, 0) + Spx(1, 1) + Spx(2, 2);
 
-    blas::matrix<RealType> Bpx = Spx + SpxT + traceSpx * blas::identity_matrix<RealType>(3);
+    matrix<RealType> Bpx = Spx + SpxT + traceSpx * identity_matrix<RealType>(3);
 
     // Create the 4x4 matrix.
-    blas::matrix<RealType> Qpx(4, 4);
+    matrix<RealType> Qpx(4, 4);
     
     // Fill in the matrix.
     // Block 1.
@@ -164,84 +189,89 @@ RealType ICP3D<RealType>::next()
     Vector<RealType, 3> t(0);
 
     // Optimal translation. 
-    Point3D translation = target_centroid_ - Transformation3D(quaternion, t) * current_centroid;
+    Point3D translation = target_centroid_ - Transformation(quaternion, t) * current_centroid;
 
     // Create the optimal transformation.
-    Transformation3D optimal_trans(quaternion, translation);
+    Transformation optimal_trans(quaternion, translation);
 
-    // Update the current transformation.
-    current_trans_ = optimal_trans * current_trans_;
+    // Update the current point cloud and the transformation.
+    update_current_transform_and_cloud_(optimal_trans);
 
-    // Update the current point cloud.
-    PointCloud::iterator it = current_cloud_.begin();
-    while (it != current_cloud_.end())
-    {
-        *it = current_trans_ * (*it);
-        ++it;
-    }
-
-    return distance_(current_cloud_, target_cloud_, current_corresp_);
+    return distance_(&current_cloud_, &corresp_cloud_);
 }
 
 template <typename RealType>
-Transformation3D ICP3D<RealType>::current_transformation() const
+const typename ICP3D<RealType>::Transformation& ICP3D<RealType>::current_transformation() const
 {
-    return current_transformation_;
+    return current_trans_;
 }
 
 template <typename RealType>
-typename ICP3D<RealType>::PointCloudPtr ICP3D<RealType>::current_cloud() const
+const typename ICP3D<RealType>::PointCloud& ICP3D<RealType>::current_cloud() const
 {
     return current_cloud_;
 }
 
 template <typename RealType>
-typename ICP3D<RealType>::CorrespondencesPtr ICP3D<RealType>::current_correspondence() const
+const typename ICP3D<RealType>::PointCloud& ICP3D<RealType>::current_correspondence() const
 {
-    return current_corresp_;
+    return corresp_cloud_;
 }
 
 template <typename RealType>
 void ICP3D<RealType>::overlay_()
 {
-    // TODO: implement current cloud shift using centroids.
+    // Cloud shift using centroids.
+
+    Vector<RealType, 4> zero_quaternion;
+    zero_quaternion[0] = 0;
+    zero_quaternion[1] = 0;
+    zero_quaternion[2] = 0;
+    zero_quaternion[3] = 1;
+
+    Point3D translation = centroid_(target_cloud_.get()) - centroid_(&current_cloud_);
+
+    Transformation shift_transform(zero_quaternion, translation);
+    
+    // Update the current point cloud and the transformation.
+    update_current_transform_and_cloud_(shift_transform);
 }
 
 template <typename RealType>
 typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) const
 {
     Point3D mass_center(0);
-    
-    PointCloud::const_iterator it = cloud->begin();
-    
-    while (it != cloud->end())
+   
+    for (PointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it)
     {
-        mass_center += *it;    
-        ++it;
+        mass_center += *it;  
     }
 
-    BOOST_ASSERT(cloud->size() != 0);
+    const std::size_t n = cloud->size();
 
-    mass_center /= cloud->size();
+    BOOST_ASSERT(n > 0);
+
+    mass_center /= n;
 
     return mass_center;
 }
 
 template <typename RealType>
-blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
-    const Point3D& centroid1, const Point3D& centroid2, Correspondences* corresp) const
+matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+    const Point3D& centroid1, const Point3D& centroid2) const
 {
-    blas::matrix<RealType> m(3, 3) = blas::zero_matrix<RealType>(3, 3);
-    blas::matrix<RealType> p(3, 1);
-    blas::matrix<RealType> x(1, 3);
+    const std::size_t n = cloud1->size();
 
-    Correspondences::const_iterator it = corresp->begin();
+    BOOST_ASSERT(cloud2->size() == n && n > 0);
 
-    // Calculate cross-covariance.
-    while (it != corresp->end())
-    {       
-        Point3D a = cloud1->at(it->first);
-        Point3D b = cloud2->at(it->second);
+    matrix<RealType> m = zero_matrix<RealType>(3, 3);
+    matrix<RealType> p(3, 1);
+    matrix<RealType> x(1, 3);
+
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        Point3D a = cloud1->at(i);
+        Point3D b = cloud2->at(i);
 
         p(0, 0) = a[0] - centroid1[0];
         p(1, 0) = a[1] - centroid1[1];
@@ -251,39 +281,53 @@ blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, Po
         x(0, 1) = b[1] - centroid2[1];
         x(0, 2) = b[2] - centroid2[2];
 
-        m = m + blas::prod(p, x);
-        
-        ++it;
-    }
+        m = m + prod(p, x);
+    }   
 
-    BOOST_ASSERT(corresp->size() != 0);
-
-    m = m / corresp->size();
+    m = m / n;
 
     return m;
 }
 
 template <typename RealType>
-RealType bo::methods::ICP3D<RealType>::distance_( PointCloud* cloud1, PointCloud* cloud2, 
-    Correspondences* corresp ) const
-{
+RealType bo::methods::ICP3D<RealType>::distance_(PointCloud* cloud1, PointCloud* cloud2) const
+{   
+    const std::size_t n = cloud1->size();
+
+    BOOST_ASSERT(cloud2->size() == n);
+
     RealType sum(0);
 
-    Correspondences::const_iterator it = corresp->begin();
-
-    // Calculate the integral distance.
-    while (it != corresp->end())
-    {       
-        Point3D a = cloud1->at(it->first);
-        Point3D b = cloud2->at(it->second);
-
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        Point3D a = cloud1->at(i);
+        Point3D b = cloud2->at(i);
         sum += dist_fun_(a, b);
-
-        ++it;
     }
 
     return sum;
 }
+
+// Point3D brackets accessor.
+template <typename RealType>
+inline RealType bo::methods::ICP3D<RealType>::point_bac(const Point3D& p, std::size_t k)
+{ 
+    return p[k]; 
+}
+
+template <typename RealType>
+void bo::methods::ICP3D<RealType>::update_current_transform_and_cloud_(const Transformation& m)
+{
+    // Update the current transformation.
+    current_trans_ = m * current_trans_;
+
+    // Update the current point cloud.
+    for (PointCloud::iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
+    {
+        *it = m * (*it);
+    }
+}
+
 
 } // namespace methods
 } // namespace bo
