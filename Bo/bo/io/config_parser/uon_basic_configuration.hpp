@@ -106,7 +106,7 @@ namespace config_parser {
 */
 
 // Bo's standard matrix type.
-typedef blas::matrix<float> BoFloatMatrix;
+typedef boost::numeric::ublas::matrix<float> BoFloatMatrix;
 
 
 // Namespace uon_config contains definitions of key names for UON configurations.
