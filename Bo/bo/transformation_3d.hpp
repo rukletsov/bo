@@ -72,6 +72,9 @@ public:
     // Resets current transformation to identity.
     void reset();
 
+    // Returns the 4x4 matrix corresponding to the current transformation.
+    blas::matrix<RealType> matrix() const;
+
     // Allow stream operator<< access Transformation3D members.
     template <typename V>
     friend std::ostream& operator<<(std::ostream& os, const Transformation3D<V>& obj);
@@ -79,7 +82,6 @@ public:
 private:
     blas::matrix<RealType> matrix_;
 };
-
 
 // Prints formatted transformation to the given stream.
 template <typename RealType>
@@ -179,6 +181,12 @@ template <typename RealType> inline
 void Transformation3D<RealType>::reset()
 {
     matrix_ = blas::identity_matrix<RealType>(4);
+}
+
+template <typename RealType>
+blas::matrix<RealType> bo::Transformation3D<RealType>::matrix() const
+{
+    return matrix_;
 }
 
 } // namespace bo
