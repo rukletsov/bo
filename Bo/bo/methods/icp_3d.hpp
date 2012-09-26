@@ -223,10 +223,10 @@ void ICP3D<RealType>::overlay_()
     // Cloud shift using centroids.
 
     Vector<RealType, 4> zero_quaternion;
-    zero_quaternion[0] = 0;
+    zero_quaternion[0] = 1;
     zero_quaternion[1] = 0;
     zero_quaternion[2] = 0;
-    zero_quaternion[3] = 1;
+    zero_quaternion[3] = 0;
 
     Point3D translation = centroid_(target_cloud_.get()) - centroid_(&current_cloud_);
 
