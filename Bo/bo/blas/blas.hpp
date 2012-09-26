@@ -165,21 +165,21 @@ double determinant(const matrix<T>& input)
 template <class T>
 std::vector<T> eigen_analysis(matrix<T>& A)
 {
-    const std::size_t n = A.size1();
+    const int n = (int)A.size1();
     std::vector<T> d(n);
 
     // Initialize the vector.
-    for (std::size_t j = 0; j < n; ++j)
+    for (int j = 0; j < n; ++j)
     {
         d[j] = A(n - 1, j);
     }
 
-    BOOST_ASSERT(A.size2() == n);
+    BOOST_ASSERT(A.size2() == (unsigned)n);
 
     // Check for a square matrix.
-    if (A.size2() != n)
+    if (A.size2() != (unsigned)n)
     {
-        return d;
+        return d; 
     }
 
     std::vector<T> e(n, T(0));
@@ -278,7 +278,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
     }
 
     // Doing some magic.
-    for (std::size_t i = 0; i < n - 1; ++i)
+    for (int i = 0; i < n - 1; ++i)
     {
         A(n - 1, i) = A(i, i);
         A(i, i) = 1;
@@ -289,21 +289,21 @@ std::vector<T> eigen_analysis(matrix<T>& A)
         {
             T invh = T(1.0 / h);
 
-            for (std::size_t k = 0; k <= i; ++k)
+            for (int k = 0; k <= i; ++k)
             {
                 d[k] = A(k, i + 1) * invh;
             }
 
-            for (std::size_t j = 0; j <= i; ++j)
+            for (int j = 0; j <= i; ++j)
             {
                 T g(0);
 
-                for (std::size_t k = 0; k <= i; ++k)
+                for (int k = 0; k <= i; ++k)
                 {
                     g += A(k, i + 1) * A(k, j);
                 }
 
-                for (std::size_t k = 0; k <= i; ++k)
+                for (int k = 0; k <= i; ++k)
                 {
                     A(k, j) -= g * d[k];
                 }
@@ -311,13 +311,13 @@ std::vector<T> eigen_analysis(matrix<T>& A)
             }
         }
 
-        for (std::size_t k = 0; k <= i; ++k)
+        for (int k = 0; k <= i; ++k)
         {
             A(k, i + 1) = T(0);
         }    
     }
 
-    for (std::size_t j = 0; j < n; ++j) 
+    for (int j = 0; j < n; ++j) 
     {
         d[j] = A(n - 1, j);
         A(n - 1, j) = T(0);
@@ -326,7 +326,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
     A(n - 1, n - 1) = 1;
 
     // QL.
-    for (std::size_t i = 1; i < n; ++i)
+    for (int i = 1; i < n; ++i)
     {
         e[i - 1] = e[i];
     }
@@ -335,10 +335,10 @@ std::vector<T> eigen_analysis(matrix<T>& A)
     T f(0), tmp(0);
     const T eps = T(std::pow(T(2), -52));
 
-    for (std::size_t l = 0; l < n; l++) 
+    for (int l = 0; l < n; l++) 
     {
         tmp = std::max(tmp, std::fabs(d[l]) + std::fabs(e[l]));
-        std::size_t m = l;
+        int m = l;
 
         while (m < n)
         {
@@ -365,7 +365,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
                 T dl1 = d[l + 1];
                 T h = g - d[l];
 
-                for (std::size_t i = l + 2; i < n; ++i)
+                for (int i = l + 2; i < n; ++i)
                 {
                     d[i] -= h;
                 }
@@ -377,7 +377,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
                 T el1 = e[l + 1];
                 T s(0), s2(0);
 
-                for (std::size_t i = m - 1; i >= l; --i)
+                for (int i = m - 1; i >= l; --i)
                 {
                     c3 = c2;
                     c2 = c;
@@ -393,7 +393,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
                     p = c * d[i] - s * g;
                     d[i + 1] = h + s * (c * g + s * d[i]);
 
-                    for (std::size_t k = 0; k < n; ++k)
+                    for (int k = 0; k < n; ++k)
                     {
                         h = A(k, i + 1);
                         A(k, i + 1) = s * A(k, i) + c * h;
@@ -415,12 +415,12 @@ std::vector<T> eigen_analysis(matrix<T>& A)
     }
 
     // Sort.
-    for (std::size_t i = 0; i < n - 1; ++i)
+    for (int i = 0; i < n - 1; ++i)
     {
-        std::size_t k = i;
+        int k = i;
         T p = d[i];
 
-        for (std::size_t j = i + 1; j < n; ++j)
+        for (int j = i + 1; j < n; ++j)
         {
             if (d[j] < p)
             {
@@ -434,13 +434,15 @@ std::vector<T> eigen_analysis(matrix<T>& A)
         d[k] = d[i];
         d[i] = p;
 
-        for (std::size_t j = 0; j < n; ++j)
+        for (int j = 0; j < n; ++j)
         {
             p = A(j, i);
             A(j, i) = A(j, k);
             A(j, k) = p;
         }
     }
+
+    return d;
 }
 
 } // namespace blas
