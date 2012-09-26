@@ -56,8 +56,10 @@ public:
 
 public:
     // Creates either identity transformation or the transformation based on the
-    // given (quaternion, translation vector) pair.
+    // given quaternion and/or translation vector.
     Transformation3D();
+    Transformation3D(const Quaternion& q);
+    Transformation3D(const Translation& t);
     Transformation3D(const Quaternion& q, const Translation& t);
 
     // Copy c-tor, d-tor and assignment operator are fine.
@@ -78,6 +80,10 @@ public:
     // Allow stream operator<< access Transformation3D members.
     template <typename V>
     friend std::ostream& operator<<(std::ostream& os, const Transformation3D<V>& obj);
+
+private:
+    void set_rotation_block_(const Quaternion& q);
+    void set_translation_block_(const Translation& t);
 
 private:
     blas::matrix<RealType> matrix_;
@@ -109,38 +115,27 @@ Transformation3D<RealType>::Transformation3D()
 }
 
 template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const Quaternion& q)
+{
+    reset();
+    set_rotation_block_(q);
+}
+
+template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const Translation& t)
+{
+    reset();
+    set_translation_block_(t); 
+}
+
+template <typename RealType>
 Transformation3D<RealType>::Transformation3D(const Quaternion& q, const Translation& t)
 {
     reset();
-
-    // Precompute some values based on quaternion components.
-    RealType q00 = q[0]*q[0];
-    RealType q11 = q[1]*q[1];
-    RealType q22 = q[2]*q[2];
-    RealType q33 = q[3]*q[3];
-    RealType q03 = q[0]*q[3];
-    RealType q13 = q[1]*q[3];
-    RealType q23 = q[2]*q[3];
-    RealType q02 = q[0]*q[2];
-    RealType q12 = q[1]*q[2];
-    RealType q01 = q[0]*q[1];
-
-    // Fill the top-left 3x3 block (corresponding to rotation).
-    matrix_(0, 0) = q00 + q11 - q22 - q33;
-    matrix_(1, 1) = q00 - q11 + q22 - q33;
-    matrix_(2, 2) = q00 - q11 - q22 + q33;
-    matrix_(0, 1) = RealType(2) * (q12 - q03);
-    matrix_(1, 0) = RealType(2) * (q12 + q03);
-    matrix_(0, 2) = RealType(2) * (q13 + q02);
-    matrix_(2, 0) = RealType(2) * (q13 - q02);
-    matrix_(1, 2) = RealType(2) * (q23 - q01);
-    matrix_(2, 1) = RealType(2) * (q23 + q01);
-
-    // Fill the last column (corresponding to translation) using given translation vector.
-    matrix_(0, 3) = t[0];
-    matrix_(1, 3) = t[1];
-    matrix_(2, 3) = t[2];
+    set_translation_block_(t);
+    set_rotation_block_(q);
 }
+
 
 template <typename RealType> inline
 typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operator*(
@@ -184,9 +179,45 @@ void Transformation3D<RealType>::reset()
 }
 
 template <typename RealType>
-blas::matrix<RealType> bo::Transformation3D<RealType>::matrix() const
+blas::matrix<RealType> Transformation3D<RealType>::matrix() const
 {
     return matrix_;
+}
+
+template <typename RealType>
+void Transformation3D<RealType>::set_rotation_block_(const Quaternion& q)
+{
+    // Precompute some values based on quaternion components.
+    RealType q00 = q[0]*q[0];
+    RealType q11 = q[1]*q[1];
+    RealType q22 = q[2]*q[2];
+    RealType q33 = q[3]*q[3];
+    RealType q03 = q[0]*q[3];
+    RealType q13 = q[1]*q[3];
+    RealType q23 = q[2]*q[3];
+    RealType q02 = q[0]*q[2];
+    RealType q12 = q[1]*q[2];
+    RealType q01 = q[0]*q[1];
+
+    // Fill the top-left 3x3 block (corresponding to rotation).
+    matrix_(0, 0) = q00 + q11 - q22 - q33;
+    matrix_(1, 1) = q00 - q11 + q22 - q33;
+    matrix_(2, 2) = q00 - q11 - q22 + q33;
+    matrix_(0, 1) = RealType(2) * (q12 - q03);
+    matrix_(1, 0) = RealType(2) * (q12 + q03);
+    matrix_(0, 2) = RealType(2) * (q13 + q02);
+    matrix_(2, 0) = RealType(2) * (q13 - q02);
+    matrix_(1, 2) = RealType(2) * (q23 - q01);
+    matrix_(2, 1) = RealType(2) * (q23 + q01);
+}
+
+template <typename RealType>
+void Transformation3D<RealType>::set_translation_block_(const Translation& t)
+{
+    // Fill the last column (corresponding to translation) using given translation vector.
+    matrix_(0, 3) = t[0];
+    matrix_(1, 3) = t[1];
+    matrix_(2, 3) = t[2];
 }
 
 } // namespace bo
