@@ -58,8 +58,6 @@ namespace detail {
 
 } // namespace detail
 
-using namespace boost::numeric::ublas;
-
 template <typename RealType>
 class ICP3D: public boost::noncopyable
 {
@@ -88,7 +86,7 @@ private:
     void overlay_();
     Point3D centroid_(PointCloud* cloud) const;
     // Attention: the elements cloud2[i] must correspond to the elements cloud1[i].  
-    matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+    blas::matrix<RealType> cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
         const Point3D& centroid1, const Point3D& centroid2) const;
     // Attention: the elements cloud2[i] must correspond to the elements cloud1[i].  
     RealType distance_(PointCloud* cloud1, PointCloud* cloud2) const;
@@ -140,21 +138,22 @@ RealType ICP3D<RealType>::next()
     }
     
     // Calculate the cross covariance for the current points and the target ones.
-    matrix<RealType> Spx = cross_covariance_(&current_cloud_, &corresp_cloud_, current_centroid,
+    blas::matrix<RealType> Spx = cross_covariance_(&current_cloud_, &corresp_cloud_, current_centroid,
         target_centroid_);
 
-    matrix<RealType> SpxT = trans(Spx);
+    blas::matrix<RealType> SpxT = trans(Spx);
 
     // Create the asymmetrical matrix.
-    matrix<RealType> Apx = Spx - SpxT;
+    blas::matrix<RealType> Apx = Spx - SpxT;
 
     // Calculate the matrix trace.
     RealType traceSpx = Spx(0, 0) + Spx(1, 1) + Spx(2, 2);
 
-    matrix<RealType> Bpx = Spx + SpxT + traceSpx * identity_matrix<RealType>(3);
+    blas::matrix<RealType> Bpx = Spx + SpxT + 
+        traceSpx * boost::numeric::ublas::identity_matrix<RealType>(3);
 
     // Create the 4x4 matrix.
-    matrix<RealType> Qpx(4, 4);
+    blas::matrix<RealType> Qpx(4, 4);
     
     // Fill in the matrix.
     // Block 1.
@@ -257,16 +256,16 @@ typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) 
 }
 
 template <typename RealType>
-matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
+blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, PointCloud* cloud2,
     const Point3D& centroid1, const Point3D& centroid2) const
 {
     const std::size_t n = cloud1->size();
 
     BOOST_ASSERT(cloud2->size() == n && n > 0);
 
-    matrix<RealType> m = zero_matrix<RealType>(3, 3);
-    matrix<RealType> p(3, 1);
-    matrix<RealType> x(1, 3);
+    blas::matrix<RealType> m = boost::numeric::ublas::zero_matrix<RealType>(3, 3);
+    blas::matrix<RealType> p(3, 1);
+    blas::matrix<RealType> x(1, 3);
 
     for (std::size_t i = 0; i < n; ++i)
     {

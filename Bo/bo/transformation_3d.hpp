@@ -145,11 +145,11 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     Point3D point) const
 {
     // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
-    bounded_vector<RealType, 4> source;
+    boost::numeric::ublas::bounded_vector<RealType, 4> source;
     source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
 
-    // Perfrom multiplication.
-    bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
+    // Perform multiplication.
+    boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
 
     // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
     // coordinates.
