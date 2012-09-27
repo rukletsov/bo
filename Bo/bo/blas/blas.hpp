@@ -450,7 +450,7 @@ std::vector<T> eigen_analysis(matrix<T>& A)
 // Computes the L1 norm of matrix. Uses std::abs(T), which implies T is a built-in type
 // or a custom type, for which abs() is provided in std namespace.
 template <class T>
-T norm_1(const matrix<T>& A)
+T l1_norm(const matrix<T>& A)
 {
     T sum(0);
 
