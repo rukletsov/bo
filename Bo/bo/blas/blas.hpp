@@ -38,7 +38,9 @@
 
 #include <iostream>
 #include <vector>
+#include <cmath>
 #include <boost/format.hpp>
+
 // Suppress boost::numeric::ublas C4127 warning under MSVC.
 #ifdef _MSC_VER
 #   pragma warning(push)
@@ -444,6 +446,21 @@ std::vector<T> eigen_analysis(matrix<T>& A)
 
     return d;
 }
+
+// Computes the L1 norm of matrix. Uses std::abs(T), which implies T is a built-in type
+// or a custom type, for which abs() is provided in std namespace.
+template <class T>
+T norm_1(const matrix<T>& A)
+{
+    T sum(0);
+
+    for (std::size_t i = 0; i < A.size1(); ++i)
+        for (std::size_t j = 0; j < A.size2(); ++j)
+            sum += std::abs(A(i, j));
+
+    return sum;
+}
+
 
 } // namespace blas
 } // namespace bo
