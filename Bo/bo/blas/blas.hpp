@@ -165,7 +165,7 @@ double determinant(const matrix<T>& input)
 // eigenvalues, sorted in non-decreasing order. The corresponding eigenvectors are
 // stored in the columns of the matrix A.
 template <class T>
-std::vector<T> eigen_analysis(matrix<T>& A)
+std::vector<T> eigen_symmetric(matrix<T>& A)
 {
     const int n = (int)A.size1();
     std::vector<T> d(n);

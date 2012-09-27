@@ -66,7 +66,7 @@
 
         // Perform a new ICP registration step and update the current distance
         // between the source and target.
-        d = icp.next(); 
+        distance = icp.next(); 
 
         // Update the current transformation. 
         m2 = icp.current_transformation().matrix();
@@ -231,7 +231,7 @@ RealType ICP3D<RealType>::next()
     Qpx(3, 2) = Bpx(2, 1);
     Qpx(3, 3) = Bpx(2, 2); 
 
-    blas::eigen_analysis(Qpx);
+    blas::eigen_symmetric(Qpx);
 
     // Quaternion that defines the optimal rotation.
     Vector<RealType, 4> quaternion;
