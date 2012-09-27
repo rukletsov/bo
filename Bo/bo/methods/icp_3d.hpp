@@ -149,8 +149,8 @@ RealType ICP3D<RealType>::next()
     // Calculate the matrix trace.
     RealType traceSpx = Spx(0, 0) + Spx(1, 1) + Spx(2, 2);
 
-    blas::matrix<RealType> Bpx = Spx + SpxT + 
-        traceSpx * boost::numeric::ublas::identity_matrix<RealType>(3);
+    blas::matrix<RealType> Bpx = Spx + SpxT - 
+        traceSpx * blas::identity_matrix<RealType>(3);
 
     // Create the 4x4 matrix.
     blas::matrix<RealType> Qpx(4, 4);
@@ -175,20 +175,19 @@ RealType ICP3D<RealType>::next()
     Qpx(2, 3) = Bpx(1, 2);
     Qpx(3, 1) = Bpx(2, 0);
     Qpx(3, 2) = Bpx(2, 1);
-    Qpx(3, 3) = Bpx(2, 2);
+    Qpx(3, 3) = Bpx(2, 2); 
 
     blas::eigen_analysis(Qpx);
 
     // Quaternion that defines the optimal rotation.
     Vector<RealType, 4> quaternion;
-    quaternion[0] = Qpx(3, 0);
-    quaternion[1] = Qpx(3, 1);
-    quaternion[2] = Qpx(3, 2);
-    quaternion[3] = Qpx(3, 3);
-    Vector<RealType, 3> t(0);
+    quaternion[0] = RealType(Qpx(0, 3));
+    quaternion[1] = RealType(Qpx(1, 3));
+    quaternion[2] = RealType(Qpx(2, 3));
+    quaternion[3] = RealType(Qpx(3, 3));
 
     // Optimal translation. 
-    Point3D translation = target_centroid_ - Transformation(quaternion, t) * current_centroid;
+    Point3D translation = target_centroid_ - Transformation(quaternion) * current_centroid;
 
     // Create the optimal transformation.
     Transformation optimal_trans(quaternion, translation);
@@ -257,7 +256,7 @@ blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, Po
 
     BOOST_ASSERT(cloud2->size() == n && n > 0);
 
-    blas::matrix<RealType> m = boost::numeric::ublas::zero_matrix<RealType>(3, 3);
+    blas::matrix<RealType> m = blas::zero_matrix<RealType>(3, 3);
     blas::matrix<RealType> p(3, 1);
     blas::matrix<RealType> x(1, 3);
 
