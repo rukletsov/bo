@@ -169,17 +169,15 @@ public:
     double eucl_norm() const;
     template <typename RetType> void eucl_norm(RetType& retvar) const;
 
-    // Computes taxicab (L1) norm of the vector. Uses std::abs(T), which implies
-    // T is a built-in type or cutom type, for which abs() is provided in std namespace.
+    // Computes taxicab (L1) and maximum (L inf) norms of the vector. Uses std::abs(T), 
+    // which implies T is a built-in type or custom type, for which abs() is provided 
+    // in std namespace.
     T taxicab_norm() const;
-
-    // Computes maximum (L inf) norm of the vector. Uses std::abs(T), which implies
-    // T is a built-in type or cutom type, for which abs() is provided in std namespace.
     T maximum_norm() const;
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
-    // If the vector is a null-vector, normalization is sensless. However, some
+    // If the vector is a null-vector, normalization is senseless. However, some
     // software (e.g. Wolfram Mathematica 7.0) returns the null-vector as a result
     // of a normalization of the null-vector. In order not to inflate the code,
     // the function called on the null-vector will make 0/0 division and return

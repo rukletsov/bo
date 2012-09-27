@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.2 2012.09.17
+  blas.hpp, v 1.1.3 2012.09.27
 
   Basic linear algebra subprograms. 
 
@@ -38,13 +38,19 @@
 
 #include <iostream>
 #include <vector>
+#include <cmath>
 #include <boost/format.hpp>
+
 // Suppress boost::numeric::ublas C4127 warning under MSVC.
 #ifdef _MSC_VER
 #   pragma warning(push)
 #   pragma warning(disable:4127)
-#   include <boost/numeric/ublas/matrix.hpp>
-#   include <boost/numeric/ublas/lu.hpp>
+#endif // _MSC_VER
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/lu.hpp>
+
+#ifdef _MSC_VER
 #   pragma warning(pop)
 #endif // _MSC_VER
 
@@ -163,9 +169,9 @@ double determinant(const matrix<T>& input)
 // eigenvalues, sorted in non-decreasing order. The corresponding eigenvectors are
 // stored in the columns of the matrix A.
 template <class T>
-std::vector<T> eigen_analysis(matrix<T>& A)
+std::vector<T> eigen_symmetric(matrix<T>& A)
 {
-    unsigned int n = A.size1();
+    const int n = (int)A.size1();
     std::vector<T> d(n);
 
     // Initialize the vector.
@@ -174,12 +180,12 @@ std::vector<T> eigen_analysis(matrix<T>& A)
         d[j] = A(n - 1, j);
     }
 
-    BOOST_ASSERT(A.size2() == n);
+    BOOST_ASSERT(A.size2() == (unsigned)n);
 
     // Check for a square matrix.
-    if (A.size2() != n)
+    if (A.size2() != (unsigned)n)
     {
-        return d;
+        return d; 
     }
 
     std::vector<T> e(n, T(0));
@@ -441,7 +447,24 @@ std::vector<T> eigen_analysis(matrix<T>& A)
             A(j, k) = p;
         }
     }
+
+    return d;
 }
+
+// Computes the L1 norm of matrix. Uses std::abs(T), which implies T is a built-in type
+// or a custom type, for which abs() is provided in std namespace.
+template <class T>
+T l1_norm(const matrix<T>& A)
+{
+    T sum(0);
+
+    for (std::size_t i = 0; i < A.size1(); ++i)
+        for (std::size_t j = 0; j < A.size2(); ++j)
+            sum += std::abs(A(i, j));
+
+    return sum;
+}
+
 
 } // namespace blas
 } // namespace bo

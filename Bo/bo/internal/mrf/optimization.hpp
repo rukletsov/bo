@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  optimization.hpp, v 0.1.5 2012.09.14
+  optimization.hpp, v 0.1.6 2012.09.20
 
   Various energy minimization algorithms for MRF models.
 
@@ -74,7 +74,7 @@ protected:
 // A class impementing iterated conditional modes minimization algorithm. As its
 // parent, captures sole ownership over an istance of TypePossibleValues<NodeType>.
 template <typename NodeType, typename DataType, typename RealType>
-class ICM2D: MRF2DOptimizer<NodeType, DataType, RealType>
+class ICM2D: public MRF2DOptimizer<NodeType, DataType, RealType>
 {
 public:
     ICM2D(NodePossibleLabels* possible_values): MRF2DOptimizer(possible_values)
@@ -115,7 +115,7 @@ public:
 // Additionally takes initial temperature and decreasing multiplier for it, and
 // precomputed probability for MMD modification if this modification was requested.
 template <typename NodeType, typename DataType, typename RealType>
-class MD2D: MRF2DOptimizer<NodeType, DataType, RealType>
+class MD2D: public MRF2DOptimizer<NodeType, DataType, RealType>
 {
 public:
     typedef boost::uniform_real<RealType> RealDistribution;

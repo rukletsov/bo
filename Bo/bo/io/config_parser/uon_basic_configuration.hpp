@@ -39,13 +39,13 @@
 #define UON_BASIC_CONFIGURATION_HPP_7A47DDA3_838A_4177_AFD0_227E7B76FBAB_
 
 #include <vector>
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/algorithm/string/detail/trim.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/io/ini_reader.hpp"
 #include "bo/io/config_parser/basic_configuration.hpp"
+#include "bo/blas/blas.hpp"
 
 // Enable ATK usage only when requested by the library user.
 #ifdef ATK_SUPPORTED

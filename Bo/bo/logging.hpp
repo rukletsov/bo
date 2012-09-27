@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.4 2012.09.12
+  logging.hpp, v 1.0.5 2012.09.28
 
   Routines for logging messages and errors.
 
@@ -41,7 +41,9 @@
 #ifdef _MSC_VER
 #   pragma warning (push)
 #   pragma warning (disable:4127)
-#   include <boost/date_time.hpp>
+#endif // _MSC_VER
+#include <boost/date_time.hpp>
+#ifdef _MSC_VER
 #   pragma warning(pop)
 #endif // _MSC_VER
 

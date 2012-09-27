@@ -101,6 +101,22 @@ protected:
     RealType thres_border;
 };
 
+// Smoothness prior energy on two-node clique for node types, supporting mean() method.
+template <typename NodeType, typename RealType>
+struct MeanSmoothnessPrior: public GenericPrior<NodeType, RealType>
+{
+    MeanSmoothnessPrior(RealType response_weight): GenericPrior(response_weight)
+    { }
+
+    virtual RealType operator()(NodeType arg1, NodeType arg2) const
+    {
+        return multiplier * square(arg1.mean() - arg2.mean()) / RealType(2);
+    }
+
+    virtual ~MeanSmoothnessPrior()
+    { }
+};
+
 } // namespace bo
 
 #endif // PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_

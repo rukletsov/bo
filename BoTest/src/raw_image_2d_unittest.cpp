@@ -1,5 +1,6 @@
 
 #include <cstddef>
+#include <algorithm>
 #include <boost/cstdint.hpp>
 #include <gtest/gtest.h>
 
@@ -269,6 +270,17 @@ TEST_F(RawImage2DTest, SizeCheck)
 
     EXPECT_EQ(im3_.size(), im3_.width() * im3_.height());
     EXPECT_EQ(im_invalid1_.size(), im_invalid1_.width() * im_invalid1_.height());
+}
+
+TEST_F(RawImage2DTest, Fill)
+{
+    im1_.fill(-1.f);
+    EXPECT_EQ(*std::min_element(im1_.data(), im1_.data() + im1_.size()),
+              *std::max_element(im1_.data(), im1_.data() + im1_.size()));
+    EXPECT_EQ(-1.f, *std::min_element(im1_.data(), im1_.data() + im1_.size()));
+
+    im_invalid1_.fill(1.f);
+    EXPECT_EQ(std::size_t(0), im_invalid1_.size());
 }
 
 // TODO: provide tests for other RawImage2D functions.
