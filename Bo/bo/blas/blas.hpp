@@ -49,8 +49,8 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
-#ifdef _MSC_VER
 
+#ifdef _MSC_VER
 #   pragma warning(pop)
 #endif // _MSC_VER
 
