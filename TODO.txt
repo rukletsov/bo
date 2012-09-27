@@ -3,7 +3,8 @@ LIBRARY
 ================================================================================
 * Add memleak tests (check Application Verifier, Dr. Memory).
 * Comments in Doxygen style (Qt style?).
-* Implement Kahan summation (check functors, accumulate, transform, etc).
+* Implement Kahan summation iteration which takes two values and error.
+* Implement Kahan summation (check functors, accumulate, transform, etc). 
 * Make use of FindBoost (check minimal version 1.43) and FindGTest and allow 
   user to change paths.
 ? Add "real" type which abstracts floating point type.
