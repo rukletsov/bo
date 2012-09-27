@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.2 2012.09.17
+  blas.hpp, v 1.1.3 2012.09.27
 
   Basic linear algebra subprograms. 
 
@@ -45,8 +45,12 @@
 #ifdef _MSC_VER
 #   pragma warning(push)
 #   pragma warning(disable:4127)
-#   include <boost/numeric/ublas/matrix.hpp>
-#   include <boost/numeric/ublas/lu.hpp>
+#endif // _MSC_VER
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/lu.hpp>
+#ifdef _MSC_VER
+
 #   pragma warning(pop)
 #endif // _MSC_VER
 
