@@ -34,6 +34,60 @@
 
 *******************************************************************************/
 
+/* Usage example:
+
+    std::vector<Vertex> std_source();
+    ... // Initialize the source point cloud here.
+
+    boost::shared_ptr<std::vector<Vertex> > std_target_ptr = boost::shared_ptr<std::vector<Vertex> >
+    (new std::vector<Vertex>());
+    ... // Initialize the target point cloud here.
+
+    // Create an ICP registrator.
+    bo::methods::ICP3D<float> icp(std_source, std_target_ptr,
+    bo::methods::euclidean_distance<float, 3>);
+
+    // Initialize auxiliary variables.   
+    // Iteration counter.
+    std::size_t iteration = 0;                        
+    // Norm of the transformation difference.
+    float epsilon = std::numeric_limits<float>::max();
+    // Distance between the source and target point clouds.
+    float distance = std::numeric_limits<float>::max(); 
+    // Transformation matrices.
+    bo::blas::matrix<float> m1;
+    bo::blas::matrix<float> m2;
+
+    // Iteratively register two point clouds.
+    while (iteration < max_allowed_iterations && epsilon >= min_transformation_epsilon)
+    {
+        // Cache the transformation from the previous iteration.
+        m1 = m2;
+
+        // Perform a new ICP registration step and update the current distance
+        // between the source and target.
+        d = icp.next(); 
+
+        // Update the current transformation. 
+        m2 = icp.current_transformation().matrix();
+
+        // Update the norm of the transformation difference.
+        if (iteration > 0)
+        {
+            bo::blas::matrix<float> mdif = m2 - m1;
+            epsilon = bo::blas::l1_norm(mdif);
+        }
+
+        ++iteration;
+    }
+
+    // The final transformation.
+    bo::Transformation3D<float> final_transformation = icp.current_transformation();
+    
+    // The corresponding final transformation matrix.
+    bo::blas::matrix<float> final_matrix = final_transformation.matrix();
+*/
+
 #ifndef ICP_3D_HPP_507CF525_CC8A_4499_80D2_E8C8644603F5_
 #define ICP_3D_HPP_507CF525_CC8A_4499_80D2_E8C8644603F5_
 
@@ -73,7 +127,7 @@ public:
           bool is_preprocess = true);
 
     RealType next();
-    const Transformation& current_transformation() const;
+    Transformation current_transformation() const;
     const PointCloud& current_cloud() const;
     const PointCloud& current_correspondence() const;
 
@@ -199,7 +253,7 @@ RealType ICP3D<RealType>::next()
 }
 
 template <typename RealType>
-const typename ICP3D<RealType>::Transformation& ICP3D<RealType>::current_transformation() const
+typename ICP3D<RealType>::Transformation ICP3D<RealType>::current_transformation() const
 {
     return current_trans_;
 }
@@ -273,6 +327,8 @@ blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, Po
         x(0, 1) = b[1] - centroid2[1];
         x(0, 2) = b[2] - centroid2[2];
 
+        // Accumulate the elements.
+        // Warning: type overflow is possible here!
         m = m + prod(p, x);
     }   
 
