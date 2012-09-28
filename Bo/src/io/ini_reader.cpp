@@ -249,10 +249,10 @@ void IniReader::add_keyvalue(const String& section_name,
 {
     // 'section_name' section and 'subsection_name' subsection should already 
     // exist in 'sections_'
-    BOOST_ASSERT_MSG(sections_.find(section_name) != sections_.end(),
+    BOOST_ASSERT(sections_.find(section_name) != sections_.end() &&
         "IniReader: can not add key/value pair to a non-existent section.");
-    BOOST_ASSERT_MSG(sections_[section_name].find(subsection_name) !=
-        sections_[section_name].end(),
+    BOOST_ASSERT(sections_[section_name].find(subsection_name) !=
+        sections_[section_name].end() &&
         "IniReader: can not add key/value pair to a non-existent subsection.");
 
     sections_[section_name][subsection_name][key_name] = value;
@@ -268,8 +268,8 @@ Strings IniReader::split_subsection(const Line& trimmed_line) const
                  boost::is_any_of(settings_.section_delimiter_symbols), 
                  boost::token_compress_off);
 
-    BOOST_ASSERT_MSG(split_result.size() > 1,
-                     "IniReader: subsection name or format is invalid.");
+    BOOST_ASSERT(split_result.size() > 1 &&
+                 "IniReader: subsection name or format is invalid.");
 
     if (split_result.size() == 2)
     {
@@ -340,8 +340,8 @@ Strings IniReader::split_keyvalue(const Line& trimmed_line) const
                      boost::is_any_of(settings_.delimiter_symbols),
                      boost::token_compress_off);
 
-        BOOST_ASSERT_MSG(split_result.size() > 1,
-                         "IniReader: key/value pair format is invalid.");
+        BOOST_ASSERT(split_result.size() > 1 &&
+                     "IniReader: key/value pair format is invalid.");
 
         if (split_result.size() > 2)
         {
