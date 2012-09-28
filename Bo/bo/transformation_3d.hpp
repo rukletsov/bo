@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.6 2012.09.28
+  transformation_3d.hpp, v 0.0.7 2012.09.29
 
   3D space transformations.
 
@@ -36,8 +36,6 @@
 #define TRANSFORMATION_3D_HPP_23877F3F_5EB9_4221_A422_C239EC9AA5D6_
 
 #include <iostream>
-#include <stdexcept>
-#include <boost/assert.hpp>
 
 #include <bo/vector.hpp>
 #include <bo/extended_math.hpp>
@@ -55,16 +53,19 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef Vector<RealType, 3> Translation;
     typedef Vector<RealType, 4> Quaternion;
+    typedef blas::bounded_matrix<RealType, 3, 3> RotationMatrix;
+    typedef blas::bounded_matrix<RealType, 4, 4> TransformationMatrix;
 
 public:
     // Creates either identity transformation or the transformation based on the
     // given combinations of quaternion, rotation matrix, translation vector.
     Transformation3D();
     Transformation3D(const Quaternion& q);
+    Transformation3D(const RotationMatrix& rot_matrix);
     Transformation3D(const Translation& t);
     Transformation3D(const Quaternion& q, const Translation& t);
-    Transformation3D(const blas::matrix<RealType>& rot_matrix, const Translation& t);
-    Transformation3D(const blas::matrix<RealType>& trans_matrix);
+    Transformation3D(const RotationMatrix& rot_matrix, const Translation& t);
+    Transformation3D(const TransformationMatrix& trans_matrix);
 
     // Copy c-tor, d-tor and assignment operator are fine.
 
@@ -79,7 +80,7 @@ public:
     void reset();
 
     // Returns the 4x4 matrix corresponding to the current transformation.
-    blas::matrix<RealType> matrix() const;
+    TransformationMatrix matrix() const;
 
     // Allow stream operator<< access Transformation3D members.
     template <typename V>
@@ -87,11 +88,11 @@ public:
 
 private:
     void set_rotation_block_(const Quaternion& q);
-    void set_rotation_block_(const blas::matrix<RealType>& rot_matrix);
+    void set_rotation_block_(const RotationMatrix& rot_matrix);
     void set_translation_block_(const Translation& t);
 
 private:
-    blas::matrix<RealType> matrix_;
+    blas::bounded_matrix<RealType, 4, 4> matrix_;
 
     // This is a memory cache which is used to speed-up conversion from bo's 3-Vectors
     // to boost uBLAS 4-vectors.
@@ -131,6 +132,13 @@ Transformation3D<RealType>::Transformation3D(const Quaternion& q)
 }
 
 template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const RotationMatrix& rot_matrix)
+{
+    reset();
+    set_rotation_block_(rot_matrix);
+}
+
+template <typename RealType>
 Transformation3D<RealType>::Transformation3D(const Translation& t)
 {
     reset();
@@ -146,8 +154,7 @@ Transformation3D<RealType>::Transformation3D(const Quaternion& q, const Translat
 }
 
 template <typename RealType>
-Transformation3D<RealType>::Transformation3D(const blas::matrix<RealType>& rot_matrix,
-                                             const Translation& t)
+Transformation3D<RealType>::Transformation3D(const RotationMatrix& rot_matrix, const Translation& t)
 {
     reset();
     set_rotation_block_(rot_matrix);
@@ -155,18 +162,10 @@ Transformation3D<RealType>::Transformation3D(const blas::matrix<RealType>& rot_m
 }
 
 template <typename RealType>
-Transformation3D<RealType>::Transformation3D(const blas::matrix<RealType>& trans_matrix)
+Transformation3D<RealType>::Transformation3D(const TransformationMatrix& trans_matrix)
 {
     reset();
-
-    // Check that input translation matrix is 4x4.
-    if ((trans_matrix.size1() != 4) || (trans_matrix.size2() != 4))
-    {
-        BOOST_ASSERT(false && "Dimensions of the translation matrix are not 4x4.");
-        throw std::logic_error("Transformation3D: translation matrix should be 4x4.");
-    }
-
-    matrix_(trans_matrix);
+    matrix_ = trans_matrix;
 }
 
 
@@ -245,15 +244,8 @@ void Transformation3D<RealType>::set_rotation_block_(const Quaternion& q)
 }
 
 template <typename RealType>
-void Transformation3D<RealType>::set_rotation_block_(const blas::matrix<RealType>& rot_matrix)
+void Transformation3D<RealType>::set_rotation_block_(const RotationMatrix& rot_matrix)
 {
-    // Check that input matrix is 3x3.
-    if ((rot_matrix.size1() != 3) || (rot_matrix.size2() != 3))
-    {
-        BOOST_ASSERT(false && "Dimensions of the rotation matrix are not 3x3.");
-        throw std::logic_error("Transformation3D: rotation matrix should be 3x3.");
-    }
-
     // Fill the top left 3x3 block (corresponding to rotation).
     matrix_(0, 0) = rot_matrix(0, 0); matrix_(0, 1) = rot_matrix(0, 1); matrix_(0, 2) = rot_matrix(0, 2);
     matrix_(1, 0) = rot_matrix(1, 0); matrix_(1, 1) = rot_matrix(1, 1); matrix_(1, 2) = rot_matrix(1, 2);
