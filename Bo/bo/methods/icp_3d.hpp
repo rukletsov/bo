@@ -148,12 +148,11 @@ private:
 
 private:
     PointCloudPtr target_cloud_;
-    Point3D target_centroid_;
-    Metric dist_fun_;
     PointCloud current_cloud_;
-    Transformation current_trans_;
-    Point3DTree tree_;
     PointCloud corresp_cloud_;
+    Transformation current_trans_;
+    Point3DTree tree_;   
+    Metric dist_fun_;
 };
 
 template <typename RealType>
@@ -161,10 +160,7 @@ ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
     Metric dist_fun, bool is_preprocess):
     current_cloud_(source), target_cloud_(target), dist_fun_(dist_fun), 
     current_trans_(), tree_(Point3DTree(std::ptr_fun(ICP3D<RealType>::point_bac)))
-{
-    // Cache centroid for the target point cloud.
-    target_centroid_ = centroid_(target.get());
-
+{    
     // Compute a kd-tree for the target point cloud.
     PointCloud::const_iterator it = target->begin();
     while (it != target->end())
@@ -181,6 +177,7 @@ ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
 template <typename RealType>
 RealType ICP3D<RealType>::next()
 {
+    // Calculate the mass center of the current point cloud.
     Point3D current_centroid = centroid_(&current_cloud_);
 
     // Update the correspondence.
@@ -190,10 +187,13 @@ RealType ICP3D<RealType>::next()
         std::pair<Point3DTree::const_iterator, RealType> closest = tree_.find_nearest(*it);
         corresp_cloud_.push_back(*closest.first);
     }
+
+    // Calculate the mass center of the corresponding points.
+    Point3D corresp_centroid = centroid_(&corresp_cloud_);
     
     // Calculate the cross covariance for the current points and the target ones.
     blas::matrix<RealType> Spx = cross_covariance_(&current_cloud_, &corresp_cloud_, current_centroid,
-        target_centroid_);
+        corresp_centroid);
 
     blas::matrix<RealType> SpxT = trans(Spx);
 
@@ -241,7 +241,7 @@ RealType ICP3D<RealType>::next()
     quaternion[3] = RealType(Qpx(3, 3));
 
     // Optimal translation. 
-    Point3D translation = target_centroid_ - Transformation(quaternion) * current_centroid;
+    Point3D translation = corresp_centroid - Transformation(quaternion) * current_centroid;
 
     // Create the optimal transformation.
     Transformation optimal_trans(quaternion, translation);
