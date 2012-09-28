@@ -180,7 +180,7 @@ typename RawImage2D<ValType>::Index RawImage2D<ValType>::index(
     std::size_t offset) const
 {
     Index retvalue = std::make_pair(offset % width(), offset / width());
-    BOOST_ASSERT(is_valid_index(retvalue.first && retvalue.second),
+    BOOST_ASSERT(is_valid_index(retvalue.first, retvalue.second) &&
                      "Offset is out of range.");
     return retvalue;
 }
