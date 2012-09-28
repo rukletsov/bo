@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.5 2012.09.28
+  transformation_3d.hpp, v 0.0.6 2012.09.28
 
   3D space transformations.
 
@@ -92,6 +92,10 @@ private:
 
 private:
     blas::matrix<RealType> matrix_;
+
+    // This is a memory cache which is used to speed-up conversion from bo's 3-Vectors
+    // to boost uBLAS 4-vectors.
+    blas::bounded_vector<RealType, 4> cached_vector_;
 };
 
 // Prints formatted transformation to the given stream.
@@ -171,11 +175,11 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     Point3D point) const
 {
     // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
-    boost::numeric::ublas::bounded_vector<RealType, 4> source;
-    source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
+    cached_vector_(0) = point[0]; cached_vector_(1) = point[1];
+    cached_vector_(2) = point[2]; cached_vector_(3) = 1;
 
     // Perform multiplication.
-    boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
+    boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, cached_vector_);
 
     // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
     // coordinates.
