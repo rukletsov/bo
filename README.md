@@ -38,6 +38,6 @@ CMake is currently used to build Bö and its tests. If you use CMake from comman
 
 The code has been successfully built with, tested and run on:
 
- * Ubuntu Linux with gcc, Fedora Linux with gcc.
- * Mac OS X Lion (10.7) with gcc and clang.
- * Windows XP with msvc2005, Windows XP with msvc2008, Windows 7 with msvc2010.
+ * Ubuntu 10.04 32bit with gcc 4.4.3; Fedora 17 32bit with gcc 4.7.0.
+ * Mac OS X Lion (10.7.2) 64bit with gcc 4.2.1 and clang 3.0.
+ * Windows XP 32bit with msvc2005 and msvc2008; Windows 7 64bit with msvc2010.
