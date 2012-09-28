@@ -165,7 +165,7 @@ RawImage2D<ValType> RawImage2D<ValType>::clone() const
 template <typename ValType> inline
 std::size_t RawImage2D<ValType>::offset(std::size_t col, std::size_t row) const
 {
-    BOOST_ASSERT_MSG(is_valid_index(col, row), "Index is out of range.");
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return (col + width_ * row);
 }
 
@@ -180,7 +180,7 @@ typename RawImage2D<ValType>::Index RawImage2D<ValType>::index(
     std::size_t offset) const
 {
     Index retvalue = std::make_pair(offset % width(), offset / width());
-    BOOST_ASSERT_MSG(is_valid_index(retvalue.first, retvalue.second),
+    BOOST_ASSERT(is_valid_index(retvalue.first && retvalue.second),
                      "Offset is out of range.");
     return retvalue;
 }
@@ -189,7 +189,7 @@ template <typename ValType> inline
 typename RawImage2D<ValType>::const_reference RawImage2D<ValType>::operator()(
     std::size_t col, std::size_t row) const
 {
-    BOOST_ASSERT_MSG(is_valid_index(col, row), "Index is out of range.");
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return (*image_)[col + width_ * row];
 }
 
@@ -197,7 +197,7 @@ template <typename ValType> inline
 typename RawImage2D<ValType>::reference RawImage2D<ValType>::operator()(
     std::size_t col, std::size_t row)
 {
-    BOOST_ASSERT_MSG(is_valid_index(col, row), "Index is out of range.");
+    BOOST_ASSERT(is_valid_index(col, row) && "Index is out of range.");
     return (*image_)[col + width_ * row];
 }
 

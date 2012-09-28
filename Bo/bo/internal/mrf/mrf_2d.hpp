@@ -103,7 +103,7 @@ MRF2D<NodeType, DataType, RealType>::MRF2D(const RandomLattice& initial_configur
     if ((configuration_.width() != observation_.width()) ||
         (configuration_.height() != configuration_.height()))
     {
-        BOOST_ASSERT_MSG(false, "Dimensions of the configuration and observation do not coincide.");
+        BOOST_ASSERT(false && "Dimensions of the configuration and observation do not coincide.");
         throw std::logic_error("MRF2D: dimensions of the random field lattice and the "
                                "observation data must be the same.");
     }
