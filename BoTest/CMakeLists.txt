@@ -1,5 +1,5 @@
 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 
 PROJECT (BoTest)
 
@@ -46,6 +46,13 @@ IF (NOT MSVC)
                            boost_system)
 ENDIF (NOT MSVC)
 
+ADD_CUSTOM_COMMAND(TARGET BoTest
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${TESTS_OUTPUT_PATH}/data"
+        "$<TARGET_FILE_DIR:BoTest>/data/"
+        COMMENT "Copy test data to the runtime directory."
+)
+
 # GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
 FIND_PACKAGE (Threads)
 IF (${CMAKE_USE_PTHREADS_INIT})
@@ -76,9 +83,6 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
-
-# Copy binary to the directory with test data.
-INSTALL (TARGETS BoTest DESTINATION ${TESTS_OUTPUT_PATH})
 
 # Create tests from the current binary and pass a directory where test data is stored
 # as a command-line argument.
