@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mrf_2d.hpp, v 0.1.1 2012.09.20
+  mrf_2d.hpp, v 0.1.1 2012.10.01
 
   Markov random field model for regular 2D lattice.
 
@@ -67,6 +67,7 @@ public:
 
     RealType compute_full_energy() const;
     RealType compute_local_energy(NodeType val, std::size_t col, std::size_t row) const;
+    RealType compute_local_likelihood(NodeType val, std::size_t col, std::size_t row) const;
 
     const_reference operator()(std::size_t col, std::size_t row) const;
     reference operator()(std::size_t col, std::size_t row);
@@ -143,6 +144,15 @@ RealType MRF2D<NodeType, DataType, RealType>::compute_local_energy(NodeType val,
                left_clique_(val, col, row) + up_clique_(val, col, row));
 
     return energy;
+}
+
+// Computes a likelihood function for the given node with provided value.
+template <typename NodeType, typename DataType, typename RealType>
+RealType MRF2D<NodeType, DataType, RealType>::compute_local_likelihood(NodeType val,
+    std::size_t col, std::size_t row) const
+{
+    return
+        likelihood_fun_(val, col, row);
 }
 
 template <typename NodeType, typename DataType, typename RealType> inline

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  optimization.hpp, v 0.1.6 2012.09.20
+  optimization.hpp, v 0.1.7 2012.10.01
 
   Various energy minimization algorithms for MRF models.
 
@@ -61,6 +61,35 @@ public:
 
     MRF2DOptimizer(NodePossibleLabels* possible_values): values_(possible_values)
     { }
+
+    // Performs the maximum-likelihood estimation (MLE) method for the given MRF.
+    // This method is usually used to obtain initial configuration of the MRF.
+    virtual void mle(MRF2D<NodeType, DataType, RealType>& mrf)
+    {
+        for (std::size_t col = 0; col < mrf.width(); ++col) {
+            for (std::size_t row = 0; row < mrf.height(); ++row) {
+
+                RealType min_energy = std::numeric_limits<RealType>::max();
+                NodeType min_value = values_->next();
+
+                values_->reset();
+                std::size_t count = values_->count();
+
+                while (count--)
+                {
+                    NodeType value = values_->next();
+                    RealType energy = mrf.compute_local_likelihood(value, col, row);
+
+                    if (energy < min_energy)
+                    {
+                        min_energy = energy;
+                        min_value = value;
+                    }
+                }
+
+                mrf(col, row) = min_value;
+        }   }
+    }
 
     virtual void next_iteration(MRF2D<NodeType, DataType, RealType>&) = 0;
 
