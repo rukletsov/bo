@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.4 2012.09.16
+  transformation_3d.hpp, v 0.0.8 2012.09.29
 
   3D space transformations.
 
@@ -53,14 +53,19 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef Vector<RealType, 3> Translation;
     typedef Vector<RealType, 4> Quaternion;
+    typedef blas::bounded_matrix<RealType, 3, 3> RotationMatrix;
+    typedef blas::bounded_matrix<RealType, 4, 4> TransformationMatrix;
 
 public:
     // Creates either identity transformation or the transformation based on the
-    // given quaternion and/or translation vector.
+    // given combinations of quaternion, rotation matrix, translation vector.
     Transformation3D();
     Transformation3D(const Quaternion& q);
+    Transformation3D(const RotationMatrix& rot_matrix);
     Transformation3D(const Translation& t);
     Transformation3D(const Quaternion& q, const Translation& t);
+    Transformation3D(const RotationMatrix& rot_matrix, const Translation& t);
+    Transformation3D(const TransformationMatrix& trans_matrix);
 
     // Copy c-tor, d-tor and assignment operator are fine.
 
@@ -75,7 +80,7 @@ public:
     void reset();
 
     // Returns the 4x4 matrix corresponding to the current transformation.
-    blas::matrix<RealType> matrix() const;
+    TransformationMatrix matrix() const;
 
     // Allow stream operator<< access Transformation3D members.
     template <typename V>
@@ -83,10 +88,11 @@ public:
 
 private:
     void set_rotation_block_(const Quaternion& q);
+    void set_rotation_block_(const RotationMatrix& rot_matrix);
     void set_translation_block_(const Translation& t);
 
 private:
-    blas::matrix<RealType> matrix_;
+    blas::bounded_matrix<RealType, 4, 4> matrix_;
 };
 
 // Prints formatted transformation to the given stream.
@@ -122,6 +128,13 @@ Transformation3D<RealType>::Transformation3D(const Quaternion& q)
 }
 
 template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const RotationMatrix& rot_matrix)
+{
+    reset();
+    set_rotation_block_(rot_matrix);
+}
+
+template <typename RealType>
 Transformation3D<RealType>::Transformation3D(const Translation& t)
 {
     reset();
@@ -132,8 +145,23 @@ template <typename RealType>
 Transformation3D<RealType>::Transformation3D(const Quaternion& q, const Translation& t)
 {
     reset();
-    set_translation_block_(t);
     set_rotation_block_(q);
+    set_translation_block_(t);
+}
+
+template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const RotationMatrix& rot_matrix, const Translation& t)
+{
+    reset();
+    set_rotation_block_(rot_matrix);
+    set_translation_block_(t);
+}
+
+template <typename RealType>
+Transformation3D<RealType>::Transformation3D(const TransformationMatrix& trans_matrix)
+{
+    reset();
+    matrix_ = trans_matrix;
 }
 
 
@@ -142,11 +170,11 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     Point3D point) const
 {
     // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
-    boost::numeric::ublas::bounded_vector<RealType, 4> source;
-    source(0) = point[0]; source(1) = point[1]; source(2) = point[2]; source(3) = 1;
+    blas::bounded_vector<RealType, 4> homog_vec;
+    homog_vec(0) = point[0]; homog_vec(1) = point[1]; homog_vec(2) = point[2]; homog_vec(3) = 1;
 
     // Perform multiplication.
-    boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, source);
+    boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, homog_vec);
 
     // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
     // coordinates.
@@ -209,6 +237,15 @@ void Transformation3D<RealType>::set_rotation_block_(const Quaternion& q)
     matrix_(2, 0) = RealType(2) * (q13 - q02);
     matrix_(1, 2) = RealType(2) * (q23 - q01);
     matrix_(2, 1) = RealType(2) * (q23 + q01);
+}
+
+template <typename RealType>
+void Transformation3D<RealType>::set_rotation_block_(const RotationMatrix& rot_matrix)
+{
+    // Fill the top left 3x3 block (corresponding to rotation).
+    matrix_(0, 0) = rot_matrix(0, 0); matrix_(0, 1) = rot_matrix(0, 1); matrix_(0, 2) = rot_matrix(0, 2);
+    matrix_(1, 0) = rot_matrix(1, 0); matrix_(1, 1) = rot_matrix(1, 1); matrix_(1, 2) = rot_matrix(1, 2);
+    matrix_(2, 0) = rot_matrix(2, 0); matrix_(2, 1) = rot_matrix(2, 1); matrix_(2, 2) = rot_matrix(2, 2);
 }
 
 template <typename RealType>

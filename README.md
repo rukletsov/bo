@@ -17,6 +17,9 @@ Bö is a collection of basic and advanced methods and data structures for 2D ima
  * Linear filtering for 2D images.
  * Matrix operations (e.g. matrix inversion, eigenvectors and eigenvalues of real matrices).
 
+## C++11 
+No C++11 features are currently used in order to support older compilers.
+
 # Project Dependencies
 --------------------------------------------------------------------------------
  * [Boost](http://www.boost.org/). Minimal required version of boost is 1.43 because of `boost::array::fill()`. This function is used only once and can be rewritten, that lowers the version needed to 1.38 because of the ScopeExit library. If you also want to build tests, boost version 1.44 is required because of the Filesystem version 3 library.
@@ -38,6 +41,9 @@ CMake is currently used to build Bö and its tests. If you use CMake from comman
 
 The code has been successfully built with, tested and run on:
 
- * Ubuntu Linux with gcc, Fedora Linux with gcc.
- * Mac OS X Lion (10.7) with gcc and clang.
- * Windows XP with msvc2005, Windows XP with msvc2008, Windows 7 with msvc2010.
+ * Ubuntu 10.04 32bit with gcc 4.4.3; Fedora 17 32bit with gcc 4.7.0.
+ * Mac OS X Lion (10.7.2) 64bit with gcc 4.2.1 and clang 3.0.
+ * Windows XP 32bit with msvc2005 and msvc2008; Windows 7 64bit with msvc2010.
+
+## Using Bö
+Code samples and overview of some features are available on [project wiki](https://bitbucket.org/rukletsov/b/wiki/Home).

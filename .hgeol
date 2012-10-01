@@ -9,6 +9,7 @@
 **.py = native
 **.txt = native
 **.ui = native
+**.md = native
 
 .hgignore = native
 .hgtags = native
