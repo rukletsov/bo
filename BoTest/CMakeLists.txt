@@ -34,10 +34,19 @@ ADD_EXECUTABLE (BoTest
                 ${BoTest_HDRS}
 )
 
-TARGET_LINK_LIBRARIES (BoTest
-                       bo
-                       gtest
-)
+# Add dependencies. MSVC distinguishes between debug and release runtime, therefore both
+# debug and release versions of gtest should be available when using MSVC compiler.
+IF (MSVC)
+    TARGET_LINK_LIBRARIES (BoTest
+                           bo
+                           debug gtestd optimized gtest
+    )
+ELSE ()
+    TARGET_LINK_LIBRARIES (BoTest
+                           bo
+                           gtest
+    )
+ENDIF (MSVC)
 
 # Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
 IF (NOT MSVC)
