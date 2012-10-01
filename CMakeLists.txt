@@ -1,5 +1,5 @@
 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 
 # User-defined options for the project.
 OPTION (BuildTests "Build all of Bo's tests" OFF)

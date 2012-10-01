@@ -1,5 +1,5 @@
 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 
 PROJECT (BoTest)
 
@@ -45,6 +45,13 @@ IF (NOT MSVC)
                            boost_filesystem
                            boost_system)
 ENDIF (NOT MSVC)
+
+ADD_CUSTOM_COMMAND(TARGET BoTest
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${TESTS_OUTPUT_PATH}/data"
+        "$<TARGET_FILE_DIR:BoTest>/data/"
+        COMMENT "Copy test data to the runtime directory."
+)
 
 # GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
 FIND_PACKAGE (Threads)
