@@ -162,6 +162,10 @@ IF (MSVC)
     # operator cannot be generated. The warning seems not to be important.
     ADD_DEFINITIONS ("/wd4512")
 
+    # Disable C4127 warning. Constant conditional expressions should not always
+    # trigger a warning (e.g. for while(1)). But MSVC does, which is annoying.
+    ADD_DEFINITIONS ("/wd4127")
+
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
