@@ -130,8 +130,18 @@ ENDIF (NOT MSVC)
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (bo PROPERTIES DEBUG_POSTFIX "d")
 
-# Suppress some warnings and set warning level for MSVC and GNUCXX.
+# Compiler-specific features and options.
 IF (MSVC)
+    # If MSVC2010 compiler (or newer) is used, target Windows 7. This means that
+    # the newest Windows API will be used but it can be partially unavailable on
+    # previous versions of Windows. For older compilers a default value will be
+    # applied in the "pch.h" file. For more information see
+    #     http://msdn.microsoft.com/en-us/library/aa383745%28v=vs.85%29.aspx
+    IF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
+        MESSAGE (STATUS "Targeting Windows 7 API: _WIN32_WINNT = 0x0601")
+        ADD_DEFINITIONS (-D_WIN32_WINNT=0x0601)
+    ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
+
     # Remove default warning level from .cpp and .c sources to avoid conflicts with
     # desired warning which is manually set later.
     IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -152,29 +162,15 @@ IF (MSVC)
     # operator cannot be generated. The warning seems not to be important.
     ADD_DEFINITIONS ("/wd4512")
 
-ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
-                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
-ENDIF (MSVC)
-
-
-# MSVC-specific features and options.
-IF (MSVC)
-    # If MSVC2010 compiler (or newer) is used, target Windows 7. This means that
-    # the newest Windows API will be used but it can be partially unavailable on
-    # previous versions of Windows. For older compilers a default value will be
-    # applied in the "pch.h" file. For more information see
-    #     http://msdn.microsoft.com/en-us/library/aa383745%28v=vs.85%29.aspx
-    IF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
-        MESSAGE (STATUS "Targeting Windows 7 API: _WIN32_WINNT = 0x0601")
-        ADD_DEFINITIONS (-D_WIN32_WINNT=0x0601)
-    ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
-
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
-                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")                         
-  
+                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
+
     # Supress "no public symbols found" MSVC's linker warning (this can occur for
     # the "pch.obj" file when using precompiled headers.
     SET_TARGET_PROPERTIES (bo PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
+
+ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
+                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
