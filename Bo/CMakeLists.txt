@@ -157,11 +157,6 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 ENDIF (MSVC)
 
-# Copy shared library to the directory with test data.
-IF (BUILD_SHARED_LIBS)
-    INSTALL (TARGETS bo DESTINATION ${TESTS_OUTPUT_PATH})
-ENDIF (BUILD_SHARED_LIBS)
-
 
 # MSVC-specific features and options.
 IF (MSVC)
