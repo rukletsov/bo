@@ -130,7 +130,7 @@ ENDIF (NOT MSVC)
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (bo PROPERTIES DEBUG_POSTFIX "d")
 
-# Rise warning level to maximum for MSVC and GNUCXX.
+# Suppress some warnings and set warning level for MSVC and GNUCXX.
 IF (MSVC)
     # Remove default warning level from .cpp and .c sources to avoid conflicts with
     # desired warning which is manually set later.

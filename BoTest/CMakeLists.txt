@@ -73,15 +73,23 @@ ENDIF (${CMAKE_USE_PTHREADS_INIT})
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (BoTest PROPERTIES DEBUG_POSTFIX "d")
 
-# Rise warning level to maximum for MSVC and GNUCXX.
+# Suppress some warnings and set warning level for MSVC and GNUCXX.
 IF (MSVC)
+    # Remove default warning level from .cpp and .c sources to avoid conflicts with
+    # desired warning which is manually set later.
     IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
         # Replace exisiting warning level with a desired one.
-        STRING (REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    ELSE ()
-        # Set a desired warning level if there was no set previously.
-        ADD_DEFINITIONS ("/W4")
+        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+
+    IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+        # Replace exisiting warning level with a desired one.
+        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    ENDIF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+
+    # Set a desired warning level. If it has been already set and differs from the
+    # provided one, a D9025 warning is raised.
+    ADD_DEFINITIONS ("/W4")
 
     # Disable C4245 warning. Conversions from negatibe integers to size_t are used
     # widely within the tests. It's done on purpose in order to test incorrect
