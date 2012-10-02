@@ -35,7 +35,8 @@ ADD_EXECUTABLE (BoTest
 )
 
 # Add dependencies. MSVC distinguishes between debug and release runtime, therefore both
-# debug and release versions of gtest should be available when using MSVC compiler.
+# debug and release versions of gtest should be available when using MSVC compiler. Also
+# add boost dependencies if compiler is not MSVC (boost has auto-link support for it).
 IF (MSVC)
     TARGET_LINK_LIBRARIES (BoTest
                            bo
@@ -45,15 +46,10 @@ ELSE ()
     TARGET_LINK_LIBRARIES (BoTest
                            bo
                            gtest
+                           boost_system
+                           boost_filesystem
     )
 ENDIF (MSVC)
-
-# Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
-IF (NOT MSVC)
-    TARGET_LINK_LIBRARIES (BoTest
-                           boost_filesystem
-                           boost_system)
-ENDIF (NOT MSVC)
 
 ADD_CUSTOM_COMMAND(TARGET BoTest
     POST_BUILD
@@ -73,7 +69,7 @@ ENDIF (${CMAKE_USE_PTHREADS_INIT})
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (BoTest PROPERTIES DEBUG_POSTFIX "d")
 
-# Suppress some warnings and set warning level for MSVC and GNUCXX.
+# Compiler-specific features and options.
 IF (MSVC)
     # Remove default warning level from .cpp and .c sources to avoid conflicts with
     # desired warning which is manually set later.
@@ -96,6 +92,10 @@ IF (MSVC)
     # indexation.
     ADD_DEFINITIONS ("/wd4245")
 
+    # Supress secure warnings (C4996) for MSVC compiler.
+    SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
+                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
+
 ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
@@ -115,11 +115,3 @@ TestCase(Mesh)
 TestCase(Timer)
 TestCase(RawImage2D)
 TestCase(IniReader)
-
-
-# Supress MSVC-specific compiler and linker warnings.
-IF (MSVC)
-    # Supress secure warnings (C4996) for MSVC compiler.
-    SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS 
-                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
-ENDIF (MSVC)
