@@ -53,9 +53,9 @@ ENDIF (MSVC)
 
 ADD_CUSTOM_COMMAND(TARGET BoTest
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${TESTS_OUTPUT_PATH}/data"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${TESTS_PATH}/data"
         "$<TARGET_FILE_DIR:BoTest>/data/"
-        COMMENT "Copy test data to the runtime directory."
+        COMMENT "Copying test data to the runtime directory."
 )
 
 # GTest depends on pthread library on platforms, where it is availabe (e.g. GNUCXX).
@@ -106,7 +106,7 @@ ENDIF (MSVC)
 FUNCTION (TestCase test_name)
     ADD_TEST (NAME ${test_name}Test
               COMMAND BoTest --gtest_filter=${test_name}*
-                                    "${TESTS_OUTPUT_PATH}/data"
+                                    "${TESTS_PATH}/data"
     )
 ENDFUNCTION (TestCase test_name)
 
