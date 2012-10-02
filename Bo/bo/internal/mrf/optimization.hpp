@@ -153,7 +153,7 @@ public:
     MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta,
          bool is_modified, RealType mmd_probability):
         MRF2DOptimizer(possible_values), t_(temp), t_delta_(temp_delta),
-        is_modified_(is_modified), mmd_probab_(std::log(mmd_probability)),
+        is_modified_(is_modified), mmd_log_probab_(std::log(mmd_probability)),
         rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))), RealDistribution(0, 1))
     { }
 
@@ -161,7 +161,7 @@ public:
     {
         // If a modified version of MD algo (MMD) is used, then the decision probability
         // is fixed and obtained as a parameter. Otherwise, it is generated every time.
-        RealType decision_probab = mmd_probab_;
+        RealType decision_probab = mmd_log_probab_;
 
         // Update current temperature. See algorithm description for details.
         t_ *= t_delta_;
@@ -192,7 +192,7 @@ private:
     RealType t_;
     RealType t_delta_;
     bool is_modified_;
-    RealType mmd_probab_;
+    RealType mmd_log_probab_;
 };
 
 } // namespace bo
