@@ -344,69 +344,73 @@ TEST_F(VectorTest, SwapFillAssign)
 #include "bo/performance.hpp"
 TEST_F(VectorTest, OperationPerformance)
 {
-    Vector<int, 10000>* vec1 = new Vector<int, 10000>(-569);
-    Vector<int, 10000>* vec2 = new Vector<int, 10000>(9899);
-    Vector<int, 10000>* vec3 = new Vector<int, 10000>(98999);
+    #define VEC_SIZE 10000
+    typedef Vector<int, VEC_SIZE> TestVec;
+    const int repetitions_count = 100000;
+
+    TestVec* vec1 = new TestVec(-569);
+    TestVec* vec2 = new TestVec(9899);
+    TestVec* vec3 = new TestVec(98999);
 
     // Vector-Scalar operations.
     bo::Timer timer;
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec1) += 879556;
     std::cout << "Vector += Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec2) = *vec1 + 879556;
     std::cout << "Vector + Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec1) -= 879556;
     std::cout << "Vector -= Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec2) = *vec1 - 879556;
     std::cout << "Vector - Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec1) *= 29;
     std::cout << "Vector *= Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec2) = *vec1 * 29;
     std::cout << "Vector * Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec1) /= 29;
     std::cout << "Vector /= Scalar took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         (*vec2) = *vec1 / 29;
     std::cout << "Vector / Scalar took " << timer.elapsed() << std::endl;
 
     // Vector-Vector operations.
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         *vec3 += *vec1;
     std::cout << "Vector += Vector took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         *vec3 = *vec1 + *vec2;
     std::cout << "Vector + Vector took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         *vec3 -= *vec1;
     std::cout << "Vector -= Vector took " << timer.elapsed() << std::endl;
 
     timer.restart();
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < repetitions_count; ++i)
         *vec3 = *vec1 - *vec2;
     std::cout << "Vector - Vector took " << timer.elapsed() << std::endl;
 
