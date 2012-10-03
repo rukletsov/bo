@@ -12,8 +12,7 @@ LIBRARY
 
 Transformation3D<> class
 ================================================================================
-* Add getters for trasformation matrix in various formats.
-* Add tests.
+* Write tests.
 ? Optimize vector-matrix multiplication (remove vector conversion).
 
 MRF class collection
@@ -47,7 +46,6 @@ RawImage<> class
 
 Vector<> class
 ================================================================================
-* Consider using std algorithms (std::copy, std::swap, etc) instead of loops.
 * Write tests: conversion from/to Vectors of different types; operations with
   converted vectors.
 
@@ -105,6 +103,7 @@ RawImage<> class
 
 Vector<> class
 --------------------------------------------------------------------------------
+[DONE] * Consider using std algorithms (std::copy, std::swap, etc) instead of loops.
 [DONE] * Make an n-dimensional vector based on boost::array.
 [DONE] * Add useful mathematical methods, e.g. normalize(), etc.
 [DONE] * Implement operator+=, operator-=, etc.
