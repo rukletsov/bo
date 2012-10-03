@@ -3,12 +3,12 @@
 #include "bo/performance.hpp"
 #include "bo/vector.hpp"
 
-#define VEC_SIZE 10
+#define VEC_SIZE 10000
 
 int main(int argc, char* argv[])
 {
     typedef bo::Vector<int, VEC_SIZE> TestVec;
-    const int repetitions_count = 100000000;
+    const int repetitions_count = 100000;
 
     TestVec* vec1 = new TestVec(-569);
     TestVec* vec2 = new TestVec(9899);
