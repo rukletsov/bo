@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.1.7 2012.09.16
+  vector.hpp, v 1.2.0 2012.10.03
 
   Multidimensional Vector (Point) class. 
 
@@ -286,36 +286,32 @@ Vector<T, N>::Vector(const T& x, const T& y, const T& z, const T& w)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const T& scalar)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] += scalar;
-
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::plus<T>(), scalar));
     return *this;
 }
 
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const T& scalar)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] -= scalar;
-
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::minus<T>(), scalar));
     return *this;
 }
 
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator*=(const T& scalar)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] *= scalar;
-
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::multiplies<T>(), scalar));
     return *this;
 }
 
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator/=(const T& scalar)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] /= scalar;
-
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::divides<T>(), scalar));
     return *this;
 }
 
@@ -332,18 +328,16 @@ bool Vector<T, N>::operator==(const Vector<T, N>& other) const
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const Vector<T, N>& other)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] += other.components_[i];
-
+    std::transform(components_.begin(), components_.end(), other.components_.begin(),
+                   components_.begin(), std::plus<T>());
     return *this;
 }
 
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
 {
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] -= other.components_[i];
-
+    std::transform(components_.begin(), components_.end(), other.components_.begin(),
+                   components_.begin(), std::minus<T>());
     return *this;
 }
 
@@ -353,7 +347,6 @@ Vector<T, N> Vector<T, N>::operator-() const
     Vector<T, N> retvalue;
     std::transform(components_.begin(), components_.end(), retvalue.components_.begin(),
                    std::negate<T>());
-
     return retvalue;
 }
 
