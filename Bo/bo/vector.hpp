@@ -286,10 +286,10 @@ Vector<T, N>::Vector(const T& x, const T& y, const T& z, const T& w)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const T& scalar)
 {
-//    std::transform(components_.begin(), components_.end(), components_.begin(),
-//                   std::bind2nd(std::plus<T>(), scalar));
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] += scalar;
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::plus<T>(), scalar));
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] += scalar;
 
     return *this;
 }
@@ -297,10 +297,10 @@ const Vector<T, N>& Vector<T, N>::operator+=(const T& scalar)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const T& scalar)
 {
-//    std::transform(components_.begin(), components_.end(), components_.begin(),
-//                   std::bind2nd(std::minus<T>(), scalar));
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] -= scalar;
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::minus<T>(), scalar));
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] -= scalar;
 
     return *this;
 }
@@ -308,10 +308,10 @@ const Vector<T, N>& Vector<T, N>::operator-=(const T& scalar)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator*=(const T& scalar)
 {
-//    std::transform(components_.begin(), components_.end(), components_.begin(),
-//                   std::bind2nd(std::multiplies<T>(), scalar));
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] *= scalar;
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::multiplies<T>(), scalar));
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] *= scalar;
 
     return *this;
 }
@@ -319,10 +319,10 @@ const Vector<T, N>& Vector<T, N>::operator*=(const T& scalar)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator/=(const T& scalar)
 {
-//    std::transform(components_.begin(), components_.end(), components_.begin(),
-//                   std::bind2nd(std::divides<T>(), scalar));
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] /= scalar;
+    std::transform(components_.begin(), components_.end(), components_.begin(),
+                   std::bind2nd(std::divides<T>(), scalar));
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] /= scalar;
 
     return *this;
 }
@@ -340,10 +340,10 @@ bool Vector<T, N>::operator==(const Vector<T, N>& other) const
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator+=(const Vector<T, N>& other)
 {
-//    std::transform(components_.begin(), components_.end(), other.components_.begin(),
-//                   components_.begin(), std::plus<T>());
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] += other.components_[i];
+    std::transform(components_.begin(), components_.end(), other.components_.begin(),
+                   components_.begin(), std::plus<T>());
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] += other.components_[i];
 
     return *this;
 }
@@ -351,10 +351,10 @@ const Vector<T, N>& Vector<T, N>::operator+=(const Vector<T, N>& other)
 template <typename T, std::size_t N>
 const Vector<T, N>& Vector<T, N>::operator-=(const Vector<T, N>& other)
 {
-//    std::transform(components_.begin(), components_.end(), other.components_.begin(),
-//                   components_.begin(), std::minus<T>());
-    for (std::size_t i = 0; i < N; ++i)
-        components_[i] -= other.components_[i];
+    std::transform(components_.begin(), components_.end(), other.components_.begin(),
+                   components_.begin(), std::minus<T>());
+//    for (std::size_t i = 0; i < N; ++i)
+//        components_[i] -= other.components_[i];
 
     return *this;
 }

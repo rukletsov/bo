@@ -36,7 +36,7 @@ ADD_EXECUTABLE (BoTest
 
 TARGET_LINK_LIBRARIES (BoTest
                        bo
-                       gtest
+                       debug gtestd optimized gtest
 )
 
 # Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
