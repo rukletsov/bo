@@ -283,7 +283,7 @@ std::vector<T> eigen_symmetric(matrix<T>& A)
         }
     }
 
-    // Doing some magic.
+    // I put on my robe and wizard hat...
     for (int i = 0; i < n - 1; ++i)
     {
         A(n - 1, i) = A(i, i);
