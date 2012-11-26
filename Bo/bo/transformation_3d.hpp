@@ -207,7 +207,7 @@ void Transformation3D<RealType>::reset()
 }
 
 template <typename RealType>
-blas::matrix<RealType> Transformation3D<RealType>::matrix() const
+typename Transformation3D<RealType>::TransformationMatrix Transformation3D<RealType>::matrix() const
 {
     return matrix_;
 }
