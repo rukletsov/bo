@@ -44,7 +44,7 @@ TEST_F(TilingTest, Temp)
 
     MinSpanPropagation<float> tiling;
 
-    TilingAlgo::Image2D test_image = load_raw_image_float_8bpps(test_filepath.string(), 512, 512);
+    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(test_filepath.string(), 512, 512);
 //    std::cout << test_image(112, 132) << " ";
 //    std::cout << test_image(113, 132) << " ";
 //    std::cout << test_image(114, 132) << " ";
