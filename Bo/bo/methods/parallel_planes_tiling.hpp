@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.0 2012.11.27
+  parallel_planes_tiling.hpp, v 1.0.1 2012.12.03
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -42,20 +42,48 @@
 
 #include "bo/config.hpp"
 #include "bo/mesh.hpp"
+#include "bo/raw_image_2d.hpp"
 
 namespace bo {
 namespace methods {
 namespace surfaces {
 
 template <typename RealType>
-class MaxSpanPropagation: public boost::noncopyable
+class MinSpanPropagation: public boost::noncopyable
 {
 public:
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> ParallelPlane;
     typedef Mesh<RealType> Mesh;
+    typedef RawImage2D<RealType> Image2D;
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
+    typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
+
+public:
+    MinSpanPropagation() { }
+
+    static ParallelPlanePtr load_plane(Image2D data)
+    {
+        ParallelPlanePtr plane(new ParallelPlane);
+
+        for (std::size_t row = 0; row < data.height(); ++row)
+            for (std::size_t col = 0; col < data.width(); ++col)
+                if (data(col, row) > 0)
+                    plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
+
+        return plane;
+    }
+
+    static Mesh propagate(ParallelPlaneConstPtr plane)
+    {
+        Mesh mesh(plane->size());
+
+        for (ParallelPlane::const_iterator it = plane->begin(); it != plane->end(); ++it)
+             mesh.add_vertex(*it);
+
+        return mesh;
+    }
 };
 
 } // namespace surfaces
