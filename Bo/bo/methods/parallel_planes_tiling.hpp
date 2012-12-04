@@ -43,6 +43,7 @@
 #include "bo/config.hpp"
 #include "bo/mesh.hpp"
 #include "bo/raw_image_2d.hpp"
+#include "bo/kdtree.hpp"
 
 namespace bo {
 namespace methods {
@@ -59,6 +60,9 @@ public:
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
+
+    typedef bo::KDTree<3, Point3D,
+        boost::function<RealType (Point3D, std::size_t)> > Tree;
 
 public:
     MinSpanPropagation() { }
@@ -77,12 +81,34 @@ public:
 
     static Mesh propagate(ParallelPlaneConstPtr plane)
     {
-        Mesh mesh(plane->size());
+        Mesh mesh(10);
+
+        // Set algorithm parameters.
+        float delta_min = 5;
+        float delta_max = 10;
+
+        // Build kd-tree from given points.
+        Tree tree(std::ptr_fun(point3D_accessor_));
+        for (ParallelPlane::const_iterator it = plane->begin(); it != plane->end(); ++it)
+             tree.insert(*it);
+        tree.optimise();
+
+        // Choose initial point.
+        Point3D current = (*plane)[10];
+
+        // Choose propagation direction.
 
         for (ParallelPlane::const_iterator it = plane->begin(); it != plane->end(); ++it)
              mesh.add_vertex(*it);
 
         return mesh;
+    }
+
+private:
+    // Helper function for KDTree instance.
+    static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
+    {
+        return pt[k];
     }
 };
 
