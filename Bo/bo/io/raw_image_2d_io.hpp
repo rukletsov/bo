@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  raw_image_2d_io.hpp, v 1.0.3 2012.12.04
+  raw_image_2d_io.hpp, v 1.0.4 2012.12.04
 
   I/O for RawImage2D class. OpenCV library can be used for working with
   image files. This file provides necessary convertion and utility functions
@@ -68,14 +68,38 @@
 namespace bo {
 namespace io {
 
-// Saves RawImage2D<float> to a raw file (8 bytes per pixel, row by row).
-void BO_DECL save_raw_image_float_to_8bpps(bo::RawImage2D<float> image,
-                                           const std::string& filename);
+// Saves normalized RawImage2D<RealType> to a raw file (8 bytes per pixel, row by row).
+template <typename RealType>
+void save_raw_image_to_8bpps(bo::RawImage2D<RealType> image,
+                             const std::string& filename)
+{
+    if (image.is_null())
+        return;
 
-// Loads RawImage2D<float> from a raw file (8 bytes per pixel, row by row).
-bo::RawImage2D<float> BO_DECL load_raw_image_float_8bpps(const std::string& filename,
-                                                         std::size_t width,
-                                                         std::size_t height);
+    std::ofstream fs(filename.c_str(), std::fstream::out | std::fstream::binary);
+    for (std::size_t row = 0; row < image.height(); ++row)
+        for (std::size_t col = 0; col < image.width(); ++col)
+            fs << boost::uint8_t(image(col, row) *
+                                 std::numeric_limits<boost::uint8_t>::max());
+}
+
+// Loads normalized RawImage2D<RealType> from a raw file (8 bytes per pixel, row by row).
+template <typename RealType>
+bo::RawImage2D<RealType> load_raw_image_8bpps(const std::string& filename,
+                                              std::size_t width,
+                                              std::size_t height)
+{
+    // Allocate empty image of requested size.
+    bo::RawImage2D<RealType> image(width, height);
+
+    std::ifstream fs(filename.c_str(), std::fstream::in | std::fstream::binary);
+    for (std::size_t row = 0; row < height; ++row)
+        for (std::size_t col = 0; col < width; ++col)
+            image(col, row) = RealType(boost::uint8_t(fs.get() /
+                                       std::numeric_limits<boost::uint8_t>::max()));
+
+    return image;
+}
 
 // Helper functions for OpenCV library are available on demand.
 #ifdef BO_USE_OPENCV
