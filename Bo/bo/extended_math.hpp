@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  extended_math.hpp, v 1.0.0 2011.09.28
+  extended_math.hpp, v 1.0.1 2012.12.11
 
   Extension of the standard <cmath> header.
 
-  Copyright (c) 2011
+  Copyright (c) 2011, 2012
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -36,7 +36,14 @@
 #define EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C_
 
 #include <cmath>
+#include <vector>
+#include <algorithm>
+#include <functional>
 #include <boost/math/tr1.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
 
 namespace bo {
 
@@ -66,6 +73,21 @@ RealType fi_gm(RealType value)
 {
     return
         (value * value) / (RealType(1) + value * value);
+}
+
+// Returns the mean of the given samples.
+template <typename SampleType>
+SampleType mean(const std::vector<SampleType>& data)
+{
+    // Initialize boost accumulator.
+    namespace accs = boost::accumulators;
+    typedef accs::accumulator_set<SampleType, accs::stats<accs::tag::mean> > Acc;
+
+    // Fill accumulator with data.
+    Acc acc = std::for_each(data.begin(), data.end(), acc);
+
+    // Request and return mean.
+    return accs::mean(acc);
 }
 
 } // namespace bo
