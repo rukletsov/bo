@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  icp_3d.hpp, v 0.0.3 2012.12.11
+  icp_3d.hpp, v 0.0.4 2012.12.11
 
   Point-to-point implementation of the ICP registration algorithm for 3D point
   clouds.
@@ -104,6 +104,7 @@
 #include "bo/blas/blas.hpp"
 #include "bo/blas/conversions.hpp"
 #include "bo/kdtree.hpp"
+#include "bo/extended_math.hpp"
 
 namespace bo {
 namespace methods {
@@ -274,18 +275,21 @@ void ICP3D<RealType>::overlay_()
 template <typename RealType>
 typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) const
 {
-    Point3D mass_center(0);
+    BOOST_ASSERT(cloud->size() > 0);
+    Point3D mass_center = mean(*cloud);
+
+//    Point3D mass_center(0);
    
-    for (PointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it)
-    {
-        mass_center += *it;  
-    }
+//    for (PointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it)
+//    {
+//        mass_center += *it;
+//    }
 
-    const std::size_t n = cloud->size();
+//    const std::size_t n = cloud->size();
 
-    BOOST_ASSERT(n > 0);
+//    BOOST_ASSERT(n > 0);
 
-    mass_center /= n;
+//    mass_center /= n;
 
     return mass_center;
 }
