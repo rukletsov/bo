@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  transformation_3d.hpp, v 0.0.8 2012.09.29
+  transformation_3d.hpp, v 0.0.9 2012.12.11
 
   3D space transformations.
 
@@ -37,9 +37,10 @@
 
 #include <iostream>
 
-#include <bo/vector.hpp>
-#include <bo/extended_math.hpp>
-#include <bo/blas/blas.hpp>
+#include "bo/vector.hpp"
+#include "bo/extended_math.hpp"
+#include "bo/blas/blas.hpp"
+#include "bo/blas/conversions.hpp"
 
 namespace bo {
 
@@ -92,7 +93,7 @@ private:
     void set_translation_block_(const Translation& t);
 
 private:
-    blas::bounded_matrix<RealType, 4, 4> matrix_;
+    TransformationMatrix matrix_;
 };
 
 // Prints formatted transformation to the given stream.
@@ -170,16 +171,15 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     Point3D point) const
 {
     // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
-    blas::bounded_vector<RealType, 4> homog_vec;
-    homog_vec(0) = point[0]; homog_vec(1) = point[1]; homog_vec(2) = point[2]; homog_vec(3) = 1;
+    blas::bounded_vector<RealType, 4> homog_vec(4, 1);
+    blas::subrange(homog_vec, 0, 3) = blas::from_bo_vector(point);
 
     // Perform multiplication.
     boost::numeric::ublas::bounded_vector<RealType, 4> result = blas::prod(matrix_, homog_vec);
 
     // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
     // coordinates.
-    Point3D retvalue;
-    retvalue[0] = result(0); retvalue[1] = result(1); retvalue[2] = result(2);
+    Point3D retvalue = blas::to_bo_vector(blas::subrange(result, 0, 3));
 
     return
         retvalue;
@@ -243,18 +243,14 @@ template <typename RealType>
 void Transformation3D<RealType>::set_rotation_block_(const RotationMatrix& rot_matrix)
 {
     // Fill the top left 3x3 block (corresponding to rotation).
-    matrix_(0, 0) = rot_matrix(0, 0); matrix_(0, 1) = rot_matrix(0, 1); matrix_(0, 2) = rot_matrix(0, 2);
-    matrix_(1, 0) = rot_matrix(1, 0); matrix_(1, 1) = rot_matrix(1, 1); matrix_(1, 2) = rot_matrix(1, 2);
-    matrix_(2, 0) = rot_matrix(2, 0); matrix_(2, 1) = rot_matrix(2, 1); matrix_(2, 2) = rot_matrix(2, 2);
+    blas::subrange(matrix_, 0, 3, 0, 3) = rot_matrix;
 }
 
 template <typename RealType>
 void Transformation3D<RealType>::set_translation_block_(const Translation& t)
 {
     // Fill the last column (corresponding to translation) using given translation vector.
-    matrix_(0, 3) = t[0];
-    matrix_(1, 3) = t[1];
-    matrix_(2, 3) = t[2];
+    blas::subrange(blas::column(matrix_, 3), 0, 3) = t;
 }
 
 } // namespace bo
