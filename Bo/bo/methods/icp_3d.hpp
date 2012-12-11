@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  icp_3d.hpp, v 0.0.2 2012.09.17
+  icp_3d.hpp, v 0.0.3 2012.12.11
 
   Point-to-point implementation of the ICP registration algorithm for 3D point
   clouds.
@@ -102,7 +102,7 @@
 #include "bo/vector.hpp"
 #include "bo/transformation_3d.hpp"
 #include "bo/blas/blas.hpp"
-
+#include "bo/blas/conversions.hpp"
 #include "bo/kdtree.hpp"
 
 namespace bo {
@@ -221,24 +221,12 @@ RealType ICP3D<RealType>::next()
     Qpx(2, 0) = Apx(2, 0);
     Qpx(3, 0) = Apx(0, 1);
     // Block 4.
-    Qpx(1, 1) = Bpx(0, 0);
-    Qpx(1, 2) = Bpx(0, 1);
-    Qpx(1, 3) = Bpx(0, 2);
-    Qpx(2, 1) = Bpx(1, 0);
-    Qpx(2, 2) = Bpx(1, 1);
-    Qpx(2, 3) = Bpx(1, 2);
-    Qpx(3, 1) = Bpx(2, 0);
-    Qpx(3, 2) = Bpx(2, 1);
-    Qpx(3, 3) = Bpx(2, 2); 
+    blas::subrange(Qpx, 1, 4, 1, 4) = blas::subrange(Bpx, 0, 3, 0, 3);
 
     blas::eigen_symmetric(Qpx);
 
     // Quaternion that defines the optimal rotation.
-    Vector<RealType, 4> quaternion;
-    quaternion[0] = RealType(Qpx(0, 3));
-    quaternion[1] = RealType(Qpx(1, 3));
-    quaternion[2] = RealType(Qpx(2, 3));
-    quaternion[3] = RealType(Qpx(3, 3));
+    Vector<RealType, 4> quaternion = blas::to_bo_vector(blas::column(Qpx, 3));
 
     // Optimal translation. 
     Point3D translation = corresp_centroid - Transformation(quaternion) * current_centroid;
@@ -329,7 +317,7 @@ blas::matrix<RealType> ICP3D<RealType>::cross_covariance_(PointCloud* cloud1, Po
 
         // Accumulate the elements.
         // Warning: type overflow is possible here!
-        m = m + prod(p, x);
+        m = m + blas::prod(p, x);
     }   
 
     m = m / n;
