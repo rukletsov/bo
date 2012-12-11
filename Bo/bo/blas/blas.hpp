@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.3 2012.09.27
+  blas.hpp, v 1.1.4 2012.12.11
 
   Basic linear algebra subprograms. 
 
@@ -167,14 +167,21 @@ double determinant(const matrix<T>& input)
 
 // Eigenvector decomposition for real symmetric matrices. Returns a vector of the
 // eigenvalues, sorted in non-decreasing order. The corresponding eigenvectors are
-// stored in the columns of the matrix A.
-template <class T>
-std::vector<T> eigen_symmetric(matrix<T>& A)
+// stored in the columns of the matrix expr.
+template <class E>
+std::vector<typename E::value_type> eigen_symmetric(matrix_expression<E>& expr)
 {
-    const int n = (int)A.size1();
+    // Cache the underlying matrix type.
+    typedef E::value_type T;
+
+    // Evaluate and cache the matrix_expression.
+    typename E::closure_type A(expr());
+
+    // Allocate the return vector.
+    const int n(A.size1());
     std::vector<T> d(n);
 
-    // Initialize the vector.
+    // Initialize the return vector.
     for (int j = 0; j < n; ++j)
     {
         d[j] = A(n - 1, j);
