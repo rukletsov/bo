@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mbutterfly_mesh_subdiv.hpp, v 1.0.1 2012.03.17
+  mbutterfly_mesh_subdiv.hpp, v 1.0.2 2012.12.11
 
   Implementation of the Modified Butterfly subdivision surface method.
 
@@ -40,7 +40,7 @@
 #define MBUTTERFLY_MESH_SUBDIV_HPP_0CE908A8_0799_4C4E_92EC_3DCDAB62386E_
 
 #include "bo/config.hpp"
-#include <bo/mesh.hpp>
+#include "bo/mesh.hpp"
 
 namespace bo {
 namespace methods {

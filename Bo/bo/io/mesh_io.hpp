@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mesh_io.hpp, v 1.1.0 2012.03.27
+  mesh_io.hpp, v 1.1.1 2012.12.11
 
   I/O for Mesh class. RPly library is used for working with .ply files.
 
@@ -37,8 +37,8 @@
 
 #include <string>
 
-#include <bo/config.hpp>
-#include <bo/mesh.hpp>
+#include "bo/config.hpp"
+#include "bo/mesh.hpp"
 
 namespace bo {
 namespace io {
