@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  extended_math.hpp, v 1.0.1 2012.12.11
+  extended_math.hpp, v 1.0.2 2012.12.12
 
   Extension of the standard <cmath> header.
 
@@ -82,9 +82,10 @@ SampleType mean(const std::vector<SampleType>& data)
     // Initialize boost accumulator.
     namespace accs = boost::accumulators;
     typedef accs::accumulator_set<SampleType, accs::stats<accs::tag::mean> > Acc;
+    Acc acc;
 
     // Fill accumulator with data.
-    Acc acc = std::for_each(data.begin(), data.end(), acc);
+    acc = std::for_each(data.begin(), data.end(), acc);
 
     // Request and return mean.
     return accs::mean(acc);
