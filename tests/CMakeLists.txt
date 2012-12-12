@@ -11,6 +11,7 @@ SET (BoTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image_2d_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ini_reader_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tiling_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/math_unittest.cpp
 )
 
 SET (BoTest_HDRS
@@ -117,3 +118,4 @@ TestCase(Timer)
 TestCase(RawImage2D)
 TestCase(IniReader)
 TestCase(Tiling)
+TestCase(Math)
