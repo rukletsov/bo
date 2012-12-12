@@ -45,11 +45,6 @@ TEST_F(TilingTest, Temp)
     MinSpanPropagation<float> tiling;
 
     TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(test_filepath.string(), 512, 512);
-//    std::cout << test_image(112, 132) << " ";
-//    std::cout << test_image(113, 132) << " ";
-//    std::cout << test_image(114, 132) << " ";
-//    std::cout << test_image(115, 132) << " ";
-//    std::cout << test_image(116, 132) << " ";
 
     TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
     TilingAlgo::Mesh mesh = tiling.propagate(plane_data);
