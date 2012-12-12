@@ -43,6 +43,7 @@
 #include <boost/assert.hpp>
 
 #include "bo/vector.hpp"
+#include "bo/extended_math.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/blas/conversions.hpp"
 
@@ -63,9 +64,9 @@ struct PCA
     typedef boost::array<EigenValue, Dim> EigenValues;
     typedef Vector<RealType, Dim> EigenVector;
     typedef boost::array<EigenVector, Dim> EigenVectors;
-    typedef boost::tuples::tuple<EigenValues, EigenVectors> EigenResult;
+    typedef boost::tuples::tuple<EigenValues, EigenVectors> Result;
 
-    EigenResult operator() (Samples data)
+    Result operator() (Samples data)
     {
         typedef blas::bounded_vector<RealType, Dim> BlasVector;
         typedef std::vector<RealType> StdVector;
