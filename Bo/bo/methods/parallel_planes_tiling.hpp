@@ -36,6 +36,8 @@
 #define PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
 
 #include <vector>
+#include <algorithm>
+#include <functional>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -44,6 +46,10 @@
 #include "bo/mesh.hpp"
 #include "bo/raw_image_2d.hpp"
 #include "bo/kdtree.hpp"
+#include "bo/extended_math.hpp"
+#include "bo/blas/blas.hpp"
+#include "bo/blas/conversions.hpp"
+#include "bo/extended_std.hpp"
 
 namespace bo {
 namespace methods {
@@ -54,6 +60,7 @@ class MinSpanPropagation: public boost::noncopyable
 {
 public:
     typedef Vector<RealType, 3> Point3D;
+    typedef std::vector<Point3D> Points3D;
     typedef std::vector<Point3D> ParallelPlane;
     typedef Mesh<RealType> Mesh;
     typedef RawImage2D<RealType> Image2D;
@@ -96,9 +103,56 @@ public:
         // Choose initial point.
         Point3D current = (*plane)[10];
 
-        // Choose propagation direction.
+        // Choose propagation direction. First search for nearby points.
+        Points3D neighbours;
+        tree.find_within_range(current, delta_max, std::back_inserter(neighbours));
 
-        for (ParallelPlane::const_iterator it = plane->begin(); it != plane->end(); ++it)
+        // PCA.
+
+        // Now find the mean among the neighbours.
+        Point3D mean_neighbour = bo::mean(neighbours);
+
+        // Now calculate the deviations from mean.
+        std::transform(neighbours.begin(), neighbours.end(), neighbours.begin(),
+                       std::bind2nd(std::minus<Point3D>(), mean_neighbour));
+
+        // Now compute the 3x3 covariance matrix columwise and store it in blas matrix
+        // type for further processing.
+        typedef blas::bounded_matrix<RealType, 3, 3> CovarianceMatrix;
+        CovarianceMatrix cov = blas::zero_matrix<RealType>(3);
+
+        for (Points3D::const_iterator pt = neighbours.begin();
+             pt != neighbours.end(); ++pt)
+        {
+            cov(0, 0) += pt->x() * pt->x();
+            cov(1, 0) += pt->y() * pt->x();
+            cov(2, 0) += pt->z() * pt->x();
+
+            cov(0, 1) += pt->x() * pt->y();
+            cov(1, 1) += pt->y() * pt->y();
+            cov(2, 1) += pt->z() * pt->y();
+
+            cov(0, 2) += pt->x() * pt->z();
+            cov(1, 2) += pt->y() * pt->z();
+            cov(2, 2) += pt->z() * pt->z();
+        }
+
+        cov /= neighbours.size();
+
+        // Get the eigenvectors of the covariance matrix.
+        std::vector<RealType> cov_eigenvalues = blas::eigen_symmetric(cov);
+
+        // Choose the largest eigenvector, which should be the last in cov matrix.
+        Point3D prop_direction;
+        prop_direction.x() = cov(0, 2); prop_direction.y() = cov(1, 2); prop_direction.z() = cov(2, 2);
+        std::cout << cov_eigenvalues;
+        std::cout << prop_direction;
+
+
+
+
+
+        for (Points3D::const_iterator it = neighbours.begin(); it != neighbours.end(); ++it)
              mesh.add_vertex(*it);
 
         return mesh;
