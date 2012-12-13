@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.1 2012.12.03
+  parallel_planes_tiling.hpp, v 1.0.2 2012.12.13
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -45,6 +45,8 @@
 #include "bo/kdtree.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/blas/pca.hpp"
+#include "bo/methods/distances_3d.hpp"
+
 #include "bo/extended_std.hpp"
 
 namespace bo {
@@ -91,10 +93,11 @@ public:
         Mesh mesh(10);
 
         // Set algorithm parameters.
-        float delta_min = 5;
-        float delta_max = 10;
+        RealType delta_min = 5;
+        RealType delta_max = 10;
 
         // Build kd-tree from given points.
+        // TODO: provide kd-tree with current metric.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Choose initial point.
@@ -107,10 +110,14 @@ public:
         Point3D prop = tangential_prop;
         std::cout << prop;
 
-        // Search for the propagation candidate. It should lie on the arc strip
+        // Search for the propagation candidate. It should lie on the arced strip
         // bounded by delta_min and delta_max circumferences and a plane containing
         // current point and normal to propagation vector.
-        //tree.find
+        Point3D candidate = *(tree.find_nearest_if(current, delta_max,
+            ArchedStrip(current, delta_min, delta_max, prop, &euclidean_distance<RealType, 3>)).first);
+
+        std::cout << current;
+        std::cout << candidate;
 
 
 
@@ -124,6 +131,43 @@ public:
         return mesh;
     }
 
+protected:
+    struct ArchedStrip
+    {
+        ArchedStrip(Point3D ref_pt): ref_pt_(ref_pt)
+        { }
+
+        ArchedStrip(Point3D ref_pt, RealType delta_min, RealType delta_max, Point3D prop,
+                    Metric dist_fun):
+            ref_pt_(ref_pt), delta_min_(delta_min), delta_max_(delta_max), prop_(prop),
+            dist_fun_(dist_fun)
+        { }
+
+        bool operator()(const Point3D& pt)
+        {
+            // We need to check three conditions are met:
+            // 1. the point lies outside the delta_min circle;
+            // 2. the point lies inside the delta_max circle;
+            // 3. the point lies in front of the diving plane normal to
+            //    propagation vector.
+
+            RealType dist = dist_fun_/*euclidean_distance*/(ref_pt_, pt);
+            bool cond1 = (dist >= delta_min_);
+            bool cond2 = (dist <= delta_max_);
+
+            // Dot product is positive if the angle between vectors < 90 deg.
+            bool cond3 = ((prop_ * (pt - ref_pt_)) > 0);
+
+            return (cond1 && cond2 && cond3);
+        }
+
+        Point3D ref_pt_;
+        RealType delta_min_;
+        RealType delta_max_;
+        Point3D prop_;
+        Metric dist_fun_;
+    };
+
 private:
     // Helper function for KDTree instance.
     static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
@@ -132,7 +176,7 @@ private:
     }
 
     // Computes the tangential propagation vector for the given point.
-    static Point3D tangential_propagation_(Point3D pt, const Tree& tree, float radius)
+    static Point3D tangential_propagation_(Point3D pt, const Tree& tree, RealType radius)
     {
         // Search for nearby points.
         Points3D neighbours;
