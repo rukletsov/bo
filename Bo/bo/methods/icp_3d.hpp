@@ -271,19 +271,6 @@ typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) 
     BOOST_ASSERT(cloud->size() > 0);
     Point3D mass_center = mean(*cloud);
 
-//    Point3D mass_center(0);
-   
-//    for (PointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it)
-//    {
-//        mass_center += *it;
-//    }
-
-//    const std::size_t n = cloud->size();
-
-//    BOOST_ASSERT(n > 0);
-
-//    mass_center /= n;
-
     return mass_center;
 }
 
