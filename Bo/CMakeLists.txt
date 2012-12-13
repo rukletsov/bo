@@ -34,6 +34,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/kdtree.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/blas.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/conversions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/d25_active_contours.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/distances_3d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/icp_3d.hpp
