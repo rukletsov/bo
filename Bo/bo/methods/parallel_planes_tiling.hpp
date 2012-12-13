@@ -55,6 +55,8 @@ template <typename RealType>
 class MinSpanPropagation: public boost::noncopyable
 {
 public:
+    typedef MinSpanPropagation<RealType> this_type;
+
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> Points3D;
     typedef std::vector<Point3D> ParallelPlane;
@@ -93,30 +95,30 @@ public:
         float delta_max = 10;
 
         // Build kd-tree from given points.
-        Tree tree(std::ptr_fun(point3D_accessor_));
-        for (ParallelPlane::const_iterator it = plane->begin(); it != plane->end(); ++it)
-             tree.insert(*it);
-        tree.optimise();
+        Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Choose initial point.
         Point3D current = (*plane)[10];
 
-        // Search for nearby points.
-        Points3D neighbours;
-        tree.find_within_range(current, delta_max, std::back_inserter(neighbours));
+        // Get the tangential propagation.
+        Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
 
-        // Employ PCA to extract the propagation direction from the set of nearby points.
-        PCAEngine pca;
-        PCAEngine::Result result = pca(neighbours);
-        Point3D prop_direction = result.get<1>()[2];
+        // Initial propagation equals tangential propagation alone.
+        Point3D prop = tangential_prop;
+        std::cout << prop;
 
-        std::cout << prop_direction;
+        // Search for the propagation candidate. It should lie on the arc strip
+        // bounded by delta_min and delta_max circumferences and a plane containing
+        // current point and normal to propagation vector.
+        //tree.find
+
+
 
 
 
 
         // Build mesh from points.
-        for (Points3D::const_iterator it = neighbours.begin(); it != neighbours.end(); ++it)
+        for (Points3D::const_iterator it = plane->begin(); it != plane->end(); ++it)
              mesh.add_vertex(*it);
 
         return mesh;
@@ -127,6 +129,22 @@ private:
     static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
     {
         return pt[k];
+    }
+
+    // Computes the tangential propagation vector for the given point.
+    static Point3D tangential_propagation_(Point3D pt, const Tree& tree, float radius)
+    {
+        // Search for nearby points.
+        Points3D neighbours;
+        tree.find_within_range(pt, radius, std::back_inserter(neighbours));
+
+        // Employ PCA to extract the tangential propagation vector from the set of
+        // nearby points.
+        PCAEngine pca;
+        PCAEngine::Result result = pca(neighbours);
+        Point3D tangential = result.get<1>()[2];
+
+        return tangential;
     }
 };
 
