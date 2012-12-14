@@ -95,16 +95,22 @@ public:
         // Set algorithm parameters.
         RealType delta_min = 5;
         RealType delta_max = 10;
+        Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
         // TODO: provide kd-tree with current metric.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
-        // Choose initial point.
-        Point3D current = (*plane)[10];
+        // Choose initial point and mark it as the start one. Previous to current
+        // equals current to compute inertial propagation right.
+        Point3D start = (*plane)[10];
+        Point3D current = start;
+        Point3D previous = current;
 
-        // Get the tangential propagation.
+        // Get the total propagation.
         Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
+        Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
+        Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
 
         // Initial propagation equals tangential propagation alone.
         Point3D prop = tangential_prop;
@@ -114,7 +120,20 @@ public:
         // bounded by delta_min and delta_max circumferences and a plane containing
         // current point and normal to propagation vector.
         Point3D candidate = *(tree.find_nearest_if(current, delta_max,
-            ArchedStrip(current, delta_min, delta_max, prop, &euclidean_distance<RealType, 3>)).first);
+            ArchedStrip(current, delta_min, delta_max, prop, metric)).first);
+
+
+//        do
+//        {
+//            // Compute tangential propagation
+//            // Compute inertial propagation
+//            // Derive propagation vector.
+//            // Get candidate.
+//            // Check if the candidate "sees" start point.
+//            // Link either to candidate or to start point.
+//            // Update mesh.
+
+//        } while (curret != start);
 
         std::cout << current;
         std::cout << candidate;
@@ -189,6 +208,20 @@ private:
         Point3D tangential = result.get<1>()[2];
 
         return tangential;
+    }
+
+    // Computes the inertial propagation vector from current and previous mesh vertices.
+    static Point3D inertial_propagation_(Point3D current, Point3D previous)
+    {
+        return
+            (current -= previous);
+    }
+
+    // Computes the total propagation vector from tangential and inertial components.
+    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio)
+    {
+        Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
+        return total/*.maximum_norm()*/;
     }
 };
 
