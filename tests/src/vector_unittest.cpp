@@ -273,6 +273,7 @@ TEST_F(VectorTest, Normalization)
     float float_retval;
     vec2_.euclidean_norm(float_retval);
     EXPECT_NEAR(8.66025f, float_retval, 0.00001f);
+    EXPECT_NEAR(8.66025f, vec2_.euclidean_norm(), 0.00001f);
 
     vec4_.euclidean_norm(float_retval);
     EXPECT_FLOAT_EQ(18.f, float_retval);
@@ -283,6 +284,8 @@ TEST_F(VectorTest, Normalization)
 
     vec4_.euclidean_norm(int_retval);
     EXPECT_EQ(int(18), int_retval);
+
+    EXPECT_EQ(int(18), vec4_.euclidean_norm());
 
     // Check taxicab norm.
     EXPECT_FLOAT_EQ(0.f, vec1_.taxicab_norm());

@@ -164,10 +164,13 @@ public:
     std::size_t min_index() const;
     std::size_t max_index() const;
 
-    // Computes euclidean (L2) norm of the vector. If the return variable is given,
-    // try to convert the result to retvar's type.
+    // Computes euclidean (L2) norm of the vector. Double version converts self product
+    // to double and calls std::sqrt(T) afterwards. Other overloads uses the double
+    // version. Templated version converts norm in double to type T. If the return
+    // variable is given, norm is converted to the retvar's type.
     double euclidean_norm_d() const;
     template <typename RetType> void euclidean_norm(RetType& retvar) const;
+    T euclidean_norm() const;
 
     // Computes taxicab (L1) and maximum (L inf) norms of the vector. Uses std::abs(T), 
     // which implies T is a built-in type or custom type, for which abs() is provided 
@@ -528,6 +531,12 @@ template <typename T, std::size_t N> template <typename RetType>
 void Vector<T, N>::euclidean_norm(RetType& retvar) const
 {
     retvar = static_cast<RetType>(euclidean_norm_d());
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::euclidean_norm() const
+{
+    return T(euclidean_norm_d());
 }
 
 template <typename T, std::size_t N>
