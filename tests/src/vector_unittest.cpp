@@ -264,10 +264,10 @@ TEST_F(VectorTest, AggregationFunctions)
 TEST_F(VectorTest, Normalization)
 {
     // Check euclidean norm.
-    EXPECT_DOUBLE_EQ(0., vec1_.euclidean_norm());
-    EXPECT_NEAR(8.66025, vec2_.euclidean_norm(), 0.00001);
-    EXPECT_NEAR(17.46682, vec3_.euclidean_norm(), 0.00001);
-    EXPECT_DOUBLE_EQ(18., vec4_.euclidean_norm());
+    EXPECT_DOUBLE_EQ(0., vec1_.euclidean_norm_d());
+    EXPECT_NEAR(8.66025, vec2_.euclidean_norm_d(), 0.00001);
+    EXPECT_NEAR(17.46682, vec3_.euclidean_norm_d(), 0.00001);
+    EXPECT_DOUBLE_EQ(18., vec4_.euclidean_norm_d());
     EXPECT_DOUBLE_EQ(0., (vec2_ - vec2_).taxicab_norm());
 
     float float_retval;

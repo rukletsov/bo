@@ -156,7 +156,7 @@ public:
     {
         return ((!ce.ps->isVisited) || (checkNodes&&ce.ps->isNode()) || 
                 (checkVisited && ce.ps->isVisited)) &&
-               ((searchCenter.p-ce.ps->p).euclidean_norm() > minDistance);
+               ((searchCenter.p-ce.ps->p).euclidean_norm_d() > minDistance);
     }
 
 protected:
@@ -184,7 +184,7 @@ public:
         this->ce1 = ce1;
         this->ce2 = ce2;
         ba = ce2.ps->p - ce1.ps->p;
-        absBa = ba.euclidean_norm();
+        absBa = ba.euclidean_norm_d();
         only_nodes = false;
     }
 
@@ -313,9 +313,9 @@ struct TriangularDipyramid
         Vector<float,3> z = getNormalVector(t);
 
         // Sides length.
-        float a = float((t.B() - t.C()).euclidean_norm());
-        float b = float((t.C() - t.A()).euclidean_norm());
-        float c = float((t.A() - t.B()).euclidean_norm());
+        float a = float((t.B() - t.C()).euclidean_norm_d());
+        float b = float((t.C() - t.A()).euclidean_norm_d());
+        float c = float((t.A() - t.B()).euclidean_norm_d());
         
         // Half-perimeter.
         float p = (a + b + c) / 2;
@@ -331,7 +331,7 @@ struct TriangularDipyramid
         float h = r * std::sqrt(1 / (baseAngleCos * baseAngleCos)-1);
 
         // Height vector.
-        z = z / float(z.euclidean_norm()) * h;
+        z = z / float(z.euclidean_norm_d()) * h;
         
         // Two top-vertices.
         Vector<float,3> p1 = tdp.center + z;
@@ -362,15 +362,15 @@ struct TriangularDipyramid
         Vector<float, 3> z = getNormalVector(t);
 
         // Sides length.
-        float a = float((t.B() - t.C()).euclidean_norm());
-        float b = float((t.C() - t.A()).euclidean_norm());
-        float c = float((t.A() - t.B()).euclidean_norm());
+        float a = float((t.B() - t.C()).euclidean_norm_d());
+        float b = float((t.C() - t.A()).euclidean_norm_d());
+        float c = float((t.A() - t.B()).euclidean_norm_d());
 
         // Center of the incircle.
         tdp.center=(t.A() * a + t.B() * b + t.C() * c) / ( a + b + c);
 
         // Height vector.
-        z = z / float(z.euclidean_norm()) * height;
+        z = z / float(z.euclidean_norm_d()) * height;
 
         // Two top-vertices.
         Vector<float, 3> p1 = tdp.center + z;
@@ -444,7 +444,7 @@ struct TriangularDipyramid
                         Vertex norm = getNormalVector(e1, e2);
                         
                         // For non-zero cross products perform the test.
-                        float d = static_cast<float>(norm.euclidean_norm());
+                        float d = static_cast<float>(norm.euclidean_norm_d());
                         if (d > float_zero_eps)
                         {
                             // Normalize, just for order.
@@ -552,7 +552,7 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
     const HPointElement& ps2, bool checkNodes, bool checkVisited)
 {
     Vector<float,3> v1 = ps2.p - ps1.p;
-    double a = v1.euclidean_norm();
+    double a = v1.euclidean_norm_d();
 
     HPointElement mid;
     mid.p = (ps1.p + ps2.p) / 2;
@@ -573,8 +573,8 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
             Vector<float,3> v2 = (*it).ps->p - ps2.p;
             Vector<float,3> v3 = ps1.p - (*it).ps->p;
 
-            double b = v2.euclidean_norm();
-            double c = v3.euclidean_norm();
+            double b = v2.euclidean_norm_d();
+            double c = v3.euclidean_norm_d();
 
             if (b < maxInitDistance && c < maxInitDistance && 
                 b > minInitDistance && c > minInitDistance)
@@ -631,7 +631,7 @@ inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HP
 
 inline float D25ActiveContours::get_distance(const HPointElement &ps1, const HPointElement &ps2)
 {
-    return (float)(ps1.p - ps2.p).euclidean_norm();
+    return (float)(ps1.p - ps2.p).euclidean_norm_d();
 }
 
 
@@ -805,7 +805,7 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
     
     // If (inertialFactor >= 1): Inertial edge propagation.
     Vector<float,3> p(0, 0, 0);
-    float nmedian = (float)median.euclidean_norm();
+    float nmedian = (float)median.euclidean_norm_d();
     if (nmedian != 0)
         p = median / nmedian * pnorm;
 
@@ -836,7 +836,7 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
         }
 
         // Normalize the propagation vector.
-        float nprop = (float)prop.euclidean_norm();
+        float nprop = (float)prop.euclidean_norm_d();
         if (nprop != 0)
             prop = prop / nprop * pnorm;
 
@@ -906,9 +906,9 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
     // Define the neighbourhood radius. Find the maximum of maxSurfaceDepth and 
     // the distances from the triangle vertices to its mass centre.
     float tmp, rad = maxSurfaceDepth;
-    rad = rad > (tmp = float((tr.p1->p - mid).euclidean_norm())) ? rad : tmp;
-    rad = rad > (tmp = float((tr.p2->p - mid).euclidean_norm())) ? rad : tmp;
-    rad = rad > (tmp = float((tr.p3->p - mid).euclidean_norm())) ? rad : tmp;
+    rad = rad > (tmp = float((tr.p1->p - mid).euclidean_norm_d())) ? rad : tmp;
+    rad = rad > (tmp = float((tr.p2->p - mid).euclidean_norm_d())) ? rad : tmp;
+    rad = rad > (tmp = float((tr.p3->p - mid).euclidean_norm_d())) ? rad : tmp;
 
     // Pre-search: choose all points in the range (sphere with radius = rad).
     HPointElement mids;
@@ -923,7 +923,7 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
         Vector<float,3> X = tr.p2->p - tr.p1->p;
         Vector<float,3> Y = tr.p3->p - tr.p1->p;
         Vector<float,3> Z = getNormalVector(tr); 
-        Z = Z / float(Z.euclidean_norm()) * maxSurfaceDepth;
+        Z = Z / float(Z.euclidean_norm_d()) * maxSurfaceDepth;
         Vector<float,3> O = tr.p1->p;
 
         // Calculate the triangle prism basis matrix.
@@ -1035,11 +1035,11 @@ bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElem
                 
                 // Vector [ps, p]. 
                 Vector<float,3> v1 = ps->p - p;
-                double normV1 = v1.euclidean_norm();
+                double normV1 = v1.euclidean_norm_d();
 
                 // Vector [ee.p2, p].
                 Vector<float,3> v2 = ee.p2->p - p;
-                double normV2 = v2.euclidean_norm();
+                double normV2 = v2.euclidean_norm_d();
 
                 if(normV1==0 || normV2==0)
                     return false;
@@ -1321,7 +1321,7 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
     delete[] S2;
 
     // Return the normalized normal vector/
-    return v / float(v.euclidean_norm());
+    return v / float(v.euclidean_norm_d());
 }
 
 
@@ -1390,9 +1390,9 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
     Vector<float,3> v3b = t.p2->p - t.p3->p;
  
     // Calculate cos of the angles a, b and c.
-    float cos1 = v1a * v1b / float((v1a.euclidean_norm() * v1b.euclidean_norm()));
-    float cos2 = v2a * v2b / float((v2a.euclidean_norm() * v2b.euclidean_norm()));
-    float cos3 = v3a * v3b / float((v3a.euclidean_norm() * v3b.euclidean_norm()));
+    float cos1 = v1a * v1b / float((v1a.euclidean_norm_d() * v1b.euclidean_norm_d()));
+    float cos2 = v2a * v2b / float((v2a.euclidean_norm_d() * v2b.euclidean_norm_d()));
+    float cos3 = v3a * v3b / float((v3a.euclidean_norm_d() * v3b.euclidean_norm_d()));
 
     // Compare the angles with the minimal allowed value. 
     if ((std::fabs(cos1) > maxExcludedAngle) ||
