@@ -264,24 +264,24 @@ TEST_F(VectorTest, AggregationFunctions)
 TEST_F(VectorTest, Normalization)
 {
     // Check euclidean norm.
-    EXPECT_DOUBLE_EQ(0., vec1_.eucl_norm());
-    EXPECT_NEAR(8.66025, vec2_.eucl_norm(), 0.00001);
-    EXPECT_NEAR(17.46682, vec3_.eucl_norm(), 0.00001);
-    EXPECT_DOUBLE_EQ(18., vec4_.eucl_norm());
+    EXPECT_DOUBLE_EQ(0., vec1_.euclidean_norm());
+    EXPECT_NEAR(8.66025, vec2_.euclidean_norm(), 0.00001);
+    EXPECT_NEAR(17.46682, vec3_.euclidean_norm(), 0.00001);
+    EXPECT_DOUBLE_EQ(18., vec4_.euclidean_norm());
     EXPECT_DOUBLE_EQ(0., (vec2_ - vec2_).taxicab_norm());
 
     float float_retval;
-    vec2_.eucl_norm(float_retval);
+    vec2_.euclidean_norm(float_retval);
     EXPECT_NEAR(8.66025f, float_retval, 0.00001f);
 
-    vec4_.eucl_norm(float_retval);
+    vec4_.euclidean_norm(float_retval);
     EXPECT_FLOAT_EQ(18.f, float_retval);
 
     int int_retval;
-    vec3_.eucl_norm(int_retval);
+    vec3_.euclidean_norm(int_retval);
     EXPECT_EQ(int(17), int_retval);
 
-    vec4_.eucl_norm(int_retval);
+    vec4_.euclidean_norm(int_retval);
     EXPECT_EQ(int(18), int_retval);
 
     // Check taxicab norm.
