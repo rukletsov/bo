@@ -156,21 +156,14 @@ private:
     Metric dist_fun_;
 };
 
+// Includes computing a kd-tree for the target point cloud.
 template <typename RealType>
 ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
     Metric dist_fun, bool is_preprocess):
     current_cloud_(source), target_cloud_(target), dist_fun_(dist_fun), 
-    current_trans_(), tree_(Point3DTree(std::ptr_fun(ICP3D<RealType>::point_bac)))
+    current_trans_(),
+    tree_(target->begin(), target->end(), Point3DTree(std::ptr_fun(ICP3D<RealType>::point_bac)))
 {    
-    // Compute a kd-tree for the target point cloud.
-    PointCloud::const_iterator it = target->begin();
-    while (it != target->end())
-    {
-        tree_.insert(*it);
-        ++it;
-    }
-    tree_.optimise();
-
     if (is_preprocess)
         overlay_();
 }

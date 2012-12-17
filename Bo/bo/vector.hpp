@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.2.0 2012.10.03
+  vector.hpp, v 1.2.2 2012.12.14
 
   Multidimensional Vector (Point) class. 
 
@@ -164,10 +164,13 @@ public:
     std::size_t min_index() const;
     std::size_t max_index() const;
 
-    // Computes euclidean (L2) norm of the vector. If the return variable is given,
-    // try to convert the result to retvar's type.
-    double eucl_norm() const;
-    template <typename RetType> void eucl_norm(RetType& retvar) const;
+    // Computes euclidean (L2) norm of the vector. Double version converts self product
+    // to double and calls std::sqrt(T) afterwards. Other overloads uses the double
+    // version. Templated version converts norm in double to type T. If the return
+    // variable is given, norm is converted to the retvar's type.
+    double euclidean_norm_d() const;
+    template <typename RetType> void euclidean_norm(RetType& retvar) const;
+    T euclidean_norm() const;
 
     // Computes taxicab (L1) and maximum (L inf) norms of the vector. Uses std::abs(T), 
     // which implies T is a built-in type or custom type, for which abs() is provided 
@@ -518,16 +521,22 @@ T Vector<T, N>::avg() const
 }
 
 template <typename T, std::size_t N> 
-double Vector<T, N>::eucl_norm() const
+double Vector<T, N>::euclidean_norm_d() const
 {
     return 
         std::sqrt(static_cast<double>((*this) * (*this)));
 }
 
 template <typename T, std::size_t N> template <typename RetType> 
-void Vector<T, N>::eucl_norm(RetType& retvar) const
+void Vector<T, N>::euclidean_norm(RetType& retvar) const
 {
-    retvar = static_cast<RetType>(eucl_norm());
+    retvar = static_cast<RetType>(euclidean_norm_d());
+}
+
+template <typename T, std::size_t N>
+T Vector<T, N>::euclidean_norm() const
+{
+    return T(euclidean_norm_d());
 }
 
 template <typename T, std::size_t N>
@@ -558,7 +567,7 @@ Vector<double, N> Vector<T, N>::normalized() const
     // Normalization of the null vector is meaningess. In this case vector's norm
     // is zero and factor should be Infinity (according to IEC559/IEEE754). A simple 
     // check for this is using numeric_limits<> class.
-    double factor = 1.0 / eucl_norm();
+    double factor = 1.0 / euclidean_norm_d();
     if (std::numeric_limits<double>::infinity() == factor)
         throw std::logic_error("Normalization of the null vector is meaningless.");
 
