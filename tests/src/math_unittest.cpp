@@ -23,6 +23,8 @@ public:
     typedef std::vector<float> Samples1f;
     typedef std::vector<double> Samples1d;
 
+    typedef std::logic_error ex_t;
+
 protected:
 
     MathTest(): data3f_(4), data2d_(10), data1d_(4)
@@ -48,12 +50,13 @@ protected:
     Vecs3f data3f_;
     Vecs2d data2d_;
     Vecs2i data2i_;
+    Vecs2d empty2d_;
     Samples1f data1f_;
     Samples1d data1d_;
 };
 
 
-TEST_F(MathTest, Mean)
+TEST_F(MathTest, DISABLED_Mean)
 {
     Vec3f res3f = mean(data3f_);
     EXPECT_DOUBLE_EQ(0.f, res3f[0]);
@@ -62,9 +65,12 @@ TEST_F(MathTest, Mean)
 
     double res1d = mean(data1d_);
     EXPECT_DOUBLE_EQ(2.85, res1d);
+
+    // An exception should be throw by mean() iff the data set is empty.
+    EXPECT_THROW(mean(empty2d_), ex_t);
 }
 
-TEST_F(MathTest, PCA)
+TEST_F(MathTest, DISABLED_PCA)
 {
     typedef blas::PCA<double, 2> PCAEngine;
     PCAEngine pca;
@@ -81,4 +87,7 @@ TEST_F(MathTest, PCA)
     PCAEngine::EigenVector eigenvector2 = result.get<1>()[1];
     EXPECT_DOUBLE_EQ(1., eigenvector2[0]);
     EXPECT_DOUBLE_EQ(0., eigenvector2[1]);
+
+    // An exception should be throw by PCA iff the data set is empty.
+    EXPECT_THROW(pca(empty2d_), ex_t);
 }

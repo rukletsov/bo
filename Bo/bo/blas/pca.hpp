@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  pca.hpp, v 1.0.0 2012.12.12
+  pca.hpp, v 1.0.1 2012.12.18
 
   Principal component analysis implementation using the covariance method.
 
@@ -38,6 +38,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
 #include <boost/tuple/tuple.hpp>
 #include <boost/array.hpp>
 #include <boost/assert.hpp>
@@ -71,6 +72,10 @@ struct PCA
         typedef blas::bounded_vector<RealType, Dim> BlasVector;
         typedef std::vector<RealType> StdVector;
         typedef blas::bounded_matrix<RealType, Dim, Dim> Matrix;
+
+        // If the data is empty, PCA is meaningless.
+        if (data.size() == 0)
+            throw std::logic_error("PCA for an empty set is meaningless.");
 
         // Find the mean among the neighbours.
         Sample mean_value = bo::mean(data);

@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  extended_math.hpp, v 1.0.2 2012.12.12
+  extended_math.hpp, v 1.0.3 2012.12.18
 
   Extension of the standard <cmath> header.
 
@@ -39,6 +39,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
 #include <boost/math/tr1.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -79,6 +80,10 @@ RealType fi_gm(RealType value)
 template <typename SampleType>
 SampleType mean(const std::vector<SampleType>& data)
 {
+    // The mean of an empty set is meaningless.
+    if (data.size() == 0)
+        throw std::logic_error("The mean of an empty set is meaningless.");
+
     // Initialize boost accumulator.
     namespace accs = boost::accumulators;
     typedef accs::accumulator_set<SampleType, accs::stats<accs::tag::mean> > Acc;
