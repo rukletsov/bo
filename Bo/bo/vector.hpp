@@ -183,7 +183,7 @@ public:
 
     // Note that for integral types normalize won't work. For this reason this
     // function is designed const and it returns a normalized double vector.
-    // If the vector is a null-vector, normalization is senseless. However, some
+    // If the vector is a null-vector, normalization is meaningless. However, some
     // software (e.g. Wolfram Mathematica 7.0) returns the null-vector as a result
     // of a normalization of the null-vector. In order not to inflate the code,
     // the function called on the null-vector will make 0/0 division and return

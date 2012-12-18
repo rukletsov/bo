@@ -23,6 +23,8 @@ public:
     typedef std::vector<float> Samples1f;
     typedef std::vector<double> Samples1d;
 
+    typedef std::logic_error ex_t;
+
 protected:
 
     MathTest(): data3f_(4), data2d_(10), data1d_(4)
@@ -48,6 +50,7 @@ protected:
     Vecs3f data3f_;
     Vecs2d data2d_;
     Vecs2i data2i_;
+    Vecs3f empty1d_;
     Samples1f data1f_;
     Samples1d data1d_;
 };
@@ -62,6 +65,9 @@ TEST_F(MathTest, Mean)
 
     double res1d = mean(data1d_);
     EXPECT_DOUBLE_EQ(2.85, res1d);
+
+    // An exception should be throw by mean() iff the set is empty.
+    EXPECT_THROW(mean(empty1d_), ex_t);
 }
 
 TEST_F(MathTest, PCA)
