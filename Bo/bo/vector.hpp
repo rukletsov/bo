@@ -119,7 +119,7 @@ public:
     // But this approach leads to a lot of copy-paste methods, e.g. all operators,
     // constructors and some other. The possible solution is to write a macros for 
     // automatic creation of these duplicated methods. An open question is performance
-    // in the presence of inheritance and possible redundant object copying. That 
+    // in the presence of inheritance and possible redundant object copying. That
     // should be checked in case of this approach.
     //
     // Finally, it was decided to favor the first approach because of its simplicity
