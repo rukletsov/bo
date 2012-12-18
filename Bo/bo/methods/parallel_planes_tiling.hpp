@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.3 2012.12.18
+  parallel_planes_tiling.hpp, v 1.0.4 2012.12.18
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -117,9 +117,10 @@ public:
 //                __debugbreak();
 
             // Compute total propagation.
-            Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 1);
+            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
+                delta_max, inertial_prop);
+            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
 
             // Search for the propagation candidate. It should lie on the arced strip
             // bounded by delta_min and delta_max circumferences and a plane containing
@@ -197,26 +198,6 @@ private:
         return pt[k];
     }
 
-    // Computes the tangential propagation vector for the given point.
-    static Point3D tangential_propagation_(Point3D pt, const Tree& tree, RealType radius)
-    {
-        // Search for nearby points.
-        Points3D neighbours;
-        tree.find_within_range(pt, radius, std::back_inserter(neighbours));
-
-        // Employ PCA to extract the tangential propagation vector from the set of
-        // nearby points.
-        PCAEngine pca;
-        PCAEngine::Result result = pca(neighbours);
-        Point3D tangential = result.get<1>()[2];
-
-        // TODO: remove this block by refactoring bo::Vector class.
-        // Normalize vector.
-        Point3D tangential_normalized(tangential.normalized(), 3);
-
-        return tangential_normalized;
-    }
-
     // Computes the inertial propagation vector from current and previous mesh vertices.
     static Point3D inertial_propagation_(Point3D current, Point3D previous)
     {
@@ -233,6 +214,31 @@ private:
         { }
 
         return inertial_normalized;
+    }
+
+    // Computes the tangential propagation vector for the given point.
+    static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
+                                           RealType radius, Point3D inertial)
+    {
+        // Search for nearby points.
+        Points3D neighbours;
+        tree.find_within_range(pt, radius, std::back_inserter(neighbours));
+
+        // Employ PCA to extract the tangential propagation vector from the set of
+        // nearby points.
+        PCAEngine pca;
+        PCAEngine::Result result = pca(neighbours);
+        Point3D tangential = result.get<1>()[2];
+
+        // Ensure that tangential and inertial components are codirectional.
+        if (tangential * inertial < 0)
+            tangential = - tangential;
+
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D tangential_normalized(tangential.normalized(), 3);
+
+        return tangential_normalized;
     }
 
     // Computes the total propagation vector from tangential and inertial components.
