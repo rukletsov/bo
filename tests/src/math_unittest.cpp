@@ -50,7 +50,7 @@ protected:
     Vecs3f data3f_;
     Vecs2d data2d_;
     Vecs2i data2i_;
-    Vecs3f empty1d_;
+    Vecs2d empty2d_;
     Samples1f data1f_;
     Samples1d data1d_;
 };
@@ -66,8 +66,8 @@ TEST_F(MathTest, Mean)
     double res1d = mean(data1d_);
     EXPECT_DOUBLE_EQ(2.85, res1d);
 
-    // An exception should be throw by mean() iff the set is empty.
-    EXPECT_THROW(mean(empty1d_), ex_t);
+    // An exception should be throw by mean() iff the data set is empty.
+    EXPECT_THROW(mean(empty2d_), ex_t);
 }
 
 TEST_F(MathTest, PCA)
@@ -87,4 +87,7 @@ TEST_F(MathTest, PCA)
     PCAEngine::EigenVector eigenvector2 = result.get<1>()[1];
     EXPECT_DOUBLE_EQ(1., eigenvector2[0]);
     EXPECT_DOUBLE_EQ(0., eigenvector2[1]);
+
+    // An exception should be throw by PCA iff the data set is empty.
+    EXPECT_THROW(pca(empty2d_), ex_t);
 }
