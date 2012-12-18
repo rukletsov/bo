@@ -125,13 +125,15 @@ public:
             // bounded by delta_min and delta_max circumferences and a plane containing
             // current point and normal to propagation vector.
             Point3D phantom_candidate = current + total_prop * delta_min;
+
+            // TODO: get rid of max radius.
             std::pair<Tree::const_iterator, RealType> candidate_data =
-                    tree.find_nearest_if(current, delta_max,
+                    tree.find_nearest_if(phantom_candidate, delta_max,
                         ArchedStrip(current, delta_min, delta_max, total_prop, metric));
             RealType real_dst = candidate_data.second;
             Point3D candidate = *(candidate_data.first);
 
-            if ((real_dst >= delta_max) || (current_idx > 3111))
+            if ((real_dst >= delta_max) || (current_idx > 1000))
                 break;
 
             // Check if the candidate "sees" the start point "in front".
