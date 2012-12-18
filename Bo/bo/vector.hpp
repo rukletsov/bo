@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  vector.hpp, v 1.2.2 2012.12.14
+  vector.hpp, v 1.2.3 2012.12.18
 
   Multidimensional Vector (Point) class. 
 
@@ -62,6 +62,9 @@ class Vector
     > > > > 
 {
 public:
+    typedef Vector<T, N> this_type;
+
+public:
     // Each component is initialized either to 0 or to a given value.
     // If a c-array of type S is given, copy its elements.
     Vector();
@@ -75,27 +78,27 @@ public:
     Vector(const T& x, const T& y, const T& z, const T& w);
 
     // Some of standard operators. boost::operators library adds more.
-    const Vector<T, N>& operator+=(const T& scalar);
-    const Vector<T, N>& operator-=(const T& scalar);
-    const Vector<T, N>& operator*=(const T& scalar);
-    const Vector<T, N>& operator/=(const T& scalar);
+    const this_type& operator+=(const T& scalar);
+    const this_type& operator-=(const T& scalar);
+    const this_type& operator*=(const T& scalar);
+    const this_type& operator/=(const T& scalar);
 
     // In general won't work for floats. This is because not every real number can 
     // be represented by float/double/long double and therefore theoretically equal
     // numbers can differ, i.e. f^{-1}(f(x)) can differ from x. Fore more information
     // on this topic see
     //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
-    bool operator==(const Vector<T, N>& other) const;
+    bool operator==(const this_type& other) const;
 
-    const Vector<T, N>& operator+=(const Vector<T, N>& other);
-    const Vector<T, N>& operator-=(const Vector<T, N>& other);
+    const this_type& operator+=(const this_type& other);
+    const this_type& operator-=(const this_type& other);
 
     // Unary negation operator. Creates a new Vector<T, N> and copies every element,
     // taken with the minus sign. Uses std::transform and std::negate<> in current
     // implementation. Another possible way to do this is multiplication by -1. In
     // this case type T should provide a c-tor taking -1 as single argument. This
     // approach seems to be less rational as the current one.
-    Vector<T, N> operator-() const;
+    this_type operator-() const;
 
     // Assignment and access operators. Range-check is done by boost::array via 
     // debug-only assertions. Use at() method for safer but less efficient version 
@@ -117,13 +120,13 @@ public:
     // The other solution is to have a basic, say, VectorImpl<T, N> class and 
     // derived classes Vector<T, N> and its specializations Vector<T, 2> and so on.
     // But this approach leads to a lot of copy-paste methods, e.g. all operators,
-    // constructors and some other. The possible solution is to write a macros for 
+    // constructors and some other. A possible solution is to write a macros for
     // automatic creation of these duplicated methods. An open question is performance
-    // in the presence of inheritance and possible redundant object copying. That 
+    // in presence of inheritance and possible redundant object copying. That
     // should be checked in case of this approach.
     //
     // Finally, it was decided to favor the first approach because of its simplicity
-    // and not worse performance.
+    // and at least not worse performance.
 
     const T& x() const;
     const T& y() const;
@@ -137,7 +140,7 @@ public:
     
     // Cross product makes sense only in 3D and therefore is available only for 
     // Vector<T, 3>.
-    Vector<T, N> cross_product(const Vector<T, N>& other) const;
+    this_type cross_product(const this_type& other) const;
 
     // See below for operator* (dot product), defined outside the class.
     // See below for operator<<, defined outside the class.
@@ -191,7 +194,7 @@ public:
     static std::size_t size();
 
     // Swap method (linear complexity).
-    void swap(Vector<T, N>& other);
+    void swap(this_type& other);
 
     // Fill each component with a given value.
     void fill(const T& value);
