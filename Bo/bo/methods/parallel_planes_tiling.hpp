@@ -48,6 +48,7 @@
 #include "bo/methods/distances_3d.hpp"
 
 #include "bo/extended_std.hpp"
+#include <intrin.h>
 
 namespace bo {
 namespace methods {
@@ -99,53 +100,52 @@ public:
 
         // Build kd-tree from given points.
         // TODO: provide kd-tree with current metric.
+        // TODO: convert 3D points to 2D and pass this data as reference to kdtree c-tor.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Choose initial point and mark it as the start one. Previous to current
         // equals current to compute inertial propagation right.
         Point3D start = (*plane)[10];
+        std::size_t start_idx = mesh.add_vertex(start);
         Point3D current = start;
+        std::size_t current_idx = start_idx;
         Point3D previous = current;
 
-        // Get the total propagation.
-        Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
-        Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-        Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
+        do
+        {
+            // Compute total propagation.
+            Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
+            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
+            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
 
-        // Initial propagation equals tangential propagation alone.
-        Point3D prop = tangential_prop;
-        std::cout << prop;
+            // Search for the propagation candidate. It should lie on the arced strip
+            // bounded by delta_min and delta_max circumferences and a plane containing
+            // current point and normal to propagation vector.
+            Point3D candidate = *(tree.find_nearest_if(current, delta_max,
+                ArchedStrip(current, delta_min, delta_max, total_prop, metric)).first);
 
-        // Search for the propagation candidate. It should lie on the arced strip
-        // bounded by delta_min and delta_max circumferences and a plane containing
-        // current point and normal to propagation vector.
-        Point3D candidate = *(tree.find_nearest_if(current, delta_max,
-            ArchedStrip(current, delta_min, delta_max, prop, metric)).first);
+            if (candidate.x() < 0.001f)
+            {
+                __debugbreak();
+            }
 
+            // Check if the candidate "sees" the start point "in front".
+            std::size_t candidate_idx;
+            if ((delta_max > metric(start, current)) || (total_prop * (current - start)) > 0)
+                candidate_idx = mesh.add_vertex(candidate);
+            else
+                candidate_idx = start_idx;
 
-//        do
-//        {
-//            // Compute tangential propagation
-//            // Compute inertial propagation
-//            // Derive propagation vector.
-//            // Get candidate.
-//            // Check if the candidate "sees" start point.
-//            // Link either to candidate or to start point.
-//            // Update mesh.
+            // Link to candidate (may be start point) and update mesh structure.
+            //std::size_t dummy_idx = mesh.add_vertex((current + candidate) / RealType(2));
+            //mesh.add_face(Mesh::Face(current_idx, dummy_idx, candidate_idx));
 
-//        } while (curret != start);
+            // Update algortihm's state.
+            previous = current;
+            current = candidate;
+            current_idx = candidate_idx;
 
-        std::cout << current;
-        std::cout << candidate;
-
-
-
-
-
-
-        // Build mesh from points.
-        for (Points3D::const_iterator it = plane->begin(); it != plane->end(); ++it)
-             mesh.add_vertex(*it);
+        } while (current_idx != start_idx);
 
         return mesh;
     }
@@ -170,7 +170,7 @@ protected:
             // 3. the point lies in front of the diving plane normal to
             //    propagation vector.
 
-            RealType dist = dist_fun_/*euclidean_distance*/(ref_pt_, pt);
+            RealType dist = dist_fun_(ref_pt_, pt);
             bool cond1 = (dist >= delta_min_);
             bool cond2 = (dist <= delta_max_);
 
@@ -221,7 +221,12 @@ private:
     static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio)
     {
         Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
-        return total/*.maximum_norm()*/;
+
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D total_normalized(total.normalized(), 3);
+
+        return total_normalized;
     }
 };
 
