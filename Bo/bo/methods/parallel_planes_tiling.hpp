@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.2 2012.12.13
+  parallel_planes_tiling.hpp, v 1.0.3 2012.12.18
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -95,7 +95,7 @@ public:
 
         // Set algorithm parameters.
         RealType delta_min = 5;
-        RealType delta_max = 10;
+        RealType delta_max = 30;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
@@ -113,32 +113,33 @@ public:
 
         do
         {
+//            if (current_idx == 1032)
+//                __debugbreak();
+
             // Compute total propagation.
             Point3D tangential_prop = this_type::tangential_propagation_(current, tree, delta_max);
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
+            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 1);
 
             // Search for the propagation candidate. It should lie on the arced strip
             // bounded by delta_min and delta_max circumferences and a plane containing
             // current point and normal to propagation vector.
-            Point3D candidate = *(tree.find_nearest_if(current, delta_max,
-                ArchedStrip(current, delta_min, delta_max, total_prop, metric)).first);
+            Point3D phantom_candidate = current + total_prop * delta_min;
+            std::pair<Tree::const_iterator, RealType> candidate_data =
+                    tree.find_nearest_if(current, delta_max,
+                        ArchedStrip(current, delta_min, delta_max, total_prop, metric));
+            RealType real_dst = candidate_data.second;
+            Point3D candidate = *(candidate_data.first);
 
-            if (candidate.x() < 0.001f)
-            {
-                __debugbreak();
-            }
+            if ((real_dst >= delta_max) || (current_idx > 3111))
+                break;
 
             // Check if the candidate "sees" the start point "in front".
             std::size_t candidate_idx;
-            if ((delta_max > metric(start, current)) || (total_prop * (current - start)) > 0)
+            if ((delta_max < metric(start, current)) || (total_prop * (current - start)) >= 0)
                 candidate_idx = mesh.add_vertex(candidate);
             else
                 candidate_idx = start_idx;
-
-            // Link to candidate (may be start point) and update mesh structure.
-            //std::size_t dummy_idx = mesh.add_vertex((current + candidate) / RealType(2));
-            //mesh.add_face(Mesh::Face(current_idx, dummy_idx, candidate_idx));
 
             // Update algortihm's state.
             previous = current;
@@ -207,14 +208,29 @@ private:
         PCAEngine::Result result = pca(neighbours);
         Point3D tangential = result.get<1>()[2];
 
-        return tangential;
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D tangential_normalized(tangential.normalized(), 3);
+
+        return tangential_normalized;
     }
 
     // Computes the inertial propagation vector from current and previous mesh vertices.
     static Point3D inertial_propagation_(Point3D current, Point3D previous)
     {
-        return
-            (current -= previous);
+        Point3D inertial = (current -= previous);
+
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D inertial_normalized(0);
+        try
+        {
+            inertial_normalized.assign(inertial.normalized(), 3);
+        }
+        catch (...)
+        { }
+
+        return inertial_normalized;
     }
 
     // Computes the total propagation vector from tangential and inertial components.
