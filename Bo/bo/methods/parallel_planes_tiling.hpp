@@ -91,11 +91,12 @@ public:
 
     static Mesh propagate(ParallelPlaneConstPtr plane)
     {
+        // TODO: assert on data size (at least 2 samples?).
         Mesh mesh(10);
 
         // Set algorithm parameters.
-        RealType delta_min = 5;
-        RealType delta_max = 30;
+        RealType delta_min = 1;
+        RealType delta_max = 7;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
@@ -105,7 +106,7 @@ public:
 
         // Choose initial point and mark it as the start one. Previous to current
         // equals current to compute inertial propagation right.
-        Point3D start = (*plane)[10];
+        Point3D start = (*plane)[0];
         std::size_t start_idx = mesh.add_vertex(start);
         Point3D current = start;
         std::size_t current_idx = start_idx;
