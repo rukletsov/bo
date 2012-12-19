@@ -8,6 +8,7 @@ property float z
 element face 0
 property list uchar int vertex_indices
 end_header
+-16.4146 -44.7009 -173.863 
 19.0221 -52.6465 -173.367 
 19.1302 -52.5942 -173.367 
 19.2383 -52.5419 -173.367 
