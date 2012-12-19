@@ -54,13 +54,13 @@ TEST_F(TilingTest, Temp)
 //    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(raw_test_filepath_.string(), 512, 512);
 //    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
-    ASSERT_TRUE(IsFileAvailable(ply_femur_filepath_));
-    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
-    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
-
-//    ASSERT_TRUE(IsFileAvailable(ply_sheep_filepath_));
-//    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
+//    ASSERT_TRUE(IsFileAvailable(ply_femur_filepath_));
+//    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
 //    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
+
+    ASSERT_TRUE(IsFileAvailable(ply_sheep_filepath_));
+    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
+    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
     TilingAlgo::Mesh mesh = tiling.propagate(plane_data);
     mesh_to_ply(mesh, (boost::filesystem3::path(DataDirectory) /= "result.ply").string());

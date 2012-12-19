@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.4 2012.12.18
+  parallel_planes_tiling.hpp, v 1.0.5 2012.12.19
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -96,7 +96,7 @@ public:
 
         // Set algorithm parameters.
         RealType delta_min = 1;
-        RealType delta_max = 7;
+        RealType delta_max = 10;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
@@ -121,7 +121,7 @@ public:
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
             Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
                 delta_max, inertial_prop);
-            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5);
+            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
 
             // Search for the propagation candidate. It should lie on the arced strip
             // bounded by delta_min and delta_max circumferences and a plane containing
@@ -135,7 +135,19 @@ public:
             RealType real_dst = candidate_data.second;
             Point3D candidate = *(candidate_data.first);
 
-            if ((real_dst >= delta_max) || (current_idx > 1000))
+            // Check if we bump into a hole.
+            if (real_dst >= delta_max)
+            {
+                // Draw total propagation vector.
+                std::size_t prop_idx = mesh.add_vertex(current + total_prop * delta_max);
+                std::size_t dummy1_idx = mesh.add_vertex(current);
+                std::size_t dummy2_idx = mesh.add_vertex(current);
+                mesh.add_face(Mesh::Face(prop_idx, dummy1_idx, dummy2_idx));
+                break;
+            }
+
+            // Restrict total length (to prevent looping).
+            if (current_idx > 1000)
                 break;
 
             // Check if the candidate "sees" the start point "in front".
@@ -204,11 +216,13 @@ private:
     {
         Point3D inertial = (current -= previous);
 
-        // TODO: remove this block by refactoring bo::Vector class.
-        // Normalize vector.
+        // TODO: remove this by redesigning the algorithm and requiring inertial
+        // vector to be non-zero.
         Point3D inertial_normalized(0);
         try
         {
+            // TODO: remove this block by refactoring bo::Vector class.
+            // Normalize vector.
             inertial_normalized.assign(inertial.normalized(), 3);
         }
         catch (...)
