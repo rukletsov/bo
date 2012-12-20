@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.6 2012.12.20
+  parallel_planes_tiling.hpp, v 1.0.7 2012.12.20
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -96,7 +96,7 @@ public:
 
         // Set algorithm parameters.
         RealType delta_min = 1;
-        RealType delta_max = 10;
+        RealType delta_max = 7;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
@@ -104,65 +104,29 @@ public:
         // TODO: convert 3D points to 2D and pass this data as reference to kdtree c-tor.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
-        // Choose initial point and mark it as the start one.
+        // Choose initial point and initial propagation. It solely consists of the
+        // tangential component, since inertial cannot be defined.
         Point3D start = (*plane)[0];
-        std::size_t start_idx = mesh.add_vertex(start);
-
-        // Compute initial propagation. It solely consists of tangential component,
-        // since inertial cannot be defined.
-        Point3D total_prop = this_type::tangential_propagation_(start, tree,
+        Point3D initial_prop = this_type::tangential_propagation_(start, tree,
             delta_max, Point3D(RealType(0)));
 
-        Point3D current = start;
-        std::size_t current_idx = start_idx;
-        do
-        {
-            // Search for the propagation candidate. It should lie on the arced strip
-            // bounded by delta_min and delta_max circumferences and a plane containing
-            // current point and normal to propagation vector.
-            Point3D phantom_candidate = current + total_prop * delta_min;
+        // Run propagation. It may bump into a hole or return a circuit.
+        PropagationResult attempt1 = propagate_(start, start, initial_prop, tree,
+            delta_min, delta_max, 1000, metric);
 
-            // TODO: get rid of max radius.
-            std::pair<Tree::const_iterator, RealType> candidate_data =
-                    tree.find_nearest_if(phantom_candidate, delta_max,
-                        ArchedStrip(current, delta_min, delta_max, total_prop, metric));
-            RealType real_dst = candidate_data.second;
-            Point3D candidate = *(candidate_data.first);
+        // If the hole was detected, run propagation in a different direction.
+        PropagationResult attempt2;
+        if (attempt1.hole_encountered)
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop,
+                tree, delta_min, delta_max, 1000, metric);
 
-            // Check if we bump into a hole.
-            if (real_dst >= delta_max)
-            {
-                // Draw total propagation vector.
-                std::size_t prop_idx = mesh.add_vertex(current + total_prop * delta_max);
-                std::size_t dummy1_idx = mesh.add_vertex(current);
-                std::size_t dummy2_idx = mesh.add_vertex(current);
-                mesh.add_face(Mesh::Face(prop_idx, dummy1_idx, dummy2_idx));
-                break;
-            }
-
-            // Restrict total length (to prevent looping).
-            if (current_idx > 1000)
-                break;
-
-            // Check if the candidate "sees" the start point "in front".
-            std::size_t candidate_idx;
-            if ((delta_max < metric(start, current)) || (total_prop * (current - start)) >= 0)
-                candidate_idx = mesh.add_vertex(candidate);
-            else
-                candidate_idx = start_idx;
-
-            // Update algortihm's state.
-            Point3D previous = current;
-            current = candidate;
-            current_idx = candidate_idx;
-
-            // Compute total propagation.
-            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
-                delta_max, inertial_prop);
-            total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
-
-        } while (current_idx != start_idx);
+        // Glue propagation results together.
+        for (ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
+             rit != attempt2.points->rend(); ++rit)
+            mesh.add_vertex(*rit);
+        for (ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
+             it != attempt1.points->end(); ++it)
+            mesh.add_vertex(*it);
 
         return mesh;
     }
@@ -202,6 +166,17 @@ protected:
         RealType delta_max_;
         Point3D prop_;
         Metric dist_fun_;
+    };
+
+    struct PropagationResult
+    {
+        PropagationResult(): maxsize_reached(false), hole_encountered(false),
+            points(new ParallelPlane)
+        { }
+
+        bool maxsize_reached;
+        bool hole_encountered;
+        ParallelPlanePtr points;
     };
 
 private:
@@ -266,6 +241,65 @@ private:
         Point3D total_normalized(total.normalized(), 3);
 
         return total_normalized;
+    }
+
+    // End point is not included, start is always included.
+    static PropagationResult propagate_(const Point3D& start, const Point3D& end,
+                                       Point3D total_prop, const Tree& tree,
+                                       RealType delta_min, RealType delta_max,
+                                       std::size_t max_size, Metric metric)
+    {
+        PropagationResult retvalue;
+        retvalue.points->push_back(start);
+
+        Point3D current = start;
+        do
+        {
+            // Restrict total length (to prevent looping).
+            if (retvalue.points->size() > max_size)
+            {
+                retvalue.maxsize_reached = true;
+                break;
+            }
+
+            // Search for the propagation candidate. It should lie on the arced strip
+            // bounded by delta_min and delta_max circumferences and a plane containing
+            // current point and normal to propagation vector.
+            Point3D phantom_candidate = current + total_prop * delta_min;
+
+            // TODO: get rid of max radius.
+            std::pair<Tree::const_iterator, RealType> candidate_data =
+                    tree.find_nearest_if(phantom_candidate, delta_max,
+                        ArchedStrip(current, delta_min, delta_max, total_prop, metric));
+            RealType candidate_distance = candidate_data.second;
+            Point3D candidate = *(candidate_data.first);
+
+            // Check if we bump into a hole.
+            if (candidate_distance >= delta_max)
+            {
+                retvalue.hole_encountered = true;
+                break;
+            }
+
+            // Check if the candidate "sees" the end point "in front".
+            if ((delta_max < metric(end, candidate)) || (total_prop * (end - candidate)) < 0)
+                retvalue.points->push_back(candidate);
+            else
+                candidate = end;
+
+            // Update algortihm's state.
+            Point3D previous = current;
+            current = candidate;
+
+            // Compute total propagation.
+            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
+            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
+                delta_max, inertial_prop);
+            total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
+
+        } while (current != end);
+
+        return retvalue;
     }
 };
 
