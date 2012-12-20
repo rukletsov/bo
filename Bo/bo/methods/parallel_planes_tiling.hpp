@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.5 2012.12.19
+  parallel_planes_tiling.hpp, v 1.0.6 2012.12.20
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -104,25 +104,19 @@ public:
         // TODO: convert 3D points to 2D and pass this data as reference to kdtree c-tor.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
-        // Choose initial point and mark it as the start one. Previous to current
-        // equals current to compute inertial propagation right.
+        // Choose initial point and mark it as the start one.
         Point3D start = (*plane)[0];
         std::size_t start_idx = mesh.add_vertex(start);
+
+        // Compute initial propagation. It solely consists of tangential component,
+        // since inertial cannot be defined.
+        Point3D total_prop = this_type::tangential_propagation_(start, tree,
+            delta_max, Point3D(RealType(0)));
+
         Point3D current = start;
         std::size_t current_idx = start_idx;
-        Point3D previous = current;
-
         do
         {
-//            if (current_idx == 1032)
-//                __debugbreak();
-
-            // Compute total propagation.
-            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
-                delta_max, inertial_prop);
-            Point3D total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
-
             // Search for the propagation candidate. It should lie on the arced strip
             // bounded by delta_min and delta_max circumferences and a plane containing
             // current point and normal to propagation vector.
@@ -158,9 +152,15 @@ public:
                 candidate_idx = start_idx;
 
             // Update algortihm's state.
-            previous = current;
+            Point3D previous = current;
             current = candidate;
             current_idx = candidate_idx;
+
+            // Compute total propagation.
+            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
+            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
+                delta_max, inertial_prop);
+            total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
 
         } while (current_idx != start_idx);
 
