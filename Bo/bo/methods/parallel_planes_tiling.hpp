@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.7 2012.12.20
+  parallel_planes_tiling.hpp, v 1.0.8 2012.12.27
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -129,6 +129,47 @@ public:
             mesh.add_vertex(*it);
 
         return mesh;
+    }
+
+    static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
+                                           ParallelPlaneConstPtr contour2)
+    {
+        // Prepare: build kd-trees.
+        Tree tree1(contour1->begin(), contour1->end(), std::ptr_fun(point3D_accessor_));
+        Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
+
+        // Determine whether both contours are closed or not. This determines the
+        // algorithm's behaviour.
+
+        // 1. Contours are closed.
+        // Choose a vertex and a direction on the first contour.
+        // Find closest vertex on the second contour and determine direction.
+        // Iteratively sample points from contours until the surface patcg is ready.
+
+        // 2. Contours having exactly one hole.
+        // Take the first vertex (at the hole) and direction on the first contour.
+        // Take the first vertex (at the hole) and determine co-directed movement.
+        // Iterate till the end of both contours.
+        ParallelPlane::const_iterator current1 = contour1->begin();
+        Point3D direction1 = *(contour1->begin() + 1) - *current1;
+
+        ParallelPlane::const_iterator current2 = contour2->begin();
+        Point3D direction2 = *(contour2->begin() + 1) - *current2;
+
+        // TODO: swap direction if dot product of direction is less than zero.
+        std::size_t current1_idx = mesh.add_vertex(*current1);
+        std::size_t current2_idx = mesh.add_vertex(*current2);
+        while (true)
+        {
+            RealType span1_norm = (*(current1 + 1) - *current2).euclidean_norm();
+            RealType span2_norm = (*(current2 + 1) - *current1).euclidean_norm();
+
+            if (span1_norm > span2_norm)
+            {
+
+            }
+        }
+
     }
 
 protected:
