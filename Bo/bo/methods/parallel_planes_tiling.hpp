@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.8 2012.12.27
+  parallel_planes_tiling.hpp, v 1.0.9 2013.01.03
 
   Implementation of several surface tiling methods, working with parallel planes.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -48,7 +48,6 @@
 #include "bo/methods/distances_3d.hpp"
 
 #include "bo/extended_std.hpp"
-#include <intrin.h>
 
 namespace bo {
 namespace methods {
@@ -121,10 +120,10 @@ public:
                 tree, delta_min, delta_max, 1000, metric);
 
         // Glue propagation results together.
-        for (ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
+        for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
              rit != attempt2.points->rend(); ++rit)
             mesh.add_vertex(*rit);
-        for (ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
+        for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
              it != attempt1.points->end(); ++it)
             mesh.add_vertex(*it);
 
@@ -150,10 +149,10 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        ParallelPlane::const_iterator current1 = contour1->begin();
+        typename ParallelPlane::const_iterator current1 = contour1->begin();
         Point3D direction1 = *(contour1->begin() + 1) - *current1;
 
-        ParallelPlane::const_iterator current2 = contour2->begin();
+        typename ParallelPlane::const_iterator current2 = contour2->begin();
         Point3D direction2 = *(contour2->begin() + 1) - *current2;
 
         // TODO: swap direction if dot product of direction is less than zero.
@@ -258,8 +257,8 @@ private:
         // Employ PCA to extract the tangential propagation vector from the set of
         // nearby points.
         PCAEngine pca;
-        PCAEngine::Result result = pca(neighbours);
-        Point3D tangential = result.get<1>()[2];
+        typename PCAEngine::Result result = pca(neighbours);
+        Point3D tangential = result.template get<1>()[2];
 
         // Ensure that tangential and inertial components are codirectional.
         if (tangential * inertial < 0)
@@ -309,7 +308,7 @@ private:
             Point3D phantom_candidate = current + total_prop * delta_min;
 
             // TODO: get rid of max radius.
-            std::pair<Tree::const_iterator, RealType> candidate_data =
+            std::pair<typename Tree::const_iterator, RealType> candidate_data =
                     tree.find_nearest_if(phantom_candidate, delta_max,
                         ArchedStrip(current, delta_min, delta_max, total_prop, metric));
             RealType candidate_distance = candidate_data.second;
