@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  pca.hpp, v 1.0.1 2012.12.18
+  pca.hpp, v 1.0.2 2013.01.03
 
   Principal component analysis implementation using the covariance method.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -88,7 +88,7 @@ struct PCA
         Matrix covar_matrix = blas::zero_matrix<RealType>(Dim);
 
         // Iteratively compute the Dim x Dim covariance matrix (sample by sample).
-        for (Samples::const_iterator pt = data.begin(); pt != data.end(); ++pt)
+        for (typename Samples::const_iterator pt = data.begin(); pt != data.end(); ++pt)
         {
             BlasVector vect = blas::from_bo_vector(*pt);
             covar_matrix += blas::outer_prod(vect, vect);

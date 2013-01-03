@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.4 2012.12.11
+  blas.hpp, v 1.1.5 2013.01.03
 
   Basic linear algebra subprograms. 
 
-  Copyright (c) 2011, 2012
+  Copyright (c) 2011 - 2013
   Dzmitry Hlindzich <dzmitry.hlindzich@ziti.uni-heidelberg.de>
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
@@ -172,7 +172,7 @@ template <class E>
 std::vector<typename E::value_type> eigen_symmetric(matrix_expression<E>& expr)
 {
     // Cache the underlying matrix type.
-    typedef E::value_type T;
+    typedef typename E::value_type T;
 
     // Evaluate and cache the matrix_expression.
     typename E::closure_type A(expr());
