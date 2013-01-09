@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.9 2013.01.03
+  parallel_planes_tiling.hpp, v 1.0.10 2013.01.09
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -156,6 +156,8 @@ public:
         Point3D direction2 = *(contour2->begin() + 1) - *current2;
 
         // TODO: swap direction if dot product of direction is less than zero.
+
+        Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)
@@ -163,9 +165,30 @@ public:
             RealType span1_norm = (*(current1 + 1) - *current2).euclidean_norm();
             RealType span2_norm = (*(current2 + 1) - *current1).euclidean_norm();
 
+            // Add candidate vertex.
+            std::size_t candidate_idx;
             if (span1_norm > span2_norm)
             {
+                candidate_idx = mesh.add_vertex(*(current2 + 1));
+            }
+            else
+            {
+                candidate_idx = mesh.add_vertex(*(current1 + 1));
+            }
 
+            // Add edges to candidate vertex.
+            mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
+
+            // Update current vertices.
+            if (span1_norm > span2_norm)
+            {
+                current2 += 1;
+                current2_idx = candidate_idx;
+            }
+            else
+            {
+                current1 += 1;
+                current1_idx = candidate_idx;
             }
         }
 
