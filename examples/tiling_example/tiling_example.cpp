@@ -3,7 +3,7 @@
 
 #include <cstdio>
 #include <string>
-#include <stdexcept>
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
@@ -11,36 +11,44 @@
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
 
+#include "bo/extended_std.hpp"
+#include <boost/format.hpp>
+
 // Directory where test data is stored.
 std::string DataDirectory;
 
 // Paths to data used in the example.
 static const std::string raw_test_filename = "2d_contour4_512x512_8bit.raw";
+static const std::string ply_femur_dirname = "femur";
 static const std::string ply_femur_filename = "femur/femur_plane01.ply";
 static const std::string ply_sheep_filename = "sheep_plane.ply";
 
+using namespace boost::filesystem3;
 using namespace bo::methods::surfaces;
 using namespace bo::io;
 
-boost::filesystem3::path raw_test_filepath_;
-boost::filesystem3::path ply_femur_filepath_;
-boost::filesystem3::path ply_sheep_filepath_;
+path raw_test_filepath_;
+path ply_femur_dirpath_;
+path ply_femur_filepath_;
+path ply_sheep_filepath_;
 
-void AssertFileExists(const boost::filesystem3::path& filepath)
+void AssertPathExists(const path& filepath)
 {
-    BOOST_ASSERT(boost::filesystem3::exists(boost::filesystem3::path(filepath)));
+    BOOST_ASSERT(boost::filesystem3::exists(filepath));
 }
 
 void SetUp()
 {
     // Get data directory name. Input directory can have or not have trail slashes.
-    raw_test_filepath_ = boost::filesystem3::path(DataDirectory) /= raw_test_filename;
-    ply_femur_filepath_ = boost::filesystem3::path(DataDirectory) /= ply_femur_filename;
-    ply_sheep_filepath_ = boost::filesystem3::path(DataDirectory) /= ply_sheep_filename;
+    raw_test_filepath_ = path(DataDirectory) /= raw_test_filename;
+    ply_femur_dirpath_ = path(DataDirectory) /= ply_femur_dirname;
+    ply_femur_filepath_ = path(DataDirectory) /= ply_femur_filename;
+    ply_sheep_filepath_ = path(DataDirectory) /= ply_sheep_filename;
 }
 
 void RunPropagation();
 void RunChrisitiansen();
+void RunFemurChrisitiansen();
 
 
 int main(int argc, char* argv[])
@@ -50,13 +58,13 @@ int main(int argc, char* argv[])
         DataDirectory.assign(argv[1]);
     else if (argc == 1)
         // Apply default value which is "./data/tiling" directory.
-        DataDirectory.assign((boost::filesystem3::initial_path() /= "data/tiling").string());
+        DataDirectory.assign((initial_path() /= "data/tiling").string());
     else
         DataDirectory.assign("");
 
     SetUp();
 
-    RunChrisitiansen();
+    RunFemurChrisitiansen();
 }
 
 void RunPropagation()
@@ -73,7 +81,7 @@ void RunPropagation()
 //    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
 //    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
-    AssertFileExists(ply_sheep_filepath_);
+    AssertPathExists(ply_sheep_filepath_);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
     TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
@@ -92,7 +100,7 @@ void RunChrisitiansen()
 //    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(raw_test_filepath_.string(), 512, 512);
 //    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
-    AssertFileExists(ply_femur_filepath_);
+    AssertPathExists(ply_femur_filepath_);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
     TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
@@ -109,4 +117,74 @@ void RunChrisitiansen()
 
     TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
     mesh_to_ply(mesh, (boost::filesystem3::path(DataDirectory) /= "result_mesh.ply").string());
+}
+
+void RunFemurChrisitiansen()
+{
+    typedef MinSpanPropagation<float> TilingAlgo;
+    typedef std::vector<path> ContourData;
+    typedef std::vector<TilingAlgo::ParallelPlanePtr> Contours;
+    typedef std::vector<TilingAlgo::Mesh> Meshes;
+
+    MinSpanPropagation<float> tiling;
+    ContourData contour_data;
+    Contours contours;
+    Meshes meshes;
+
+    // Load planes paths.
+    AssertPathExists(ply_femur_dirpath_);
+    for (directory_iterator it(ply_femur_dirpath_); it != directory_iterator(); ++it)
+    {
+        if ((is_regular_file(*it)) &&
+            (it->path().filename().string().substr(0, 11) == "femur_plane"))
+            contour_data.push_back(it->path());
+    }
+
+    // Sort paths in lexicographic order, since directory iteration is not ordered
+    // on some file systems.
+    std::sort(contour_data.begin(), contour_data.end());
+//    std::cout << "List of loaded contours: " << contour_data;
+
+    // Extract contours from contour data.
+    for (ContourData::const_iterator it = contour_data.begin(); it != contour_data.end(); ++it)
+    {
+        AssertPathExists(*it);
+        TilingAlgo::Mesh mesh = mesh_from_ply(it->string());
+        TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(mesh.get_all_vertices()));
+        TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
+
+        contours.push_back(contour);
+    }
+
+    // Tile pair of contours.
+    int i = 1;
+    create_directory(path(DataDirectory) /= "result");
+    for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
+    {
+        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it);
+        std::string outpath = ((path(DataDirectory) /= "result") /=
+                (boost::format("%1%.ply") % i).str()).string();
+        std::cout << outpath << std::endl;
+        mesh_to_ply(mesh, outpath);
+
+        //meshes.push_back(tiling.christiansen_triangulation(*(it - 1), *it));
+        ++i;
+    }
+
+    // Stitch stripes.
+
+
+//    AssertPathExists(ply_femur_filepath_);
+//    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
+//    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
+
+//    TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data, 0.5f);
+//    TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data, 0.2f);
+
+//    for (TilingAlgo::ParallelPlane::iterator it = contour2->begin();
+//         it != contour2->end(); ++it)
+//        it->z() = it->z() + 3;
+
+//    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
+//    mesh_to_ply(mesh, (boost::filesystem3::path(DataDirectory) /= "result_mesh.ply").string());
 }
