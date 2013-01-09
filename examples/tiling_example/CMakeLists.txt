@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 PROJECT (TilingExample)
 
 SET (TilingExample_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tiling_example.cpp
 )
 
 # For additional dependencies check the root CMakeLists.
