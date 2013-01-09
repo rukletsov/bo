@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.11 2013.01.09
+  parallel_planes_tiling.hpp, v 1.0.12 2013.01.09
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -36,6 +36,7 @@
 #define PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
 
 #include <vector>
+#include <limits>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -133,6 +134,8 @@ public:
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
                                            ParallelPlaneConstPtr contour2)
     {
+        // TODO: assert on data size (at least 2 samples?).
+
         // Prepare: build kd-trees.
         Tree tree1(contour1->begin(), contour1->end(), std::ptr_fun(point3D_accessor_));
         Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
@@ -156,24 +159,40 @@ public:
         Point3D direction2 = *(contour2->begin() + 1) - *current2;
 
         // TODO: swap direction if dot product of direction is less than zero.
+        // TODO: create iterators for contours with support for direction and start check.
 
         Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)
         {
-            RealType span1_norm = (*(current1 + 1) - *current2).euclidean_norm();
-            RealType span2_norm = (*(current2 + 1) - *current1).euclidean_norm();
+            typename ParallelPlane::const_iterator candidate1 = current1 + 1;
+            typename ParallelPlane::const_iterator candidate2 = current2 + 1;
+
+            // This guarantees that when one contour ends, points will be sampled
+            // solely from the other one.
+            RealType span1_norm = (candidate1 != contour1->end()) ?
+                        (*(candidate1) - *current2).euclidean_norm() :
+                        std::numeric_limits<RealType>::max();
+            RealType span2_norm = (candidate2 != contour2->end()) ?
+                        (*(candidate2) - *current1).euclidean_norm() :
+                        std::numeric_limits<RealType>::max();
+
+            // Means both contours are exhausted.
+            if ((candidate1 == contour1->end()) && (candidate2 == contour2->end()))
+                break;
 
             // Add candidate vertex.
             std::size_t candidate_idx;
             if (span1_norm > span2_norm)
             {
-                candidate_idx = mesh.add_vertex(*(current2 + 1));
+                candidate_idx = (candidate2 != contour2->end()) ?
+                            mesh.add_vertex(*candidate2) : -1;
             }
             else
             {
-                candidate_idx = mesh.add_vertex(*(current1 + 1));
+                candidate_idx = (candidate1 != contour1->end()) ?
+                            mesh.add_vertex(*candidate1) : -1;
             }
 
             // Add edges to candidate vertex.
@@ -182,16 +201,17 @@ public:
             // Update current vertices.
             if (span1_norm > span2_norm)
             {
-                current2 += 1;
+                current2 = candidate2;
                 current2_idx = candidate_idx;
             }
             else
             {
-                current1 += 1;
+                current1 = candidate1;
                 current1_idx = candidate_idx;
             }
         }
 
+        return mesh;
     }
 
     static Mesh to_mesh(ParallelPlaneConstPtr contour)
