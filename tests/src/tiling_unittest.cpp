@@ -44,7 +44,7 @@ protected:
     boost::filesystem3::path ply_sheep_filepath_;
 };
 
-TEST_F(TilingTest, Temp)
+TEST_F(TilingTest, TempPropagate)
 {
     typedef MinSpanPropagation<float> TilingAlgo;
 
@@ -62,6 +62,7 @@ TEST_F(TilingTest, Temp)
     TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
     TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
-    TilingAlgo::Mesh mesh = tiling.propagate(plane_data);
+    TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
+    TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
     mesh_to_ply(mesh, (boost::filesystem3::path(DataDirectory) /= "result.ply").string());
 }

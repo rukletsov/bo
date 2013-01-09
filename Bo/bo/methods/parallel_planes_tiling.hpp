@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.10 2013.01.09
+  parallel_planes_tiling.hpp, v 1.0.11 2013.01.09
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -88,10 +88,9 @@ public:
         return plane;
     }
 
-    static Mesh propagate(ParallelPlaneConstPtr plane)
+    static ParallelPlanePtr propagate(ParallelPlaneConstPtr plane, RealType ratio)
     {
         // TODO: assert on data size (at least 2 samples?).
-        Mesh mesh(10);
 
         // Set algorithm parameters.
         RealType delta_min = 1;
@@ -111,23 +110,24 @@ public:
 
         // Run propagation. It may bump into a hole or return a circuit.
         PropagationResult attempt1 = propagate_(start, start, initial_prop, tree,
-            delta_min, delta_max, 1000, metric);
+            delta_min, delta_max, 1000, metric, ratio);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.hole_encountered)
             attempt2 = propagate_(start, attempt1.points->back(), - initial_prop,
-                tree, delta_min, delta_max, 1000, metric);
+                tree, delta_min, delta_max, 1000, metric, ratio);
 
         // Glue propagation results together.
+        ParallelPlanePtr result(new ParallelPlane);
         for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
              rit != attempt2.points->rend(); ++rit)
-            mesh.add_vertex(*rit);
+            result->push_back(*rit);
         for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
              it != attempt1.points->end(); ++it)
-            mesh.add_vertex(*it);
+            result->push_back(*it);
 
-        return mesh;
+        return result;
     }
 
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
@@ -192,6 +192,16 @@ public:
             }
         }
 
+    }
+
+    static Mesh to_mesh(ParallelPlaneConstPtr contour)
+    {
+        Mesh mesh(contour->size());
+        for (typename ParallelPlane::const_iterator it = contour->begin();
+             it != contour->end(); ++it)
+            mesh.add_vertex(*it);
+
+        return mesh;
     }
 
 protected:
@@ -310,7 +320,7 @@ private:
     static PropagationResult propagate_(const Point3D& start, const Point3D& end,
                                        Point3D total_prop, const Tree& tree,
                                        RealType delta_min, RealType delta_max,
-                                       std::size_t max_size, Metric metric)
+                                       std::size_t max_size, Metric metric, RealType ratio)
     {
         PropagationResult retvalue;
         retvalue.points->push_back(start);
@@ -358,7 +368,7 @@ private:
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
             Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
                 delta_max, inertial_prop);
-            total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, 0.5f);
+            total_prop = this_type::total_propagation_(tangential_prop, inertial_prop, ratio);
 
         } while (current != end);
 
