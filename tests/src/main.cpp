@@ -42,43 +42,4 @@ int main(int argc, char* argv[])
 
     // Run all defined tests.
     return RUN_ALL_TESTS();
-
-    //        |
-    // TODO:  |  move this to tiling_unittest.
-    //        V
-
-//    #include "bo/methods/parallel_planes_tiling.hpp"
-//    #include "bo/io/raw_image_2d_io.hpp"
-//    #include "bo/io/mesh_io.hpp"
-
-//    using namespace bo::methods::surfaces;
-//    using namespace bo::io;
-
-//    typedef MinSpanPropagation<float> TilingAlgo;
-
-//    MinSpanPropagation<float> tiling;
-
-//    boost::filesystem3::path test_filepath = boost::filesystem3::path(DataDirectory) /= "2d_contour4_512x512_8bit.raw";
-//    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(test_filepath.string(), 512, 512);
-
-//    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
-//    TilingAlgo::Mesh mesh = tiling.propagate(plane_data);
-//    mesh_to_ply(mesh, (boost::filesystem3::path(DataDirectory) /= "result.ply").string());
-
-
-    //        |
-    // TODO:  |  move this to mesh_unittest.
-    //        V
-
-    //// Load mesh.
-    //bo::Mesh mesh = bo::Mesh::from_ply(std::string("..\\data\\mesh.ply"));
-
-    //// Load point cloud.
-    //
-
-    //std::cout << mesh << std::endl;
-
-    //bo::Mesh::Normal normal = mesh.get_vertex_normal(1);
-
-    ////mesh.to_ply(std::string("..\\debug\\pts2.ply"));
 }
