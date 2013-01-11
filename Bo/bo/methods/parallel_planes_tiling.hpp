@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.13 2013.01.11
+  parallel_planes_tiling.hpp, v 1.0.14 2013.01.11
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -161,17 +161,17 @@ public:
         // TODO: swap direction if dot product of direction is less than zero.
         // TODO: create iterators for contours with support for direction and start check.
 
-//        if ((*(contour2->end()) - *current1).euclidean_norm() <
-//            (*(contour2->begin()) - *current1).euclidean_norm())
-//        {
-//            // Contour2 traverse direction should be swapped in order to correspond
-//            // with the contoru1 direction.
-//            ParallelPlanePtr contour2_codirected = ParallelPlanePtr(
-//                        new ParallelPlane(contour2->rbegin(), contour2->rend()));
-//        }
+        bool contour2_forward = true;
+        if ((contour2->back() - *current1).euclidean_norm() <
+            (contour2->front() - *current1).euclidean_norm())
+        {
+            // Contour2 traverse direction should be swapped in order to correspond
+            // with the contoru1 direction.
+            contour2_forward = false;
+        }
 
-        typename ParallelPlane::const_iterator current2 = contour2->begin();
-        Point3D direction2 = *(contour2->begin() + 1) - *current2;
+        ContourIterator current2(contour2, contour2_forward);
+        Point3D direction2 = *(current2 + 1) - *current2;
 
         Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
@@ -179,31 +179,31 @@ public:
         while (true)
         {
             ContourIterator candidate1 = current1 + 1;
-            typename ParallelPlane::const_iterator candidate2 = current2 + 1;
+            ContourIterator candidate2 = current2 + 1;
 
             // This guarantees that when one contour ends, points will be sampled
             // solely from the other one.
             RealType span1_norm = (candidate1.is_valid()) ?
                         (*(candidate1) - *current2).euclidean_norm() :
                         std::numeric_limits<RealType>::max();
-            RealType span2_norm = (candidate2 != contour2->end()) ?
+            RealType span2_norm = (candidate2.is_valid()) ?
                         (*(candidate2) - *current1).euclidean_norm() :
                         std::numeric_limits<RealType>::max();
 
             // Means both contours are exhausted.
-            if (!candidate1.is_valid() && (candidate2 == contour2->end()))
+            if (!candidate1.is_valid() && !candidate2.is_valid())
                 break;
 
             // Add candidate vertex.
             std::size_t candidate_idx;
             if (span1_norm > span2_norm)
             {
-                candidate_idx = (candidate2 != contour2->end()) ?
+                candidate_idx = candidate2.is_valid() ?
                             mesh.add_vertex(*candidate2) : -1;
             }
             else
             {
-                candidate_idx = (candidate1.is_valid()) ?
+                candidate_idx = candidate1.is_valid() ?
                             mesh.add_vertex(*candidate1) : -1;
             }
 
