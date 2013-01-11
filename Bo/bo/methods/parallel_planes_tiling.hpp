@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.12 2013.01.09
+  parallel_planes_tiling.hpp, v 1.0.13 2013.01.11
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -36,7 +36,9 @@
 #define PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
 
 #include <vector>
+#include <iterator>
 #include <limits>
+#include <stdexcept>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -152,26 +154,36 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        typename ParallelPlane::const_iterator current1 = contour1->begin();
-        Point3D direction1 = *(contour1->begin() + 1) - *current1;
+        ContourIterator current1(contour1, true);
+        Point3D direction1 = *(current1 + 1) - *current1;
+
+        // TODO: rewrtie swap detection using dot products.
+        // TODO: swap direction if dot product of direction is less than zero.
+        // TODO: create iterators for contours with support for direction and start check.
+
+//        if ((*(contour2->end()) - *current1).euclidean_norm() <
+//            (*(contour2->begin()) - *current1).euclidean_norm())
+//        {
+//            // Contour2 traverse direction should be swapped in order to correspond
+//            // with the contoru1 direction.
+//            ParallelPlanePtr contour2_codirected = ParallelPlanePtr(
+//                        new ParallelPlane(contour2->rbegin(), contour2->rend()));
+//        }
 
         typename ParallelPlane::const_iterator current2 = contour2->begin();
         Point3D direction2 = *(contour2->begin() + 1) - *current2;
-
-        // TODO: swap direction if dot product of direction is less than zero.
-        // TODO: create iterators for contours with support for direction and start check.
 
         Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)
         {
-            typename ParallelPlane::const_iterator candidate1 = current1 + 1;
+            ContourIterator candidate1 = current1 + 1;
             typename ParallelPlane::const_iterator candidate2 = current2 + 1;
 
             // This guarantees that when one contour ends, points will be sampled
             // solely from the other one.
-            RealType span1_norm = (candidate1 != contour1->end()) ?
+            RealType span1_norm = (candidate1.is_valid()) ?
                         (*(candidate1) - *current2).euclidean_norm() :
                         std::numeric_limits<RealType>::max();
             RealType span2_norm = (candidate2 != contour2->end()) ?
@@ -179,7 +191,7 @@ public:
                         std::numeric_limits<RealType>::max();
 
             // Means both contours are exhausted.
-            if ((candidate1 == contour1->end()) && (candidate2 == contour2->end()))
+            if (!candidate1.is_valid() && (candidate2 == contour2->end()))
                 break;
 
             // Add candidate vertex.
@@ -191,7 +203,7 @@ public:
             }
             else
             {
-                candidate_idx = (candidate1 != contour1->end()) ?
+                candidate_idx = (candidate1.is_valid()) ?
                             mesh.add_vertex(*candidate1) : -1;
             }
 
@@ -270,6 +282,101 @@ protected:
         bool maxsize_reached;
         bool hole_encountered;
         ParallelPlanePtr points;
+    };
+
+    struct ContourIterator
+    {
+        typedef typename ParallelPlane::const_iterator forward_iterator;
+        typedef typename ParallelPlane::const_reverse_iterator backward_iterator;
+        typedef typename std::iterator_traits<forward_iterator>::reference reference;
+
+        ContourIterator(ParallelPlaneConstPtr contour, bool is_forward):
+            contour_(contour), is_forward_(is_forward)
+        {
+            if (is_forward_)
+            {
+                forward_it_ = contour_->begin();
+            }
+            else
+            {
+                backward_it_ = contour_->rbegin();
+            }
+
+            check_validity_();
+        }
+
+        // Preincrement.
+        ContourIterator& operator++()
+        {
+            if (is_valid())
+            {
+                if (is_forward_)
+                {
+                    ++forward_it_;
+
+                }
+                else
+                {
+                    ++backward_it_;
+                }
+
+                check_validity_();
+            }
+
+            return (*this);
+        }
+
+        ContourIterator& operator+=(std::size_t offset)
+        {
+            if (is_valid())
+            {
+                if (is_forward_)
+                    forward_it_ += offset;
+                else
+                    backward_it_ += offset;
+
+                check_validity_();
+            }
+
+            return (*this);
+        }
+
+        // Random access.
+        ContourIterator operator+(std::size_t offset) const
+        {
+            ContourIterator tmp = *this;
+            return (tmp += offset);
+        }
+
+        reference operator*() const
+        {
+            if (!is_valid())
+                throw std::logic_error("Cannot dereference invalid contour iterator.");
+
+            return
+                (is_forward_ ? (*forward_it_) : (*backward_it_));
+        }
+
+        bool is_valid() const
+        {
+            return valid_;
+        }
+
+    private:
+        void check_validity_()
+        {
+            if (is_forward_)
+                valid_ = (forward_it_ != contour_->end()) ? true : false;
+            else
+                valid_ = (backward_it_ != contour_->rend()) ? true : false;
+        }
+
+    private:
+        ParallelPlaneConstPtr contour_;
+        forward_iterator forward_it_;
+        backward_iterator backward_it_;
+        bool is_forward_;
+        bool valid_;
     };
 
 private:
