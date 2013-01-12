@@ -68,6 +68,9 @@ public:
     typedef typename Container::const_iterator const_iterator;
     typedef typename std::iterator_traits<const_iterator>::reference reference;
 
+    ConstIteratorImpl(cont_const_ptr contour): contour_(contour)
+    { }
+
     virtual void add(std::size_t offset) = 0;
     virtual reference dereference() const = 0;
     virtual bool check_validity() const = 0;
@@ -75,6 +78,9 @@ public:
 
     virtual ~ConstIteratorImpl()
     { }
+
+protected:
+    cont_const_ptr contour_;
 };
 
 
@@ -85,16 +91,16 @@ public:
     typedef FwdConstIteratorImpl<Container> self_type;
     typedef typename Container::const_iterator fwd_iterator;
 
-    FwdConstIteratorImpl(cont_const_ptr contour): contour_(contour)
+    FwdConstIteratorImpl(cont_const_ptr contour): ConstIteratorImpl(contour)
     { forward_it_ = contour_->begin(); }
 
-    void add(std::size_t offset)
+    virtual void add(std::size_t offset)
     { forward_it_ += offset; }
 
-    reference dereference() const
+    virtual reference dereference() const
     { return *forward_it_; }
 
-    bool check_validity() const
+    virtual bool check_validity() const
     { return (forward_it_ != contour_->end()); }
 
     virtual self_type* clone() const
@@ -103,8 +109,7 @@ public:
     virtual ~FwdConstIteratorImpl()
     { }
 
-private:
-    cont_const_ptr contour_;
+protected:
     fwd_iterator forward_it_;
 };
 
@@ -115,16 +120,16 @@ public:
     typedef BwdConstIteratorImpl<Container> self_type;
     typedef typename Container::const_reverse_iterator bwd_iterator;
 
-    BwdConstIteratorImpl(cont_const_ptr contour): contour_(contour)
+    BwdConstIteratorImpl(cont_const_ptr contour): ConstIteratorImpl(contour)
     { backward_it_ = contour_->rbegin(); }
 
-    void add(std::size_t offset)
+    virtual void add(std::size_t offset)
     { backward_it_ += offset; }
 
-    reference dereference() const
+    virtual reference dereference() const
     { return *backward_it_; }
 
-    bool check_validity() const
+    virtual bool check_validity() const
     { return (backward_it_ != contour_->rend()); }
 
     virtual self_type* clone() const
@@ -133,8 +138,7 @@ public:
     virtual ~BwdConstIteratorImpl()
     { }
 
-private:
-    cont_const_ptr contour_;
+protected:
     bwd_iterator backward_it_;
 };
 
