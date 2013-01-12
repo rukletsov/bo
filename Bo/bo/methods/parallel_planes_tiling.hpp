@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.15 2013.01.12
+  parallel_planes_tiling.hpp, v 1.0.16 2013.01.12
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -90,7 +90,7 @@ protected:
 
 
 template <typename Container>
-class FwdOnePassTraverseRule: TraverseRule<Container>
+class FwdOnePassTraverseRule: public TraverseRule<Container>
 {
 public:
     typedef FwdOnePassTraverseRule<Container> SelfType;
@@ -118,7 +118,7 @@ protected:
 };
 
 template <typename Container>
-class BwdOnePassTraverseRule: TraverseRule<Container>
+class BwdOnePassTraverseRule: public TraverseRule<Container>
 {
 public:
     typedef BwdOnePassTraverseRule<Container> SelfType;
@@ -219,6 +219,34 @@ public:
 private:
     bool valid_;
     TraverseRulePtr rule_;
+};
+
+template <typename Container>
+struct TraverseRuleFactory
+{
+    typedef boost::shared_ptr<const Container> ContainerConstPtr;
+    typedef TraverseRule<Container> TraverseRuleType;
+    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
+
+    static TraverseRulePtr FwdOnePass(ContainerConstPtr container_ptr)
+    {
+        typedef FwdOnePassTraverseRule<Container> Rule;
+        TraverseRulePtr rule_ptr(new Rule(container_ptr));
+        return rule_ptr;
+    }
+
+    static TraverseRulePtr BwdOnePass(ContainerConstPtr container_ptr)
+    {
+        typedef BwdOnePassTraverseRule<Container> Rule;
+        TraverseRulePtr rule_ptr(new Rule(container_ptr));
+        return rule_ptr;
+    }
+
+    // TODO: introduce enum instead of bool flags.
+    static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
+    {
+        return (is_forward ? FwdOnePass(container_ptr) : BwdOnePass(container_ptr));
+    }
 };
 
 }
@@ -326,10 +354,9 @@ public:
         typedef detail::FwdOnePassTraverseRule<ParallelPlane> FwdContourIteratorImpl;
         typedef detail::BwdOnePassTraverseRule<ParallelPlane> BwdContourIteratorImpl;
         typedef boost::shared_ptr<BaseContourIteratorImpl> BaseContourIteratorImplPtr;
+        typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
 
-        BaseContourIteratorImplPtr iter_impl1((BaseContourIteratorImpl*)
-                                              (new FwdContourIteratorImpl(contour1)));
-        ContourIterator current1(iter_impl1);
+        ContourIterator current1(Factory::FwdOnePass(contour1));
         Point3D direction1 = *(current1 + 1) - *current1;
 
         // TODO: rewrtie swap detection using dot products.
@@ -338,16 +365,14 @@ public:
 
         // Contour2 traverse direction should be swapped in order to correspond
         // with the contoru1 direction.
-        BaseContourIteratorImplPtr iter_impl2;
+        Factory::TraverseRulePtr rule_ptr2;
         if ((contour2->back() - *current1).euclidean_norm() <
             (contour2->front() - *current1).euclidean_norm())
-            iter_impl2.reset((BaseContourIteratorImpl*)
-                             (new BwdContourIteratorImpl(contour2)));
+            rule_ptr2 = Factory::BwdOnePass(contour2);
         else
-            iter_impl2.reset((BaseContourIteratorImpl*)
-                             (new FwdContourIteratorImpl(contour2)));
+            rule_ptr2 = Factory::FwdOnePass(contour2);
 
-        ContourIterator current2(iter_impl2);
+        ContourIterator current2(rule_ptr2);
         Point3D direction2 = *(current2 + 1) - *current2;
 
         Mesh mesh(contour1->size() + contour2->size());
