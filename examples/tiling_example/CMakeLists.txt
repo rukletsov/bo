@@ -38,7 +38,7 @@ ADD_CUSTOM_COMMAND(TARGET TilingExample
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${BOEXAMPLES_ROOT}/data/tiling"
         "$<TARGET_FILE_DIR:TilingExample>/data/tiling"
-        COMMENT "Copying examples data to the runtime directory."
+        COMMENT "Copying Tiling's data to the runtime directory."
 )
 
 # Specify the name suffix for debug build.
@@ -61,11 +61,6 @@ IF (MSVC)
     # Set a desired warning level. If it has been already set and differs from the
     # provided one, a D9025 warning is raised.
     ADD_DEFINITIONS ("/W4")
-
-    # Disable C4245 warning. Conversions from negatibe integers to size_t are used
-    # widely within the tests. It's done on purpose in order to test incorrect
-    # indexation.
-    ADD_DEFINITIONS ("/wd4245")
 
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (TilingExample PROPERTIES COMPILE_FLAGS
