@@ -60,86 +60,89 @@ namespace surfaces {
 namespace detail {
 
 template <typename Container>
-class ConstIteratorImpl
+class TraverseRule
 {
 public:
-    typedef ConstIteratorImpl<Container> self_type;
-    typedef boost::shared_ptr<const Container> cont_const_ptr;
-    typedef typename Container::const_iterator const_iterator;
-    typedef typename std::iterator_traits<const_iterator>::reference reference;
+    typedef TraverseRule<Container> SelfType;
+    typedef boost::shared_ptr<const Container> ContainerConstPtr;
+    typedef typename Container::const_iterator ContainerConstIterator;
+    typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
 
-    ConstIteratorImpl(cont_const_ptr contour): contour_(contour)
+    TraverseRule(ContainerConstPtr contour): contour_(contour)
     { }
 
     virtual void add(std::size_t offset) = 0;
-    virtual reference dereference() const = 0;
+    virtual Reference dereference() const = 0;
     virtual bool check_validity() const = 0;
-    virtual self_type* clone() const = 0;
+    virtual SelfType* clone() const = 0;
 
-    virtual ~ConstIteratorImpl()
+    virtual ~TraverseRule()
     { }
 
+    // Use this macro to define an implementation of the clone() function in descendants.
+    #define TRAVERSE_RULE_CLONE_IMPL \
+        virtual SelfType* clone() const \
+        { return new SelfType(*this); }
+
 protected:
-    cont_const_ptr contour_;
+    ContainerConstPtr contour_;
 };
 
 
 template <typename Container>
-class FwdConstIteratorImpl: ConstIteratorImpl<Container>
+class FwdOnePassTraverseRule: TraverseRule<Container>
 {
 public:
-    typedef FwdConstIteratorImpl<Container> self_type;
-    typedef typename Container::const_iterator fwd_iterator;
+    typedef FwdOnePassTraverseRule<Container> SelfType;
+    typedef typename Container::const_iterator FwdIterator;
 
-    FwdConstIteratorImpl(cont_const_ptr contour): ConstIteratorImpl(contour)
-    { forward_it_ = contour_->begin(); }
+    FwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
+    { fwd_it_ = contour_->begin(); }
 
     virtual void add(std::size_t offset)
-    { forward_it_ += offset; }
+    { fwd_it_ += offset; }
 
-    virtual reference dereference() const
-    { return *forward_it_; }
+    virtual Reference dereference() const
+    { return *fwd_it_; }
 
     virtual bool check_validity() const
-    { return (forward_it_ != contour_->end()); }
+    { return (fwd_it_ != contour_->end()); }
 
-    virtual self_type* clone() const
-    { return new self_type(*this); }
-
-    virtual ~FwdConstIteratorImpl()
+    virtual ~FwdOnePassTraverseRule()
     { }
 
+    TRAVERSE_RULE_CLONE_IMPL
+
 protected:
-    fwd_iterator forward_it_;
+    FwdIterator fwd_it_;
 };
 
 template <typename Container>
-class BwdConstIteratorImpl: ConstIteratorImpl<Container>
+class BwdOnePassTraverseRule: TraverseRule<Container>
 {
 public:
-    typedef BwdConstIteratorImpl<Container> self_type;
-    typedef typename Container::const_reverse_iterator bwd_iterator;
+    typedef BwdOnePassTraverseRule<Container> SelfType;
+    typedef typename Container::const_reverse_iterator BwdIterator;
 
-    BwdConstIteratorImpl(cont_const_ptr contour): ConstIteratorImpl(contour)
-    { backward_it_ = contour_->rbegin(); }
+    BwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
+    { bwd_it_ = contour_->rbegin(); }
 
     virtual void add(std::size_t offset)
-    { backward_it_ += offset; }
+    { bwd_it_ += offset; }
 
-    virtual reference dereference() const
-    { return *backward_it_; }
+    virtual Reference dereference() const
+    { return *bwd_it_; }
 
     virtual bool check_validity() const
-    { return (backward_it_ != contour_->rend()); }
+    { return (bwd_it_ != contour_->rend()); }
 
-    virtual self_type* clone() const
-    { return new self_type(*this); }
-
-    virtual ~BwdConstIteratorImpl()
+    virtual ~BwdOnePassTraverseRule()
     { }
 
+    TRAVERSE_RULE_CLONE_IMPL
+
 protected:
-    bwd_iterator backward_it_;
+    BwdIterator bwd_it_;
 };
 
 
@@ -147,66 +150,65 @@ template <typename Container>
 class CommonConstIterator
 {
 public:
-    typedef CommonConstIterator<Container> self_type;
+    typedef CommonConstIterator<Container> SelfType;
 
-    typedef typename Container::const_iterator const_iterator;
-    typedef typename std::iterator_traits<const_iterator>::reference reference;
+    typedef typename Container::const_iterator ContainerConstIterator;
+    typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
 
-    typedef ConstIteratorImpl<Container> impl_type;
-    typedef boost::shared_ptr<impl_type> impl_type_ptr;
+    typedef TraverseRule<Container> TraverseRuleType;
+    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
 
-    CommonConstIterator(impl_type_ptr iterator_impl): impl_(iterator_impl)
+    CommonConstIterator(TraverseRulePtr iterator_impl): rule_(iterator_impl)
     {
-        valid_ = impl_->check_validity();
+        valid_ = rule_->check_validity();
     }
 
-    CommonConstIterator(const self_type& other): valid_(other.valid_),
-        impl_(other.impl_->clone())
+    CommonConstIterator(const SelfType& other): valid_(other.valid_),
+        rule_(other.rule_->clone())
     { }
 
-    self_type& operator=(self_type other)
+    SelfType& operator=(SelfType other)
     {
         other.swap(*this);
         return *this;
     }
 
-    self_type& operator++()
+    SelfType& operator++()
     {
-        return
-            ((*this) += 1);
+        return ((*this) += 1);
     }
 
-    self_type& operator+=(std::size_t offset)
+    SelfType& operator+=(std::size_t offset)
     {
         if (is_valid())
         {
-            impl_->add(offset);
-            valid_ = impl_->check_validity();
+            rule_->add(offset);
+            valid_ = rule_->check_validity();
         }
 
         return (*this);
     }
 
-    self_type operator+(std::size_t offset) const
+    SelfType operator+(std::size_t offset) const
     {
-        self_type temp = *this;
+        SelfType temp = *this;
         return
             (temp += offset);
     }
 
-    reference operator*() const
+    Reference operator*() const
     {
         if (!is_valid())
-            throw std::logic_error("Cannot dereference invalid ParallelPlaneIterator.");
+            throw std::logic_error("Cannot dereference invalid CommonConstIterator.");
 
         return
-            impl_->dereference();
+            rule_->dereference();
     }
 
-    void swap(self_type& other)
+    void swap(SelfType& other)
     {
         std::swap(valid_, other.valid_);
-        impl_.swap(other.impl_);
+        rule_.swap(other.rule_);
     }
 
     bool is_valid() const
@@ -216,7 +218,7 @@ public:
 
 private:
     bool valid_;
-    impl_type_ptr impl_;
+    TraverseRulePtr rule_;
 };
 
 }
@@ -320,9 +322,9 @@ public:
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
         typedef detail::CommonConstIterator<ParallelPlane> ContourIterator;
-        typedef detail::ConstIteratorImpl<ParallelPlane> BaseContourIteratorImpl;
-        typedef detail::FwdConstIteratorImpl<ParallelPlane> FwdContourIteratorImpl;
-        typedef detail::BwdConstIteratorImpl<ParallelPlane> BwdContourIteratorImpl;
+        typedef detail::TraverseRule<ParallelPlane> BaseContourIteratorImpl;
+        typedef detail::FwdOnePassTraverseRule<ParallelPlane> FwdContourIteratorImpl;
+        typedef detail::BwdOnePassTraverseRule<ParallelPlane> BwdContourIteratorImpl;
         typedef boost::shared_ptr<BaseContourIteratorImpl> BaseContourIteratorImplPtr;
 
         BaseContourIteratorImplPtr iter_impl1((BaseContourIteratorImpl*)
