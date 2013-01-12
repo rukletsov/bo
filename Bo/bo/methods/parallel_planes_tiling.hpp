@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.16 2013.01.12
+  parallel_planes_tiling.hpp, v 1.0.17 2013.01.12
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -356,7 +356,7 @@ public:
         typedef boost::shared_ptr<BaseContourIteratorImpl> BaseContourIteratorImplPtr;
         typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
 
-        ContourIterator current1(Factory::FwdOnePass(contour1));
+        ContourIterator current1(Factory::Create(contour1, true));
         Point3D direction1 = *(current1 + 1) - *current1;
 
         // TODO: rewrtie swap detection using dot products.
@@ -365,14 +365,13 @@ public:
 
         // Contour2 traverse direction should be swapped in order to correspond
         // with the contoru1 direction.
+        bool is_forward = true;
         Factory::TraverseRulePtr rule_ptr2;
         if ((contour2->back() - *current1).euclidean_norm() <
             (contour2->front() - *current1).euclidean_norm())
-            rule_ptr2 = Factory::BwdOnePass(contour2);
-        else
-            rule_ptr2 = Factory::FwdOnePass(contour2);
+            is_forward = false;
 
-        ContourIterator current2(rule_ptr2);
+        ContourIterator current2(Factory::Create(contour2, is_forward));
         Point3D direction2 = *(current2 + 1) - *current2;
 
         Mesh mesh(contour1->size() + contour2->size());
