@@ -1,3 +1,4 @@
+
 /******************************************************************************
 
   dpg_hough_transform_2d.hpp, v 1.0.1 2013.01.12
@@ -38,13 +39,13 @@
 #include <vector>
 #include <list>
 #include <cmath>
+#include <boost/noncopyable.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/blas/blas.hpp"
 
 namespace bo {
 namespace methods {
-
 namespace recognition {
 
 template <typename RealType>
@@ -62,12 +63,11 @@ public:
     typedef std::vector<Feature> Features; 
     typedef std::pair<RealType, RealType> ATableElement;
     typedef std::list<ATableElement> ATableRow;
-    typedef std::vector<ATableRow > ATable;
-     
+    typedef std::vector<ATableRow> ATable;
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
                  RealType tangent_accuracy = 0.5): 
-    model_reference_(model_reference), RealType tangent_accuracy_(tangent_accuracy) 
+    model_reference_(model_reference), tangent_accuracy_(tangent_accuracy)
     {
         encode(model_features);
     }
@@ -209,9 +209,8 @@ private:
 
 };
 
-} // namespace recognition.
+} // namespace recognition
+} // namespace methods
+} // namespace bo
 
-} // namespace methods.
-} // namespace bo.
-
-#endif //DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419
+#endif // DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419

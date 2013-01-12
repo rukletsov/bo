@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  blas.hpp, v 1.1.5 2013.01.03
+  blas.hpp, v 1.1.6 2013.01.12
 
   Basic linear algebra subprograms. 
 
@@ -178,7 +178,7 @@ std::vector<typename E::value_type> eigen_symmetric(matrix_expression<E>& expr)
     typename E::closure_type A(expr());
 
     // Allocate the return vector.
-    const int n(A.size1());
+    const int n(static_cast<int>(A.size1()));
     std::vector<T> d(n);
 
     // Initialize the return vector.
