@@ -39,6 +39,7 @@
 #include <iterator>
 #include <limits>
 #include <stdexcept>
+#include <algorithm>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -62,6 +63,9 @@ template <typename Container>
 class ConstIteratorImpl
 {
 public:
+    typedef ConstIteratorImpl<Container> self_type;
+    typedef boost::shared_ptr<self_type> self_shared_ptr;
+
     typedef boost::shared_ptr<const Container> cont_const_ptr;
     typedef typename Container::const_iterator const_iterator;
     typedef typename std::iterator_traits<const_iterator>::reference reference;
@@ -69,8 +73,15 @@ public:
     virtual void add(std::size_t offset) = 0;
     virtual reference dereference() const = 0;
     virtual bool check_validity() const = 0;
+
+    self_shared_ptr clone()
+    { return raw_clone_(); }
+
     virtual ~ConstIteratorImpl()
     { }
+
+private:
+    virtual self_type* raw_clone_() const = 0;
 };
 
 
@@ -78,6 +89,7 @@ template <typename Container>
 class FwdConstIteratorImpl: ConstIteratorImpl<Container>
 {
 public:
+    typedef FwdConstIteratorImpl<Container> self_type;
     typedef typename Container::const_iterator fwd_iterator;
 
     FwdConstIteratorImpl(cont_const_ptr contour): contour_(contour)
@@ -92,6 +104,13 @@ public:
     bool check_validity() const
     { return (forward_it_ != contour_->end()); }
 
+    virtual ~FwdConstIteratorImpl()
+    { }
+
+private:
+    virtual self_type* raw_clone_() const
+    { return new self_type(*this); }
+
 private:
     cont_const_ptr contour_;
     fwd_iterator forward_it_;
@@ -101,6 +120,7 @@ template <typename Container>
 class BwdConstIteratorImpl: ConstIteratorImpl<Container>
 {
 public:
+    typedef BwdConstIteratorImpl<Container> self_type;
     typedef typename Container::const_reverse_iterator bwd_iterator;
 
     BwdConstIteratorImpl(cont_const_ptr contour): contour_(contour)
@@ -115,6 +135,13 @@ public:
     bool check_validity() const
     { return (backward_it_ != contour_->rend()); }
 
+    virtual ~BwdConstIteratorImpl()
+    { }
+
+private:
+    virtual self_type* raw_clone_() const
+    { return new self_type(*this); }
+
 private:
     cont_const_ptr contour_;
     bwd_iterator backward_it_;
@@ -122,11 +149,10 @@ private:
 
 
 template <typename Container>
-class CommonlConstIterator
+class CommonConstIterator
 {
 public:
-    typedef CommonlConstIterator<Container> self_type;
-    typedef self_type& self_reference;
+    typedef CommonConstIterator<Container> self_type;
 
     typedef typename Container::const_iterator const_iterator;
     typedef typename std::iterator_traits<const_iterator>::reference reference;
@@ -134,18 +160,28 @@ public:
     typedef ConstIteratorImpl<Container> impl_type;
     typedef boost::shared_ptr<impl_type> impl_type_ptr;
 
-    CommonlConstIterator(impl_type_ptr iterator_impl): impl_(iterator_impl)
+    CommonConstIterator(impl_type_ptr iterator_impl): impl_(iterator_impl)
     {
         valid_ = impl_->check_validity();
     }
 
-    self_reference operator++()
+    CommonConstIterator(const self_type& other): valid_(other.valid_),
+        impl_(other.impl_->clone())
+    { }
+
+    self_type& operator=(self_type other)
+    {
+        other.swap(*this);
+        return *this;
+    }
+
+    self_type& operator++()
     {
         return
             ((*this) += 1);
     }
 
-    self_reference operator+=(std::size_t offset)
+    self_type& operator+=(std::size_t offset)
     {
         if (is_valid())
         {
@@ -170,6 +206,12 @@ public:
 
         return
             impl_->dereference();
+    }
+
+    void swap(self_type& other)
+    {
+        std::swap(valid_, other.valid_);
+        impl_.swap(other.impl_);
     }
 
     bool is_valid() const
@@ -282,7 +324,7 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        typedef detail::CommonlConstIterator<ParallelPlane> ContourIterator;
+        typedef detail::CommonConstIterator<ParallelPlane> ContourIterator;
         typedef detail::ConstIteratorImpl<ParallelPlane> BaseContourIteratorImpl;
         typedef detail::FwdConstIteratorImpl<ParallelPlane> FwdContourIteratorImpl;
         typedef detail::BwdConstIteratorImpl<ParallelPlane> BwdContourIteratorImpl;
