@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.14 2013.01.11
+  parallel_planes_tiling.hpp, v 1.0.15 2013.01.12
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -64,8 +64,6 @@ class ConstIteratorImpl
 {
 public:
     typedef ConstIteratorImpl<Container> self_type;
-    typedef boost::shared_ptr<self_type> self_shared_ptr;
-
     typedef boost::shared_ptr<const Container> cont_const_ptr;
     typedef typename Container::const_iterator const_iterator;
     typedef typename std::iterator_traits<const_iterator>::reference reference;
@@ -73,15 +71,10 @@ public:
     virtual void add(std::size_t offset) = 0;
     virtual reference dereference() const = 0;
     virtual bool check_validity() const = 0;
-
-    self_shared_ptr clone()
-    { return raw_clone_(); }
+    virtual self_type* clone() const = 0;
 
     virtual ~ConstIteratorImpl()
     { }
-
-private:
-    virtual self_type* raw_clone_() const = 0;
 };
 
 
@@ -104,12 +97,11 @@ public:
     bool check_validity() const
     { return (forward_it_ != contour_->end()); }
 
+    virtual self_type* clone() const
+    { return new self_type(*this); }
+
     virtual ~FwdConstIteratorImpl()
     { }
-
-private:
-    virtual self_type* raw_clone_() const
-    { return new self_type(*this); }
 
 private:
     cont_const_ptr contour_;
@@ -135,12 +127,11 @@ public:
     bool check_validity() const
     { return (backward_it_ != contour_->rend()); }
 
+    virtual self_type* clone() const
+    { return new self_type(*this); }
+
     virtual ~BwdConstIteratorImpl()
     { }
-
-private:
-    virtual self_type* raw_clone_() const
-    { return new self_type(*this); }
 
 private:
     cont_const_ptr contour_;
