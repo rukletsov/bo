@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.17 2013.01.12
+  parallel_planes_tiling.hpp, v 1.0.18 2013.01.12
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -79,8 +79,10 @@ public:
     virtual ~TraverseRule()
     { }
 
+    // TODO: add more macros to extract common code from virtual functions.
+
     // Use this macro to define an implementation of the clone() function in descendants.
-    #define TRAVERSE_RULE_CLONE_IMPL \
+    #define BO_TRAVERSE_RULE_CLONE_IMPL \
         virtual SelfType* clone() const \
         { return new SelfType(*this); }
 
@@ -111,7 +113,7 @@ public:
     virtual ~FwdOnePassTraverseRule()
     { }
 
-    TRAVERSE_RULE_CLONE_IMPL
+    BO_TRAVERSE_RULE_CLONE_IMPL
 
 protected:
     FwdIterator fwd_it_;
@@ -139,7 +141,7 @@ public:
     virtual ~BwdOnePassTraverseRule()
     { }
 
-    TRAVERSE_RULE_CLONE_IMPL
+    BO_TRAVERSE_RULE_CLONE_IMPL
 
 protected:
     BwdIterator bwd_it_;
@@ -147,10 +149,10 @@ protected:
 
 
 template <typename Container>
-class CommonConstIterator
+class ContainerConstTraverser
 {
 public:
-    typedef CommonConstIterator<Container> SelfType;
+    typedef ContainerConstTraverser<Container> SelfType;
 
     typedef typename Container::const_iterator ContainerConstIterator;
     typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
@@ -158,12 +160,12 @@ public:
     typedef TraverseRule<Container> TraverseRuleType;
     typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
 
-    CommonConstIterator(TraverseRulePtr iterator_impl): rule_(iterator_impl)
+    ContainerConstTraverser(TraverseRulePtr iterator_impl): rule_(iterator_impl)
     {
         valid_ = rule_->check_validity();
     }
 
-    CommonConstIterator(const SelfType& other): valid_(other.valid_),
+    ContainerConstTraverser(const SelfType& other): valid_(other.valid_),
         rule_(other.rule_->clone())
     { }
 
@@ -228,19 +230,16 @@ struct TraverseRuleFactory
     typedef TraverseRule<Container> TraverseRuleType;
     typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
 
-    static TraverseRulePtr FwdOnePass(ContainerConstPtr container_ptr)
-    {
-        typedef FwdOnePassTraverseRule<Container> Rule;
-        TraverseRulePtr rule_ptr(new Rule(container_ptr));
-        return rule_ptr;
-    }
+    #define BO_RULE_FACTORY_FUNCTION(RuleName)                                 \
+        static TraverseRulePtr RuleName(ContainerConstPtr container_ptr)    \
+        {                                                                   \
+            typedef RuleName##TraverseRule<Container> Rule;                 \
+            TraverseRulePtr rule_ptr(new Rule(container_ptr));              \
+            return rule_ptr;                                                \
+        }
 
-    static TraverseRulePtr BwdOnePass(ContainerConstPtr container_ptr)
-    {
-        typedef BwdOnePassTraverseRule<Container> Rule;
-        TraverseRulePtr rule_ptr(new Rule(container_ptr));
-        return rule_ptr;
-    }
+    BO_RULE_FACTORY_FUNCTION(FwdOnePass)
+    BO_RULE_FACTORY_FUNCTION(BwdOnePass)
 
     // TODO: introduce enum instead of bool flags.
     static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
@@ -349,11 +348,7 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        typedef detail::CommonConstIterator<ParallelPlane> ContourIterator;
-        typedef detail::TraverseRule<ParallelPlane> BaseContourIteratorImpl;
-        typedef detail::FwdOnePassTraverseRule<ParallelPlane> FwdContourIteratorImpl;
-        typedef detail::BwdOnePassTraverseRule<ParallelPlane> BwdContourIteratorImpl;
-        typedef boost::shared_ptr<BaseContourIteratorImpl> BaseContourIteratorImplPtr;
+        typedef detail::ContainerConstTraverser<ParallelPlane> ContourIterator;
         typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
 
         ContourIterator current1(Factory::Create(contour1, true));
