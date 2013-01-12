@@ -111,7 +111,7 @@ TEST_F(VectorTest, SettersGetters)
     EXPECT_EQ(-2, vec4_.w());
 }
 
-TEST_F(VectorTest, DISABLED_BoundaryChecks)
+TEST_F(VectorTest, BoundaryChecks)
 {
     // Iff the given index is out of range an exception should be thrown.
     EXPECT_NO_THROW(vec1_.at(0));
@@ -261,7 +261,7 @@ TEST_F(VectorTest, AggregationFunctions)
     EXPECT_EQ(int(9), vec4_.avg());
 }
 
-TEST_F(VectorTest, DISABLED_Normalization)
+TEST_F(VectorTest, Normalization)
 {
     // Check euclidean norm.
     EXPECT_DOUBLE_EQ(0., vec1_.euclidean_norm_d());
@@ -350,7 +350,7 @@ typedef VectorTest VectorDeathTest;
 
 #ifdef _DEBUG
 
-TEST_F(VectorDeathTest, DISABLED_Assertions)
+TEST_F(VectorDeathTest, Assertions)
 {
     // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
     // expected to lead to a program termination in debug mode for console 

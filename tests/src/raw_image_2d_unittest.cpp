@@ -213,7 +213,7 @@ TEST_F(RawImage2DTest, SettersGetters)
     EXPECT_EQ(std::size_t(9), sum);
 }
 
-TEST_F(RawImage2DTest, DISABLED_BoundaryChecks)
+TEST_F(RawImage2DTest, BoundaryChecks)
 {
     typedef std::out_of_range ex_t;
 
@@ -291,7 +291,7 @@ typedef RawImage2DTest RawImage2DDeathTest;
 
 #ifdef _DEBUG
 
-TEST_F(RawImage2DDeathTest, DISABLED_OffsetAssertions)
+TEST_F(RawImage2DDeathTest, OffsetAssertions)
 {
     // Calculating offset for invalid index should lead to a debug assertion, which
     // expected to entail a program termination in debug mode (at least for console
@@ -308,7 +308,7 @@ TEST_F(RawImage2DDeathTest, DISABLED_OffsetAssertions)
     EXPECT_DEATH(im_invalid1_.offset(RawImage2D<float>::Index(-1, 1)), ".*");
 }
 
-TEST_F(RawImage2DDeathTest, DISABLED_IndexAssertions)
+TEST_F(RawImage2DDeathTest, IndexAssertions)
 {
     // Expected to work very similar to offset() method.
     EXPECT_DEATH(im1_.index(-1), ".*");
@@ -318,7 +318,7 @@ TEST_F(RawImage2DDeathTest, DISABLED_IndexAssertions)
     EXPECT_DEATH(im_invalid1_.index(1), ".*");
 }
 
-TEST_F(RawImage2DDeathTest, DISABLED_BoundaryChecksAssertions)
+TEST_F(RawImage2DDeathTest, BoundaryChecksAssertions)
 {
     // Accessing image pixel data by a wrong index should lead to a debug assertion.
     // It is expected to terminate the program in debug mode. Note that at() function

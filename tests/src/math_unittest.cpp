@@ -56,7 +56,7 @@ protected:
 };
 
 
-TEST_F(MathTest, DISABLED_Mean)
+TEST_F(MathTest, Mean)
 {
     Vec3f res3f = mean(data3f_);
     EXPECT_DOUBLE_EQ(0.f, res3f[0]);
@@ -70,7 +70,7 @@ TEST_F(MathTest, DISABLED_Mean)
     EXPECT_THROW(mean(empty2d_), ex_t);
 }
 
-TEST_F(MathTest, DISABLED_PCA)
+TEST_F(MathTest, PCA)
 {
     typedef blas::PCA<double, 2> PCAEngine;
     PCAEngine pca;
