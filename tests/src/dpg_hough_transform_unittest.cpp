@@ -4,6 +4,8 @@
 
 using namespace bo;
 using namespace bo::methods::recognition;
+using namespace bo::methods::recognition::detail;
+
 
 
 // "Test fixture" using base class form GTEST.
@@ -16,11 +18,24 @@ protected:
 
     virtual void SetUp()
     {
+        // Encode-reconstruct data.
         c1_ = DualPointGHT<float>::Point2D(1.f,0.f);
         tang1_ = DualPointGHT<float>::Point2D(1.f, 1.f);
 
         c2_ = DualPointGHT<float>::Point2D(5.f, 5.f);
         tang2_ = DualPointGHT<float>::Point2D(-1.f, -1.f);
+
+
+        // Space-line intersection data.
+        pb1_ = Space<float>::Point4D(0.f, 0.f, 0.f, 0.f);
+        pb2_ = Space<float>::Point4D(1.f, 1.f, 1.f, 1.f);
+        pb3_ = Space<float>::Point4D(1.f, 0.f, 0.f, 0.f);
+        pb4_ = Space<float>::Point4D(1.f, 0.f, 1.f, 0.f);
+        pb5_ = Space<float>::Point4D(-3.f, -3.f, -3.f, -3.f);
+        pb6_ = Space<float>::Point4D(0.5f, 0.5f, 0.5f, 0.5f);
+        pb7_ = Space<float>::Point4D(0.1f, 0.f, 0.f, 0.f);
+        pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
+        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_));
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -30,6 +45,19 @@ protected:
     DualPointGHT<float>::Point2D tang1_;
     DualPointGHT<float>::Point2D c2_;
     DualPointGHT<float>::Point2D tang2_;
+
+
+    Space<float>::Point4D pb1_;
+    Space<float>::Point4D pb2_;
+    Space<float>::Point4D pb3_;
+    Space<float>::Point4D pb4_;
+    Space<float>::Point4D pb5_;
+    Space<float>::Point4D pb6_;
+    Space<float>::Point4D pb7_;
+    Space<float>::Point4D pb8_;
+    Space<float> space1_;
+
+
 };
 
 TEST_F(HoughTransformTest, EncodeReconstruct)
@@ -57,5 +85,43 @@ TEST_F(HoughTransformTest, EncodeReconstruct)
 
     EXPECT_NEAR(ps.back()[0], f2.first[0], 0.001f);
     EXPECT_NEAR(ps.back()[1], f2.first[1], 0.001f);
+
+}
+
+TEST_F(HoughTransformTest, SpaceLineIntersection)
+{
+    space1_.intersect(Space<float>::Line4D(pb1_, pb2_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 2.f);
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb1_, pb3_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 1.f);
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb1_, pb4_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), std::sqrt(2.f));
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb5_, pb2_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 2.f);
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb5_, pb3_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 0.f);
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb6_, pb7_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 0.5f);
+
+    space1_.reset_votes();
+    space1_.intersect(Space<float>::Line4D(pb7_, pb8_));
+
+    EXPECT_FLOAT_EQ(space1_.get_votes(), std::sqrt(1 + 0.4f * 0.4f + 0.5f * 0.5f));
 
 }

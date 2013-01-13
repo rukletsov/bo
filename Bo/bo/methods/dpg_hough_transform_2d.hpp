@@ -113,6 +113,11 @@ public:
         return votes_;
     }
 
+    void reset_votes()
+    {
+        votes_ = 0;
+    }
+
     Point4D get_mass_center()
     {
         return (box_.first + box_.second) / 2;
