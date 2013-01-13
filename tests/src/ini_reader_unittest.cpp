@@ -24,18 +24,18 @@ protected:
     virtual void SetUp()
     {
         // Get data directory name. Input directory can have or not have trail slashes.
-        ini_filepath = boost::filesystem3::path(DataDirectory) /= ini_filename;
+        ini_filepath = boost::filesystem::path(DataDirectory) /= ini_filename;
     }
 
-    ::testing::AssertionResult IsTestFileAvailable(boost::filesystem3::path filepath)
+    ::testing::AssertionResult IsTestFileAvailable(boost::filesystem::path filepath)
     {
         return
-            (boost::filesystem3::exists(boost::filesystem3::path(filepath))
+            (boost::filesystem::exists(boost::filesystem::path(filepath))
              ? ::testing::AssertionSuccess() << "file \"" << filepath.string() << "\" found"
              : ::testing::AssertionFailure() << "file \"" << filepath.string() << "\" not found");
     }
 
-    boost::filesystem3::path ini_filepath;
+    boost::filesystem::path ini_filepath;
 };
 
 TEST_F(IniReaderTest, DefaultConstructor)
