@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
         DataDirectory.assign(argv[1]);
     else if (argc == 1)
         // Apply default value which is "./data" directory.
-        DataDirectory.assign((boost::filesystem3::initial_path() /= "data").string());
+        DataDirectory.assign((boost::filesystem::initial_path() /= "data").string());
     else
         DataDirectory.assign("");
 
