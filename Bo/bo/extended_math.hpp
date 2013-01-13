@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  extended_math.hpp, v 1.0.3 2012.12.18
+  extended_math.hpp, v 1.0.4 2013.01.13
 
   Extension of the standard <cmath> header.
 
-  Copyright (c) 2011, 2012
+  Copyright (c) 2011 - 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -41,10 +41,23 @@
 #include <functional>
 #include <stdexcept>
 #include <boost/math/tr1.hpp>
+
+// Suppress annoying MSVC's C4244 conversion warnings popping out from boost::accumulators
+// library (boost::numeric::functional namespace) mainly due to division operation
+// in mean computation. Suppress MSVC's C4512 warning for boost auxiliary classes as well.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4512)
+#endif // _MSC_VER
+
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 namespace bo {
 
