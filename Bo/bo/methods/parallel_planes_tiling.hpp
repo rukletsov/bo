@@ -349,16 +349,16 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        typedef detail::ContainerConstTraverser<ParallelPlane> ContourIterator;
+        typedef detail::ContainerConstTraverser<ParallelPlane> ContourTraverser;
         typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
 
-        ContourIterator current1;
-        ContourIterator current2;
+        ContourTraverser current1;
+        ContourTraverser current2;
         bool is_forward2 = true;
 
         if (is_closed)
         {
-            current1 = ContourIterator(Factory::Create(contour1, true));
+            current1 = ContourTraverser(Factory::Create(contour1, true));
             Point3D direction1 = *(current1 + 1) - *current1;
 
             Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
@@ -370,7 +370,7 @@ public:
         }
         else
         {
-            current1 = ContourIterator(Factory::Create(contour1, true));
+            current1 = ContourTraverser(Factory::Create(contour1, true));
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
@@ -378,7 +378,7 @@ public:
                     (contour2->front() - *current1).euclidean_norm())
                 is_forward2 = false;
 
-            current2 = ContourIterator(Factory::Create(contour2, is_forward2));
+            current2 = ContourTraverser(Factory::Create(contour2, is_forward2));
         }
 
         Mesh mesh(contour1->size() + contour2->size());
@@ -389,8 +389,8 @@ public:
 //            std::cout << std::endl << "New iteration" << std::endl;
 //            std::cout << "current2: " << *current2;
 
-            ContourIterator candidate1 = current1 + 1;
-            ContourIterator candidate2 = current2 + 1;
+            ContourTraverser candidate1 = current1 + 1;
+            ContourTraverser candidate2 = current2 + 1;
 
 //            std::cout << "current1: " << *current1;
 //            std::cout << "current2: " << *current2;
