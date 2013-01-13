@@ -11,6 +11,7 @@ SET (BoTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/raw_image_2d_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ini_reader_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/math_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dpg_hough_transform_unittest.cpp
 )
 
 SET (BoTest_HDRS
