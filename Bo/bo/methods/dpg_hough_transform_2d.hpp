@@ -32,17 +32,21 @@
 
 *******************************************************************************/
 
-#ifndef DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419
-#define DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419
+#ifndef DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419_
+#define DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419_
 
 #include <utility>
 #include <vector>
 #include <list>
 #include <cmath>
+
 #include <boost/noncopyable.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/blas/blas.hpp"
+
+#include <iostream>
 
 namespace bo {
 namespace methods {
@@ -67,7 +71,8 @@ public:
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
                  RealType tangent_accuracy = 0.5): 
-    model_reference_(model_reference), tangent_accuracy_(tangent_accuracy)
+    model_reference_(model_reference), tangent_accuracy_(tangent_accuracy),
+    pi_(boost::math::constants::pi<RealType>())
     {
         encode(model_features);
     }
@@ -89,10 +94,12 @@ public:
 
         // Reconstruct the model points from all alpha and beta angles and
         // the given two reference points.
-        for (ATable::const_iterator ait = atable_.begin(); ait != atable_.end(); ++ait)
-            for (ATableRow::const_iterator it = ait->begin(); it != ait->end(); ++it)
+        for (typename DualPointGHT<RealType>::ATable::const_iterator ait = atable_.begin();
+             ait != atable_.end(); ++ait)
+            for (typename DualPointGHT<RealType>::ATableRow::const_iterator it = ait->begin();
+                 it != ait->end(); ++it)
             {
-                points.push_back(find_intersection(reference_points, *it)); 
+                points.push_back(find_intersection2(reference_points, *it));
             }
 
         return points;
@@ -104,26 +111,52 @@ private:
     RealType tangent_accuracy_;
     ATable atable_;
 
-    // Row index in the alpha-table for the given cosine of the tangent angle.
-    std::size_t atable_index(RealType cos_gamma)
+    RealType pi_;
+
+    // Row index in the alpha-table for the given tangent angle.
+    std::size_t atable_index(RealType gamma)
     {
-        return static_cast<std::size_t>((cos_gamma + 1) / 2 * (atable_.size() - 1));
+        return static_cast<std::size_t>((gamma + pi_) / (2 * pi_) * (atable_.size() - 1));
     }
 
-    // Fill in the given 2x2 matrix as a rotational one accordingly to the
-    // given rotation angle cosine.
-    void rotational(blas::matrix<RealType> &m, RealType cosa)
+    // Rotates the given vector in a radians.
+    inline Point2D rotate(const Point2D &v, RealType a)
     {
-        RealType sina = std::sqrt(1 - cosa * cosa);
-        m(0, 0) = cosa;
-        m(0, 1) = - sina; //! or minus.
-        m(1, 0) = sina;
-        m(1, 1) = cosa;
+        RealType cosa = std::cos(a);
+        RealType sina = std::sin(a);
+
+        return Point2D(cosa * v[0] - sina * v[1], sina * v[0] + cosa * v[1]);
     }
 
-    // Computes the intersection of two lines, defined by the reference points and 
+    // Computes the "positive" normal to the given vector.
+    inline Point2D normal(const Point2D &v)
+    {
+        return rotate(v, pi_ / 2);
+    }
+
+    // Computes the signed angle in radians [-pi/2, pi/2] betwen the vectors relatively to
+    // the base vector.
+    RealType angle(const Point2D &base, const Point2D &v)
+    {
+        // Cosine between the vectors.
+        RealType cosa = base * v / base.euclidean_norm() / v.euclidean_norm();
+
+        // Angle without the sign.
+        RealType a = std::acos(cosa);
+
+        // Normal vector for the base.
+        Point2D norm_base = normal(base);
+
+        // The sign is defined by the halfspace relatively to base where v is located.
+        int sign = norm_base * v < 0 ? -1 : 1;
+
+        // Angle with sign.
+        return sign * a;
+    }
+
+    // Computes the intersection of two lines, defined by the reference points and
     // the given element of the alpha-table.
-    Point2D find_intersection(const Reference &reference_points, const ATableElement &e)
+    Point2D find_intersection2(const Reference &reference_points, const ATableElement &e)
     {
         Point2D p;
 
@@ -131,42 +164,39 @@ private:
         Point2D p1 = reference_points.first;
         Point2D p2 = reference_points.second;
 
-        // Create the reference matrix.
-        blas::matrix<RealType> ab(2, 1);
-        ab(0, 0) = p1[1] - p2[1];
-        ab(1, 0) = p2[0] - p1[0];
+        // Reference vector.
+        Point2D ab = p2 - p1;
 
-        // Initialize a rotational matrix.
-        blas::matrix<RealType> r(2, 2);
+        // If the intersection is located on the reference line compute the intersection
+        // directly.
+        if (e.first == 0)
+        {
+            return p1 + e.second * ab;
+        }
 
-        blas::matrix<RealType> a1 = blas::prod(rotational(r, e.first), ab);
-        blas::matrix<RealType> a2 = blas::prod(rotational(r, e.second), ab);
+        // Find the first normalized direction.
+        Point2D v1 = rotate(ab, e.first);
+        v1 = v1 / v1.euclidean_norm();
 
-        // Create the basis matrix.
-        blas::matrix<RealType> a(2, 2);
-        a(0, 0) = a1(0, 0);
-        a(0, 1) = a1(1, 0);
-        a(1, 0) = a2(0, 0);
-        a(1, 1) = a2(1, 0);
+        // Find the second normalized direction.
+        Point2D v2 = rotate(ab, e.second);
+        v2 = v2 / v2.euclidean_norm();
 
-        // Init an inverse matrix.
-        blas::matrix<RealType> ia(2, 2);  
-        bool is_inversible = blas::invert_matrix(a, ia);
+        // Calculate the intersection point.
+        RealType sina = std::sin(e.first);
+        RealType sinb = std::sin(e.second);
 
-        BOOST_ASSERT(is_inversible);
+        // The intersection is not on the reference line.
+        BOOST_ASSERT(sinb != 0);
 
-        // Compute the intersection.
-        blas::matrix<RealType> b(2, 1); 
-        b(0, 0) = - (a1(0, 0) * p1[0] + a1(1, 0) * p1[1]);
-        b(1, 0) = - (a2(0, 0) * p2[0] + a2(1, 0) * p2[1]);
+        // The coordinate of the intersection point relatively to v1.
+        RealType t = ab[0] / (v1[0] - v2[0] * sina / sinb);
 
-        blas::matrix<RealType> c = blas::prod(ia, b);
-
-        p[0] = c(0, 0);
-        p[1] = c(1, 0);
+        return p1 + t * v1;
 
         return p;
     }
+
 
     // Fills in the alpha-table using the given model features
     // and two reference points.
@@ -178,12 +208,12 @@ private:
         // Allocate memory for the alpha-table.
         atable_.resize(tangent_angle_number);
 
-        // Normalized reference vector.
+        // The reference vector.
         Point2D ab = model_reference_.second - model_reference_.first;
-        ab = ab.normalized();
-        
+
         // Fill in the alpha-table.
-        for (Features::const_iterator it = model_features.begin(); it != model_features.end(); ++it)
+        for (typename DualPointGHT<RealType>::Features::const_iterator it = model_features.begin();
+             it != model_features.end(); ++it)
         {
             // Current model point.
             Point2D c = it->first;
@@ -194,16 +224,25 @@ private:
             Point2D v1 = c - model_reference_.first;
             Point2D v2 = c - model_reference_.second;
 
-            // Compute cosines of the reference angles.
-            RealType cos_alpha = ab * v1 / v1.euclidean_norm();
-            RealType cos_beta = ab * v2 / v2.euclidean_norm();
+            // Compute the reference angles.
+            RealType alpha = angle(ab, v1);
+            RealType beta = angle(ab, v2);
+            // Compute the tangential angle.
+            RealType gamma = angle(v1, tangent);
 
-            // Compute cosine of the tangential angle.
-            RealType cos_gamma = - v1 * tangent / v1.euclidean_norm() / tangent.euclidean_norm();
+            // Correction for the points located on the reference line.
+            // This case is encoded as: alpha = 0; beta = coordinate of the current model point
+            // on the reference line relatively to the reference vector.
+            if (std::sin(beta) == 0)
+            {
+                alpha = 0;
+                RealType abnorm =  ab.euclidean_norm();
+                beta = ab * v1 / (abnorm * abnorm);
+            }
 
             // Define the row for the computed angles in the alpha-table and insert
             // the angles into the table.
-            atable_.at(atable_index(cos_gamma)).push_back(ATableElement(cos_alpha, cos_beta));
+            atable_.at(atable_index(gamma)).push_back(ATableElement(alpha, beta));
         }
     }
 
@@ -213,4 +252,4 @@ private:
 } // namespace methods
 } // namespace bo
 
-#endif // DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419
+#endif // DPG_HOUGH_TRANSFORM_HPP_55B0255B_E6C8_4302_9114_D1B684CD3419_
