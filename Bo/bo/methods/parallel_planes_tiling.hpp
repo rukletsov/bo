@@ -160,6 +160,9 @@ public:
     typedef TraverseRule<Container> TraverseRuleType;
     typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
 
+    ContainerConstTraverser(): valid_(false)
+    { }
+
     ContainerConstTraverser(TraverseRulePtr iterator_impl): rule_(iterator_impl)
     {
         valid_ = rule_->check_validity();
@@ -332,17 +335,15 @@ public:
     {
         // TODO: assert on data size (at least 2 samples?).
 
-        // Prepare: build kd-trees.
-        Tree tree1(contour1->begin(), contour1->end(), std::ptr_fun(point3D_accessor_));
-        Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
-
-        // Determine whether both contours are closed or not. This determines the
+        // TODO: Determine whether both contours are closed or not. This determines the
         // algorithm's behaviour.
+
+        bool is_closed = false;
 
         // 1. Contours are closed.
         // Choose a vertex and a direction on the first contour.
         // Find closest vertex on the second contour and determine direction.
-        // Iteratively sample points from contours until the surface patcg is ready.
+        // Iteratively sample points from contours until the surface patch is ready.
 
         // 2. Contours having exactly one hole.
         // Take the first vertex (at the hole) and direction on the first contour.
@@ -351,20 +352,34 @@ public:
         typedef detail::ContainerConstTraverser<ParallelPlane> ContourIterator;
         typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
 
-        ContourIterator current1(Factory::Create(contour1, true));
-        Point3D direction1 = *(current1 + 1) - *current1;
+        ContourIterator current1;
+        ContourIterator current2;
+        bool is_forward2 = true;
 
-        // Contour2 traverse direction should be swapped in order to correspond
-        // with the contoru1 direction.
-        bool is_forward = true;
-        Factory::TraverseRulePtr rule_ptr2;
-        // TODO: rewrtie swap detection using dot products.
-        if ((contour2->back() - *current1).euclidean_norm() <
-            (contour2->front() - *current1).euclidean_norm())
-            is_forward = false;
+        if (is_closed)
+        {
+            current1 = ContourIterator(Factory::Create(contour1, true));
+            Point3D direction1 = *(current1 + 1) - *current1;
 
-        ContourIterator current2(Factory::Create(contour2, is_forward));
-        Point3D direction2 = *(current2 + 1) - *current2;
+            Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
+
+            //        Point3D supposed_direction = (contour2->front() + 1) - contour2->front();
+            //        if (supposed_direction * direction1 < 0)
+            //            is_forward = false;
+
+        }
+        else
+        {
+            current1 = ContourIterator(Factory::Create(contour1, true));
+
+            // Contour2 traverse direction should be swapped in order to correspond
+            // with the contoru1 direction.
+            if ((contour2->back() - *current1).euclidean_norm() <
+                    (contour2->front() - *current1).euclidean_norm())
+                is_forward2 = false;
+
+            current2 = ContourIterator(Factory::Create(contour2, is_forward2));
+        }
 
         Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
