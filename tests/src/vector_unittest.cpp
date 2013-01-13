@@ -120,10 +120,8 @@ TEST_F(VectorTest, BoundaryChecks)
     EXPECT_THROW(vec1_.at(-1), std::out_of_range);
 
     // opeartor[] doesn't throw exceptions when wrong index is used. An assertion
-    // is used in debug mode and nothing in release mode. Since assertion leads to
-    // a special state of a program (usually termination and via abort()), 
-    // corresponding tests are placed in a special test case for so-called "death
-    // tests". However, valid indices should be always processed without any crashes.
+    // is used in debug mode and nothing in release mode. Valid indices should be
+    // always processed without any crashes.
     vec3_[0] = -1.;
     vec3_[vec3_.size() - 1];
 }
@@ -343,21 +341,3 @@ TEST_F(VectorTest, SwapFillAssign)
     EXPECT_DOUBLE_EQ(3., vec2_[1]);
     EXPECT_DOUBLE_EQ(0., vec2_[2]);
 }
-
-
-// An aliased fixture for so-called "death tests".
-typedef VectorTest VectorDeathTest;
-
-#ifdef _DEBUG
-
-TEST_F(VectorDeathTest, Assertions)
-{
-    // operator[] uses BOOST_ASSERT macro through boost::array class. The macro is 
-    // expected to lead to a program termination in debug mode for console 
-    // applications. This assertion can be caught and therefore tested if it works 
-    // when necessary.
-    EXPECT_DEATH(vec3_[vec3_.size()], "Assertion failed: i < N && \"out of range\".*");
-    EXPECT_DEATH(vec3_[-1], "Assertion failed: i < N && \"out of range\".*");
-}
-
-#endif
