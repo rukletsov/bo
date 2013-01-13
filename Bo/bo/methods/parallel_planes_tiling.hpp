@@ -38,7 +38,6 @@
 #include <vector>
 #include <iterator>
 #include <limits>
-#include <stdexcept>
 #include <algorithm>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -50,208 +49,13 @@
 #include "bo/blas/blas.hpp"
 #include "bo/blas/pca.hpp"
 #include "bo/methods/distances_3d.hpp"
+#include "bo/internal/surfaces/container_traversers.hpp"
 
 #include "bo/extended_std.hpp"
 
 namespace bo {
 namespace methods {
 namespace surfaces {
-
-namespace detail {
-
-template <typename Container>
-class TraverseRule
-{
-public:
-    typedef TraverseRule<Container> SelfType;
-    typedef boost::shared_ptr<const Container> ContainerConstPtr;
-    typedef typename Container::const_iterator ContainerConstIterator;
-    typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
-
-    TraverseRule(ContainerConstPtr contour): contour_(contour)
-    { }
-
-    virtual void add(std::size_t offset) = 0;
-    virtual Reference dereference() const = 0;
-    virtual bool check_validity() const = 0;
-    virtual SelfType* clone() const = 0;
-
-    virtual ~TraverseRule()
-    { }
-
-    // TODO: add more macros to extract common code from virtual functions.
-
-    // Use this macro to define an implementation of the clone() function in descendants.
-    #define BO_TRAVERSE_RULE_CLONE_IMPL \
-        virtual SelfType* clone() const \
-        { return new SelfType(*this); }
-
-protected:
-    ContainerConstPtr contour_;
-};
-
-
-template <typename Container>
-class FwdOnePassTraverseRule: public TraverseRule<Container>
-{
-public:
-    typedef FwdOnePassTraverseRule<Container> SelfType;
-    typedef typename Container::const_iterator FwdIterator;
-
-    FwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
-    { fwd_it_ = contour_->begin(); }
-
-    virtual void add(std::size_t offset)
-    { fwd_it_ += offset; }
-
-    virtual Reference dereference() const
-    { return *fwd_it_; }
-
-    virtual bool check_validity() const
-    { return (fwd_it_ != contour_->end()); }
-
-    virtual ~FwdOnePassTraverseRule()
-    { }
-
-    BO_TRAVERSE_RULE_CLONE_IMPL
-
-protected:
-    FwdIterator fwd_it_;
-};
-
-template <typename Container>
-class BwdOnePassTraverseRule: public TraverseRule<Container>
-{
-public:
-    typedef BwdOnePassTraverseRule<Container> SelfType;
-    typedef typename Container::const_reverse_iterator BwdIterator;
-
-    BwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
-    { bwd_it_ = contour_->rbegin(); }
-
-    virtual void add(std::size_t offset)
-    { bwd_it_ += offset; }
-
-    virtual Reference dereference() const
-    { return *bwd_it_; }
-
-    virtual bool check_validity() const
-    { return (bwd_it_ != contour_->rend()); }
-
-    virtual ~BwdOnePassTraverseRule()
-    { }
-
-    BO_TRAVERSE_RULE_CLONE_IMPL
-
-protected:
-    BwdIterator bwd_it_;
-};
-
-
-template <typename Container>
-class ContainerConstTraverser
-{
-public:
-    typedef ContainerConstTraverser<Container> SelfType;
-
-    typedef typename Container::const_iterator ContainerConstIterator;
-    typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
-
-    typedef TraverseRule<Container> TraverseRuleType;
-    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
-
-    ContainerConstTraverser(): valid_(false)
-    { }
-
-    ContainerConstTraverser(TraverseRulePtr iterator_impl): rule_(iterator_impl)
-    {
-        valid_ = rule_->check_validity();
-    }
-
-    ContainerConstTraverser(const SelfType& other): valid_(other.valid_),
-        rule_(other.rule_->clone())
-    { }
-
-    SelfType& operator=(SelfType other)
-    {
-        other.swap(*this);
-        return *this;
-    }
-
-    SelfType& operator++()
-    {
-        return ((*this) += 1);
-    }
-
-    SelfType& operator+=(std::size_t offset)
-    {
-        if (is_valid())
-        {
-            rule_->add(offset);
-            valid_ = rule_->check_validity();
-        }
-
-        return (*this);
-    }
-
-    SelfType operator+(std::size_t offset) const
-    {
-        SelfType temp = *this;
-        return
-            (temp += offset);
-    }
-
-    Reference operator*() const
-    {
-        if (!is_valid())
-            throw std::logic_error("Cannot dereference invalid CommonConstIterator.");
-
-        return
-            rule_->dereference();
-    }
-
-    void swap(SelfType& other)
-    {
-        std::swap(valid_, other.valid_);
-        rule_.swap(other.rule_);
-    }
-
-    bool is_valid() const
-    {
-        return valid_;
-    }
-
-private:
-    bool valid_;
-    TraverseRulePtr rule_;
-};
-
-template <typename Container>
-struct TraverseRuleFactory
-{
-    typedef boost::shared_ptr<const Container> ContainerConstPtr;
-    typedef TraverseRule<Container> TraverseRuleType;
-    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
-
-    #define BO_RULE_FACTORY_FUNCTION(RuleName)                              \
-        static TraverseRulePtr RuleName(ContainerConstPtr container_ptr)    \
-        {                                                                   \
-            typedef RuleName##TraverseRule<Container> Rule;                 \
-            TraverseRulePtr rule_ptr(new Rule(container_ptr));              \
-            return rule_ptr;                                                \
-        }
-
-    BO_RULE_FACTORY_FUNCTION(FwdOnePass)
-    BO_RULE_FACTORY_FUNCTION(BwdOnePass)
-
-    // TODO: introduce enum instead of bool flags.
-    static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
-    {
-        return (is_forward ? FwdOnePass(container_ptr) : BwdOnePass(container_ptr));
-    }
-};
-
-}
 
 template <typename RealType>
 class MinSpanPropagation: public boost::noncopyable
@@ -349,8 +153,8 @@ public:
         // Take the first vertex (at the hole) and direction on the first contour.
         // Take the first vertex (at the hole) and determine co-directed movement.
         // Iterate till the end of both contours.
-        typedef detail::ContainerConstTraverser<ParallelPlane> ContourTraverser;
-        typedef detail::TraverseRuleFactory<ParallelPlane> Factory;
+        typedef ContainerConstTraverser<ParallelPlane> ContourTraverser;
+        typedef TraverseRuleFactory<ParallelPlane> Factory;
 
         ContourTraverser current1;
         ContourTraverser current2;
@@ -362,6 +166,9 @@ public:
             Point3D direction1 = *(current1 + 1) - *current1;
 
             Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
+
+            // Find closest vertex on the second contour and determine direction.
+            //std::pair<typename Tree::const_iterator, RealType> tree.find_nearest(*current1)
 
             //        Point3D supposed_direction = (contour2->front() + 1) - contour2->front();
             //        if (supposed_direction * direction1 < 0)
@@ -389,6 +196,7 @@ public:
 //            std::cout << std::endl << "New iteration" << std::endl;
 //            std::cout << "current2: " << *current2;
 
+            // TODO: cache cnadidates and progress only in case of acceptance.
             ContourTraverser candidate1 = current1 + 1;
             ContourTraverser candidate2 = current2 + 1;
 
