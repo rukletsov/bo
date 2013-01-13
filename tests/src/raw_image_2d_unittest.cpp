@@ -10,7 +10,7 @@
 using namespace bo;
 
 
-// Create a so-called "text fixture" using base class form GTEST.
+// Create a so-called "text fixture".
 class RawImage2DTest: public testing::Test
 {
 protected:
