@@ -98,17 +98,17 @@ public:
 
     }
 
-    const Spaces& get_subspaces()
+    inline Spaces& get_subspaces()
     {
         return subspaces_;
     }
 
-    const Box4D& get_bounding_box()
+    inline const Box4D& get_bounding_box()
     {
         return box_;
     }
 
-    RealType get_votes()
+    inline RealType get_votes()
     {
         return votes_;
     }
@@ -118,7 +118,12 @@ public:
         votes_ = 0;
     }
 
-    Point4D get_mass_center()
+    inline std::size_t get_resolution_level()
+    {
+        return resolution_level_;
+    }
+
+    inline Point4D get_mass_center()
     {
         return (box_.first + box_.second) / 2;
     }
@@ -213,6 +218,7 @@ public:
     typedef std::pair<RealType, RealType> ATableElement;
     typedef std::list<ATableElement> ATableRow;
     typedef std::vector<ATableRow> ATable;
+    typedef detail::Space<RealType> Space4D;
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
                  RealType tangent_accuracy = 0.5): 
@@ -225,31 +231,30 @@ public:
     // Detects the references that define probable poses of the model within the 
     // given features.
     ReferenceVotes fast_detect(const Features &object_features, RealType probability, 
-                               unsigned int T, unsigned int M, RecognitionArea bounding_box) 
+                               unsigned int divisions_per_dimension, unsigned int maximal_resolution_level,
+                               RecognitionArea bounding_box)
     {
-        using namespace detail;
-
         ReferenceVotes ref_votes;
 
         // Create the root space object.
-        typename Space<RealType>::Point4D p1(bounding_box.first[0], bounding_box.first[1],
+        typename Space4D::Point4D p1(bounding_box.first[0], bounding_box.first[1],
                                   bounding_box.first[0], bounding_box.first[1]);
-        typename Space<RealType>::Point4D p2(bounding_box.second[0], bounding_box.second[1],
+        typename Space4D::Point4D p2(bounding_box.second[0], bounding_box.second[1],
                                   bounding_box.second[0], bounding_box.second[1]);
-        space_ = Space<RealType>(Space<RealType>::Box4D(p1, p2));
+        space_ = Space4D(Space4D::Box4D(p1, p2));
 
         // Hierarchical search for the vote peak in the space.
-        process_space(space_, T, M);
+        process_space(space_, probability, divisions_per_dimension, maximal_resolution_level);
 
         /*
         // Get all subspaces from the last resolution level;
-        typename Space<RealType>::Spaces leafs = get_resolution_level(M);
+        typename Space4D::Spaces leafs = get_resolution_level(M);
 
         // Extract the references.
-        for (typename Space<RealType>::const_iterator it = leafs.begin(); it != leafs.end(); ++it)
+        for (typename Space4D::const_iterator it = leafs.begin(); it != leafs.end(); ++it)
         {
             // Attention: the space is approximated by its mass center!
-            typename Space<RealType>::Point4D c = it->get_mass_center();
+            typename Space4D::Point4D c = it->get_mass_center();
 
             Reference ref(Point2D(c[0], c[1]), Point2D(c[2], c[3]));
             ReferenceVote rv(ref, it->get_votes());
@@ -283,7 +288,7 @@ private:
     Reference model_reference_;
     RealType tangent_accuracy_;
     ATable atable_;
-    detail::Space<RealType> space_;
+    Space4D space_;
     RealType pi_;
 
     // Row index in the alpha-table for the given tangent angle.
@@ -418,6 +423,40 @@ private:
             atable_.at(atable_index(gamma)).push_back(ATableElement(alpha, beta));
         }
     }
+
+    // Recursive fills in the space tree calculating votes for each subspace.
+    void process_space(Space4D &s, RealType probability, RealType divisions_per_dimension,
+                       RealType maximal_resolution_level)
+    {
+        if (s.get_resolution_level() > maximal_resolution_level) return;
+
+        // Create the space subdivision.
+        s.subdivide(divisions_per_dimension);
+        typename Space4D::Spaces subs = s.get_subspaces();
+
+        // The subspace with max votes.
+        typename Space4D::Spaces::iterator maxit = subs.begin();
+
+        // Calculate the votes for the obtained subspaces.
+        for (typename Space4D::Spaces::iterator it = subs.begin(); it != subs.end(); ++it)
+        {
+            calculate_votes(*it);
+
+            // Cache the optimal subspace.
+            if (maxit->get_votes() < it->get_votes())
+                maxit = it;
+        }
+
+        // Continue the subdivision procedure for the subspace with the maximal number of votes.
+        process_space(*maxit, probability, divisions_per_dimension, maximal_resolution_level);
+    }
+
+    RealType calculate_votes(Space4D &s)
+    {
+        return 0;
+    }
+
+
 
 };
 
