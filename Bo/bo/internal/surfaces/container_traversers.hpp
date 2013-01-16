@@ -65,8 +65,6 @@ public:
     virtual ~TraverseRule()
     { }
 
-    // TODO: add more macros to extract common code from virtual functions.
-
     // Use this macro to define an implementation of the clone() function in descendants.
     #define BO_TRAVERSE_RULE_CLONE_IMPL \
         virtual SelfType* clone() const \
@@ -359,6 +357,8 @@ struct TraverseRuleFactory
     BO_RULE_BINARY_FACTORY_FUNCTION(FwdCircuit)
     BO_RULE_BINARY_FACTORY_FUNCTION(BwdCircuit)
 
+    // TODO: create enums and true Create dispatcher.
+
     static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
     {
         return (is_forward ? FwdOnePass(container_ptr) : BwdOnePass(container_ptr));
@@ -367,11 +367,8 @@ struct TraverseRuleFactory
     static TraverseRulePtr Create(ContainerConstPtr container_ptr,
                                 std::size_t start_idx, bool is_forward)
     {
-        if ((start_idx == 0) || (start_idx == container_ptr->size() - 1))
-            return Create(container_ptr, is_forward);
-        else
-            return (is_forward ? FwdCircuit(container_ptr, start_idx) :
-                                 BwdCircuit(container_ptr, start_idx));
+        return (is_forward ? FwdCircuit(container_ptr, start_idx) :
+                             BwdCircuit(container_ptr, start_idx));
     }
 };
 
