@@ -144,11 +144,11 @@ public:
     typedef typename Container::const_iterator FwdIterator;
 
     FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        TraverseRule(contour), left_items_(contour->size())
+        TraverseRule(contour), left_items_(contour->size()), end_it_(contour->end())
     {
         fwd_it_ = contour_->begin();
         fwd_it_ += start_idx;
-        valid_ = (fwd_it_ != contour_->end());
+        valid_ = (fwd_it_ != end_it_);
     }
 
     virtual void add(std::size_t offset)
@@ -157,11 +157,11 @@ public:
         if (left_items_ < 0)
         {
             valid_ = false;
-            fwd_it_ = contour_->end();
+            fwd_it_ = end_it_;
             return;
         }
 
-        std::ptrdiff_t dist_to_end = contour_->end() - fwd_it_;
+        std::ptrdiff_t dist_to_end = end_it_ - fwd_it_;
         if (dist_to_end > 1)
             // can be progressed up to the last element, before end()
             fwd_it_ += offset;
@@ -188,6 +188,7 @@ public:
 
 protected:
     FwdIterator fwd_it_;
+    FwdIterator end_it_;
     std::ptrdiff_t left_items_;
     bool valid_;
 };
@@ -202,11 +203,11 @@ public:
     typedef typename Container::const_reverse_iterator BwdIterator;
 
     BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        TraverseRule(contour), left_items_(contour->size())
+        TraverseRule(contour), left_items_(contour->size()), end_it_(contour->rend())
     {
         bwd_it_ = contour_->rbegin();
         bwd_it_ += (contour_->size() - 1 - start_idx);
-        valid_ = (bwd_it_ != contour_->rend());
+        valid_ = (bwd_it_ != end_it_);
     }
 
     virtual void add(std::size_t offset)
@@ -215,11 +216,11 @@ public:
         if (left_items_ < 0)
         {
             valid_ = false;
-            bwd_it_ = contour_->rend();
+            bwd_it_ = end_it_;
             return;
         }
 
-        std::ptrdiff_t dist_to_end = contour_->rend() - bwd_it_;
+        std::ptrdiff_t dist_to_end = end_it_ - bwd_it_;
         if (dist_to_end > 1)
             // can be progressed up to the first element, after rend()
             bwd_it_ += offset;
@@ -246,6 +247,7 @@ public:
 
 protected:
     BwdIterator bwd_it_;
+    BwdIterator end_it_;
     std::ptrdiff_t left_items_;
     bool valid_;
 };
