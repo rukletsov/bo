@@ -50,6 +50,7 @@ void SetUp()
 }
 
 void RunPropagation();
+void RunChrisitiansenClosed();
 void RunChrisitiansen(const path &contour1_path, const path &contour2_path);
 void RunFemurChrisitiansen();
 
@@ -67,8 +68,9 @@ int main(int argc, char* argv[])
 
     SetUp();
 
-    RunChrisitiansen(ply_femur_filepath1_, ply_femur_filepath2_);
-    RunFemurChrisitiansen();
+    RunChrisitiansenClosed();
+//    RunChrisitiansen(ply_femur_filepath1_, ply_femur_filepath2_);
+//    RunFemurChrisitiansen();
 }
 
 void RunPropagation()
@@ -113,6 +115,27 @@ void RunChrisitiansen(const path& contour1_path, const path& contour2_path)
 
     TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
     mesh_to_ply(mesh, (path(DataDirectory) /= "result_mesh.ply").string());
+}
+
+void RunChrisitiansenClosed()
+{
+    typedef MinSpanPropagation<float> TilingAlgo;
+
+    MinSpanPropagation<float> tiling;
+
+    AssertPathExists(raw_test_filepath_);
+    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(raw_test_filepath_.string(), 512, 512);
+    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
+
+    TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data, 0.5f);
+
+    TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data, 0.2f);
+    for (TilingAlgo::ParallelPlane::iterator it = contour2->begin(); it != contour2->end(); ++it)
+        it->z() += 10;
+
+
+    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
+    mesh_to_ply(mesh, (path(DataDirectory) /= "result_contour.ply").string());
 }
 
 void RunFemurChrisitiansen()
