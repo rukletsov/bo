@@ -97,8 +97,8 @@ public:
         // TODO: assert on data size (at least 2 samples?).
 
         // Set algorithm parameters.
-        RealType delta_min = 1;
-        RealType delta_max = 7;
+        RealType delta_min = 5;
+        RealType delta_max = 10;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
@@ -164,7 +164,8 @@ public:
 
         if (is_closed)
         {
-            current1 = ContourTraverser(Factory::Create(contour1, true));
+            current1 = ContourTraverser(Factory::Create(contour1, 10, true));
+            candidate1 = current1 + 1;
             Point3D direction1 = *(current1 + 1) - *current1;
 
             // Find closest vertex on the second contour and determine direction.
@@ -183,12 +184,14 @@ public:
                 }
             }
 
-            std::cout << "distance: " << c2min_dist << std::endl;
+            // Contour2 traverse direction should be swapped in order to correspond
+            // with the contoru1 direction.
+            Point3D direction2 = *(c2min_it + 1) - *c2min_it;
+            if (direction1 * direction2 < 0)
+                is_forward2 = false;
 
-            //        Point3D supposed_direction = (contour2->front() + 1) - contour2->front();
-            //        if (supposed_direction * direction1 < 0)
-            //            is_forward = false;
-
+            current2 = ContourTraverser(Factory::Create(contour2, 10, true));
+            candidate2 = current2 + 1;
         }
         else
         {

@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
 
     SetUp();
 
+//    RunPropagation();
     RunChrisitiansenClosed();
 //    RunChrisitiansen(ply_femur_filepath1_, ply_femur_filepath2_);
 //    RunFemurChrisitiansen();
@@ -79,17 +80,17 @@ void RunPropagation()
 
     MinSpanPropagation<float> tiling;
 
-//    ASSERT_TRUE(IsFileAvailable(raw_test_filepath_));
-//    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(raw_test_filepath_.string(), 512, 512);
-//    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
+    AssertPathExists(raw_test_filepath_);
+    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(raw_test_filepath_.string(), 512, 512);
+    TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
 //    ASSERT_TRUE(IsFileAvailable(ply_femur_filepath_));
 //    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_femur_filepath_.string());
 //    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
-    AssertPathExists(ply_sheep_filepath_);
-    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
-    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
+//    AssertPathExists(ply_sheep_filepath_);
+//    TilingAlgo::Mesh test_mesh = mesh_from_ply(ply_sheep_filepath_.string());
+//    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
     TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
@@ -132,7 +133,6 @@ void RunChrisitiansenClosed()
     TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data, 0.2f);
     for (TilingAlgo::ParallelPlane::iterator it = contour2->begin(); it != contour2->end(); ++it)
         it->z() += 10;
-
 
     TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
     mesh_to_ply(mesh, (path(DataDirectory) /= "result_contour.ply").string());
