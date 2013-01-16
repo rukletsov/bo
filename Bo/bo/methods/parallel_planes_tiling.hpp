@@ -158,6 +158,8 @@ public:
 
         ContourTraverser current1;
         ContourTraverser current2;
+        ContourTraverser candidate1;
+        ContourTraverser candidate2;
         bool is_forward2 = true;
 
         if (is_closed)
@@ -178,6 +180,7 @@ public:
         else
         {
             current1 = ContourTraverser(Factory::Create(contour1, true));
+            candidate1 = current1 + 1;
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
@@ -186,6 +189,7 @@ public:
                 is_forward2 = false;
 
             current2 = ContourTraverser(Factory::Create(contour2, is_forward2));
+            candidate2 = current2 + 1;
         }
 
         Mesh mesh(contour1->size() + contour2->size());
@@ -194,12 +198,6 @@ public:
         while (true)
         {
 //            std::cout << std::endl << "New iteration" << std::endl;
-//            std::cout << "current2: " << *current2;
-
-            // TODO: cache cnadidates and progress only in case of acceptance.
-            ContourTraverser candidate1 = current1 + 1;
-            ContourTraverser candidate2 = current2 + 1;
-
 //            std::cout << "current1: " << *current1;
 //            std::cout << "current2: " << *current2;
 
@@ -225,32 +223,25 @@ public:
 //                std::cout << "adding2: " << *candidate2;
                 candidate_idx = candidate2.is_valid() ?
                             mesh.add_vertex(*candidate2) : -1;
+                // Add edges to candidate vertex.
+                mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
+
+                current2 = candidate2;
+                current2_idx = candidate_idx;
+                ++candidate2;
             }
             else
             {
 //                std::cout << "adding 1: " << *candidate1;
                 candidate_idx = candidate1.is_valid() ?
                             mesh.add_vertex(*candidate1) : -1;
-            }
+                // Add edges to candidate vertex.
+                mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
 
-            // Add edges to candidate vertex.
-            mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
-
-            // Update current vertices.
-            if (span1_norm > span2_norm)
-            {
-//                std::cout << "updating 2: " << std::endl;
-                current2 = candidate2;
-                current2_idx = candidate_idx;
-            }
-            else
-            {
-//                std::cout << "updating 1: " << std::endl;
                 current1 = candidate1;
                 current1_idx = candidate_idx;
+                ++candidate1;
             }
-
-//            std::cout << "current2: " << *current2;
         }
 
         return mesh;
