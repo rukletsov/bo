@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.19 2013.01.12
+  parallel_planes_tiling.hpp, v 1.0.20 2013.01.16
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -135,7 +135,7 @@ public:
     }
 
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
-                                           ParallelPlaneConstPtr contour2)
+                                           ParallelPlanePtr contour2)
     {
         // TODO: assert on data size (at least 2 samples?).
 
@@ -164,33 +164,36 @@ public:
 
         if (is_closed)
         {
-            current1 = ContourTraverser(Factory::Create(contour1, 10, true));
+            // !!! Temp code for testing BwdCircuitTraverser
+            std::reverse(contour2->begin(), contour2->end());
+
+            current1 = ContourTraverser(Factory::Create(contour1, 5, true));
             candidate1 = current1 + 1;
             Point3D direction1 = *(current1 + 1) - *current1;
 
             // Find closest vertex on the second contour and determine direction.
             // No need of using kd-tree here, since the operation is done once.
             Metric metric(&euclidean_distance<RealType, 3>);
-            ParallelPlane::const_iterator c2min_it = contour2->end();
+            std::size_t c2min_idx = 0;
             RealType c2min_dist = std::numeric_limits<RealType>::max();
-            for (ParallelPlane::const_iterator c2it = contour2->begin();
-                 c2it != contour2->end(); ++c2it)
+
+            for (std::size_t c2_idx = 0; c2_idx < contour2->size(); ++c2_idx)
             {
-                RealType cur_dist = metric(*c2it, *current1);
+                RealType cur_dist = metric(contour2->at(c2_idx), *current1);
                 if (cur_dist < c2min_dist)
                 {
-                    c2min_it = c2it;
+                    c2min_idx = c2_idx;
                     c2min_dist = cur_dist;
                 }
             }
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
-            Point3D direction2 = *(c2min_it + 1) - *c2min_it;
+            Point3D direction2 = contour2->at(c2min_idx + 1) - contour2->at(c2min_idx);
             if (direction1 * direction2 < 0)
                 is_forward2 = false;
 
-            current2 = ContourTraverser(Factory::Create(contour2, 10, true));
+            current2 = ContourTraverser(Factory::Create(contour2, c2min_idx, is_forward2));
             candidate2 = current2 + 1;
         }
         else
