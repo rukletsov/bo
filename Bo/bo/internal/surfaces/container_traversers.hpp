@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.0 2013.01.13
+  container_traversers.hpp, v 1.1.1 2013.01.16
 
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
@@ -134,6 +134,64 @@ protected:
     BwdIterator bwd_it_;
 };
 
+// This traverse rule iterates the container forward from the given iterator to back()
+// and then from front() to the given iterator.
+template <typename Container>
+class FwdCircuitTraverseRule: public TraverseRule<Container>
+{
+public:
+    typedef FwdCircuitTraverseRule<Container> SelfType;
+    typedef typename Container::const_iterator FwdIterator;
+
+    FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
+        TraverseRule(contour), left_elems_(contour->size())
+    {
+        fwd_it_ = contour_->begin();
+        fwd_it_ += start_idx;
+        valid_ = (fwd_it_ != contour_->end());
+    }
+
+    virtual void add(std::size_t offset)
+    {
+        left_elems_ -= offset;
+        if (left_elems_ < 0)
+        {
+            valid_ = false;
+            fwd_it_ = contour_->end();
+            return;
+        }
+
+        std::ptrdiff_t dist_to_end = contour_->end() - fwd_it_;
+        if (dist_to_end > 1)
+            // can be progressed up to the last element, before end()
+            fwd_it_ += offset;
+        else
+        {
+            // move to the end and then start from begin()
+            offset -= dist_to_end;
+            fwd_it_ = contour_->begin();
+            // progress iterator by remaining elements
+            fwd_it_ += offset;
+        }
+    }
+
+    virtual Reference dereference() const
+    { return *fwd_it_; }
+
+    virtual bool check_validity() const
+    { return valid_; }
+
+    virtual ~FwdCircuitTraverseRule()
+    { }
+
+    BO_TRAVERSE_RULE_CLONE_IMPL
+
+protected:
+    FwdIterator fwd_it_;
+    std::ptrdiff_t left_elems_;
+    bool valid_;
+};
+
 // This class represents a constant container traverser. The actual behaviour depends
 // on the traverse rule specified. Turns into invalid state if the traverse rule
 // indicates that no more elements can be accessed in the container.
@@ -235,13 +293,29 @@ struct TraverseRuleFactory
             return rule_ptr;                                                \
         }
 
+
+    static TraverseRulePtr FwdCircuit(ContainerConstPtr container_ptr, std::size_t start_idx)
+    {
+        typedef FwdCircuitTraverseRule<Container> Rule;
+        TraverseRulePtr rule_ptr(new Rule(container_ptr, start_idx));
+        return rule_ptr;
+    }
+
     BO_RULE_FACTORY_FUNCTION(FwdOnePass)
     BO_RULE_FACTORY_FUNCTION(BwdOnePass)
 
-    // TODO: introduce enum instead of bool flags.
     static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
     {
         return (is_forward ? FwdOnePass(container_ptr) : BwdOnePass(container_ptr));
+    }
+
+    static TraverseRulePtr Create(ContainerConstPtr container_ptr,
+                                std::size_t start_idx, bool is_forward)
+    {
+        if ((start_idx == 0) || (start_idx == container_ptr->size() - 1))
+            return Create(container_ptr, is_forward);
+        else
+            return (FwdCircuit(container_ptr, start_idx));
     }
 };
 
