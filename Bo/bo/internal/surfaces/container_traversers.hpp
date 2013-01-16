@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.1 2013.01.16
+  container_traversers.hpp, v 1.1.2 2013.01.16
 
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
@@ -134,8 +134,8 @@ protected:
     BwdIterator bwd_it_;
 };
 
-// This traverse rule iterates the container forward from the given iterator to back()
-// and then from front() to the given iterator.
+// This traverse rule iterates the container forward from the given item to back()
+// and then from front() to the given item included.
 template <typename Container>
 class FwdCircuitTraverseRule: public TraverseRule<Container>
 {
@@ -144,7 +144,7 @@ public:
     typedef typename Container::const_iterator FwdIterator;
 
     FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        TraverseRule(contour), left_elems_(contour->size())
+        TraverseRule(contour), left_items_(contour->size())
     {
         fwd_it_ = contour_->begin();
         fwd_it_ += start_idx;
@@ -153,8 +153,8 @@ public:
 
     virtual void add(std::size_t offset)
     {
-        left_elems_ -= offset;
-        if (left_elems_ < 0)
+        left_items_ -= offset;
+        if (left_items_ < 0)
         {
             valid_ = false;
             fwd_it_ = contour_->end();
@@ -188,7 +188,65 @@ public:
 
 protected:
     FwdIterator fwd_it_;
-    std::ptrdiff_t left_elems_;
+    std::ptrdiff_t left_items_;
+    bool valid_;
+};
+
+// This traverse rule iterates the container backwards from the given item to front()
+// and then from back() to the given item included.
+template <typename Container>
+class BwdCircuitTraverseRule: public TraverseRule<Container>
+{
+public:
+    typedef BwdCircuitTraverseRule<Container> SelfType;
+    typedef typename Container::const_reverse_iterator BwdIterator;
+
+    BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
+        TraverseRule(contour), left_items_(contour->size())
+    {
+        bwd_it_ = contour_->rbegin();
+        bwd_it_ += (contour_->size() - 1 - start_idx);
+        valid_ = (bwd_it_ != contour_->rend());
+    }
+
+    virtual void add(std::size_t offset)
+    {
+        left_items_ -= offset;
+        if (left_items_ < 0)
+        {
+            valid_ = false;
+            bwd_it_ = contour_->rend();
+            return;
+        }
+
+        std::ptrdiff_t dist_to_end = contour_->rend() - bwd_it_;
+        if (dist_to_end > 1)
+            // can be progressed up to the first element, after rend()
+            bwd_it_ += offset;
+        else
+        {
+            // move to the front and then start from rbegin()
+            offset -= dist_to_end;
+            bwd_it_ = contour_->rbegin();
+            // progress iterator by remaining elements
+            bwd_it_ += offset;
+        }
+    }
+
+    virtual Reference dereference() const
+    { return *bwd_it_; }
+
+    virtual bool check_validity() const
+    { return valid_; }
+
+    virtual ~BwdCircuitTraverseRule()
+    { }
+
+    BO_TRAVERSE_RULE_CLONE_IMPL
+
+protected:
+    BwdIterator bwd_it_;
+    std::ptrdiff_t left_items_;
     bool valid_;
 };
 
@@ -301,6 +359,13 @@ struct TraverseRuleFactory
         return rule_ptr;
     }
 
+    static TraverseRulePtr BwdCircuit(ContainerConstPtr container_ptr, std::size_t start_idx)
+    {
+        typedef BwdCircuitTraverseRule<Container> Rule;
+        TraverseRulePtr rule_ptr(new Rule(container_ptr, start_idx));
+        return rule_ptr;
+    }
+
     BO_RULE_FACTORY_FUNCTION(FwdOnePass)
     BO_RULE_FACTORY_FUNCTION(BwdOnePass)
 
@@ -315,7 +380,8 @@ struct TraverseRuleFactory
         if ((start_idx == 0) || (start_idx == container_ptr->size() - 1))
             return Create(container_ptr, is_forward);
         else
-            return (FwdCircuit(container_ptr, start_idx));
+            return (is_forward ? FwdCircuit(container_ptr, start_idx) :
+                                 BwdCircuit(container_ptr, start_idx));
     }
 };
 
