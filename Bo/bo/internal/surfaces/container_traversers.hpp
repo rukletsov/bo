@@ -345,7 +345,7 @@ struct TraverseRuleFactory
     typedef TraverseRule<Container> TraverseRuleType;
     typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
 
-    #define BO_RULE_FACTORY_FUNCTION(RuleName)                              \
+    #define BO_RULE_UNARY_FACTORY_FUNCTION(RuleName)                        \
         static TraverseRulePtr RuleName(ContainerConstPtr container_ptr)    \
         {                                                                   \
             typedef RuleName##TraverseRule<Container> Rule;                 \
@@ -353,23 +353,19 @@ struct TraverseRuleFactory
             return rule_ptr;                                                \
         }
 
+    #define BO_RULE_BINARY_FACTORY_FUNCTION(RuleName)                       \
+        static TraverseRulePtr RuleName(ContainerConstPtr container_ptr,    \
+                                        std::size_t start_idx)              \
+        {                                                                   \
+            typedef RuleName##TraverseRule<Container> Rule;                 \
+            TraverseRulePtr rule_ptr(new Rule(container_ptr, start_idx));   \
+            return rule_ptr;                                                \
+        }
 
-    static TraverseRulePtr FwdCircuit(ContainerConstPtr container_ptr, std::size_t start_idx)
-    {
-        typedef FwdCircuitTraverseRule<Container> Rule;
-        TraverseRulePtr rule_ptr(new Rule(container_ptr, start_idx));
-        return rule_ptr;
-    }
-
-    static TraverseRulePtr BwdCircuit(ContainerConstPtr container_ptr, std::size_t start_idx)
-    {
-        typedef BwdCircuitTraverseRule<Container> Rule;
-        TraverseRulePtr rule_ptr(new Rule(container_ptr, start_idx));
-        return rule_ptr;
-    }
-
-    BO_RULE_FACTORY_FUNCTION(FwdOnePass)
-    BO_RULE_FACTORY_FUNCTION(BwdOnePass)
+    BO_RULE_UNARY_FACTORY_FUNCTION(FwdOnePass)
+    BO_RULE_UNARY_FACTORY_FUNCTION(BwdOnePass)
+    BO_RULE_BINARY_FACTORY_FUNCTION(FwdCircuit)
+    BO_RULE_BINARY_FACTORY_FUNCTION(BwdCircuit)
 
     static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
     {
