@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.2 2013.01.16
+  container_traversers.hpp, v 1.1.3 2013.01.16
 
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
@@ -148,30 +148,36 @@ public:
     {
         fwd_it_ = contour_->begin();
         fwd_it_ += start_idx;
-        valid_ = (fwd_it_ != end_it_);
     }
 
     virtual void add(std::size_t offset)
     {
-        left_items_ -= offset;
-        if (left_items_ < 0)
+        // Do nothing for already invalidated traverser.
+        if (check_validity())
         {
-            valid_ = false;
-            fwd_it_ = end_it_;
-            return;
-        }
-
-        std::ptrdiff_t dist_to_end = end_it_ - fwd_it_;
-        if (dist_to_end > 1)
-            // can be progressed up to the last element, before end()
-            fwd_it_ += offset;
-        else
-        {
-            // move to the end and then start from begin()
-            offset -= dist_to_end;
-            fwd_it_ = contour_->begin();
-            // progress iterator by remaining elements
-            fwd_it_ += offset;
+            // Check boundary condition.
+            left_items_ -= offset;
+            if (left_items_ >= 0)
+            {
+                // Check if we have to jump to the beginning of the container.
+                std::size_t dist_to_end = end_it_ - fwd_it_;
+                if (dist_to_end > offset)
+                {
+                    // Iterator's new position is before end().
+                    fwd_it_ += offset;
+                }
+                else
+                {
+                    // Start iterating from the beginning, mind skipped items.
+                    fwd_it_ = contour_->begin();
+                    fwd_it_ += (offset - dist_to_end);
+                }
+            }
+            else
+            {
+                // Invalidate traverser.
+                fwd_it_ = end_it_;
+            }
         }
     }
 
@@ -179,7 +185,7 @@ public:
     { return *fwd_it_; }
 
     virtual bool check_validity() const
-    { return valid_; }
+    { return (fwd_it_ != end_it_); }
 
     virtual ~FwdCircuitTraverseRule()
     { }
@@ -190,7 +196,6 @@ protected:
     FwdIterator fwd_it_;
     FwdIterator end_it_;
     std::ptrdiff_t left_items_;
-    bool valid_;
 };
 
 // This traverse rule iterates the container backwards from the given item to front()
@@ -207,30 +212,36 @@ public:
     {
         bwd_it_ = contour_->rbegin();
         bwd_it_ += (contour_->size() - 1 - start_idx);
-        valid_ = (bwd_it_ != end_it_);
     }
 
     virtual void add(std::size_t offset)
     {
-        left_items_ -= offset;
-        if (left_items_ < 0)
+        // Do nothing for already invalidated traverser.
+        if (check_validity())
         {
-            valid_ = false;
-            bwd_it_ = end_it_;
-            return;
-        }
-
-        std::ptrdiff_t dist_to_end = end_it_ - bwd_it_;
-        if (dist_to_end > 1)
-            // can be progressed up to the first element, after rend()
-            bwd_it_ += offset;
-        else
-        {
-            // move to the front and then start from rbegin()
-            offset -= dist_to_end;
-            bwd_it_ = contour_->rbegin();
-            // progress iterator by remaining elements
-            bwd_it_ += offset;
+            // Check boundary condition.
+            left_items_ -= offset;
+            if (left_items_ >= 0)
+            {
+                // Check if we have to jump to the end of the container.
+                std::size_t dist_to_end = end_it_ - bwd_it_;
+                if (dist_to_end > offset)
+                {
+                    // Iterator's new position is after rend().
+                    bwd_it_ += offset;
+                }
+                else
+                {
+                    // Start iterating from the end backwards, mind skipped itemd.
+                    bwd_it_ = contour_->rbegin();
+                    bwd_it_ += (offset - dist_to_end);
+                }
+            }
+            else
+            {
+                // Invalidate traverser.
+                bwd_it_ = end_it_;
+            }
         }
     }
 
@@ -238,7 +249,7 @@ public:
     { return *bwd_it_; }
 
     virtual bool check_validity() const
-    { return valid_; }
+    { return (bwd_it_ != end_it_); }
 
     virtual ~BwdCircuitTraverseRule()
     { }
@@ -249,7 +260,6 @@ protected:
     BwdIterator bwd_it_;
     BwdIterator end_it_;
     std::ptrdiff_t left_items_;
-    bool valid_;
 };
 
 // This class represents a constant container traverser. The actual behaviour depends
