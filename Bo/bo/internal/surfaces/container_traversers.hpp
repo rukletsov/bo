@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.3 2013.01.16
+  container_traversers.hpp, v 1.1.4 2013.01.16
 
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
@@ -84,7 +84,8 @@ public:
     typedef FwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_iterator FwdIterator;
 
-    FwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
+    FwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour),
+        end_it_(contour->end())
     { fwd_it_ = contour_->begin(); }
 
     virtual void add(std::size_t offset)
@@ -94,7 +95,7 @@ public:
     { return *fwd_it_; }
 
     virtual bool check_validity() const
-    { return (fwd_it_ != contour_->end()); }
+    { return (fwd_it_ != end_it_); }
 
     virtual ~FwdOnePassTraverseRule()
     { }
@@ -103,6 +104,7 @@ public:
 
 protected:
     FwdIterator fwd_it_;
+    FwdIterator end_it_;
 };
 
 // This traverse rule iterates the container backward from rbegin() to rend().
@@ -113,7 +115,8 @@ public:
     typedef BwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_reverse_iterator BwdIterator;
 
-    BwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour)
+    BwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour),
+        end_it_(contour->rend())
     { bwd_it_ = contour_->rbegin(); }
 
     virtual void add(std::size_t offset)
@@ -123,7 +126,7 @@ public:
     { return *bwd_it_; }
 
     virtual bool check_validity() const
-    { return (bwd_it_ != contour_->rend()); }
+    { return (bwd_it_ != end_it_); }
 
     virtual ~BwdOnePassTraverseRule()
     { }
@@ -132,23 +135,20 @@ public:
 
 protected:
     BwdIterator bwd_it_;
+    BwdIterator end_it_;
 };
 
 // This traverse rule iterates the container forward from the given item to back()
 // and then from front() to the given item included.
 template <typename Container>
-class FwdCircuitTraverseRule: public TraverseRule<Container>
+class FwdCircuitTraverseRule: public FwdOnePassTraverseRule<Container>
 {
 public:
     typedef FwdCircuitTraverseRule<Container> SelfType;
-    typedef typename Container::const_iterator FwdIterator;
 
     FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        TraverseRule(contour), left_items_(contour->size()), end_it_(contour->end())
-    {
-        fwd_it_ = contour_->begin();
-        fwd_it_ += start_idx;
-    }
+        FwdOnePassTraverseRule(contour), left_items_(contour->size())
+    { fwd_it_ += start_idx; }
 
     virtual void add(std::size_t offset)
     {
@@ -181,38 +181,26 @@ public:
         }
     }
 
-    virtual Reference dereference() const
-    { return *fwd_it_; }
-
-    virtual bool check_validity() const
-    { return (fwd_it_ != end_it_); }
-
     virtual ~FwdCircuitTraverseRule()
     { }
 
     BO_TRAVERSE_RULE_CLONE_IMPL
 
 protected:
-    FwdIterator fwd_it_;
-    FwdIterator end_it_;
     std::ptrdiff_t left_items_;
 };
 
 // This traverse rule iterates the container backwards from the given item to front()
 // and then from back() to the given item included.
 template <typename Container>
-class BwdCircuitTraverseRule: public TraverseRule<Container>
+class BwdCircuitTraverseRule: public BwdOnePassTraverseRule<Container>
 {
 public:
     typedef BwdCircuitTraverseRule<Container> SelfType;
-    typedef typename Container::const_reverse_iterator BwdIterator;
 
     BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        TraverseRule(contour), left_items_(contour->size()), end_it_(contour->rend())
-    {
-        bwd_it_ = contour_->rbegin();
-        bwd_it_ += (contour_->size() - 1 - start_idx);
-    }
+        BwdOnePassTraverseRule(contour), left_items_(contour->size())
+    { bwd_it_ += (contour_->size() - 1 - start_idx); }
 
     virtual void add(std::size_t offset)
     {
@@ -245,22 +233,15 @@ public:
         }
     }
 
-    virtual Reference dereference() const
-    { return *bwd_it_; }
-
-    virtual bool check_validity() const
-    { return (bwd_it_ != end_it_); }
-
     virtual ~BwdCircuitTraverseRule()
     { }
 
     BO_TRAVERSE_RULE_CLONE_IMPL
 
 protected:
-    BwdIterator bwd_it_;
-    BwdIterator end_it_;
     std::ptrdiff_t left_items_;
 };
+
 
 // This class represents a constant container traverser. The actual behaviour depends
 // on the traverse rule specified. Turns into invalid state if the traverse rule
@@ -345,6 +326,7 @@ private:
     bool valid_;
     TraverseRulePtr rule_;
 };
+
 
 // Factory for traverse rules. Simplifies construction of traversers with particular
 // traverse rules.
