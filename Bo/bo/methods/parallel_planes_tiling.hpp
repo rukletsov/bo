@@ -142,7 +142,7 @@ public:
         // TODO: Determine whether both contours are closed or not. This determines the
         // algorithm's behaviour.
 
-        bool is_closed = false;
+        bool is_closed = true;
 
         // 1. Contours are closed.
         // Choose a vertex and a direction on the first contour.
@@ -167,10 +167,23 @@ public:
             current1 = ContourTraverser(Factory::Create(contour1, true));
             Point3D direction1 = *(current1 + 1) - *current1;
 
-            Tree tree2(contour2->begin(), contour2->end(), std::ptr_fun(point3D_accessor_));
-
             // Find closest vertex on the second contour and determine direction.
-            //std::pair<typename Tree::const_iterator, RealType> tree.find_nearest(*current1)
+            // No need of using kd-tree here, since the operation is done once.
+            Metric metric(&euclidean_distance<RealType, 3>);
+            ParallelPlane::const_iterator c2min_it = contour2->end();
+            RealType c2min_dist = std::numeric_limits<RealType>::max();
+            for (ParallelPlane::const_iterator c2it = contour2->begin();
+                 c2it != contour2->end(); ++c2it)
+            {
+                RealType cur_dist = metric(*c2it, *current1);
+                if (cur_dist < c2min_dist)
+                {
+                    c2min_it = c2it;
+                    c2min_dist = cur_dist;
+                }
+            }
+
+            std::cout << "distance: " << c2min_dist << std::endl;
 
             //        Point3D supposed_direction = (contour2->front() + 1) - contour2->front();
             //        if (supposed_direction * direction1 < 0)
@@ -197,10 +210,6 @@ public:
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)
         {
-//            std::cout << std::endl << "New iteration" << std::endl;
-//            std::cout << "current1: " << *current1;
-//            std::cout << "current2: " << *current2;
-
             // This guarantees that when one contour ends, points will be sampled
             // solely from the other one.
             RealType span1_norm = (candidate1.is_valid()) ?
@@ -210,8 +219,6 @@ public:
                         (*(candidate2) - *current1).euclidean_norm() :
                         std::numeric_limits<RealType>::max();
 
-//            std::cout << "span1: " << span1_norm << "; span2: " << span2_norm << std::endl;
-
             // Means both contours are exhausted.
             if (!candidate1.is_valid() && !candidate2.is_valid())
                 break;
@@ -220,9 +227,9 @@ public:
             std::size_t candidate_idx;
             if (span1_norm > span2_norm)
             {
-//                std::cout << "adding2: " << *candidate2;
                 candidate_idx = candidate2.is_valid() ?
                             mesh.add_vertex(*candidate2) : -1;
+
                 // Add edges to candidate vertex.
                 mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
 
@@ -232,7 +239,6 @@ public:
             }
             else
             {
-//                std::cout << "adding 1: " << *candidate1;
                 candidate_idx = candidate1.is_valid() ?
                             mesh.add_vertex(*candidate1) : -1;
                 // Add edges to candidate vertex.
