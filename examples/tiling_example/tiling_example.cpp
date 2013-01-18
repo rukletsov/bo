@@ -171,12 +171,11 @@ void ChrisitiansenFemurFull()
     typedef MinSpanPropagation<float> TilingAlgo;
     typedef std::vector<path> ContourData;
     typedef std::vector<TilingAlgo::ParallelPlanePtr> Contours;
-    typedef std::vector<TilingAlgo::Mesh> Meshes;
 
     MinSpanPropagation<float> tiling;
     ContourData contour_data;
     Contours contours;
-    Meshes meshes;
+    TilingAlgo::Mesh result_mesh;
 
     // Load planes paths.
     AssertPathExists(paths.FemurInDir);
@@ -203,20 +202,14 @@ void ChrisitiansenFemurFull()
         contours.push_back(contour);
     }
 
-    // Tile pair of contours.
-    int i = 1;
+    // Tile pair of contours and join it with the result mesh.
     for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
     {
         TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it);
-        std::string outpath = (paths.FemurOutDir /
-                (boost::format("result%1%-%2%.ply") % (i - 1) % i).str()).string();
-        mesh_to_ply(mesh, outpath);
-
-        //meshes.push_back(tiling.christiansen_triangulation(*(it - 1), *it));
-        ++i;
+        result_mesh.join(mesh);
     }
 
-    // Stitch stripes.
+    mesh_to_ply(result_mesh, paths.PlyFemurOutMeshPath.string());
 }
 
 
