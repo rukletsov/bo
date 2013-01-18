@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/function.hpp>
 
 #include "bo/mesh.hpp"
@@ -82,7 +83,7 @@ public:
 
     static ParallelPlanePtr load_plane(Image2D data)
     {
-        ParallelPlanePtr plane(new ParallelPlane);
+        ParallelPlanePtr plane = boost::make_shared<ParallelPlane>();
 
         for (std::size_t row = 0; row < data.height(); ++row)
             for (std::size_t col = 0; col < data.width(); ++col)
@@ -123,7 +124,7 @@ public:
                 tree, delta_min, delta_max, 1000, metric, ratio);
 
         // Glue propagation results together.
-        ParallelPlanePtr result(new ParallelPlane);
+        ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
         for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
              rit != attempt2.points->rend(); ++rit)
             result->push_back(*rit);
@@ -164,7 +165,7 @@ public:
 
         if (is_closed)
         {
-            // !!! Temp code for testing BwdCircuitTraverser
+            // !!! Temp code for testing BwdCircuitTraverser.
             std::reverse(contour2->begin(), contour2->end());
 
             current1 = ContourTraverser(Factory::Create(contour1, 5, true));
@@ -309,7 +310,7 @@ protected:
     struct PropagationResult
     {
         PropagationResult(): maxsize_reached(false), hole_encountered(false),
-            points(new ParallelPlane)
+            points(boost::make_shared<ParallelPlane>())
         { }
 
         bool maxsize_reached;
