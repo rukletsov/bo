@@ -1,11 +1,11 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.3.2 2012.09.16
+  mesh.hpp, v 1.3.3 2013.01.18
 
   Triangular mesh class.
 
-  Copyright (c) 2010 - 2012
+  Copyright (c) 2010 - 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -59,8 +59,9 @@ namespace bo {
 template <typename T>
 class Mesh
 {
-
 public:
+    typedef Mesh<T> SelfType;
+
     // Mesh vertices. Their order shouldn't be changed, since other collections 
     // use vertex indices as references.
     typedef Vector<T, 3> Vertex;
@@ -112,6 +113,10 @@ public:
     // euclidean norm of the difference between the given point and the closest to it
     // point on the mesh.
     double distance(const Vertex& point) const;
+
+    // Joins the given mesh into the current one. First adds points, then recalculates
+    // faces and finally adds faces.
+    SelfType& join(const SelfType& other);
 
     // Returns data from connectivity structures. Throws if face index is out of range.
     const AdjacentVerticesPerVertex& get_neighbouring_vertices(
@@ -389,6 +394,36 @@ double Mesh<T>::distance(const Vertex& point) const
 {
     return
         methods::euclidean_distance_d(get_closest_point(point), point);
+}
+
+template <typename T>
+Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
+{
+    // Cache vertex and face count.
+    std::size_t other_size = other.vertices_.size();
+
+    // Lookup table for faces transformation.
+    std::vector<std::size_t> lookup_table(other_size);
+
+    // Insert vertices and fill lookup table.
+    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
+    {
+        std::size_t new_idx = this->add_vertex(other.vertices_[other_idx]);
+        lookup_table[other_idx] = new_idx;
+    }
+
+    // Transform and insert faces.
+    typename Faces::const_iterator other_end = other.faces_.end();
+    for (typename Faces::const_iterator old_face = other.faces_.begin();
+         old_face != other_end; ++old_face)
+    {
+        std::size_t new_a = lookup_table[old_face->A()];
+        std::size_t new_b = lookup_table[old_face->B()];
+        std::size_t new_c = lookup_table[old_face->C()];
+        this->add_face(Face(new_a, new_b, new_c));
+    }
+
+    return (*this);
 }
 
 template <typename T>

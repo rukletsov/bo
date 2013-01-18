@@ -15,7 +15,7 @@ extern std::string DataDirectory;
 
 typedef Mesh<double> MeshOfDoubles;
 
-// Create a so-called "text fixture" using base class form GTEST.
+// Create a so-called "text fixture".
 class MeshTest: public testing::Test
 {
 protected:

@@ -56,7 +56,7 @@
 namespace bo {
 namespace methods {
 
-namespace detail{
+namespace detail {
 
 // Face centroid and id used for k-d tree based face search.
 template <typename T>
