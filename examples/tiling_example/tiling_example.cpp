@@ -140,7 +140,7 @@ void ChrisitiansenFemur()
     TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
+    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2, false);
     mesh_to_ply(mesh, paths.PlyFemurOutPath0102.string());
 }
 
@@ -162,7 +162,7 @@ void ChrisitiansenClosed()
     TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
+    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2, true);
     mesh_to_ply(mesh, paths.PlyClosedOutMeshPath.string());
 }
 
@@ -205,7 +205,7 @@ void ChrisitiansenFemurFull()
     // Tile pair of contours and join it with the result mesh.
     for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
     {
-        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it);
+        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it, false);
         result_mesh.join(mesh);
     }
 

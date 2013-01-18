@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.20 2013.01.16
+  parallel_planes_tiling.hpp, v 1.0.21 2013.01.16
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -136,14 +136,12 @@ public:
     }
 
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
-                                           ParallelPlanePtr contour2)
+                                           ParallelPlanePtr contour2, bool is_closed)
     {
         // TODO: assert on data size (at least 2 samples?).
 
         // TODO: Determine whether both contours are closed or not. This determines the
         // algorithm's behaviour.
-
-        bool is_closed = true;
 
         // 1. Contours are closed.
         // Choose a vertex and a direction on the first contour.
