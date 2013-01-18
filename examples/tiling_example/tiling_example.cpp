@@ -83,7 +83,8 @@ void PropagateClosed()
     MinSpanPropagation<float> tiling;
 
     AssertPathExists(paths.RawClosedPath);
-    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(paths.RawClosedPath.string(), 512, 512);
+    TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(
+                paths.RawClosedPath.string(), 512, 512);
     TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
@@ -98,7 +99,8 @@ void PropagateFemur01()
 
     AssertPathExists(paths.PlyFemurPath01);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(paths.PlyFemurPath01.string());
-    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data =
+        boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
     TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
@@ -112,7 +114,8 @@ void PropagateSheep()
 
     AssertPathExists(paths.PlySheepPath);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(paths.PlySheepPath.string());
-    TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(test_mesh.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data =
+            boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
     TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
@@ -126,11 +129,13 @@ void ChrisitiansenFemur()
 
     AssertPathExists(paths.PlyFemurPath01);
     TilingAlgo::Mesh test_mesh1 = mesh_from_ply(paths.PlyFemurPath01.string());
-    TilingAlgo::ParallelPlanePtr plane_data1(new TilingAlgo::ParallelPlane(test_mesh1.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data1 =
+            boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh1.get_all_vertices());
 
     AssertPathExists(paths.PlyFemurPath02);
     TilingAlgo::Mesh test_mesh2 = mesh_from_ply(paths.PlyFemurPath02.string());
-    TilingAlgo::ParallelPlanePtr plane_data2(new TilingAlgo::ParallelPlane(test_mesh2.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data2 =
+            boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data2, 0.2f);
@@ -146,11 +151,13 @@ void ChrisitiansenClosed()
 
     AssertPathExists(paths.PlyClosedPath01);
     TilingAlgo::Mesh test_mesh1 = mesh_from_ply(paths.PlyClosedPath01.string());
-    TilingAlgo::ParallelPlanePtr plane_data1(new TilingAlgo::ParallelPlane(test_mesh1.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data1 =
+            boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh1.get_all_vertices());
 
     AssertPathExists(paths.PlyClosedPath02);
     TilingAlgo::Mesh test_mesh2 = mesh_from_ply(paths.PlyClosedPath02.string());
-    TilingAlgo::ParallelPlanePtr plane_data2(new TilingAlgo::ParallelPlane(test_mesh2.get_all_vertices()));
+    TilingAlgo::ParallelPlanePtr plane_data2 =
+            boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::ParallelPlanePtr contour2 = tiling.propagate(plane_data2, 0.2f);
@@ -189,7 +196,8 @@ void ChrisitiansenFemurFull()
     {
         AssertPathExists(*it);
         TilingAlgo::Mesh mesh = mesh_from_ply(it->string());
-        TilingAlgo::ParallelPlanePtr plane_data(new TilingAlgo::ParallelPlane(mesh.get_all_vertices()));
+        TilingAlgo::ParallelPlanePtr plane_data =
+                boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
         TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
 
         contours.push_back(contour);
