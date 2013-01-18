@@ -43,22 +43,4 @@ int main(int argc, char* argv[])
 
     // Run all defined tests.
     return RUN_ALL_TESTS();
-
-
-
-    //        |
-    // TODO:  |  move this to mesh_unittest.
-    //        V
-
-    //// Load mesh.
-    //bo::Mesh mesh = bo::Mesh::from_ply(std::string("..\\data\\mesh.ply"));
-
-    //// Load point cloud.
-    //
-
-    //std::cout << mesh << std::endl;
-
-    //bo::Mesh::Normal normal = mesh.get_vertex_normal(1);
-
-    ////mesh.to_ply(std::string("..\\debug\\pts2.ply"));
 }
