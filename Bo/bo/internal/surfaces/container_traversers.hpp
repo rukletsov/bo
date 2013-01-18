@@ -39,6 +39,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <algorithm>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 
 namespace bo {
@@ -254,7 +255,7 @@ public:
     typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
 
     typedef TraverseRule<Container> TraverseRuleType;
-    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
+    typedef std::auto_ptr<TraverseRuleType> TraverseRulePtr;
 
     ContainerConstTraverser(): valid_(false)
     { }
@@ -312,7 +313,7 @@ public:
     void swap(SelfType& other)
     {
         std::swap(valid_, other.valid_);
-        rule_.swap(other.rule_);
+        std::swap(rule_, other.rule_);
     }
 
     bool is_valid() const
@@ -333,7 +334,7 @@ struct TraverseRuleFactory
 {
     typedef boost::shared_ptr<const Container> ContainerConstPtr;
     typedef TraverseRule<Container> TraverseRuleType;
-    typedef boost::shared_ptr<TraverseRuleType> TraverseRulePtr;
+    typedef std::auto_ptr<TraverseRuleType> TraverseRulePtr;
 
     #define BO_RULE_UNARY_FACTORY_FUNCTION(RuleName)                        \
         static TraverseRulePtr RuleName(ContainerConstPtr container_ptr)    \
