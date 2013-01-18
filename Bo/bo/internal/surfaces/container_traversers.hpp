@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.4 2013.01.16
+  container_traversers.hpp, v 1.1.5 2013.01.18
 
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
@@ -362,14 +362,17 @@ struct TraverseRuleFactory
 
     static TraverseRulePtr Create(ContainerConstPtr container_ptr, bool is_forward)
     {
-        return (is_forward ? FwdOnePass(container_ptr) : BwdOnePass(container_ptr));
+        TraverseRulePtr retvalue = (is_forward ? FwdOnePass(container_ptr) :
+                                                 BwdOnePass(container_ptr));
+        return retvalue;
     }
 
     static TraverseRulePtr Create(ContainerConstPtr container_ptr,
                                 std::size_t start_idx, bool is_forward)
     {
-        return (is_forward ? FwdCircuit(container_ptr, start_idx) :
-                             BwdCircuit(container_ptr, start_idx));
+        TraverseRulePtr retvalue = (is_forward ? FwdCircuit(container_ptr, start_idx) :
+                                                 BwdCircuit(container_ptr, start_idx));
+        return retvalue;
     }
 };
 
