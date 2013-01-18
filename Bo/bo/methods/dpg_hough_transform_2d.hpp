@@ -161,7 +161,7 @@ private:
     {
         // Sort the levels: level1 <= level2.
         if (level1 > level2)
-            std::swap<RealType>(level1, level2);
+            std::swap(level1, level2);
 
         // The origin point and the direction.
         Point4D p = seg.first.first;
@@ -184,7 +184,7 @@ private:
 
         // Sort the coordinates: t1 <= t2.
         if (t1 > t2)
-            std::swap<RealType>(t1, t2);
+            std::swap(t1, t2);
 
         // Cut the segment.
         for (int i = 0; i < 2; ++i)
