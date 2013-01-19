@@ -36,6 +36,10 @@ protected:
         pb7_ = Space<float>::Point4D(0.1f, 0.f, 0.f, 0.f);
         pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
         space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_));
+
+        // Space subdivision.
+        pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
+        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -55,7 +59,9 @@ protected:
     Space<float>::Point4D pb6_;
     Space<float>::Point4D pb7_;
     Space<float>::Point4D pb8_;
+    Space<float>::Point4D pb9_;
     Space<float> space1_;
+    Space<float> space2_;
 
 
 };
@@ -124,4 +130,14 @@ TEST_F(HoughTransformTest, SpaceLineIntersection)
 
     EXPECT_FLOAT_EQ(space1_.get_votes(), std::sqrt(1 + 0.4f * 0.4f + 0.5f * 0.5f));
 
+}
+
+TEST_F(HoughTransformTest, SpaceSubdivision)
+{
+    std::size_t n = 5;
+
+    space2_.subdivide(n);
+    detail::Space<float>::Spaces subs = space2_.get_subspaces();
+
+    EXPECT_EQ(subs.size(), n * n * n * n);
 }
