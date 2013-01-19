@@ -336,8 +336,6 @@ private:
     // the given element of the alpha-table.
     Point2D find_intersection(const Reference &reference_points, const ATableElement &e)
     {
-        Point2D p;
-
         // Reference points.
         Point2D p1 = reference_points.first;
         Point2D p2 = reference_points.second;
@@ -371,8 +369,6 @@ private:
         RealType t = ab[0] / (v1[0] - v2[0] * sina / sinb);
 
         return p1 + t * v1;
-
-        return p;
     }
 
 
