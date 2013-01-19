@@ -93,6 +93,7 @@ public:
         return plane;
     }
 
+    // TODO: put this into complex_propagation.hpp.
     static ParallelPlanePtr propagate(ParallelPlaneConstPtr plane, RealType ratio)
     {
         // TODO: assert on data size (at least 2 samples?).
@@ -135,6 +136,7 @@ public:
         return result;
     }
 
+    // TODO: put this into triangulation.hpp.
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
                                            ParallelPlanePtr contour2, bool is_closed)
     {
