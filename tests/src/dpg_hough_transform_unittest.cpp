@@ -40,6 +40,30 @@ protected:
         // Space subdivision.
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
         space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
+
+        // Object detection.
+        // Generate a circle model with radius 1 and center (0,0).
+        for (float a = 0; a < boost::math::constants::pi<float>(); a += 0.01)
+        {
+            DualPointGHT<float>::Point2D p(std::cos(a), std::sin(a));
+            DualPointGHT<float>::Point2D tan(-std::sin(a), std::cos(a));
+
+            model.push_back( DualPointGHT<float>::Feature(p, tan));
+        }
+        // Generate a circle object with radius 1 and center (2, 2).
+        for (float a = 0; a < boost::math::constants::pi<float>(); a += 0.01)
+        {
+            DualPointGHT<float>::Point2D p(2 + std::cos(a), 2 + std::sin(a));
+            DualPointGHT<float>::Point2D tan(-std::sin(a), std::cos(a));
+
+            object.push_back( DualPointGHT<float>::Feature(p, tan));
+        }
+        // Create reference points.
+        ref3_ = DualPointGHT<float>::Point2D(-0.1f,0.f);
+        ref4_ = DualPointGHT<float>::Point2D(0.1f,0.f);
+        // Object recognition area.
+        bbox = DualPointGHT<float>::RecognitionArea(DualPointGHT<float>::Point2D(0.f, 0.f),
+                                                    DualPointGHT<float>::Point2D(10.f, 10.f));
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -63,7 +87,11 @@ protected:
     Space<float> space1_;
     Space<float> space2_;
 
-
+    DualPointGHT<float>::Features model;
+    DualPointGHT<float>::Features object;
+    DualPointGHT<float>::RecognitionArea bbox;
+    DualPointGHT<float>::Point2D ref3_;
+    DualPointGHT<float>::Point2D ref4_;
 };
 
 TEST_F(HoughTransformTest, EncodeReconstruct)
@@ -140,4 +168,15 @@ TEST_F(HoughTransformTest, SpaceSubdivision)
     detail::Space<float>::Spaces subs = space2_.get_subspaces();
 
     EXPECT_EQ(subs.size(), n * n * n * n);
+}
+
+TEST_F(HoughTransformTest, ObjectDetection)
+{
+    // Create dual-point reference.
+    DualPointGHT<float>::Reference ref(ref3_, ref4_);
+
+    // Create a transformation and encode the feature.
+    DualPointGHT<float> ght(model, ref);
+
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(object, 0.9f, 2, 10, bbox);
 }
