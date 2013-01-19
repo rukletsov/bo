@@ -106,12 +106,17 @@ public:
         return subspaces_;
     }
 
-    inline const Box4D& get_bounding_box()
+    inline const Spaces& get_subspaces() const
+    {
+         return subspaces_;
+    }
+
+    inline const Box4D& get_bounding_box() const
     {
         return box_;
     }
 
-    inline RealType get_votes()
+    inline RealType get_votes() const
     {
         return votes_;
     }
@@ -121,12 +126,12 @@ public:
         votes_ = 0;
     }
 
-    inline std::size_t get_resolution_level()
+    inline std::size_t get_resolution_level() const
     {
         return resolution_level_;
     }
 
-    inline Point4D get_mass_center()
+    inline Point4D get_mass_center() const
     {
         return (box_.first + box_.second) / 2;
     }
@@ -231,7 +236,7 @@ public:
     typedef detail::Space<RealType> Space4D;
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
-                 RealType tangent_accuracy = 0.5): 
+                 RealType tangent_accuracy = 0.01):
     model_reference_(model_reference), tangent_accuracy_(tangent_accuracy),
     pi_(boost::math::constants::pi<RealType>())
     {
@@ -241,7 +246,8 @@ public:
     // Detects the references that define probable poses of the model within the 
     // given features.
     ReferenceVotes fast_detect(const Features &object_features, RealType probability, 
-                               unsigned int divisions_per_dimension, unsigned int maximal_resolution_level,
+                               unsigned int divisions_per_dimension,
+                               unsigned int maximal_resolution_level,
                                RecognitionArea bounding_box)
     {
         ReferenceVotes ref_votes;
@@ -251,27 +257,29 @@ public:
                                   bounding_box.first[0], bounding_box.first[1]);
         typename Space4D::Point4D p2(bounding_box.second[0], bounding_box.second[1],
                                   bounding_box.second[0], bounding_box.second[1]);
-        space_ = Space4D(Space4D::Box4D(p1, p2));
+        Space4D s(typename Space4D::Box4D(p1, p2));
 
         // Hierarchical search for the vote peak in the space.
-        process_space(space_, object_features, probability, divisions_per_dimension,
+        process_space(s, object_features, probability, divisions_per_dimension,
                       maximal_resolution_level);
 
-        /*
         // Get all subspaces from the last resolution level;
-        typename Space4D::Spaces leafs = get_resolution_level(M);
+        typename Space4D::Spaces leafs;
+        get_resolution_level(s, leafs, maximal_resolution_level);
+
+        std::sort(leafs.begin(), leafs.end());
 
         // Extract the references.
-        for (typename Space4D::const_iterator it = leafs.begin(); it != leafs.end(); ++it)
+        for (typename Space4D::Spaces::const_reverse_iterator it = leafs.rbegin();
+             it != leafs.rend(); ++it)
         {
             // Attention: the space is approximated by its mass center!
             typename Space4D::Point4D c = it->get_mass_center();
 
             Reference ref(Point2D(c[0], c[1]), Point2D(c[2], c[3]));
             ReferenceVote rv(ref, it->get_votes());
-            ref_votes.pop_back(rv);
+            ref_votes.push_back(rv);
         }
-        */
 
         return ref_votes;
     }
@@ -299,7 +307,6 @@ private:
     Reference model_reference_;
     RealType tangent_accuracy_;
     ATable atable_;
-    Space4D space_;
     RealType pi_;
 
     // Row index in the alpha-table for the given tangent angle.
@@ -457,7 +464,8 @@ private:
         std::sort(subs.begin(), subs.end());
 
         // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
-        process_space(*subs.back(), probability, divisions_per_dimension, maximal_resolution_level);
+        process_space(subs.back(), object_features, probability, divisions_per_dimension,
+                      maximal_resolution_level);
     }
 
     // Intersects the given space with the lines produced by the object features and increase the
@@ -466,8 +474,8 @@ private:
     {
         for (typename Features::const_iterator it = object_features.begin(); it != object_features.end(); ++it)
         {
-            Point2D c = it->first();
-            Point2D tan = it->second();
+            Point2D c = it->first;
+            Point2D tan = it->second;
 
             // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
             for (std::size_t index = 0; index < atable_.size(); ++index)
@@ -484,15 +492,15 @@ private:
                 for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                      abit !=  atable_.at(index).end(); ++abit)
                 {
-                    RealType alpha = abit->first();
-                    RealType beta = abit->second();
+                    RealType alpha = abit->first;
+                    RealType beta = abit->second;
 
                     Point2D v2 = rotate(v1, beta - alpha);
 
                     // Consider the directional vectors ratio.
                     if (alpha != 0)
                         // The conventional case.
-                        v2 *= sin(alpha) / sin(beta);
+                        v2 *= std::sin(alpha) / std::sin(beta);
                     else
                         // The directional vectors are located on the reference line.
                         v2 *= 1 - 1 / beta;
@@ -511,6 +519,25 @@ private:
             }
 
         }
+    }
+
+    // Recursively traces the space tree and inserts into the container the elements from
+    // the given resolution level.
+    void get_resolution_level(const Space4D &s, typename Space4D::Spaces &container,
+                                         std::size_t resolution_level)
+    {
+        if (s.get_resolution_level() == resolution_level)
+            container.push_back(s);
+        else
+        {
+            const typename Space4D::Spaces subs = s.get_subspaces();
+
+            for (typename Space4D::Spaces::const_iterator it = subs.begin(); it != subs.end(); ++it)
+            {
+                get_resolution_level(*it, container, resolution_level);
+            }
+        }
+
     }
 
 };
