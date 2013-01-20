@@ -452,19 +452,20 @@ private:
 
         // Create the space subdivision.
         s.subdivide(divisions_per_dimension);
-        typename Space4D::Spaces subs = s.get_subspaces();
+        //typename Space4D::Spaces subs = s.get_subspaces();
 
         // Calculate the votes for the obtained subspaces.
-        for (typename Space4D::Spaces::iterator it = subs.begin(); it != subs.end(); ++it)
+        for (typename Space4D::Spaces::iterator it = s.get_subspaces().begin();
+             it != s.get_subspaces().end(); ++it)
         {
             feature_to_vote(*it, object_features);
         }
 
         // Subspaces with less votes first.
-        std::sort(subs.begin(), subs.end());
+        std::sort(s.get_subspaces().begin(), s.get_subspaces().end());
 
         // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
-        process_space(subs.back(), object_features, probability, divisions_per_dimension,
+        process_space(s.get_subspaces().back(), object_features, probability, divisions_per_dimension,
                       maximal_resolution_level);
     }
 
