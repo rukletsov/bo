@@ -37,13 +37,18 @@ protected:
         pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
         space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_));
 
+        space1x_ = Space<float>(Space<float>::Box4D(Space<float>::Point4D(-1.f, -1.f, -1.f, -1.f),
+                                                    Space<float>::Point4D(1.f, 1.f, 1.f, 1.f)));
+        pb8a_ = Space<float>::Point4D(1.f, 0.f, 1.f, 0.f);
+        pb8b_ = Space<float>::Point4D(0.86f, 0.51f, 1.57f, -0.47f);
+
         // Space subdivision.
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
         space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
 
         // Object detection.
         // Generate a circle model with radius 1 and center (0,0).
-        for (float a = 0; a < boost::math::constants::pi<float>(); a += 0.1)
+        for (float a = 0; a < 2 * boost::math::constants::pi<float>(); a += 0.1)
         {
             DualPointGHT<float>::Point2D p(std::cos(a), std::sin(a));
             DualPointGHT<float>::Point2D tan(-std::sin(a), std::cos(a));
@@ -51,7 +56,7 @@ protected:
             model.push_back( DualPointGHT<float>::Feature(p, tan));
         }
         // Generate a circle object with radius 1 and center (2, 2).
-        for (float a = 0; a < boost::math::constants::pi<float>(); a += 0.1)
+        for (float a = 0; a < 2 * boost::math::constants::pi<float>(); a += 0.1)
         {
             DualPointGHT<float>::Point2D p(2 + std::cos(a), 2 + std::sin(a));
             DualPointGHT<float>::Point2D tan(-std::sin(a), std::cos(a));
@@ -84,7 +89,10 @@ protected:
     Space<float>::Point4D pb7_;
     Space<float>::Point4D pb8_;
     Space<float>::Point4D pb9_;
+    Space<float>::Point4D pb8a_;
+    Space<float>::Point4D pb8b_;
     Space<float> space1_;
+    Space<float> space1x_;
     Space<float> space2_;
 
     DualPointGHT<float>::Features model;
@@ -151,13 +159,20 @@ TEST_F(HoughTransformTest, SpaceLineIntersection)
     space1_.reset_votes();
     space1_.intersect(Space<float>::Line4D(pb6_, pb7_));
 
-    EXPECT_FLOAT_EQ(space1_.get_votes(), 0.5f);
+    EXPECT_FLOAT_EQ(space1_.get_votes(), 1.0f);
 
     space1_.reset_votes();
     space1_.intersect(Space<float>::Line4D(pb7_, pb8_));
 
     EXPECT_FLOAT_EQ(space1_.get_votes(), std::sqrt(1 + 0.4f * 0.4f + 0.5f * 0.5f));
+}
 
+TEST_F(HoughTransformTest, ComplexSpaceLineIntersection)
+{
+    space1x_.reset_votes();
+    space1x_.intersect(Space<float>::Line4D(pb8a_, pb8b_));
+
+    EXPECT_NEAR(space1x_.get_votes(), 2.44, 0.006);
 }
 
 TEST_F(HoughTransformTest, SpaceSubdivision)
@@ -178,14 +193,14 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model, ref);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model, 0.9f, 2, 1, bbox);
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model, 0.9f, 2, 3, bbox);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
-    EXPECT_EQ(r.first.x() > 0 && r.first.x() < 1 &&
-              r.first.y() > 0 && r.first.y() < 1 &&
-              r.second.x() > 0 && r.second.x() < 1 &&
-              r.second.y() > 0 && r.second.y() < 1, true);
+    EXPECT_EQ(r.first.x() > -1 && r.first.x() < 1 &&
+              r.first.y() > -1 && r.first.y() < 1 &&
+              r.second.x() > -1 && r.second.x() < 1 &&
+              r.second.y() > -1 && r.second.y() < 1, true);
 
     int iii = 0;
 }

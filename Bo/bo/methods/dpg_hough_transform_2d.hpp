@@ -139,7 +139,7 @@ public:
     void intersect(Line4D line)
     {
         // Create the "infinite" segment coordinates that models the whole line.
-        SegmentCoordinates coord(std::numeric_limits<RealType>::min(), std::numeric_limits<RealType>::max());
+        SegmentCoordinates coord(-std::numeric_limits<RealType>::max(), std::numeric_limits<RealType>::max());
 
         // Create the "infinite" segment.
         Segment4D seg(line, coord);
@@ -151,6 +151,9 @@ public:
         // The number of votes that the space receives in the result of the intersection
         // equals to the lenght of the resulting segment.
         // Compute the segment.
+        Point4D ss1 = seg.first.first + seg.first.second * seg.second[0];
+        Point4D ss2 = seg.first.first + seg.first.second * seg.second[1];
+        Point4D ss = ss2 - ss1;
         Point4D s = seg.first.second * (seg.second[1] - seg.second[0]);
         // Increase the votes.
         votes_ += s.euclidean_norm();
@@ -225,7 +228,7 @@ public:
     typedef std::vector<Point2D> Points2D;
     typedef std::pair<Point2D, Point2D> Reference;
     typedef std::pair<Point2D, Point2D> RecognitionArea;
-    typedef std::pair<Reference, std::size_t> ReferenceVote;
+    typedef std::pair<Reference, RealType> ReferenceVote;
     typedef std::vector<ReferenceVote> ReferenceVotes;
     // Feature is a model point and a tangent vector.
     typedef std::pair<Point2D, Point2D> Feature;
