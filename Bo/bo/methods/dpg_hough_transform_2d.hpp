@@ -136,28 +136,52 @@ public:
         return (box_.first + box_.second) / 2;
     }
 
-    void intersect(Line4D line)
+    void vote(Segment4D segment)
+    {
+        // The number of votes that the space receives in the result of the intersection
+        // equals to the lenght of the resulting segment.
+        // Compute the segment.
+        Point4D ss1 = segment.first.first + segment.first.second * segment.second[0];
+        Point4D ss2 = segment.first.first + segment.first.second * segment.second[1];
+        Point4D ss = ss2 - ss1;
+        Point4D s = segment.first.second * (segment.second[1] - segment.second[0]);
+
+        // Increase the votes.
+        // Continuous. Attention: has no effect if the intersection is in one point.
+        votes_ += s.euclidean_norm();
+    }
+
+    void vote_descrete(const Segment4D &segment)
+    {
+        // Discrete.
+        if (segment.second[0] > -std::numeric_limits<RealType>::max() &&
+            segment.second[0] < std::numeric_limits<RealType>::max())
+        {
+            votes_ += 1;
+        }
+    }
+
+    Segment4D intersect(Segment4D segment)
+    {
+        // Cut the segment in each of four dimensions.
+        for (std::size_t d = 0; d < 4; ++d)
+            cut_segment(segment, d, box_.first[d], box_.second[d]);
+
+        return segment;
+    }
+
+
+    Segment4D intersect(Line4D line)
     {
         // Create the "infinite" segment coordinates that models the whole line.
         SegmentCoordinates coord(-std::numeric_limits<RealType>::max(), std::numeric_limits<RealType>::max());
 
         // Create the "infinite" segment.
-        Segment4D seg(line, coord);
+        Segment4D infinite_seg(line, coord);
 
-        // Cut the segment in each of four dimensions.
-        for (std::size_t d = 0; d < 4; ++d)
-            cut_segment(seg, d, box_.first[d], box_.second[d]);
-
-        // The number of votes that the space receives in the result of the intersection
-        // equals to the lenght of the resulting segment.
-        // Compute the segment.
-        Point4D ss1 = seg.first.first + seg.first.second * seg.second[0];
-        Point4D ss2 = seg.first.first + seg.first.second * seg.second[1];
-        Point4D ss = ss2 - ss1;
-        Point4D s = seg.first.second * (seg.second[1] - seg.second[0]);
-        // Increase the votes.
-        votes_ += s.euclidean_norm();
+        return intersect(infinite_seg);
     }
+
 
     // Operator is needed for sorting.
     bool operator < (const Space &other) const
@@ -187,9 +211,9 @@ private:
         // If the segment is parallel to the levels of this dimension.
         if (v[dimension] == 0)
         {
-             // If the origin is outside the levels, return zero segment.
+             // If the origin is outside the levels, return infinite point.
             if (p[dimension] > level2 || p[dimension] < level1)
-                seg.second[0] = seg.second[1] = 0;
+                seg.second[0] = seg.second[1] = std::numeric_limits<RealType>::max();
 
             // Otherwise return the same segment.
             return;
@@ -202,6 +226,25 @@ private:
         // Sort the coordinates: t1 <= t2.
         if (t1 > t2)
             std::swap(t1, t2);
+
+       // Correcting approximate intersections.
+       const RealType eps(0.01 / v[dimension]);
+
+        // If the segments is outside the levels (less), move it in the negative
+        // infinite point.
+        if (seg.second[0] < t1 - eps && seg.second[1] < t1 - eps)
+        {
+            seg.second[0] = seg.second[1] = -std::numeric_limits<RealType>::max();
+            return;
+        }
+
+        // If the segments is outside the levels (less), move it in the positive
+        // infinite point.
+        if (seg.second[0] > t2 + eps && seg.second[1] > t2 + eps)
+        {
+            seg.second[0] = seg.second[1] = std::numeric_limits<RealType>::max();
+            return;
+        }
 
         // Cut the segment.
         for (int i = 0; i < 2; ++i)
@@ -227,7 +270,7 @@ public:
     typedef Vector<RealType, 2> Point2D;
     typedef std::vector<Point2D> Points2D;
     typedef std::pair<Point2D, Point2D> Reference;
-    typedef std::pair<Point2D, Point2D> RecognitionArea;
+    typedef std::pair<Point2D, Point2D> SearchArea;
     typedef std::pair<Reference, RealType> ReferenceVote;
     typedef std::vector<ReferenceVote> ReferenceVotes;
     // Feature is a model point and a tangent vector.
@@ -239,11 +282,13 @@ public:
     typedef detail::Space<RealType> Space4D;
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
-                 RealType tangent_accuracy = 0.01):
+                 RealType tangent_accuracy = RealType(0.005)):
     model_reference_(model_reference), tangent_accuracy_(tangent_accuracy),
     pi_(boost::math::constants::pi<RealType>())
     {
         encode(model_features);
+
+        model_base_ = (model_reference_.second - model_reference_.first).euclidean_norm();
     }
 
     // Detects the references that define probable poses of the model within the 
@@ -251,20 +296,25 @@ public:
     ReferenceVotes fast_detect(const Features &object_features, RealType probability, 
                                unsigned int divisions_per_dimension,
                                unsigned int maximal_resolution_level,
-                               RecognitionArea bounding_box)
+                               SearchArea reference_box1,
+                               SearchArea reference_box2,
+                               Point2D scaling_range = Point2D(0.95f, 1.05f))
     {
         ReferenceVotes ref_votes;
 
         // Create the root space object.
-        typename Space4D::Point4D p1(bounding_box.first[0], bounding_box.first[1],
-                                  bounding_box.first[0], bounding_box.first[1]);
-        typename Space4D::Point4D p2(bounding_box.second[0], bounding_box.second[1],
-                                  bounding_box.second[0], bounding_box.second[1]);
+        typename Space4D::Point4D p1(reference_box1.first[0], reference_box1.first[1],
+                                  reference_box2.first[0], reference_box2.first[1]);
+        typename Space4D::Point4D p2(reference_box1.second[0], reference_box1.second[1],
+                                  reference_box2.second[0], reference_box2.second[1]);
         Space4D s(typename Space4D::Box4D(p1, p2));
+
+        // In the case if the scaling is incorrect.
+        normalize_scaling_range(scaling_range);
 
         // Hierarchical search for the vote peak in the space.
         process_space(s, object_features, probability, divisions_per_dimension,
-                      maximal_resolution_level);
+                      maximal_resolution_level, scaling_range);
 
         // Get all subspaces from the last resolution level;
         typename Space4D::Spaces leafs;
@@ -308,6 +358,7 @@ public:
 private:
 
     Reference model_reference_;
+    RealType model_base_;
     RealType tangent_accuracy_;
     ATable atable_;
     RealType pi_;
@@ -447,11 +498,25 @@ private:
         }
     }
 
+    void normalize_scaling_range(Point2D &scaling_range)
+    {
+        if (scaling_range[0] < 0)
+            scaling_range[0] = 0;
+
+        if (scaling_range[1] < 0)
+            scaling_range[1] = 0;
+
+        if (scaling_range[0] > scaling_range[1])
+            std::swap(scaling_range[0], scaling_range[1]);
+    }
+
     // Recursively fills in the space tree calculating votes for each subspace.
     void process_space(Space4D &s, const Features &object_features, RealType probability,
-                       RealType divisions_per_dimension, RealType maximal_resolution_level)
+                       RealType divisions_per_dimension, RealType maximal_resolution_level,
+                       const Point2D &scaling_range)
     {
-        if (s.get_resolution_level() > maximal_resolution_level) return;
+        if (s.get_resolution_level() > maximal_resolution_level)
+            return;
 
         // Create the space subdivision.
         s.subdivide(divisions_per_dimension);
@@ -461,7 +526,7 @@ private:
         for (typename Space4D::Spaces::iterator it = s.get_subspaces().begin();
              it != s.get_subspaces().end(); ++it)
         {
-            feature_to_vote(*it, object_features);
+            feature_to_vote(*it, object_features, scaling_range);
         }
 
         // Subspaces with less votes first.
@@ -469,59 +534,80 @@ private:
 
         // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
         process_space(s.get_subspaces().back(), object_features, probability, divisions_per_dimension,
-                      maximal_resolution_level);
+                      maximal_resolution_level, scaling_range);
+        /*
+        for (typename Space4D::Spaces::reverse_iterator it = s.get_subspaces().rbegin(); it != s.get_subspaces().rend(); ++it)
+        {
+            process_space(*it, object_features, probability, divisions_per_dimension,
+                          maximal_resolution_level);
+        }
+        */
     }
 
     // Intersects the given space with the lines produced by the object features and increase the
     // number of the space votes.
-    void feature_to_vote(Space4D &s, const Features &object_features)
+    void feature_to_vote(Space4D &s, const Features &object_features, const Point2D &scaling_range)
     {
         for (typename Features::const_iterator it = object_features.begin(); it != object_features.end(); ++it)
         {
             Point2D c = it->first;
             Point2D tan = it->second;
 
-            // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
-            for (std::size_t index = 0; index < atable_.size(); ++index)
+            feature_to_vote(s, c, tan, scaling_range);
+        }
+    }
+
+    // Intersects the given space with the line defined by the feature (position and tangent)
+    // and increase the number of the space votes.
+    inline void feature_to_vote(Space4D &s, const Point2D &c, const Point2D &tan, const Point2D &scaling_range)
+    {
+        // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
+        for (std::size_t index = 0; index < atable_.size(); ++index)
+        {
+            // Probable angle between the directional vector and the tangent.
+            RealType gamma = atable_gamma(index);
+
+            // Probable normalized directional vector.
+            Point2D v1 = rotate(tan, -gamma);
+            v1 = v1 / v1.euclidean_norm();
+
+            // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
+            // the current table row.
+            for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
+                 abit !=  atable_.at(index).end(); ++abit)
             {
-                // Probable angle between the directional vector and the tangent.
-                RealType gamma = atable_gamma(index);
+                RealType alpha = abit->first;
+                RealType beta = abit->second;
 
-                // Probable normalized directional vector.
-                Point2D v1 = rotate(tan, -gamma);
-                v1 = v1 / v1.euclidean_norm();
+                Point2D v2 = rotate(v1, beta - alpha);
 
-                // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
-                // the current table row.
-                for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
-                     abit !=  atable_.at(index).end(); ++abit)
-                {
-                    RealType alpha = abit->first;
-                    RealType beta = abit->second;
+                // Consider the directional vectors ratio.
+                if (alpha != 0)
+                    // The conventional case.
+                    v2 *= std::sin(alpha) / std::sin(beta);
+                else
+                    // The directional vectors are located on the reference line.
+                    v2 *= 1 - 1 / beta;
 
-                    Point2D v2 = rotate(v1, beta - alpha);
+                // Compose a 4D line.
+                // The point on this line.
+                typename Space4D::Point4D p4(c.x(), c.y(), c.x(), c.y());
+                // The directional vector of the line.
+                typename Space4D::Point4D v4(v1.x(), v1.y(), v2.x(), v2.y());
+                // The line in 4D.
+                typename Space4D::Line4D line4(p4, v4);
 
-                    // Consider the directional vectors ratio.
-                    if (alpha != 0)
-                        // The conventional case.
-                        v2 *= std::sin(alpha) / std::sin(beta);
-                    else
-                        // The directional vectors are located on the reference line.
-                        v2 *= 1 - 1 / beta;
+                // Create two segments on this line that correspond to the given scaling range.
+                RealType vnorm = (v2 - v1).euclidean_norm();
+                Point2D segment_coords = scaling_range * model_base_ / vnorm;
 
-                    // Compose a 4D line and intersect with the space.
-                    // The point on this line.
-                    typename Space4D::Point4D p4(c.x(), c.y(), c.x(), c.y());
-                    // The directional vector of the line.
-                    typename Space4D::Point4D v4(v1.x(), v1.y(), v2.x(), v2.y());
-                    // The line in 4D.
-                    typename Space4D::Line4D line4(p4, v4);
+                typename Space4D::Segment4D segment1(line4,  segment_coords);
+                typename Space4D::Segment4D segment2(line4, -segment_coords);
 
-                    // Intersect and compute the votes.
-                    s.intersect(line4);
-                }
+                // Intersect and compute the votes.
+                s.vote_descrete(s.intersect(segment1));
+                s.vote_descrete(s.intersect(segment2));
             }
-
         }
     }
 
