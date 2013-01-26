@@ -47,11 +47,20 @@ protected:
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
         space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
 
+
         // Simple object detection.
-        DualPointGHT<float>::Feature f1(DualPointGHT<float>::Point2D(0.f, -1.f), DualPointGHT<float>::Point2D(1.f, 0.f));
-        DualPointGHT<float>::Feature f2(DualPointGHT<float>::Point2D(0.f, 1.f), DualPointGHT<float>::Point2D(1.f, 0.f));
-        model_.push_back(f1);
-        model_.push_back(f2);
+        // Create a spirale.
+        float pi = boost::math::constants::pi<float>();
+        for (int i = 0; i < 360; i += 20)
+        {
+            float angle = i * pi / 180;
+
+            float x = std::cos(angle);
+            float y = std::sin(angle);
+
+            DualPointGHT<float>::Feature f(DualPointGHT<float>::Point2D(angle * x, angle * y), DualPointGHT<float>::Point2D(-y, x));
+            model_.push_back(f);
+        }
 
         // Create reference points.
         ref3_ = DualPointGHT<float>::Point2D(-1.0f, 0.f);
@@ -182,4 +191,23 @@ TEST_F(HoughTransformTest, SpaceSubdivision)
     detail::Space<float>::Spaces subs = space2_.get_subspaces();
 
     EXPECT_EQ(subs.size(), n * n * n * n);
+}
+
+TEST_F(HoughTransformTest, SelfDetection)
+{
+    // Create dual-point reference.
+    DualPointGHT<float>::Reference ref(ref3_, ref4_);
+
+    // Create a transformation and encode the feature.
+    DualPointGHT<float> ght(model_, ref, 0.01f);
+
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 5, bbox_, bbox_);
+
+    DualPointGHT<float>::Reference r = rv.front().first;
+
+    EXPECT_NEAR(r.first[0], -1, 0.01);
+    EXPECT_NEAR(r.first[1],  0, 0.01);
+    EXPECT_NEAR(r.second[0],  1, 0.01);
+    EXPECT_NEAR(r.second[1],  0, 0.01);
+
 }

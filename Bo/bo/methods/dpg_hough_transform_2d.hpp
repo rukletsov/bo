@@ -227,12 +227,9 @@ private:
         if (t1 > t2)
             std::swap(t1, t2);
 
-       // Correcting approximate intersections.
-       const RealType eps(0.01 / v[dimension]);
-
         // If the segments is outside the levels (less), move it in the negative
         // infinite point.
-        if (seg.second[0] < t1 - eps && seg.second[1] < t1 - eps)
+        if (seg.second[0] < t1 && seg.second[1] < t1)
         {
             seg.second[0] = seg.second[1] = -std::numeric_limits<RealType>::max();
             return;
@@ -240,7 +237,7 @@ private:
 
         // If the segments is outside the levels (less), move it in the positive
         // infinite point.
-        if (seg.second[0] > t2 + eps && seg.second[1] > t2 + eps)
+        if (seg.second[0] > t2 && seg.second[1] > t2)
         {
             seg.second[0] = seg.second[1] = std::numeric_limits<RealType>::max();
             return;
@@ -455,7 +452,7 @@ private:
     void encode(const Features &model_features)
     {
         // Define the number of discrete tangent angles.
-        unsigned int tangent_angle_number = static_cast<unsigned int>(pi_ / tangent_accuracy_);
+        unsigned int tangent_angle_number = static_cast<unsigned int>(2 * pi_ / tangent_accuracy_);
 
         // Allocate memory for the alpha-table.
         atable_.resize(tangent_angle_number);
@@ -550,17 +547,17 @@ private:
     {
         for (typename Features::const_iterator it = object_features.begin(); it != object_features.end(); ++it)
         {
-            Point2D c = it->first;
-            Point2D tan = it->second;
-
-            feature_to_vote(s, c, tan, scaling_range);
+            feature_to_vote(s, *it, scaling_range);
         }
     }
 
     // Intersects the given space with the line defined by the feature (position and tangent)
     // and increase the number of the space votes.
-    inline void feature_to_vote(Space4D &s, const Point2D &c, const Point2D &tan, const Point2D &scaling_range)
+    inline void feature_to_vote(Space4D &s, const Feature &f, const Point2D &scaling_range)
     {
+        Point2D c = f.first;
+        Point2D tan = f.second;
+
         // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
         for (std::size_t index = 0; index < atable_.size(); ++index)
         {
