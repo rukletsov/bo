@@ -228,6 +228,33 @@ TEST_F(HoughTransformTest, TaxicabSpaceLineIntersection)
     EXPECT_EQ(space1_.get_votes(), 10);
 }
 
+TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
+{
+    // Parallel.
+    space1_.reset_votes();
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+
+    // Diagonal.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb5_, pb2_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+
+    // Irregular.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb1_, pb10_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+}
+
 TEST_F(HoughTransformTest, SpaceSubdivision)
 {
     std::size_t n = 5;

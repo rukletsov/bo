@@ -258,6 +258,58 @@ public:
         votes_ += taxicab_dst;
     }
 
+    // The number of votes is equal to the maximum (uniform) norm of the corresponding
+    // inner segment relatively to the grid with the given cell size.
+    void vote_maxnorm(const Segment4D &segment, const Point4D &cell_size)
+    {
+        // If the segment is not zero.
+        if (segment.second[0] == segment.second[1])
+            return;
+
+        std::size_t maximum_norm = 0;
+
+        // Local coordinate origin.
+        Point4D bot = box_.first;
+        Point4D top = box_.second;
+
+        // The end points of the segment.
+        Point4D p1 = segment.first.first + segment.first.second * segment.second[0];
+        Point4D p2 = segment.first.first + segment.first.second * segment.second[1];
+
+        // Segment direction.
+        Point4D v = segment.first.second;
+
+        // For each dimension define the coordinate step beetween two cells (dimension levels).
+        for (std::size_t d = 0; d < 4; ++d)
+        {
+            if (v[d] != 0)
+            // If it is zero, the segment does not intersect the levels of this dimension and
+            // we can skip further analysis.
+            {
+                RealType proj1 = p1[d];
+                RealType proj2 = p2[d];
+                order(proj1, proj2);
+
+                order(bot[d], top[d]);
+
+                cut(proj1, bot[d], top[d]);
+                cut(proj2, bot[d], top[d]);
+
+                assert (proj1 >= bot[d] && proj2 >= bot[d]);
+
+                RealType block1 = std::floor((proj1 - bot[d]) / cell_size[d]);
+                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size[d]);
+
+                std::size_t dst = static_cast<std::size_t>(block2 - block1);
+
+                if (maximum_norm < dst)
+                    maximum_norm = dst;
+            }
+        }
+
+        votes_ += maximum_norm;
+    }
+
     Segment4D intersect(Segment4D segment)
     {
         // Cut the segment in each of four dimensions.
@@ -716,8 +768,8 @@ private:
                 typename Space4D::Segment4D segment2(line4, -segment_coords);
 
                 // Intersect and compute the votes.
-                s.vote_taxicab(s.intersect(segment1), grid_size_);
-                s.vote_taxicab(s.intersect(segment2), grid_size_);
+                s.vote_maxnorm(s.intersect(segment1), grid_size_);
+                s.vote_maxnorm(s.intersect(segment2), grid_size_);
             }
         }
     }
