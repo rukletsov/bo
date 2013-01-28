@@ -38,8 +38,10 @@
 #include <utility>
 #include <vector>
 #include <list>
+#include <set>
 #include <cmath>
 #include <algorithm>
+#include <cassert>
 
 #include <boost/noncopyable.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -61,6 +63,7 @@ class Space
 public:
 
     typedef Vector<RealType, 4> Point4D;
+    typedef Vector<int, 4> Index4D;
     typedef std::pair<Point4D, Point4D> Box4D;
     // A line in 4D is defined by any point located
     // on this line and its directional vector.
@@ -141,9 +144,6 @@ public:
         // The number of votes that the space receives in the result of the intersection
         // equals to the lenght of the resulting segment.
         // Compute the segment.
-        Point4D ss1 = segment.first.first + segment.first.second * segment.second[0];
-        Point4D ss2 = segment.first.first + segment.first.second * segment.second[1];
-        Point4D ss = ss2 - ss1;
         Point4D s = segment.first.second * (segment.second[1] - segment.second[0]);
 
         // Increase the votes.
@@ -151,14 +151,111 @@ public:
         votes_ += s.euclidean_norm();
     }
 
-    void vote_descrete(const Segment4D &segment)
+    void vote_unit(const Segment4D &segment)
     {
-        // Discrete.
+        // Binary.
         if (segment.second[0] > -std::numeric_limits<RealType>::max() &&
             segment.second[0] < std::numeric_limits<RealType>::max())
         {
             votes_ += 1;
         }
+    }
+
+    // Increase the number of votes on the number of intersection of the given segment
+    // with the grid of the given cell size in the current space.
+    // Attention: the space must contain integer number of cells (in each dimension)!
+    void vote_descrete(const Segment4D &segment, const Point4D &cell_size)
+    {
+        // We will accumulate the coordinates of intersections of the given segment
+        // with the grid of the given cell size.
+        std::set<RealType> intersections;
+
+        // Find coordinates of the intersection of the line with the space.
+        Segment4D base_seg = intersect(segment.first);
+
+
+        RealType t1_base = base_seg.second[0];
+        RealType t2_base = base_seg.second[1];
+        // Order.
+        order(t1_base, t2_base);
+
+        RealType t1 = segment.second[0];
+        RealType t2 = segment.second[1];
+        // Order.
+        order(t1, t2);
+
+        // Segment direction.
+        Point4D v = segment.first.second;
+
+        // For each dimension define the coordinate step beetween two cells (dimension levels).
+        for (std::size_t d = 0; d < 4; ++d)
+        {
+            if (v[d] != 0)
+            // If it is zero, the segment does not intersect the levels of this dimension and
+            // we can skip further analysis.
+            {
+                RealType dt = std::abs(cell_size[d] / v[d]);
+
+                // Accumulate all intersections of this dimension situated between the begin
+                // and the end of the segment. TODO: optimize it!
+                for (RealType t = t1_base + dt; t < t2_base; t += dt)
+                {
+                    if (t > t1 && t < t2)
+                        intersections.insert(t);
+                }
+            }
+        }
+
+        votes_ += intersections.size() + 1;
+    }
+
+    // The number of votes is equal to the taxicab norm of the corresponding inner
+    // segment relatively to the grid with the given cell size.
+    void vote_taxicab(const Segment4D &segment, const Point4D &cell_size)
+    {
+        // If the segment is not zero.
+        if (segment.second[0] == segment.second[1])
+            return;
+
+        std::size_t taxicab_dst = 0;
+
+        // Local coordinate origin.
+        Point4D bot = box_.first;
+        Point4D top = box_.second;
+
+        // The end points of the segment.
+        Point4D p1 = segment.first.first + segment.first.second * segment.second[0];
+        Point4D p2 = segment.first.first + segment.first.second * segment.second[1];
+
+        // Segment direction.
+        Point4D v = segment.first.second;
+
+        // For each dimension define the coordinate step beetween two cells (dimension levels).
+        for (std::size_t d = 0; d < 4; ++d)
+        {
+            if (v[d] != 0)
+            // If it is zero, the segment does not intersect the levels of this dimension and
+            // we can skip further analysis.
+            {
+                RealType proj1 = p1[d];
+                RealType proj2 = p2[d];
+                order(proj1, proj2);
+
+                order(bot[d], top[d]);
+
+                cut(proj1, bot[d], top[d]);
+                cut(proj2, bot[d], top[d]);
+
+                assert (proj1 >= bot[d] && proj2 >= bot[d]);
+
+                RealType block1 = std::floor((proj1 - bot[d]) / cell_size[d]);
+                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size[d]);
+
+                taxicab_dst += static_cast<std::size_t>(block2 - block1);
+            }
+        }
+
+        votes_ += taxicab_dst;
     }
 
     Segment4D intersect(Segment4D segment)
@@ -174,7 +271,8 @@ public:
     Segment4D intersect(Line4D line)
     {
         // Create the "infinite" segment coordinates that models the whole line.
-        SegmentCoordinates coord(-std::numeric_limits<RealType>::max(), std::numeric_limits<RealType>::max());
+        RealType mmax = std::numeric_limits<RealType>::max();
+        SegmentCoordinates coord(-mmax, mmax);
 
         // Create the "infinite" segment.
         Segment4D infinite_seg(line, coord);
@@ -201,8 +299,7 @@ private:
     void cut_segment(Segment4D &seg, std::size_t dimension, RealType level1, RealType level2)
     {
         // Sort the levels: level1 <= level2.
-        if (level1 > level2)
-            std::swap(level1, level2);
+        order(level1, level2);
 
         // The origin point and the direction.
         Point4D p = seg.first.first;
@@ -224,8 +321,7 @@ private:
         RealType t2 = (level2 - p[dimension]) / v[dimension];
 
         // Sort the coordinates: t1 <= t2.
-        if (t1 > t2)
-            std::swap(t1, t2);
+        order(t1, t2);
 
         // If the segments is outside the levels (less), move it in the negative
         // infinite point.
@@ -253,6 +349,19 @@ private:
                 seg.second[i] = t2;
         }
 
+    }
+
+    inline void order(RealType &a, RealType &b)
+    {
+        if (a > b) std::swap(a, b);
+    }
+
+    inline void cut(RealType &x, RealType a, RealType b)
+    {
+        if (x < a)
+            x = a;
+        if (x > b)
+            x = b;
     }
 };
 
@@ -305,6 +414,10 @@ public:
         typename Space4D::Point4D p2(reference_box1.second[0], reference_box1.second[1],
                                   reference_box2.second[0], reference_box2.second[1]);
         Space4D s(typename Space4D::Box4D(p1, p2));
+
+        // Initialize the grid size.
+        std::size_t divisions = std::pow(divisions_per_dimension, maximal_resolution_level + 1);
+        grid_size_ = (p2 - p1) / divisions;
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -359,6 +472,7 @@ private:
     RealType tangent_accuracy_;
     ATable atable_;
     RealType pi_;
+    typename Space4D::Point4D grid_size_;
 
     // Row index in the alpha-table for the given tangent angle.
     inline std::size_t atable_index(RealType gamma)
@@ -512,7 +626,7 @@ private:
                        RealType divisions_per_dimension, RealType maximal_resolution_level,
                        const Point2D &scaling_range)
     {
-        if (s.get_resolution_level() > maximal_resolution_level)
+        if (s.get_resolution_level() >= maximal_resolution_level)
             return;
 
         // Create the space subdivision.
@@ -602,8 +716,8 @@ private:
                 typename Space4D::Segment4D segment2(line4, -segment_coords);
 
                 // Intersect and compute the votes.
-                s.vote_descrete(s.intersect(segment1));
-                s.vote_descrete(s.intersect(segment2));
+                s.vote_taxicab(s.intersect(segment1), grid_size_);
+                s.vote_taxicab(s.intersect(segment2), grid_size_);
             }
         }
     }
