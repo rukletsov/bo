@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  triangulation.hpp, v 1.1.1 2013.01.30
+  triangulation.hpp, v 1.1.2 2013.01.30
 
   Triangulation algorithms for surface reconstruction problems.
 
@@ -49,17 +49,21 @@ namespace bo {
 namespace methods {
 namespace surfaces {
 
+// A class performing different triangulations for two slices.
 template <typename RealType>
 class Triangulation: public boost::noncopyable
 {
 public:
     typedef Triangulation<RealType> this_type;
 
-    typedef Mesh<RealType> Mesh;
     typedef Vector<RealType, 3> Point3D;
+    typedef boost::function<RealType (Point3D, Point3D)> Metric;
+    typedef Mesh<RealType> Mesh;
     typedef std::vector<Point3D> ParallelPlane;
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
-    typedef boost::function<RealType (Point3D, Point3D)> Metric;
+
+    typedef ContainerConstTraverser<ParallelPlane> ContourTraverser;
+    typedef TraverseRuleFactory<ParallelPlane> Factory;
 
 public:
     Triangulation(ParallelPlaneConstPtr contour1, bool closed1,
@@ -69,22 +73,17 @@ public:
         metric_ = &euclidean_distance<RealType, 3>;
     }
 
-    // TODO: put this into triangulation.hpp.
+    // Implementation for Christiansen algorithm for closed and opened contours.
+    //
+    // If a contour is closed, it is traversed cyclical starting and ending in the
+    // same vertex.
+    //
+    // If a contour has exactly one hole (i.e. opened), it is traversed once
+    // from the start to the end (from one hole edge to the other).
     Mesh christiansen()
     {
         // TODO: assert on data size (at least 2 samples?).
 
-        // 1. Contours are closed.
-        // Choose a vertex and a direction on the first contour.
-        // Find closest vertex on the second contour and determine direction.
-        // Iteratively sample points from contours until the surface patch is ready.
-
-        // 2. Contours having exactly one hole.
-        // Take the first vertex (at the hole) and direction on the first contour.
-        // Take the first vertex (at the hole) and determine co-directed movement.
-        // Iterate till the end of both contours.
-        typedef ContainerConstTraverser<ParallelPlane> ContourTraverser;
-        typedef TraverseRuleFactory<ParallelPlane> Factory;
 
         // Create appropriate traverser for the first contour depending whether
         // it is closed or not.
@@ -138,10 +137,13 @@ public:
 
         ContourTraverser candidate2 = current2 + 1;
 
+        // Initialize output mesh.
         Mesh mesh(contour1_->size() + contour2_->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
-        while (true)
+
+        // Iterate until both contours are exhausted.
+        while (candidate1.is_valid() || candidate2.is_valid())
         {
             // This guarantees that when one contour ends, points will be sampled
             // solely from the other one.
@@ -151,10 +153,6 @@ public:
             RealType span2_norm = (candidate2.is_valid()) ?
                         (*(candidate2) - *current1).euclidean_norm() :
                         std::numeric_limits<RealType>::max();
-
-            // Means both contours are exhausted.
-            if (!candidate1.is_valid() && !candidate2.is_valid())
-                break;
 
             // Add candidate vertex.
             std::size_t candidate_idx;
