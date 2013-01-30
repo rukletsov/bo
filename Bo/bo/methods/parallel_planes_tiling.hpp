@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.21 2013.01.16
+  parallel_planes_tiling.hpp, v 1.0.22 2013.01.16
 
   Implementation of several surface tiling methods, working with parallel planes.
 
@@ -37,23 +37,18 @@
 
 #include <vector>
 #include <iterator>
-#include <limits>
 #include <algorithm>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/function.hpp>
 
-#include "bo/mesh.hpp"
 #include "bo/raw_image_2d.hpp"
 #include "bo/kdtree.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/blas/pca.hpp"
 #include "bo/methods/distances_3d.hpp"
-#include "bo/internal/surfaces/container_traversers.hpp"
 #include "bo/internal/surfaces/arched_strip.hpp"
-
-#include "bo/extended_std.hpp"
 
 namespace bo {
 namespace methods {
@@ -68,7 +63,6 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> Points3D;
     typedef std::vector<Point3D> ParallelPlane;
-    typedef Mesh<RealType> Mesh;
     typedef RawImage2D<RealType> Image2D;
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
