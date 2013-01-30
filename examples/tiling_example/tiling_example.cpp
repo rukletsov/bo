@@ -19,6 +19,7 @@ using namespace boost::filesystem;
 using namespace bo::methods::surfaces;
 using namespace bo::io;
 
+typedef MinSpanPropagation<float> TilingAlgo;
 typedef Triangulation<float> TriangAlgo;
 
 // Directory where test data is stored.
@@ -81,8 +82,7 @@ void AssertPathExists(const path& filepath)
 
 void PropagateClosed()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
 
     AssertPathExists(paths.RawClosedPath);
     TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(
@@ -96,8 +96,7 @@ void PropagateClosed()
 
 void PropagateFemur01()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
 
     AssertPathExists(paths.PlyFemurPath01);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(paths.PlyFemurPath01.string());
@@ -111,8 +110,7 @@ void PropagateFemur01()
 
 void PropagateSheep()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
 
     AssertPathExists(paths.PlySheepPath);
     TilingAlgo::Mesh test_mesh = mesh_from_ply(paths.PlySheepPath.string());
@@ -126,8 +124,7 @@ void PropagateSheep()
 
 void ChrisitiansenFemur()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
     TriangAlgo triang;
 
     AssertPathExists(paths.PlyFemurPath01);
@@ -150,8 +147,7 @@ void ChrisitiansenFemur()
 
 void ChrisitiansenClosed()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
     TriangAlgo triang;
 
     AssertPathExists(paths.PlyClosedPath01);
@@ -174,11 +170,10 @@ void ChrisitiansenClosed()
 
 void ChrisitiansenFemurFull()
 {
-    typedef MinSpanPropagation<float> TilingAlgo;
     typedef std::vector<path> ContourData;
     typedef std::vector<TilingAlgo::PropagationResult> Contours;
 
-    MinSpanPropagation<float> tiling;
+    TilingAlgo tiling;
     TriangAlgo triang;
     ContourData contour_data;
     Contours contours;
