@@ -44,6 +44,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/mesh_closest_face_sr.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/dpg_hough_transform_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/parallel_planes_tiling.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/triangulation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/likelihood_functions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/node_types.hpp

@@ -8,6 +8,7 @@
 #include <boost/assert.hpp>
 
 #include "bo/methods/parallel_planes_tiling.hpp"
+#include "bo/methods/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
 
@@ -18,6 +19,7 @@ using namespace boost::filesystem;
 using namespace bo::methods::surfaces;
 using namespace bo::io;
 
+typedef Triangulation<float> TriangAlgo;
 
 // Directory where test data is stored.
 std::string DataDirectory;
@@ -126,6 +128,7 @@ void ChrisitiansenFemur()
 {
     typedef MinSpanPropagation<float> TilingAlgo;
     MinSpanPropagation<float> tiling;
+    TriangAlgo triang;
 
     AssertPathExists(paths.PlyFemurPath01);
     TilingAlgo::Mesh test_mesh1 = mesh_from_ply(paths.PlyFemurPath01.string());
@@ -140,7 +143,7 @@ void ChrisitiansenFemur()
     TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1.points,
+    TilingAlgo::Mesh mesh = triang.christiansen_triangulation(contour1.points,
         !contour1.has_hole, contour2.points, !contour2.has_hole);
     mesh_to_ply(mesh, paths.PlyFemurOutPath0102.string());
 }
@@ -149,6 +152,7 @@ void ChrisitiansenClosed()
 {
     typedef MinSpanPropagation<float> TilingAlgo;
     MinSpanPropagation<float> tiling;
+    TriangAlgo triang;
 
     AssertPathExists(paths.PlyClosedPath01);
     TilingAlgo::Mesh test_mesh1 = mesh_from_ply(paths.PlyClosedPath01.string());
@@ -163,7 +167,7 @@ void ChrisitiansenClosed()
     TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1.points,
+    TilingAlgo::Mesh mesh = triang.christiansen_triangulation(contour1.points,
         !(contour1.has_hole), contour2.points, !(contour2.has_hole));
     mesh_to_ply(mesh, paths.PlyClosedOutMeshPath.string());
 }
@@ -175,6 +179,7 @@ void ChrisitiansenFemurFull()
     typedef std::vector<TilingAlgo::PropagationResult> Contours;
 
     MinSpanPropagation<float> tiling;
+    TriangAlgo triang;
     ContourData contour_data;
     Contours contours;
     TilingAlgo::Mesh result_mesh;
@@ -207,7 +212,7 @@ void ChrisitiansenFemurFull()
     // Tile pair of contours and join it with the result mesh.
     for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
     {
-        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation((it - 1)->points,
+        TilingAlgo::Mesh mesh = triang.christiansen_triangulation((it - 1)->points,
             !(it - 1)->has_hole, it->points, !it->has_hole);
         result_mesh.join(mesh);
     }
