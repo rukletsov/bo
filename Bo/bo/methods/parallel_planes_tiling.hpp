@@ -156,13 +156,10 @@ public:
     }
 
     // TODO: put this into triangulation.hpp.
-    static Mesh christiansen_triangulation(PropagationResult contour1,
-                                           PropagationResult contour2)
+    static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1, bool closed1,
+                                           ParallelPlaneConstPtr contour2, bool closed2)
     {
         // TODO: assert on data size (at least 2 samples?).
-
-        // TODO: Determine whether both contours are closed or not. This determines the
-        // algorithm's behaviour.
 
         // 1. Contours are closed.
         // Choose a vertex and a direction on the first contour.
@@ -176,30 +173,18 @@ public:
         typedef ContainerConstTraverser<ParallelPlane> ContourTraverser;
         typedef TraverseRuleFactory<ParallelPlane> Factory;
 
-        ContourTraverser current1;
+        // Create appropriate traverser for the first contour depending whether
+        // it is closed or not.
+        ContourTraverser current1 = closed1 ?
+                    ContourTraverser(Factory::Create(contour1, 0, true)) :
+                    ContourTraverser(Factory::Create(contour1, true));
+        ContourTraverser candidate1 = current1 + 1;
+
+        // Create appropriate traverser for the second contour depending whether
+        // the contour is closed and how the first contour is oriented.
         ContourTraverser current2;
-        ContourTraverser candidate1;
-        ContourTraverser candidate2;
         bool is_forward2 = true;
-
-        if (contour1.has_hole)
-            current1 = ContourTraverser(Factory::Create(contour1.points, true));
-        else
-            current1 = ContourTraverser(Factory::Create(contour1.points, 5, true));
-        candidate1 = current1 + 1;
-
-        if (contour2.has_hole)
-        {
-            // Contour2 traverse direction should be swapped in order to correspond
-            // with the contoru1 direction.
-            if ((contour2.points->back() - *current1).euclidean_norm() <
-                    (contour2.points->front() - *current1).euclidean_norm())
-                is_forward2 = false;
-
-            current2 = ContourTraverser(Factory::Create(contour2.points, is_forward2));
-            candidate2 = current2 + 1;
-        }
-        else
+        if (closed2)
         {
             // Find closest vertex on the second contour and determine direction.
             // No need of using kd-tree here, since the operation is done once.
@@ -207,9 +192,9 @@ public:
             std::size_t c2min_idx = 0;
             RealType c2min_dist = std::numeric_limits<RealType>::max();
 
-            for (std::size_t c2_idx = 0; c2_idx < contour2.points->size(); ++c2_idx)
+            for (std::size_t c2_idx = 0; c2_idx < contour2->size(); ++c2_idx)
             {
-                RealType cur_dist = metric(contour2.points->at(c2_idx), *current1);
+                RealType cur_dist = metric(contour2->at(c2_idx), *current1);
                 if (cur_dist < c2min_dist)
                 {
                     c2min_idx = c2_idx;
@@ -217,18 +202,31 @@ public:
                 }
             }
 
+            // Create a default directed traverser. This is need to calculate the
+            // direction if c2min_idx is the last element in the collection.
+            current2 = ContourTraverser(Factory::Create(contour2, c2min_idx, true));
+
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
             Point3D direction1 = *(current1 + 1) - *current1;
-            Point3D direction2 = contour2.points->at(c2min_idx + 1) - contour2.points->at(c2min_idx);
+            Point3D direction2 = *(current2 + 1) - *current2;
             if (direction1 * direction2 < 0)
+                current2 = ContourTraverser(Factory::Create(contour2, c2min_idx, false));
+        }
+        else
+        {
+            // Check if contour2 traverse direction should be swapped in order to
+            // correspond with the contour1's direction.
+            if ((contour2->back() - *current1).euclidean_norm() <
+                    (contour2->front() - *current1).euclidean_norm())
                 is_forward2 = false;
 
-            current2 = ContourTraverser(Factory::Create(contour2.points, c2min_idx, is_forward2));
-            candidate2 = current2 + 1;
+            current2 = ContourTraverser(Factory::Create(contour2, is_forward2));
         }
 
-        Mesh mesh(contour1.points->size() + contour2.points->size());
+        ContourTraverser candidate2 = current2 + 1;
+
+        Mesh mesh(contour1->size() + contour2->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)
