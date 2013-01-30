@@ -51,6 +51,7 @@
 #include "bo/blas/pca.hpp"
 #include "bo/methods/distances_3d.hpp"
 #include "bo/internal/surfaces/container_traversers.hpp"
+#include "bo/internal/surfaces/arched_strip.hpp"
 
 #include "bo/extended_std.hpp"
 
@@ -271,42 +272,6 @@ public:
     }
 
 protected:
-    struct ArchedStrip
-    {
-        ArchedStrip(Point3D ref_pt): ref_pt_(ref_pt)
-        { }
-
-        ArchedStrip(Point3D ref_pt, RealType delta_min, RealType delta_max, Point3D prop,
-                    Metric dist_fun):
-            ref_pt_(ref_pt), delta_min_(delta_min), delta_max_(delta_max), prop_(prop),
-            dist_fun_(dist_fun)
-        { }
-
-        bool operator()(const Point3D& pt)
-        {
-            // We need to check three conditions are met:
-            // 1. the point lies outside the delta_min circle;
-            // 2. the point lies inside the delta_max circle;
-            // 3. the point lies in front of the diving plane normal to
-            //    propagation vector.
-
-            RealType dist = dist_fun_(ref_pt_, pt);
-            bool cond1 = (dist >= delta_min_);
-            bool cond2 = (dist <= delta_max_);
-
-            // Dot product is positive if the angle between vectors < 90 deg.
-            bool cond3 = ((prop_ * (pt - ref_pt_)) > 0);
-
-            return (cond1 && cond2 && cond3);
-        }
-
-        Point3D ref_pt_;
-        RealType delta_min_;
-        RealType delta_max_;
-        Point3D prop_;
-        Metric dist_fun_;
-    };
-
     struct PropagationResult
     {
         PropagationResult(): maxsize_reached(false), hole_encountered(false),
@@ -388,6 +353,8 @@ private:
                                        RealType delta_min, RealType delta_max,
                                        std::size_t max_size, Metric metric, RealType ratio)
     {
+        typedef ArchedStrip<RealType, 3> ArchedStrip;
+
         PropagationResult retvalue;
         retvalue.points->push_back(start);
 
