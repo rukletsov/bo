@@ -88,7 +88,7 @@ void PropagateClosed()
     TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
-    TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
+    TilingAlgo::Mesh mesh = TilingAlgo::Mesh::from_vertices(contour.get());
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
 
@@ -103,7 +103,7 @@ void PropagateFemur01()
         boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
-    TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
+    TilingAlgo::Mesh mesh = TilingAlgo::Mesh::from_vertices(contour.get());
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
 
@@ -118,7 +118,7 @@ void PropagateSheep()
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
     TilingAlgo::ParallelPlanePtr contour = tiling.propagate(plane_data, 0.5f);
-    TilingAlgo::Mesh mesh = tiling.to_mesh(contour);
+    TilingAlgo::Mesh mesh = TilingAlgo::Mesh::from_vertices(contour.get());
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
 

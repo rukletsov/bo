@@ -261,16 +261,6 @@ public:
         return mesh;
     }
 
-    static Mesh to_mesh(ParallelPlaneConstPtr contour)
-    {
-        Mesh mesh(contour->size());
-        for (typename ParallelPlane::const_iterator it = contour->begin();
-             it != contour->end(); ++it)
-            mesh.add_vertex(*it);
-
-        return mesh;
-    }
-
 protected:
     struct PropagationResult
     {
