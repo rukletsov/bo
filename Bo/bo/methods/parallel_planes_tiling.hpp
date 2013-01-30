@@ -80,6 +80,23 @@ public:
     typedef blas::PCA<RealType, 3> PCAEngine;
 
 public:
+    struct PropagationResult
+    {
+        PropagationResult(): complete(false), has_hole(false),
+            points(boost::make_shared<ParallelPlane>())
+        { }
+
+        PropagationResult(bool maxsize_reached, bool hole_encountered,
+                          ParallelPlanePtr pts):
+            complete(maxsize_reached), has_hole(hole_encountered), points(pts)
+        { }
+
+        bool complete;
+        bool has_hole;
+        ParallelPlanePtr points;
+    };
+
+public:
     MinSpanPropagation() { }
 
     static ParallelPlanePtr load_plane(Image2D data)
@@ -95,7 +112,7 @@ public:
     }
 
     // TODO: put this into complex_propagation.hpp.
-    static ParallelPlanePtr propagate(ParallelPlaneConstPtr plane, RealType ratio)
+    static PropagationResult propagate(ParallelPlaneConstPtr plane, RealType ratio)
     {
         // TODO: assert on data size (at least 2 samples?).
 
@@ -121,7 +138,7 @@ public:
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
-        if (attempt1.hole_encountered)
+        if (attempt1.has_hole)
             attempt2 = propagate_(start, attempt1.points->back(), - initial_prop,
                 tree, delta_min, delta_max, 1000, metric, ratio);
 
@@ -134,12 +151,13 @@ public:
              it != attempt1.points->end(); ++it)
             result->push_back(*it);
 
-        return result;
+        return PropagationResult(attempt1.complete && attempt2.complete,
+                                 attempt1.has_hole, result);
     }
 
     // TODO: put this into triangulation.hpp.
     static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
-                                           ParallelPlanePtr contour2, bool is_closed)
+                                           ParallelPlaneConstPtr contour2, bool is_closed)
     {
         // TODO: assert on data size (at least 2 samples?).
 
@@ -166,9 +184,6 @@ public:
 
         if (is_closed)
         {
-            // !!! Temp code for testing BwdCircuitTraverser.
-            std::reverse(contour2->begin(), contour2->end());
-
             current1 = ContourTraverser(Factory::Create(contour1, 5, true));
             candidate1 = current1 + 1;
             Point3D direction1 = *(current1 + 1) - *current1;
@@ -261,18 +276,6 @@ public:
         return mesh;
     }
 
-protected:
-    struct PropagationResult
-    {
-        PropagationResult(): maxsize_reached(false), hole_encountered(false),
-            points(boost::make_shared<ParallelPlane>())
-        { }
-
-        bool maxsize_reached;
-        bool hole_encountered;
-        ParallelPlanePtr points;
-    };
-
 private:
     // Helper function for KDTree instance.
     static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
@@ -354,7 +357,7 @@ private:
             // Restrict total length (to prevent looping).
             if (retvalue.points->size() > max_size)
             {
-                retvalue.maxsize_reached = true;
+                retvalue.complete = true;
                 break;
             }
 
@@ -373,7 +376,7 @@ private:
             // Check if we bump into a hole.
             if (candidate_distance >= delta_max)
             {
-                retvalue.hole_encountered = true;
+                retvalue.has_hole = true;
                 break;
             }
 
