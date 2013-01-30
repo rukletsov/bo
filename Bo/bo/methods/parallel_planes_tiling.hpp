@@ -156,8 +156,8 @@ public:
     }
 
     // TODO: put this into triangulation.hpp.
-    static Mesh christiansen_triangulation(ParallelPlaneConstPtr contour1,
-                                           ParallelPlaneConstPtr contour2, bool is_closed)
+    static Mesh christiansen_triangulation(PropagationResult contour1,
+                                           PropagationResult contour2)
     {
         // TODO: assert on data size (at least 2 samples?).
 
@@ -182,21 +182,34 @@ public:
         ContourTraverser candidate2;
         bool is_forward2 = true;
 
-        if (is_closed)
-        {
-            current1 = ContourTraverser(Factory::Create(contour1, 5, true));
-            candidate1 = current1 + 1;
-            Point3D direction1 = *(current1 + 1) - *current1;
+        if (contour1.has_hole)
+            current1 = ContourTraverser(Factory::Create(contour1.points, true));
+        else
+            current1 = ContourTraverser(Factory::Create(contour1.points, 5, true));
+        candidate1 = current1 + 1;
 
+        if (contour2.has_hole)
+        {
+            // Contour2 traverse direction should be swapped in order to correspond
+            // with the contoru1 direction.
+            if ((contour2.points->back() - *current1).euclidean_norm() <
+                    (contour2.points->front() - *current1).euclidean_norm())
+                is_forward2 = false;
+
+            current2 = ContourTraverser(Factory::Create(contour2.points, is_forward2));
+            candidate2 = current2 + 1;
+        }
+        else
+        {
             // Find closest vertex on the second contour and determine direction.
             // No need of using kd-tree here, since the operation is done once.
             Metric metric(&euclidean_distance<RealType, 3>);
             std::size_t c2min_idx = 0;
             RealType c2min_dist = std::numeric_limits<RealType>::max();
 
-            for (std::size_t c2_idx = 0; c2_idx < contour2->size(); ++c2_idx)
+            for (std::size_t c2_idx = 0; c2_idx < contour2.points->size(); ++c2_idx)
             {
-                RealType cur_dist = metric(contour2->at(c2_idx), *current1);
+                RealType cur_dist = metric(contour2.points->at(c2_idx), *current1);
                 if (cur_dist < c2min_dist)
                 {
                     c2min_idx = c2_idx;
@@ -206,29 +219,16 @@ public:
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
-            Point3D direction2 = contour2->at(c2min_idx + 1) - contour2->at(c2min_idx);
+            Point3D direction1 = *(current1 + 1) - *current1;
+            Point3D direction2 = contour2.points->at(c2min_idx + 1) - contour2.points->at(c2min_idx);
             if (direction1 * direction2 < 0)
                 is_forward2 = false;
 
-            current2 = ContourTraverser(Factory::Create(contour2, c2min_idx, is_forward2));
-            candidate2 = current2 + 1;
-        }
-        else
-        {
-            current1 = ContourTraverser(Factory::Create(contour1, true));
-            candidate1 = current1 + 1;
-
-            // Contour2 traverse direction should be swapped in order to correspond
-            // with the contoru1 direction.
-            if ((contour2->back() - *current1).euclidean_norm() <
-                    (contour2->front() - *current1).euclidean_norm())
-                is_forward2 = false;
-
-            current2 = ContourTraverser(Factory::Create(contour2, is_forward2));
+            current2 = ContourTraverser(Factory::Create(contour2.points, c2min_idx, is_forward2));
             candidate2 = current2 + 1;
         }
 
-        Mesh mesh(contour1->size() + contour2->size());
+        Mesh mesh(contour1.points->size() + contour2.points->size());
         std::size_t current1_idx = mesh.add_vertex(*current1);
         std::size_t current2_idx = mesh.add_vertex(*current2);
         while (true)

@@ -140,7 +140,7 @@ void ChrisitiansenFemur()
     TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1.points, contour2.points, false);
+    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
     mesh_to_ply(mesh, paths.PlyFemurOutPath0102.string());
 }
 
@@ -162,7 +162,7 @@ void ChrisitiansenClosed()
     TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f);
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
-    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1.points, contour2.points, true);
+    TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(contour1, contour2);
     mesh_to_ply(mesh, paths.PlyClosedOutMeshPath.string());
 }
 
@@ -170,7 +170,7 @@ void ChrisitiansenFemurFull()
 {
     typedef MinSpanPropagation<float> TilingAlgo;
     typedef std::vector<path> ContourData;
-    typedef std::vector<TilingAlgo::ParallelPlanePtr> Contours;
+    typedef std::vector<TilingAlgo::PropagationResult> Contours;
 
     MinSpanPropagation<float> tiling;
     ContourData contour_data;
@@ -199,13 +199,13 @@ void ChrisitiansenFemurFull()
                 boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
         TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f);
 
-        contours.push_back(contour.points);
+        contours.push_back(contour);
     }
 
     // Tile pair of contours and join it with the result mesh.
     for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
     {
-        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it, false);
+        TilingAlgo::Mesh mesh = tiling.christiansen_triangulation(*(it - 1), *it);
         result_mesh.join(mesh);
     }
 
