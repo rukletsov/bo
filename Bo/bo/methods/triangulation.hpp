@@ -191,7 +191,6 @@ private:
     {
         ContourTraverser retvalue;
 
-        bool is_forward2 = true;
         if (closed2_)
         {
             // Find closest vertex on the second contour and determine direction.
@@ -224,9 +223,9 @@ private:
         {
             // Check if contour2_ traverse direction should be swapped in order to
             // correspond with the contour1_'s direction.
-            if (metric_(contour2_->back(), *traverser1) <
-                metric_(contour2_->front(), *traverser1))
-                is_forward2 = false;
+            RealType dist_to_first = metric_(contour2_->front(), *traverser1);
+            RealType dist_to_last = metric_(contour2_->back(), *traverser1);
+            bool is_forward2 = (dist_to_first < dist_to_last) ? true : false;
 
             retvalue = ContourTraverser(TraverseFactory::Create(contour2_, is_forward2));
         }
