@@ -57,6 +57,7 @@ namespace recognition {
 
 namespace detail{
 
+
 template <typename RealType>
 class Space
 {
@@ -418,6 +419,52 @@ private:
 };
 
 
+template <typename RealType>
+class SubdivisionPolicy
+{
+public:
+    typedef Space<RealType> Space4D;
+    typedef std::vector<std::size_t> SpaceIndices;
+
+    // Returns the indices of the minimal number of spaces from the given collection such that occurece of
+    // the maximal value in them is not less then the given probability p.
+    // The min_cell_size defines the minimal undividable cell size used for space discretization.
+    static SpaceIndices probabilistic(const typename Space4D::Spaces &spaces,
+                                      const typename Space4D::Point4D &min_cell_size,
+                                      RealType p)
+    {
+        SpaceIndices sind;
+
+        return sind;
+    }
+
+    // Distribution function.
+    static RealType F(std::size_t k, std::size_t n, std::size_t x)
+    {
+        return std::exp(-std::exp((mu(k, n) - x) / beta(k, n)));
+    }
+
+    // Mean.
+    static RealType E(std::size_t k, std::size_t n)
+    {
+        // Euler–Mascheroni constant.
+        const RealType gamma = RealType(0.5772);
+
+        return mu(k, n) + gamma * beta(k, n);
+    }
+
+    static RealType mu(std::size_t k, std::size_t n)
+    {
+        return 1.16f * k * std::pow(n, -2.0 / 3) + 1;
+    }
+
+    static RealType beta(std::size_t k, std::size_t n)
+    {
+        return 0.4f * k * std::pow(n, -4.0 / 5) + 0.32;
+    }
+};
+
+
 } // namespace detail
 
 template <typename RealType>
@@ -469,7 +516,7 @@ public:
 
         // Initialize the grid size.
         std::size_t divisions = std::pow(divisions_per_dimension, maximal_resolution_level + 1);
-        grid_size_ = (p2 - p1) / divisions;
+        min_cell_size_ = (p2 - p1) / divisions;
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -524,7 +571,7 @@ private:
     RealType tangent_accuracy_;
     ATable atable_;
     RealType pi_;
-    typename Space4D::Point4D grid_size_;
+    typename Space4D::Point4D min_cell_size_;
 
     // Row index in the alpha-table for the given tangent angle.
     inline std::size_t atable_index(RealType gamma)
@@ -698,13 +745,6 @@ private:
         // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
         process_space(s.get_subspaces().back(), object_features, probability, divisions_per_dimension,
                       maximal_resolution_level, scaling_range);
-        /*
-        for (typename Space4D::Spaces::reverse_iterator it = s.get_subspaces().rbegin(); it != s.get_subspaces().rend(); ++it)
-        {
-            process_space(*it, object_features, probability, divisions_per_dimension,
-                          maximal_resolution_level);
-        }
-        */
     }
 
     // Intersects the given space with the lines produced by the object features and increase the
@@ -768,8 +808,8 @@ private:
                 typename Space4D::Segment4D segment2(line4, -segment_coords);
 
                 // Intersect and compute the votes.
-                s.vote_maxnorm(s.intersect(segment1), grid_size_);
-                s.vote_maxnorm(s.intersect(segment2), grid_size_);
+                s.vote_maxnorm(s.intersect(segment1), min_cell_size_);
+                s.vote_maxnorm(s.intersect(segment2), min_cell_size_);
             }
         }
     }

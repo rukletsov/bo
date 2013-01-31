@@ -281,5 +281,17 @@ TEST_F(HoughTransformTest, SelfDetection)
     EXPECT_NEAR(r.first[1],  0, 0.01);
     EXPECT_NEAR(r.second[0],  1, 0.01);
     EXPECT_NEAR(r.second[1],  0, 0.01);
+}
 
+TEST_F(HoughTransformTest, ProbabilisticModel)
+{
+    std::size_t k = 79;
+    std::size_t n = 37;
+
+    // Test of the distribution function.
+    float f = detail::SubdivisionPolicy<float>::F(k, n, k);
+
+    EXPECT_NEAR(f, 1.0, 0.0001);
+
+    //float e = detail::SubdivisionPolicy<float>::E(k, n);
 }
