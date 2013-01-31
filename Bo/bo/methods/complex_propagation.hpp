@@ -1,9 +1,10 @@
 
 /******************************************************************************
 
-  parallel_planes_tiling.hpp, v 1.0.22 2013.01.16
+  complex_propagation.hpp, v 1.0.23 2013.01.31
 
-  Implementation of several surface tiling methods, working with parallel planes.
+  Implementation of the complex propagation technique used in surface
+  reconstruction.
 
   Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
@@ -32,8 +33,8 @@
 
 *******************************************************************************/
 
-#ifndef PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
-#define PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
+#ifndef COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
+#define COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
 
 #include <vector>
 #include <iterator>
@@ -55,10 +56,10 @@ namespace methods {
 namespace surfaces {
 
 template <typename RealType>
-class MinSpanPropagation: public boost::noncopyable
+class ComplexPropagation: public boost::noncopyable
 {
 public:
-    typedef MinSpanPropagation<RealType> this_type;
+    typedef ComplexPropagation<RealType> this_type;
 
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> Points3D;
@@ -91,7 +92,7 @@ public:
     };
 
 public:
-    MinSpanPropagation() { }
+    ComplexPropagation() { }
 
     static ParallelPlanePtr load_plane(Image2D data)
     {
@@ -279,4 +280,4 @@ private:
 } // namespace methods
 } // namespace bo
 
-#endif // PARALLEL_PLANES_TILING_HPP_353B5678_8A01_4091_91C4_9C5BE2476BA0_
+#endif // COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2

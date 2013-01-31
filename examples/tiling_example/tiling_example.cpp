@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
-#include "bo/methods/parallel_planes_tiling.hpp"
+#include "bo/methods/complex_propagation.hpp"
 #include "bo/methods/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
@@ -20,7 +20,7 @@ using namespace bo::methods::surfaces;
 using namespace bo::io;
 
 typedef bo::Mesh<float> Mesh;
-typedef MinSpanPropagation<float> TilingAlgo;
+typedef ComplexPropagation<float> TilingAlgo;
 typedef Triangulation<float> TriangAlgo;
 
 // Directory where test data is stored.
