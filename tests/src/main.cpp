@@ -28,7 +28,6 @@ int main(int argc, char* argv[])
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif // defined(_MSC_VER) && defined(_DEBUG)
 
-
     // Extract GTest's command-line arguments and prepare test environment.
     testing::InitGoogleTest(&argc, argv);
 
