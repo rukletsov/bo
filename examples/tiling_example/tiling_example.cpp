@@ -142,7 +142,7 @@ void ChrisitiansenFemur()
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
     TriangAlgo triang(contour1.points, !contour1.has_hole, contour2.points, !contour2.has_hole);
-    Mesh mesh = triang.christiansen();
+    Mesh mesh = *triang.christiansen();
     mesh_to_ply(mesh, paths.PlyFemurOutPath0102.string());
 }
 
@@ -165,7 +165,7 @@ void ChrisitiansenClosed()
     TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f);
 
     TriangAlgo triang(contour1.points, !(contour1.has_hole), contour2.points, !(contour2.has_hole));
-    Mesh mesh = triang.christiansen();
+    Mesh mesh = *triang.christiansen();
     mesh_to_ply(mesh, paths.PlyClosedOutMeshPath.string());
 }
 
@@ -208,7 +208,7 @@ void ChrisitiansenFemurFull()
     for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
     {
         TriangAlgo triang((it - 1)->points, !(it - 1)->has_hole, it->points, !it->has_hole);
-        Mesh mesh = triang.christiansen();
+        Mesh mesh = *triang.christiansen();
         result_mesh.join(mesh);
     }
 

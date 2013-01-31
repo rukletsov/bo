@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  triangulation.hpp, v 1.1.3 2013.01.31
+  triangulation.hpp, v 1.1.4 2013.01.31
 
   Triangulation algorithms for surface reconstruction problems.
 
@@ -41,6 +41,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 #include "bo/mesh.hpp"
 #include "bo/methods/distances_3d.hpp"
@@ -49,6 +50,55 @@
 namespace bo {
 namespace methods {
 namespace surfaces {
+
+namespace detail {
+
+// A class representing a triangle strip from two contours.
+template <typename RealType>
+class TStrip
+{
+public:
+    typedef Vector<RealType, 3> Vertex;
+    typedef Mesh<RealType> Mesh;
+    typedef boost::shared_ptr<Mesh> MeshPtr;
+
+public:
+    TStrip(const Vertex& vertex1, const Vertex& vertex2, std::size_t initial_count = 2)
+    {
+        mesh_ = boost::make_shared<Mesh>(initial_count);
+        current1_idx_ = mesh_->add_vertex(vertex1);
+        current2_idx_ = mesh_->add_vertex(vertex2);
+    }
+
+    // Adds a new vertex and shifts span in the direction of *first* vertex.
+    void add1(const Vertex& vertex)
+    { current1_idx_ = add_(vertex); }
+
+    // Adds a new vertex and shifts span in the direction of the *second* vertex.
+    void add2(const Vertex& vertex)
+    { current2_idx_ = add_(vertex); }
+
+    MeshPtr mesh()
+    { return mesh_; }
+
+private:
+    // Adds new vertex and face based on the current span to the mesh. Doesn't update
+    // the current span.
+    std::size_t add_(const Vertex& vertex)
+    {
+        std::size_t new_idx = mesh_->add_vertex(vertex);
+        mesh_->add_face(Mesh::Face(current1_idx_, new_idx, current2_idx_));
+        return new_idx;
+    }
+
+private:
+    MeshPtr mesh_;
+    std::size_t current1_idx_;
+    std::size_t current2_idx_;
+};
+
+} // namespace detail
+
 
 // A class performing different triangulations for two slices.
 template <typename RealType>
@@ -59,12 +109,13 @@ public:
 
     typedef Vector<RealType, 3> Point3D;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
-    typedef Mesh<RealType> Mesh;
     typedef std::vector<Point3D> Contour;
     typedef boost::shared_ptr<const Contour> ContourConstPtr;
 
     typedef ContainerConstTraverser<Contour> ContourTraverser;
     typedef TraverseRuleFactory<Contour> TraverseFactory;
+    typedef detail::TStrip<RealType> TStrip;
+    typedef typename TStrip::MeshPtr MeshPtr;
 
 public:
     Triangulation(ContourConstPtr contour1, bool closed1,
@@ -81,7 +132,7 @@ public:
     //
     // If a contour has exactly one hole (i.e. opened), it is traversed once
     // from the start to the end (from one hole edge to the other).
-    Mesh christiansen()
+    MeshPtr christiansen()
     {
         // Check contours' length.
         if ((contour1_->size() < 2) && (contour2_->size() < 2))
@@ -96,9 +147,7 @@ public:
         ContourTraverser candidate2 = current2 + 1;
 
         // Initialize output mesh.
-        Mesh mesh(contour1_->size() + contour2_->size());
-        std::size_t current1_idx = mesh.add_vertex(*current1);
-        std::size_t current2_idx = mesh.add_vertex(*current2);
+        TStrip tstrip(*current1, *current2, contour1_->size() + contour2_->size());
 
         // Iterate until both contours are exhausted.
         while (candidate1.is_valid() || candidate2.is_valid())
@@ -107,33 +156,22 @@ public:
             RealType span1_norm = span_norm(candidate1, current2);
             RealType span2_norm = span_norm(candidate2, current1);
 
-            // Add candidate vertex.
-            std::size_t candidate_idx;
+            // Choose and add candidate vertex and corresponding face.
             if (span1_norm > span2_norm)
             {
-                candidate_idx = mesh.add_vertex(*candidate2);
-
-                // Add edges to candidate vertex.
-                mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
-
+                tstrip.add2(*candidate2);
                 current2 = candidate2;
-                current2_idx = candidate_idx;
                 ++candidate2;
             }
             else
             {
-                candidate_idx = mesh.add_vertex(*candidate1);
-
-                // Add edges to candidate vertex.
-                mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
-
+                tstrip.add1(*candidate1);
                 current1 = candidate1;
-                current1_idx = candidate_idx;
                 ++candidate1;
             }
         }
 
-        return mesh;
+        return tstrip.mesh();
     }
 
 private:
