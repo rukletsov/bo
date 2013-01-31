@@ -84,7 +84,7 @@ public:
                            divisions_per_dimension * divisions_per_dimension);
 
         Point4D sizes4d = box_.second - box_.first;
-        Point4D steps4d = sizes4d / divisions_per_dimension;
+        Point4D steps4d = sizes4d / RealType(divisions_per_dimension);
 
         for (std::size_t d0 = 0; d0 < divisions_per_dimension; ++d0)
             for (std::size_t d1 = 0; d1 < divisions_per_dimension; ++d1)
@@ -310,8 +310,8 @@ public:
         normalize_scaling_range(scaling_range);
 
         // Hierarchical search for the vote peak in the space.
-        process_space(s, object_features, probability, divisions_per_dimension,
-                      maximal_resolution_level, scaling_range);
+        process_space(s, object_features, probability, RealType(divisions_per_dimension),
+                      RealType(maximal_resolution_level), scaling_range);
 
         // Get all subspaces from the last resolution level;
         typename Space4D::Spaces leafs;

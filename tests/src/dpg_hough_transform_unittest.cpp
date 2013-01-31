@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <fstream>
 
 #include "bo/methods/dpg_hough_transform_2d.hpp"
 
