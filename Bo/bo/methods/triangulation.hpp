@@ -224,8 +224,8 @@ private:
         {
             // Check if contour2_ traverse direction should be swapped in order to
             // correspond with the contour1_'s direction.
-            if ((contour2_->back() - *traverser1).euclidean_norm() <
-                    (contour2_->front() - *traverser1).euclidean_norm())
+            if (metric_(contour2_->back(), *traverser1) <
+                metric_(contour2_->front(), *traverser1))
                 is_forward2 = false;
 
             retvalue = ContourTraverser(TraverseFactory::Create(contour2_, is_forward2));
@@ -238,11 +238,11 @@ private:
     // contour and current vertex on another. If candidate vertex is invalid (this
     // indicates that the corresponding contour has been exhausted), returns infinity.
     // This guarantees that vertices will be sampled solely from the other contour.
-    static RealType span_norm(const ContourTraverser& candidate,
-                              const ContourTraverser& other_current)
+    RealType span_norm(const ContourTraverser& candidate,
+                       const ContourTraverser& other_current) const
     {
         RealType norm = candidate.is_valid() ?
-                    (*candidate - *other_current).euclidean_norm() :
+                    metric_(*candidate, *other_current):
                     std::numeric_limits<RealType>::max();
         return norm;
     }
