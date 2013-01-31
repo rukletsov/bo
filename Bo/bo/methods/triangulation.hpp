@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  triangulation.hpp, v 1.1.2 2013.01.30
+  triangulation.hpp, v 1.1.3 2013.01.31
 
   Triangulation algorithms for surface reconstruction problems.
 
@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <limits>
+#include <stdexcept>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -82,59 +83,16 @@ public:
     // from the start to the end (from one hole edge to the other).
     Mesh christiansen()
     {
-        // TODO: assert on data size (at least 2 samples?).
+        // Check contours' length.
+        if ((contour1_->size() < 2) && (contour2_->size() < 2))
+            throw std::logic_error("Cannot run Christiansen triangulation for contours "
+                                   "consisting of less than 2 vertices.");
 
-
-        // Create appropriate traverser for the first contour depending whether
-        // it is closed or not.
-        ContourTraverser current1 = closed1_ ?
-                    ContourTraverser(Factory::Create(contour1_, 0, true)) :
-                    ContourTraverser(Factory::Create(contour1_, true));
+        // Create traversers for contours.
+        ContourTraverser current1 = create_traverser1_();
         ContourTraverser candidate1 = current1 + 1;
 
-        // Create appropriate traverser for the second contour depending whether
-        // the contour is closed and how the first contour is oriented.
-        ContourTraverser current2;
-        bool is_forward2 = true;
-        if (closed2_)
-        {
-            // Find closest vertex on the second contour and determine direction.
-            // No need of using kd-tree here, since the operation is done once.
-            std::size_t c2min_idx = 0;
-            RealType c2min_dist = std::numeric_limits<RealType>::max();
-
-            for (std::size_t c2_idx = 0; c2_idx < contour2_->size(); ++c2_idx)
-            {
-                RealType cur_dist = metric_(contour2_->at(c2_idx), *current1);
-                if (cur_dist < c2min_dist)
-                {
-                    c2min_idx = c2_idx;
-                    c2min_dist = cur_dist;
-                }
-            }
-
-            // Create a default directed traverser. This is need to calculate the
-            // direction if c2min_idx is the last element in the collection.
-            current2 = ContourTraverser(Factory::Create(contour2_, c2min_idx, true));
-
-            // Contour2 traverse direction should be swapped in order to correspond
-            // with the contoru1 direction.
-            Point3D direction1 = *(current1 + 1) - *current1;
-            Point3D direction2 = *(current2 + 1) - *current2;
-            if (direction1 * direction2 < 0)
-                current2 = ContourTraverser(Factory::Create(contour2_, c2min_idx, false));
-        }
-        else
-        {
-            // Check if contour2_ traverse direction should be swapped in order to
-            // correspond with the contour1_'s direction.
-            if ((contour2_->back() - *current1).euclidean_norm() <
-                    (contour2_->front() - *current1).euclidean_norm())
-                is_forward2 = false;
-
-            current2 = ContourTraverser(Factory::Create(contour2_, is_forward2));
-        }
-
+        ContourTraverser current2 = create_traverser2_(current1);
         ContourTraverser candidate2 = current2 + 1;
 
         // Initialize output mesh.
@@ -145,21 +103,15 @@ public:
         // Iterate until both contours are exhausted.
         while (candidate1.is_valid() || candidate2.is_valid())
         {
-            // This guarantees that when one contour ends, points will be sampled
-            // solely from the other one.
-            RealType span1_norm = (candidate1.is_valid()) ?
-                        (*(candidate1) - *current2).euclidean_norm() :
-                        std::numeric_limits<RealType>::max();
-            RealType span2_norm = (candidate2.is_valid()) ?
-                        (*(candidate2) - *current1).euclidean_norm() :
-                        std::numeric_limits<RealType>::max();
+            // Calculate span norms for candidate vertices.
+            RealType span1_norm = span_norm(candidate1, current2);
+            RealType span2_norm = span_norm(candidate2, current1);
 
             // Add candidate vertex.
             std::size_t candidate_idx;
             if (span1_norm > span2_norm)
             {
-                candidate_idx = candidate2.is_valid() ?
-                            mesh.add_vertex(*candidate2) : -1;
+                candidate_idx = mesh.add_vertex(*candidate2);
 
                 // Add edges to candidate vertex.
                 mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
@@ -170,8 +122,8 @@ public:
             }
             else
             {
-                candidate_idx = candidate1.is_valid() ?
-                            mesh.add_vertex(*candidate1) : -1;
+                candidate_idx = mesh.add_vertex(*candidate1);
+
                 // Add edges to candidate vertex.
                 mesh.add_face(Mesh::Face(current1_idx, candidate_idx, current2_idx));
 
@@ -182,6 +134,79 @@ public:
         }
 
         return mesh;
+    }
+
+private:
+    // Creates an appropriate traverser for the first contour depending whether
+    // it is closed or not.
+    ContourTraverser create_traverser1_() const
+    {
+        ContourTraverser retvalue = closed1_ ?
+            ContourTraverser(Factory::Create(contour1_, 0, true)) :
+            ContourTraverser(Factory::Create(contour1_, true));
+        return retvalue;
+    }
+
+    // Creates an appropriate traverser for the second contour depending whether
+    // the contour is closed and how the first contour is oriented.
+    ContourTraverser create_traverser2_(const ContourTraverser& traverser1) const
+    {
+        ContourTraverser retvalue;
+
+        bool is_forward2 = true;
+        if (closed2_)
+        {
+            // Find closest vertex on the second contour and determine direction.
+            // No need of using kd-tree here, since the operation is done once.
+            std::size_t c2min_idx = 0;
+            RealType c2min_dist = std::numeric_limits<RealType>::max();
+
+            for (std::size_t c2_idx = 0; c2_idx < contour2_->size(); ++c2_idx)
+            {
+                RealType cur_dist = metric_(contour2_->at(c2_idx), *traverser1);
+                if (cur_dist < c2min_dist)
+                {
+                    c2min_idx = c2_idx;
+                    c2min_dist = cur_dist;
+                }
+            }
+
+            // Create a default directed traverser. This is need to calculate the
+            // direction if c2min_idx is the last element in the collection.
+            retvalue = ContourTraverser(Factory::Create(contour2_, c2min_idx, true));
+
+            // Contour2 traverse direction should be swapped in order to correspond
+            // with the contoru1 direction.
+            Point3D direction1 = *(traverser1 + 1) - *traverser1;
+            Point3D direction2 = *(retvalue + 1) - *retvalue;
+            if (direction1 * direction2 < 0)
+                retvalue = ContourTraverser(Factory::Create(contour2_, c2min_idx, false));
+        }
+        else
+        {
+            // Check if contour2_ traverse direction should be swapped in order to
+            // correspond with the contour1_'s direction.
+            if ((contour2_->back() - *traverser1).euclidean_norm() <
+                    (contour2_->front() - *traverser1).euclidean_norm())
+                is_forward2 = false;
+
+            retvalue = ContourTraverser(Factory::Create(contour2_, is_forward2));
+        }
+
+        return retvalue;
+    }
+
+    // Calculates the euclidean norm of the span between candidate vertex on one
+    // contour and current vertex on another. If candidate vertex is invalid (this
+    // indicates that the corresponding contour has been exhausted), returns infinity.
+    // This guarantees that vertices will be sampled solely from the other contour.
+    static RealType span_norm(const ContourTraverser& candidate,
+                              const ContourTraverser& other_current)
+    {
+        RealType norm = candidate.is_valid() ?
+                    (*candidate - *other_current).euclidean_norm() :
+                    std::numeric_limits<RealType>::max();
+        return norm;
     }
 
 private:
