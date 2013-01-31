@@ -60,15 +60,15 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef Mesh<RealType> Mesh;
-    typedef std::vector<Point3D> ParallelPlane;
-    typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
+    typedef std::vector<Point3D> Contour;
+    typedef boost::shared_ptr<const Contour> ContourConstPtr;
 
-    typedef ContainerConstTraverser<ParallelPlane> ContourTraverser;
-    typedef TraverseRuleFactory<ParallelPlane> Factory;
+    typedef ContainerConstTraverser<Contour> ContourTraverser;
+    typedef TraverseRuleFactory<Contour> TraverseFactory;
 
 public:
-    Triangulation(ParallelPlaneConstPtr contour1, bool closed1,
-                  ParallelPlaneConstPtr contour2, bool closed2):
+    Triangulation(ContourConstPtr contour1, bool closed1,
+                  ContourConstPtr contour2, bool closed2):
         contour1_(contour1), closed1_(closed1), contour2_(contour2), closed2_(closed2)
     {
         metric_ = &euclidean_distance<RealType, 3>;
@@ -142,8 +142,8 @@ private:
     ContourTraverser create_traverser1_() const
     {
         ContourTraverser retvalue = closed1_ ?
-            ContourTraverser(Factory::Create(contour1_, 0, true)) :
-            ContourTraverser(Factory::Create(contour1_, true));
+            ContourTraverser(TraverseFactory::Create(contour1_, 0, true)) :
+            ContourTraverser(TraverseFactory::Create(contour1_, true));
         return retvalue;
     }
 
@@ -173,14 +173,14 @@ private:
 
             // Create a default directed traverser. This is need to calculate the
             // direction if c2min_idx is the last element in the collection.
-            retvalue = ContourTraverser(Factory::Create(contour2_, c2min_idx, true));
+            retvalue = ContourTraverser(TraverseFactory::Create(contour2_, c2min_idx, true));
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contoru1 direction.
             Point3D direction1 = *(traverser1 + 1) - *traverser1;
             Point3D direction2 = *(retvalue + 1) - *retvalue;
             if (direction1 * direction2 < 0)
-                retvalue = ContourTraverser(Factory::Create(contour2_, c2min_idx, false));
+                retvalue = ContourTraverser(TraverseFactory::Create(contour2_, c2min_idx, false));
         }
         else
         {
@@ -190,7 +190,7 @@ private:
                     (contour2_->front() - *traverser1).euclidean_norm())
                 is_forward2 = false;
 
-            retvalue = ContourTraverser(Factory::Create(contour2_, is_forward2));
+            retvalue = ContourTraverser(TraverseFactory::Create(contour2_, is_forward2));
         }
 
         return retvalue;
@@ -210,9 +210,9 @@ private:
     }
 
 private:
-    ParallelPlaneConstPtr contour1_;
+    ContourConstPtr contour1_;
     bool closed1_;
-    ParallelPlaneConstPtr contour2_;
+    ContourConstPtr contour2_;
     bool closed2_;
 
     Metric metric_;
