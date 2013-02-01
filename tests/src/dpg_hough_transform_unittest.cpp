@@ -67,6 +67,10 @@ protected:
         // Object recognition area.
         bbox_ = DualPointGHT<float>::SearchArea(DualPointGHT<float>::Point2D(-2.f, -2.f),
                                                     DualPointGHT<float>::Point2D(2.f, 2.f));
+
+
+        grid_size_ = Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f);
+        pb10_ = Space<float>::Point4D(1.f, 1.f, 1.f, 0.9f);
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -92,6 +96,8 @@ protected:
     Space<float> space1_;
     Space<float> space1x_;
     Space<float> space2_;
+    Space<float>::Point4D grid_size_;
+    Space<float>::Point4D pb10_;
 
     DualPointGHT<float>::Features model_;
     DualPointGHT<float>::SearchArea bbox_;
@@ -177,9 +183,75 @@ TEST_F(HoughTransformTest, ComplexSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb5_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(4.f, 5.f));
-    space1_.vote_descrete(space1_.intersect(sg));
+    space1_.vote_unit(space1_.intersect(sg));
 
     EXPECT_EQ(space1_.get_votes(), 0);
+}
+
+TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
+{
+    // Parallel.
+    space1_.reset_votes();
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_descrete(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+
+    // Diagonal.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb5_, pb2_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
+    space1_.vote_descrete(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 11);
+
+    // Irregular.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb1_, pb10_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_descrete(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 18);
+}
+
+
+TEST_F(HoughTransformTest, TaxicabSpaceLineIntersection)
+{
+    // Parallel.
+    space1_.reset_votes();
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_taxicab(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+}
+
+TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
+{
+    // Parallel.
+    space1_.reset_votes();
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+
+    // Diagonal.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb5_, pb2_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
+
+    // Irregular.
+    space1_.reset_votes();
+    ln = Space<float>::Line4D(pb1_, pb10_);
+    sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space1_.vote_maxnorm(sg, grid_size_);
+
+    EXPECT_EQ(space1_.get_votes(), 10);
 }
 
 TEST_F(HoughTransformTest, SpaceSubdivision)
@@ -200,7 +272,7 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 5, bbox_, bbox_);
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 6, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
@@ -208,5 +280,17 @@ TEST_F(HoughTransformTest, SelfDetection)
     EXPECT_NEAR(r.first[1],  0, 0.01);
     EXPECT_NEAR(r.second[0],  1, 0.01);
     EXPECT_NEAR(r.second[1],  0, 0.01);
+}
 
+TEST_F(HoughTransformTest, ProbabilisticModel)
+{
+    std::size_t k = 79;
+    std::size_t n = 37;
+
+    // Test of the distribution function.
+    float f = detail::SubdivisionPolicy<float>::F(k, n, k);
+
+    EXPECT_NEAR(f, 1.0, 0.0001);
+
+    //float e = detail::SubdivisionPolicy<float>::E(k, n);
 }
