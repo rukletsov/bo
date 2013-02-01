@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  triangulation.hpp, v 1.1.4 2013.01.31
+  triangulation.hpp, v 1.1.5 2013.02.01
 
   Triangulation algorithms for surface reconstruction problems.
 
@@ -38,6 +38,7 @@
 #include <vector>
 #include <limits>
 #include <stdexcept>
+#include <algorithm>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -110,7 +111,7 @@ public:
     typedef Vector<RealType, 3> Point3D;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef std::vector<Point3D> Contour;
-    typedef boost::shared_ptr<const Contour> ContourConstPtr;
+    typedef boost::shared_ptr<Contour> ContourPtr;
 
     typedef ContainerConstTraverser<Contour> ContourTraverser;
     typedef TraverseRuleFactory<Contour> TraverseFactory;
@@ -118,8 +119,8 @@ public:
     typedef typename TStrip::MeshPtr MeshPtr;
 
 public:
-    Triangulation(ContourConstPtr contour1, bool closed1,
-                  ContourConstPtr contour2, bool closed2):
+    Triangulation(ContourPtr contour1, bool closed1,
+                  ContourPtr contour2, bool closed2):
         contour1_(contour1), closed1_(closed1), contour2_(contour2), closed2_(closed2)
     {
         metric_ = &euclidean_distance<RealType, 3>;
@@ -138,6 +139,14 @@ public:
         if ((contour1_->size() < 2) && (contour2_->size() < 2))
             throw std::logic_error("Cannot run Christiansen triangulation for contours "
                                    "consisting of less than 2 vertices.");
+
+        // If the first contour is closed but the second is opened, traverse direction
+        // for the second contour may be determined incorrectly.
+        if (closed1_ && !closed2_)
+        {
+            contour1_->swap(*contour2_);
+            std::swap(closed1_, closed2_);
+        }
 
         // Create traversers for contours.
         ContourTraverser current1 = create_traverser1_();
@@ -247,9 +256,9 @@ private:
     }
 
 private:
-    ContourConstPtr contour1_;
+    ContourPtr contour1_;
     bool closed1_;
-    ContourConstPtr contour2_;
+    ContourPtr contour2_;
     bool closed2_;
 
     Metric metric_;
