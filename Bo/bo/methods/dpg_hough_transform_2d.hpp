@@ -88,7 +88,7 @@ public:
                            divisions_per_dimension * divisions_per_dimension);
 
         Point4D sizes4d = box_.second - box_.first;
-        Point4D steps4d = sizes4d / divisions_per_dimension;
+        Point4D steps4d = sizes4d / RealType(divisions_per_dimension);
 
         for (std::size_t d0 = 0; d0 < divisions_per_dimension; ++d0)
             for (std::size_t d1 = 0; d1 < divisions_per_dimension; ++d1)
@@ -516,7 +516,7 @@ public:
 
         // Initialize the grid size.
         std::size_t divisions = std::pow(divisions_per_dimension, maximal_resolution_level + 1);
-        min_cell_size_ = (p2 - p1) / divisions;
+        min_cell_size_ = (p2 - p1) / RealType(divisions);
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -742,9 +742,9 @@ private:
         // Subspaces with less votes first.
         std::sort(s.get_subspaces().begin(), s.get_subspaces().end());
 
-        // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
-        process_space(s.get_subspaces().back(), object_features, probability, divisions_per_dimension,
-                      maximal_resolution_level, scaling_range);
+        // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.      
+        process_space(s.get_subspaces().back(), object_features, probability, RealType(divisions_per_dimension),
+                      RealType(maximal_resolution_level), scaling_range);
     }
 
     // Intersects the given space with the lines produced by the object features and increase the
