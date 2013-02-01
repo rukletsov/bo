@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.0.23 2013.01.31
+  complex_propagation.hpp, v 1.0.24 2013.02.01
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -106,19 +106,18 @@ public:
         return plane;
     }
 
-    // TODO: put this into complex_propagation.hpp.
-    static PropagationResult propagate(ParallelPlaneConstPtr plane, RealType ratio)
+    static PropagationResult propagate(ParallelPlaneConstPtr plane, RealType ratio,
+                                       RealType delta_min, RealType delta_max)
     {
-        // TODO: assert on data size (at least 2 samples?).
+        // Check contours' length.
+        if (plane->size() < 2)
+            throw std::logic_error("Cannot run propagation for planes consisting of"
+                                   "less than 2 vertices.");
 
-        // Set algorithm parameters.
-        RealType delta_min = 5;
-        RealType delta_max = 10;
         Metric metric(&euclidean_distance<RealType, 3>);
 
         // Build kd-tree from given points.
         // TODO: provide kd-tree with current metric.
-        // TODO: convert 3D points to 2D and pass this data as reference to kdtree c-tor.
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Choose initial point and initial propagation. It solely consists of the
