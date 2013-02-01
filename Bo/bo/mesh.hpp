@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  mesh.hpp, v 1.3.3 2013.01.18
+  mesh.hpp, v 1.3.3 2013.01.30
 
   Triangular mesh class.
 
@@ -117,6 +117,8 @@ public:
     // Joins the given mesh into the current one. First adds points, then recalculates
     // faces and finally adds faces.
     SelfType& join(const SelfType& other);
+
+    static SelfType from_vertices(const Vertices* vertices);
 
     // Returns data from connectivity structures. Throws if face index is out of range.
     const AdjacentVerticesPerVertex& get_neighbouring_vertices(
@@ -424,6 +426,16 @@ Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
     }
 
     return (*this);
+}
+
+template <typename T>
+Mesh<T> Mesh<T>::from_vertices(const Vertices* vertices)
+{
+    SelfType mesh(vertices->size());
+    for (Vertices::const_iterator it = vertices->begin(); it != vertices->end(); ++it)
+        mesh.add_vertex(*it);
+
+    return mesh;
 }
 
 template <typename T>
