@@ -162,7 +162,7 @@ ICP3D<RealType>::ICP3D(const PointCloud& source, PointCloudPtr target,
     Metric dist_fun, bool is_preprocess):
     current_cloud_(source), target_cloud_(target), dist_fun_(dist_fun), 
     current_trans_(),
-    tree_(target->begin(), target->end(), Point3DTree(std::ptr_fun(ICP3D<RealType>::point_bac)))
+    tree_(target->begin(), target->end(), std::ptr_fun(ICP3D<RealType>::point_bac))
 {    
     if (is_preprocess)
         overlay_();
@@ -176,9 +176,9 @@ RealType ICP3D<RealType>::next()
 
     // Update the correspondence.
     corresp_cloud_.clear();
-    for (PointCloud::const_iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
+    for (typename PointCloud::const_iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
     {
-        std::pair<Point3DTree::const_iterator, RealType> closest = tree_.find_nearest(*it);
+        std::pair<typename Point3DTree::const_iterator, RealType> closest = tree_.find_nearest(*it);
         corresp_cloud_.push_back(*closest.first);
     }
 
@@ -220,7 +220,8 @@ RealType ICP3D<RealType>::next()
     blas::eigen_symmetric(Qpx);
 
     // Quaternion that defines the optimal rotation.
-    Vector<RealType, 4> quaternion = blas::to_bo_vector(blas::column(Qpx, 3));
+    boost::numeric::ublas::bounded_vector<RealType, 4> col(blas::column(Qpx, 3));
+    Vector<RealType, 4> quaternion = blas::to_bo_vector(col);
 
     // Optimal translation. 
     Point3D translation = corresp_centroid - Transformation(quaternion) * current_centroid;
@@ -342,7 +343,7 @@ void bo::methods::ICP3D<RealType>::update_current_transform_and_cloud_(const Tra
     current_trans_ = m * current_trans_;
 
     // Update the current point cloud.
-    for (PointCloud::iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
+    for (typename PointCloud::iterator it = current_cloud_.begin(); it != current_cloud_.end(); ++it)
     {
         *it = m * (*it);
     }
