@@ -83,14 +83,14 @@ public:
     typedef FwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_iterator FwdIterator;
 
-    FwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour),
-        end_it_(contour->end())
-    { fwd_it_ = contour_->begin(); }
+    FwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
+        : TraverseRule<Container>(contour), end_it_(contour->end())
+    { fwd_it_ = this->contour_->begin(); }
 
     virtual void add(std::size_t offset)
     { fwd_it_ += offset; }
 
-    virtual Reference dereference() const
+    virtual typename TraverseRule<Container>::Reference dereference() const
     { return *fwd_it_; }
 
     virtual bool check_validity() const
@@ -114,14 +114,14 @@ public:
     typedef BwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_reverse_iterator BwdIterator;
 
-    BwdOnePassTraverseRule(ContainerConstPtr contour): TraverseRule(contour),
-        end_it_(contour->rend())
-    { bwd_it_ = contour_->rbegin(); }
+    BwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
+        : TraverseRule<Container>(contour), end_it_(contour->rend())
+    { bwd_it_ = this->contour_->rbegin(); }
 
     virtual void add(std::size_t offset)
     { bwd_it_ += offset; }
 
-    virtual Reference dereference() const
+    virtual typename TraverseRule<Container>::Reference dereference() const
     { return *bwd_it_; }
 
     virtual bool check_validity() const
@@ -145,37 +145,37 @@ class FwdCircuitTraverseRule: public FwdOnePassTraverseRule<Container>
 public:
     typedef FwdCircuitTraverseRule<Container> SelfType;
 
-    FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        FwdOnePassTraverseRule(contour), left_items_(contour->size())
-    { fwd_it_ += start_idx; }
+    FwdCircuitTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour, std::size_t start_idx):
+        FwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
+    { this->fwd_it_ += start_idx; }
 
     virtual void add(std::size_t offset)
     {
         // Do nothing for already invalidated traverser.
-        if (check_validity())
+        if (this->check_validity())
         {
             // Check boundary condition.
             left_items_ -= offset;
             if (left_items_ >= 0)
             {
                 // Check if we have to jump to the beginning of the container.
-                std::size_t dist_to_end = end_it_ - fwd_it_;
+                std::size_t dist_to_end = this->end_it_ - this->fwd_it_;
                 if (dist_to_end > offset)
                 {
                     // Iterator's new position is before end().
-                    fwd_it_ += offset;
+                    this->fwd_it_ += offset;
                 }
                 else
                 {
                     // Start iterating from the beginning, mind skipped items.
-                    fwd_it_ = contour_->begin();
-                    fwd_it_ += (offset - dist_to_end);
+                    this->fwd_it_ = this->contour_->begin();
+                    this->fwd_it_ += (offset - dist_to_end);
                 }
             }
             else
             {
                 // Invalidate traverser.
-                fwd_it_ = end_it_;
+                this->fwd_it_ = this->end_it_;
             }
         }
     }
@@ -197,37 +197,37 @@ class BwdCircuitTraverseRule: public BwdOnePassTraverseRule<Container>
 public:
     typedef BwdCircuitTraverseRule<Container> SelfType;
 
-    BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
-        BwdOnePassTraverseRule(contour), left_items_(contour->size())
-    { bwd_it_ += (contour_->size() - 1 - start_idx); }
+    BwdCircuitTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour, std::size_t start_idx):
+        BwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
+    { this->bwd_it_ += (this->contour_->size() - 1 - start_idx); }
 
     virtual void add(std::size_t offset)
     {
         // Do nothing for already invalidated traverser.
-        if (check_validity())
+        if (this->check_validity())
         {
             // Check boundary condition.
             left_items_ -= offset;
             if (left_items_ >= 0)
             {
                 // Check if we have to jump to the end of the container.
-                std::size_t dist_to_end = end_it_ - bwd_it_;
+                std::size_t dist_to_end = this->end_it_ - this->bwd_it_;
                 if (dist_to_end > offset)
                 {
                     // Iterator's new position is after rend().
-                    bwd_it_ += offset;
+                    this->bwd_it_ += offset;
                 }
                 else
                 {
                     // Start iterating from the end backwards, mind skipped itemd.
-                    bwd_it_ = contour_->rbegin();
-                    bwd_it_ += (offset - dist_to_end);
+                    this->bwd_it_ = this->contour_->rbegin();
+                    this->bwd_it_ += (offset - dist_to_end);
                 }
             }
             else
             {
                 // Invalidate traverser.
-                bwd_it_ = end_it_;
+                this->bwd_it_ = this->end_it_;
             }
         }
     }
