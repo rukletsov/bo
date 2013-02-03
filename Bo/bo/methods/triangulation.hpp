@@ -60,13 +60,13 @@ class TStrip
 {
 public:
     typedef Vector<RealType, 3> Vertex;
-    typedef Mesh<RealType> Mesh;
-    typedef boost::shared_ptr<Mesh> MeshPtr;
+    typedef Mesh<RealType> Mesh3D;
+    typedef boost::shared_ptr<Mesh3D> MeshPtr;
 
 public:
     TStrip(const Vertex& vertex1, const Vertex& vertex2, std::size_t initial_count = 2)
     {
-        mesh_ = boost::make_shared<Mesh>(initial_count);
+        mesh_ = boost::make_shared<Mesh3D>(initial_count);
         current1_idx_ = mesh_->add_vertex(vertex1);
         current2_idx_ = mesh_->add_vertex(vertex2);
     }
@@ -88,7 +88,7 @@ private:
     std::size_t add_(const Vertex& vertex)
     {
         std::size_t new_idx = mesh_->add_vertex(vertex);
-        mesh_->add_face(Mesh::Face(current1_idx_, new_idx, current2_idx_));
+        mesh_->add_face(typename Mesh3D::Face(current1_idx_, new_idx, current2_idx_));
         return new_idx;
     }
 
