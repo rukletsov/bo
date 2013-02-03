@@ -120,4 +120,4 @@ struct PCA
 } // namespace blas
 } // namespace bo
 
-#endif PCA_HPP_C2EA373C_F360_43BA_BACB_4B26B78759BE_
+#endif // PCA_HPP_C2EA373C_F360_43BA_BACB_4B26B78759BE_
