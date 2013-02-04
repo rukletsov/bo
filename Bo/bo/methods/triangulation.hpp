@@ -60,7 +60,7 @@ class TStrip
 {
 public:
     typedef Vector<RealType, 3> Vertex;
-    typedef Mesh<RealType> Mesh3D;
+    typedef bo::Mesh<RealType> Mesh3D;
     typedef boost::shared_ptr<Mesh3D> MeshPtr;
 
 public:
