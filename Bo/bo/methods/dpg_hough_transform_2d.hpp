@@ -362,8 +362,8 @@ private:
     Spaces subspaces_;
     Box4D box_;
     std::size_t resolution_level_;
-    RealType votes_;
     Point4D cell_size_;
+    RealType votes_;
     std::size_t cell_count_;
 
     // Cuts the segment in the given dimension according to two given levels.
@@ -443,18 +443,14 @@ class SubdivisionPolicy
 {
 public:
     typedef Space<RealType> Space4D;
-    typedef std::vector<std::size_t> SpaceIndices;
 
-    // Returns the indices of the minimal number of spaces from the given collection such that occurece of
-    // the maximal value in them is not less then the given probability p.
-    // The min_cell_size defines the minimal undividable cell size used for space discretization.
-    static SpaceIndices probabilistic(const typename Space4D::Spaces &spaces,
-                                      const typename Space4D::Point4D &min_cell_size,
-                                      RealType p)
+    // Returns the minimal number of spaces from the beginning of the given sorted collection
+    // such that occurece of the maximal value is not less then the given probability p.
+    // Attention: the input collection of spaces must be sorted in descending order!
+    static std::size_t probabilistic(const typename Space4D::Spaces &spaces, RealType p)
     {
-        SpaceIndices sind;
 
-        return sind;
+        return 1;
     }
 
     // Distribution function.
@@ -516,6 +512,7 @@ public:
     typedef std::list<ATableElement> ATableRow;
     typedef std::vector<ATableRow> ATable;
     typedef detail::Space<RealType> Space4D;
+    typedef detail::SubdivisionPolicy<RealType> SubPolicy;
 
     DualPointGHT(const Features &model_features, const Reference &model_reference, 
                  RealType tangent_accuracy = RealType(0.005)):
@@ -547,9 +544,9 @@ public:
         // Initialize the grid size.
         std::size_t divisions = std::size_t(std::pow(RealType(divisions_per_dimension),
                                             RealType(maximal_resolution_level + 1)));
-        min_cell_size_ = (p2 - p1) / RealType(divisions);
+        typename Space4D::Point4D min_cell_size = (p2 - p1) / RealType(divisions);
 
-        Space4D s(typename Space4D::Box4D(p1, p2), min_cell_size_, 0);
+        Space4D s(typename Space4D::Box4D(p1, p2), min_cell_size, 0);
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -604,7 +601,6 @@ private:
     RealType tangent_accuracy_;
     ATable atable_;
     RealType pi_;
-    typename Space4D::Point4D min_cell_size_;
 
     // Row index in the alpha-table for the given tangent angle.
     inline std::size_t atable_index(RealType gamma)
@@ -763,7 +759,6 @@ private:
 
         // Create the space subdivision.
         s.subdivide(divisions_per_dimension);
-        //typename Space4D::Spaces subs = s.get_subspaces();
 
         // Calculate the votes for the obtained subspaces.
         for (typename Space4D::Spaces::iterator it = s.get_subspaces().begin();
@@ -772,12 +767,19 @@ private:
             feature_to_vote(*it, object_features, scaling_range);
         }
 
-        // Subspaces with less votes first.
-        std::sort(s.get_subspaces().begin(), s.get_subspaces().end());
+        // Sorting subspaces in descending order!
+        std::sort(s.get_subspaces().rbegin(), s.get_subspaces().rend());
 
-        // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.      
-        process_space(s.get_subspaces().back(), object_features, probability, RealType(divisions_per_dimension),
-                      RealType(maximal_resolution_level), scaling_range);
+        // The minimal number of spaces from the beginning of the space collection such
+        // that the probability of maximal element is not less than the given value.
+        std::size_t n = SubPolicy::probabilistic(s.get_subspaces(), probability);
+
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
+            process_space(s.get_subspaces().at(i), object_features, probability, RealType(divisions_per_dimension),
+                          RealType(maximal_resolution_level), scaling_range);
+        }
     }
 
     // Intersects the given space with the lines produced by the object features and increase the
