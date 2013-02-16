@@ -25,6 +25,8 @@ protected:
         c2_ = DualPointGHT<float>::Point2D(5.f, 5.f);
         tang2_ = DualPointGHT<float>::Point2D(-1.f, -1.f);
 
+        grid_size_ = Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f);
+
 
         // Space-line intersection data.
         pb1_ = Space<float>::Point4D(0.f, 0.f, 0.f, 0.f);
@@ -35,7 +37,7 @@ protected:
         pb6_ = Space<float>::Point4D(0.5f, 0.5f, 0.5f, 0.5f);
         pb7_ = Space<float>::Point4D(0.1f, 0.f, 0.f, 0.f);
         pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
-        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_));
+        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_), grid_size_);
 
         space1x_ = Space<float>(Space<float>::Box4D(Space<float>::Point4D(-1.f, -1.f, -1.f, -1.f),
                                                     Space<float>::Point4D(1.f, 1.f, 1.f, 1.f)));
@@ -44,7 +46,7 @@ protected:
 
         // Space subdivision.
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
-        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
+        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_), grid_size_);
 
 
         // Simple object detection.
@@ -69,7 +71,6 @@ protected:
                                                     DualPointGHT<float>::Point2D(2.f, 2.f));
 
 
-        grid_size_ = Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f);
         pb10_ = Space<float>::Point4D(1.f, 1.f, 1.f, 0.9f);
     }
 
@@ -194,7 +195,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -202,7 +203,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb5_, pb2_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 11);
 
@@ -210,7 +211,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb1_, pb10_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 18);
 }
@@ -222,7 +223,7 @@ TEST_F(HoughTransformTest, TaxicabSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_taxicab(sg, grid_size_);
+    space1_.vote_taxicab(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 }
@@ -233,7 +234,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -241,7 +242,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb5_, pb2_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -249,7 +250,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb1_, pb10_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 }
@@ -292,5 +293,10 @@ TEST_F(HoughTransformTest, ProbabilisticModel)
 
     EXPECT_NEAR(f, 1.0, 0.0001);
 
-    //float e = detail::SubdivisionPolicy<float>::E(k, n);
+    for (std::size_t i = 0; i <= k; ++i)
+    {
+        float e = detail::SubdivisionPolicy<float>::E(i, n);
+        int iii = 0;
+    }
+
 }

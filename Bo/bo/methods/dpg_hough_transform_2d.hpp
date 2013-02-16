@@ -58,6 +58,7 @@ namespace recognition {
 namespace detail{
 
 
+
 template <typename RealType>
 class Space
 {
@@ -75,10 +76,28 @@ public:
     // coordinates of two points on this line
     // relatively to the line's direction vector.
     typedef std::pair<Line4D, SegmentCoordinates> Segment4D;
+    // The size of the atomic element of the space.
 
-    Space(const Box4D &box = Box4D(Point4D(0,0,0,0), Point4D(0,0,0,0)), std::size_t resolution_level = 0):
-        box_(box), resolution_level_(resolution_level), votes_(0)
+    Space(const Box4D &box = Box4D(Point4D(0, 0, 0, 0), Point4D(0, 0, 0, 0)),
+          const Point4D &cell_size = Point4D(1, 1, 1, 1),
+          std::size_t resolution_level = 0):
+        box_(box), resolution_level_(resolution_level), cell_size_(cell_size), votes_(0)
     {
+        // Attention: the space must contain integer number of cells (in each dimension)!
+        // Compute the number of cells in the space.
+        cell_count_ = 1;
+        for (std::size_t i = 0; i < 4; ++i)
+        {
+            RealType dimension_size = box.second[i] - box.first[i];
+
+            // Computing of cells with rounding.
+            std::size_t cells_in_dimension =
+                    static_cast<std::size_t>(std::floor(dimension_size / cell_size_[i] + RealType(0.5)));
+
+            BOOST_ASSERT(std::abs(dimension_size - cells_in_dimension * cell_size_[i]) < 0.001);
+
+            cell_count_ *= cells_in_dimension;
+        }
     }
 
     // Subdivides the space.
@@ -98,7 +117,7 @@ public:
                         // Create a subspace.
                         Point4D translation(d0 * steps4d[0], d1 * steps4d[1], d2 * steps4d[2], d3 * steps4d[3]);
                         Box4D b(box_.first + translation, box_.first + translation + steps4d);
-                        Space s(b, resolution_level_ + 1);
+                        Space s(b, cell_size_, resolution_level_ + 1);
 
                         subspaces_.push_back(s);
                     }
@@ -123,6 +142,11 @@ public:
     inline RealType get_votes() const
     {
         return votes_;
+    }
+
+    inline RealType get_cell_count() const
+    {
+        return cell_count_;
     }
 
     void reset_votes()
@@ -162,10 +186,9 @@ public:
         }
     }
 
-    // Increase the number of votes on the number of intersection of the given segment
-    // with the grid of the given cell size in the current space.
-    // Attention: the space must contain integer number of cells (in each dimension)!
-    void vote_descrete(const Segment4D &segment, const Point4D &cell_size)
+    // Increases the number of votes on the number of intersection of the given segment
+    // with the grid defined by the space cell size.
+    void vote_descrete(const Segment4D &segment)
     {
         // We will accumulate the coordinates of intersections of the given segment
         // with the grid of the given cell size.
@@ -195,7 +218,7 @@ public:
             // If it is zero, the segment does not intersect the levels of this dimension and
             // we can skip further analysis.
             {
-                RealType dt = std::abs(cell_size[d] / v[d]);
+                RealType dt = std::abs(cell_size_[d] / v[d]);
 
                 // Accumulate all intersections of this dimension situated between the begin
                 // and the end of the segment. TODO: optimize it!
@@ -210,9 +233,9 @@ public:
         votes_ += intersections.size() + 1;
     }
 
-    // The number of votes is equal to the taxicab norm of the corresponding inner
-    // segment relatively to the grid with the given cell size.
-    void vote_taxicab(const Segment4D &segment, const Point4D &cell_size)
+    // Increases the votes on the number equal to the taxicab norm of the
+    // corresponding inner segment relatively to the space grid.
+    void vote_taxicab(const Segment4D &segment)
     {
         // If the segment is not zero.
         if (segment.second[0] == segment.second[1])
@@ -249,8 +272,8 @@ public:
 
                 BOOST_ASSERT(proj1 >= bot[d] && proj2 >= bot[d]);
 
-                RealType block1 = std::floor((proj1 - bot[d]) / cell_size[d]);
-                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size[d]);
+                RealType block1 = std::floor((proj1 - bot[d]) / cell_size_[d]);
+                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size_[d]);
 
                 taxicab_dst += static_cast<std::size_t>(block2 - block1);
             }
@@ -259,9 +282,9 @@ public:
         votes_ += taxicab_dst;
     }
 
-    // The number of votes is equal to the maximum (uniform) norm of the corresponding
-    // inner segment relatively to the grid with the given cell size.
-    void vote_maxnorm(const Segment4D &segment, const Point4D &cell_size)
+    // Increases the votes on the number equal to the maximum (uniform) norm of the
+    // inner segment relatively to the space grid.
+    void vote_maxnorm(const Segment4D &segment)
     {
         // If the segment is not zero.
         if (segment.second[0] == segment.second[1])
@@ -298,8 +321,8 @@ public:
 
                 BOOST_ASSERT(proj1 >= bot[d] && proj2 >= bot[d]);
 
-                RealType block1 = std::floor((proj1 - bot[d]) / cell_size[d]);
-                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size[d]);
+                RealType block1 = std::floor((proj1 - bot[d]) / cell_size_[d]);
+                RealType block2 =  std::ceil((proj2 - bot[d]) / cell_size_[d]);
 
                 std::size_t dst = static_cast<std::size_t>(block2 - block1);
 
@@ -311,6 +334,7 @@ public:
         votes_ += maximum_norm;
     }
 
+    // Returns the result of intersection of the given segment with the space.
     Segment4D intersect(Segment4D segment)
     {
         // Cut the segment in each of four dimensions.
@@ -320,7 +344,7 @@ public:
         return segment;
     }
 
-
+    // Returns the result of intersection (segment) of the given 4D line with the space.
     Segment4D intersect(Line4D line)
     {
         // Create the "infinite" segment coordinates that models the whole line.
@@ -333,20 +357,14 @@ public:
         return intersect(infinite_seg);
     }
 
-
-    // Operator is needed for sorting.
-    bool operator < (const Space &other) const
-    {
-        return votes_ < other.get_votes() ? true : false;
-    }
-
 private:
 
     Spaces subspaces_;
     Box4D box_;
     std::size_t resolution_level_;
     RealType votes_;
-
+    Point4D cell_size_;
+    std::size_t cell_count_;
 
     // Cuts the segment in the given dimension according to two given levels.
     void cut_segment(Segment4D &seg, std::size_t dimension, RealType level1, RealType level2)
@@ -419,6 +437,7 @@ private:
 };
 
 
+
 template <typename RealType>
 class SubdivisionPolicy
 {
@@ -463,6 +482,18 @@ public:
         return 0.4f * k * std::pow(n, -4.0 / 5) + 0.32;
     }
 };
+
+
+
+// Compares two spaces using an approximation of the Gumbold means.
+template <typename RealType>
+bool operator < (const Space<RealType> &s1, const Space<RealType> &s2)
+{
+    return SubdivisionPolicy<RealType>::E(s1.get_votes(), s1.get_cell_count()) <
+           SubdivisionPolicy<RealType>::E(s2.get_votes(), s2.get_cell_count()) ?
+           true : false;
+}
+
 
 
 } // namespace detail
@@ -512,12 +543,13 @@ public:
                                   reference_box2.first[0], reference_box2.first[1]);
         typename Space4D::Point4D p2(reference_box1.second[0], reference_box1.second[1],
                                   reference_box2.second[0], reference_box2.second[1]);
-        Space4D s(typename Space4D::Box4D(p1, p2));
 
         // Initialize the grid size.
         std::size_t divisions = std::size_t(std::pow(RealType(divisions_per_dimension),
                                             RealType(maximal_resolution_level + 1)));
         min_cell_size_ = (p2 - p1) / RealType(divisions);
+
+        Space4D s(typename Space4D::Box4D(p1, p2), min_cell_size_, 0);
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -809,8 +841,8 @@ private:
                 typename Space4D::Segment4D segment2(line4, -segment_coords);
 
                 // Intersect and compute the votes.
-                s.vote_maxnorm(s.intersect(segment1), min_cell_size_);
-                s.vote_maxnorm(s.intersect(segment2), min_cell_size_);
+                s.vote_maxnorm(s.intersect(segment1));
+                s.vote_maxnorm(s.intersect(segment2));
             }
         }
     }
