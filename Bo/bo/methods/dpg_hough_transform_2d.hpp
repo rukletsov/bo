@@ -449,13 +449,75 @@ public:
     // Attention: the input collection of spaces must be sorted in descending order!
     static std::size_t probabilistic(const typename Space4D::Spaces &spaces, RealType p)
     {
+        //return 1;
 
-        return 1;
+        typename Space4D::Spaces subcollection1;
+        typename Space4D::Spaces subcollection2 = spaces;
+
+        std::size_t n = 0;
+
+        // Find the minimal number of spaces that satisfy the probability constraint.
+        while (n < spaces.size() &&
+               p_max_value_in_subcollection(subcollection1, subcollection2) < p)
+        {
+            subcollection1.push_back(subcollection2.front());
+            subcollection2.erase(subcollection2.begin());
+            n = subcollection1.size();
+        }
+
+        return n;
+    }
+
+    // Computes the probability of the event that the maximal value of subcollection1 is greater
+    // than the maximal value from subcollection2.
+    static RealType p_max_value_in_subcollection(const typename Space4D::Spaces &subcollection1,
+                                                 const typename Space4D::Spaces &subcollection2)
+    {
+        // Compute the maximal vote in subcollection1.
+        std::size_t max_votes = 0;
+        for (typename Space4D::Spaces::const_iterator it = subcollection1.begin();
+             it != subcollection1.end(); ++it)
+        {
+            std::size_t votes = it->get_votes();
+            if (max_votes < votes)
+            {
+                max_votes = votes;
+            }
+        }
+
+        RealType p = 0;
+
+        // Compute the probability.
+        for (std::size_t t = 1; t <= max_votes; ++t)
+        {
+            p += (F(subcollection1, t) - F(subcollection1, t - 1)) * F(subcollection2, t - 1);
+        }
+
+        return p;
+    }
+
+    // Joint distribution function for spaces.
+    static RealType F(const typename Space4D::Spaces &spaces, std::size_t x)
+    {
+        if (spaces.size() == 0) return 0;
+
+        RealType f = 1;
+
+        for (typename Space4D::Spaces::const_iterator it = spaces.begin();
+             it != spaces.end(); ++it)
+        {
+            f *= F(it->get_votes(), it->get_cell_count(), x);
+        }
+
+        return f;
     }
 
     // Distribution function.
     static RealType F(std::size_t k, std::size_t n, std::size_t x)
     {
+        if (k == 0)
+            return RealType(1);
+
         return std::exp(-std::exp((mu(k, n) - x) / beta(k, n)));
     }
 

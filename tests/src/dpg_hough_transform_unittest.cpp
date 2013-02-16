@@ -273,7 +273,7 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 6, bbox_, bbox_);
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.05f, 3, 5, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
@@ -292,11 +292,4 @@ TEST_F(HoughTransformTest, ProbabilisticModel)
     float f = detail::SubdivisionPolicy<float>::F(k, n, k);
 
     EXPECT_NEAR(f, 1.0, 0.0001);
-
-    for (std::size_t i = 0; i <= k; ++i)
-    {
-        float e = detail::SubdivisionPolicy<float>::E(i, n);
-        int iii = 0;
-    }
-
 }
