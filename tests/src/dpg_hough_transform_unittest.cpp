@@ -37,7 +37,9 @@ protected:
         pb6_ = Space<float>::Point4D(0.5f, 0.5f, 0.5f, 0.5f);
         pb7_ = Space<float>::Point4D(0.1f, 0.f, 0.f, 0.f);
         pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
-        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_), grid_size_);
+        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_),
+                               Space<float>::Size4D(10, 10, 10, 10),
+                               1, 1, 0);
 
         space1x_ = Space<float>(Space<float>::Box4D(Space<float>::Point4D(-1.f, -1.f, -1.f, -1.f),
                                                     Space<float>::Point4D(1.f, 1.f, 1.f, 1.f)));
@@ -46,7 +48,9 @@ protected:
 
         // Space subdivision.
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
-        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_), grid_size_);
+        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_),
+                               Space<float>::Size4D(10, 10, 10, 10),
+                               2, 2, 0);
 
 
         // Simple object detection.
@@ -76,8 +80,8 @@ protected:
 
 
         space3_1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_),
-                                 Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f),
-                                 Space<float>::Size4D(3, 3, 3, 3));
+                                 Space<float>::Size4D(3, 3, 3, 3),
+                                 1, 1, 0);
         space3_2_ = space3_1_;
     }
 
@@ -270,7 +274,7 @@ TEST_F(HoughTransformTest, SpaceSubdivision)
     space2_.subdivide();
     Space<float>::Spaces subs = space2_.get_subspaces();
 
-    EXPECT_EQ(subs.size(), 16u);
+    EXPECT_EQ(subs.size(), 10000u);
 }
 
 TEST_F(HoughTransformTest, SelfDetection)
@@ -281,7 +285,8 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 5, bbox_, bbox_);
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, Space<float>::Size4D(3, 3, 3, 3),
+                                                             5, 5, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
@@ -310,7 +315,7 @@ TEST_F(HoughTransformTest, ProbabilisticModel)
     subc.push_back(space3_1_);
     subc.push_back(space3_2_);
 
-    float p = SubdivisionPolicy<float>::p_max_value_in_subcollection(subc, subc, true);
+    float p = SubdivisionPolicy<float>::p_max_value_in_subcollection(subc, subc);
 
     // P(max1 > max2) = P(max2 > max1), and
     // P(max1 > max2) + P(max2 > max1) + P(max1 = max2) = 1.
