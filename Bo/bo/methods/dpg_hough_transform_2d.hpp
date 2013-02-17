@@ -101,16 +101,25 @@ public:
             cell_resolution_increment_ =  cell_resolution_increment;
         }
 
-        // Compute the number of cells and cell size.
-        cell_count_ = 1;
+        // Compute the size of cells used for vote calculation.
         for (std::size_t i = 0; i < 4; ++i)
         {
             std::size_t cells_in_dimension =
-                    static_cast<std::size_t>(std::pow(divisions_per_dimension_[i], cell_resolution_increment_));
+                    static_cast<std::size_t>(std::pow(divisions_per_dimension_[i],
+                                                      max_resolution_level_ - resolution_level_));
 
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
+        }
 
-            cell_count_ *= cells_in_dimension;
+        // Comput the number of probabilistic elements used for the subdivision policy.
+        prob_element_count_ = 1;
+        for (std::size_t i = 0; i < 4; ++i)
+        {
+            std::size_t prob_elements_in_dimension =
+                    static_cast<std::size_t>(std::pow(divisions_per_dimension_[i],
+                                                      cell_resolution_increment_));
+
+            prob_element_count_ *= prob_elements_in_dimension;
         }
     }
 
@@ -166,9 +175,9 @@ public:
         return votes_;
     }
 
-    inline RealType get_cell_count() const
+    inline std::size_t get_prob_element_count() const
     {
-        return cell_count_;
+        return prob_element_count_;
     }
 
     void reset_votes()
@@ -393,8 +402,8 @@ private:
     std::size_t cell_resolution_increment_;
     std::size_t resolution_level_;
     RealType votes_;
-    std::size_t cell_count_;
     Point4D cell_size_;
+    std::size_t prob_element_count_;
 
     // Cuts the segment in the given dimension according to two given levels.
     void cut_segment(Segment4D &seg, std::size_t dimension, RealType level1, RealType level2)
@@ -540,7 +549,7 @@ public:
         for (typename Space4D::Spaces::const_iterator it = spaces.begin();
              it != spaces.end(); ++it)
         {
-            f *= F(it->get_votes(), it->get_cell_count(), x);
+            f *= F(it->get_votes(), it->get_prob_element_count(), x);
         }
 
         return f;
@@ -581,8 +590,8 @@ public:
 template <typename RealType>
 bool operator < (const Space<RealType> &s1, const Space<RealType> &s2)
 {
-    return SubdivisionPolicy<RealType>::E(s1.get_votes(), s1.get_cell_count()) <
-           SubdivisionPolicy<RealType>::E(s2.get_votes(), s2.get_cell_count()) ?
+    return SubdivisionPolicy<RealType>::E(s1.get_votes(), s1.get_prob_element_count()) <
+           SubdivisionPolicy<RealType>::E(s2.get_votes(), s2.get_prob_element_count()) ?
            true : false;
 }
 
@@ -846,7 +855,7 @@ private:
     void process_space(Space4D &s, const Features &object_features, const Point2D &scaling_range,
                        RealType probability)
     {
-        if (s.get_resolution_level() >= s.get_max_resolution_level() - 1)
+        if (s.get_resolution_level() >= s.get_max_resolution_level())
             return;
 
         // Create the space subdivision.

@@ -286,7 +286,7 @@ TEST_F(HoughTransformTest, SelfDetection)
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
     DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, Space<float>::Size4D(3, 3, 3, 3),
-                                                             5, 5, bbox_, bbox_);
+                                                             6, 1, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
