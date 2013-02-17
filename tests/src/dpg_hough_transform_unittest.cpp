@@ -72,6 +72,13 @@ protected:
 
 
         pb10_ = Space<float>::Point4D(1.f, 1.f, 1.f, 0.9f);
+
+
+
+        space3_1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_),
+                                 Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f),
+                                 Space<float>::Size4D(3, 3, 3, 3));
+        space3_2_ = space3_1_;
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -104,6 +111,9 @@ protected:
     DualPointGHT<float>::SearchArea bbox_;
     DualPointGHT<float>::Point2D ref3_;
     DualPointGHT<float>::Point2D ref4_;
+
+    Space<float> space3_1_;
+    Space<float> space3_2_;
 };
 
 TEST_F(HoughTransformTest, EncodeReconstruct)
@@ -258,7 +268,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
 TEST_F(HoughTransformTest, SpaceSubdivision)
 {
     space2_.subdivide();
-    detail::Space<float>::Spaces subs = space2_.get_subspaces();
+    Space<float>::Spaces subs = space2_.get_subspaces();
 
     EXPECT_EQ(subs.size(), 16u);
 }
@@ -287,7 +297,22 @@ TEST_F(HoughTransformTest, ProbabilisticModel)
     std::size_t n = 37;
 
     // Test of the distribution function.
-    float f = detail::SubdivisionPolicy<float>::F(k, n, k);
+    float f = SubdivisionPolicy<float>::F(k, n, k);
 
     EXPECT_NEAR(f, 1.0, 0.0001);
+
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space3_1_.vote_maxnorm(sg);
+    space3_1_.vote_maxnorm(sg);
+    space3_2_.vote_maxnorm(sg);
+    Space<float>::Spaces subc;
+    subc.push_back(space3_1_);
+    subc.push_back(space3_2_);
+
+    float p = SubdivisionPolicy<float>::p_max_value_in_subcollection(subc, subc, true);
+
+    // P(max1 > max2) = P(max2 > max1), and
+    // P(max1 > max2) + P(max2 > max1) + P(max1 = max2) = 1.
+    EXPECT_EQ(2 * p < 1, true);
 }
