@@ -257,12 +257,10 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
 
 TEST_F(HoughTransformTest, SpaceSubdivision)
 {
-    std::size_t n = 5;
-
-    space2_.subdivide(n);
+    space2_.subdivide();
     detail::Space<float>::Spaces subs = space2_.get_subspaces();
 
-    EXPECT_EQ(subs.size(), n * n * n * n);
+    EXPECT_EQ(subs.size(), 16u);
 }
 
 TEST_F(HoughTransformTest, SelfDetection)
@@ -273,7 +271,7 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.05f, 3, 5, bbox_, bbox_);
+    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 5, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 

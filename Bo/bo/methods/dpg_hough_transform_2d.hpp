@@ -65,23 +65,27 @@ class Space
 public:
 
     typedef Vector<RealType, 4> Point4D;
-    typedef Vector<int, 4> Index4D;
+    typedef Vector<std::size_t, 4> Size4D;
     typedef std::pair<Point4D, Point4D> Box4D;
+
     // A line in 4D is defined by any point located
     // on this line and its directional vector.
     typedef std::pair<Point4D, Point4D> Line4D;
+
     typedef Vector<RealType, 2> SegmentCoordinates;
     typedef std::vector<Space> Spaces;
+
     // A segment in 4D is modelled by a 4D line and the
     // coordinates of two points on this line
     // relatively to the line's direction vector.
     typedef std::pair<Line4D, SegmentCoordinates> Segment4D;
-    // The size of the atomic element of the space.
 
     Space(const Box4D &box = Box4D(Point4D(0, 0, 0, 0), Point4D(0, 0, 0, 0)),
           const Point4D &cell_size = Point4D(1, 1, 1, 1),
+          const Size4D &divisions_per_dimension = Size4D(2, 2, 2, 2),
           std::size_t resolution_level = 0):
-        box_(box), resolution_level_(resolution_level), cell_size_(cell_size), votes_(0)
+        box_(box), resolution_level_(resolution_level), cell_size_(cell_size),
+        divisions_per_dimension_(divisions_per_dimension), votes_(0)
     {
         // Attention: the space must contain integer number of cells (in each dimension)!
         // Compute the number of cells in the space.
@@ -98,26 +102,36 @@ public:
 
             cell_count_ *= cells_in_dimension;
         }
+
+        // Compute the number of direct child subspaces in the space.
+        subdivision_count_ = 1;
+        for (std::size_t i = 0; i < 4; ++i)
+        {
+            subdivision_count_ *= divisions_per_dimension_[i];
+        }
     }
 
     // Subdivides the space.
-    void subdivide(std::size_t divisions_per_dimension)
+    void subdivide()
     {
-        subspaces_.reserve(divisions_per_dimension * divisions_per_dimension *
-                           divisions_per_dimension * divisions_per_dimension);
+        subspaces_.clear();
+        subspaces_.reserve(subdivision_count_);
 
         Point4D sizes4d = box_.second - box_.first;
-        Point4D steps4d = sizes4d / RealType(divisions_per_dimension);
+        Point4D steps4d = Point4D(sizes4d[0] / RealType(divisions_per_dimension_[0]),
+                                  sizes4d[1] / RealType(divisions_per_dimension_[1]),
+                                  sizes4d[2] / RealType(divisions_per_dimension_[2]),
+                                  sizes4d[3] / RealType(divisions_per_dimension_[3]));
 
-        for (std::size_t d0 = 0; d0 < divisions_per_dimension; ++d0)
-            for (std::size_t d1 = 0; d1 < divisions_per_dimension; ++d1)
-                for (std::size_t d2 = 0; d2 < divisions_per_dimension; ++d2)
-                    for (std::size_t d3 = 0; d3 < divisions_per_dimension; ++d3)
+        for (std::size_t d0 = 0; d0 < divisions_per_dimension_[0]; ++d0)
+            for (std::size_t d1 = 0; d1 < divisions_per_dimension_[1]; ++d1)
+                for (std::size_t d2 = 0; d2 < divisions_per_dimension_[2]; ++d2)
+                    for (std::size_t d3 = 0; d3 < divisions_per_dimension_[3]; ++d3)
                     {
                         // Create a subspace.
                         Point4D translation(d0 * steps4d[0], d1 * steps4d[1], d2 * steps4d[2], d3 * steps4d[3]);
                         Box4D b(box_.first + translation, box_.first + translation + steps4d);
-                        Space s(b, cell_size_, resolution_level_ + 1);
+                        Space s(b, cell_size_, divisions_per_dimension_, resolution_level_ + 1);
 
                         subspaces_.push_back(s);
                     }
@@ -147,6 +161,11 @@ public:
     inline RealType get_cell_count() const
     {
         return cell_count_;
+    }
+
+    inline std::size_t get_subdivision_count() const
+    {
+        return subdivision_count_;
     }
 
     void reset_votes()
@@ -363,8 +382,10 @@ private:
     Box4D box_;
     std::size_t resolution_level_;
     Point4D cell_size_;
+    Size4D divisions_per_dimension_;
     RealType votes_;
     std::size_t cell_count_;
+    std::size_t subdivision_count_;
 
     // Cuts the segment in the given dimension according to two given levels.
     void cut_segment(Segment4D &seg, std::size_t dimension, RealType level1, RealType level2)
@@ -445,12 +466,24 @@ public:
     typedef Space<RealType> Space4D;
 
     // Returns the minimal number of spaces from the beginning of the given sorted collection
-    // such that occurece of the maximal value is not less then the given probability p.
+    // such that occurrence of the maximal value is not less then the given probability p.
     // Attention: the input collection of spaces must be sorted in descending order!
-    static std::size_t probabilistic(const typename Space4D::Spaces &spaces, RealType p)
+    static std::size_t probabilistic_global(const typename Space4D::Spaces &spaces, RealType p)
     {
-        //return 1;
+        return probabilistic(spaces, p, false);
+    }
 
+    // Returns the minimal number of spaces (at level L) from the beginning of the given sorted collection
+    // such that occurrence of the subspaces (at level L + 1) with maximal number of votes is not less then
+    // the given probability p.
+    // Attention: the input collection of spaces must be sorted in descending order!
+    static std::size_t probabilistic_greedy(const typename Space4D::Spaces &spaces, RealType p)
+    {
+        return probabilistic(spaces, p, true);
+    }
+
+    static std::size_t probabilistic(const typename Space4D::Spaces &spaces, RealType p, bool is_greedy)
+    {
         typename Space4D::Spaces subcollection1;
         typename Space4D::Spaces subcollection2 = spaces;
 
@@ -458,7 +491,7 @@ public:
 
         // Find the minimal number of spaces that satisfy the probability constraint.
         while (n < spaces.size() &&
-               p_max_value_in_subcollection(subcollection1, subcollection2) < p)
+               p_max_value_in_subcollection(subcollection1, subcollection2, is_greedy) < p)
         {
             subcollection1.push_back(subcollection2.front());
             subcollection2.erase(subcollection2.begin());
@@ -468,10 +501,12 @@ public:
         return n;
     }
 
+
     // Computes the probability of the event that the maximal value of subcollection1 is greater
     // than the maximal value from subcollection2.
     static RealType p_max_value_in_subcollection(const typename Space4D::Spaces &subcollection1,
-                                                 const typename Space4D::Spaces &subcollection2)
+                                                 const typename Space4D::Spaces &subcollection2,
+                                                 bool is_greedy)
     {
         // Compute the maximal vote in subcollection1.
         std::size_t max_votes = 0;
@@ -490,23 +525,40 @@ public:
         // Compute the probability.
         for (std::size_t t = 1; t <= max_votes; ++t)
         {
-            p += (F(subcollection1, t) - F(subcollection1, t - 1)) * F(subcollection2, t - 1);
+            RealType f1 = F_joint(subcollection1, t, is_greedy);
+            RealType f2 = F_joint(subcollection1, t - 1, is_greedy);
+            RealType f3 = F_joint(subcollection2, t - 1, is_greedy);
+
+            p += (f1 - f2) * f3;
+            //p += (F_joint(subcollection1, t, is_greedy) - F_joint(subcollection1, t - 1, is_greedy)) *
+            //      F_joint(subcollection2, t - 1, is_greedy);
         }
 
         return p;
     }
 
     // Joint distribution function for spaces.
-    static RealType F(const typename Space4D::Spaces &spaces, std::size_t x)
+    static RealType F_joint(const typename Space4D::Spaces &spaces, std::size_t x, bool is_greedy)
     {
         if (spaces.size() == 0) return 0;
 
         RealType f = 1;
 
-        for (typename Space4D::Spaces::const_iterator it = spaces.begin();
-             it != spaces.end(); ++it)
+        if (!is_greedy)
         {
-            f *= F(it->get_votes(), it->get_cell_count(), x);
+            for (typename Space4D::Spaces::const_iterator it = spaces.begin();
+                 it != spaces.end(); ++it)
+            {
+                f *= F(it->get_votes(), it->get_cell_count(), x);
+            }
+        }
+        else
+        {
+            for (typename Space4D::Spaces::const_iterator it = spaces.begin();
+                 it != spaces.end(); ++it)
+            {
+                f *= F(it->get_votes(), it->get_subdivision_count(), x);
+            }
         }
 
         return f;
@@ -604,11 +656,15 @@ public:
                                   reference_box2.second[0], reference_box2.second[1]);
 
         // Initialize the grid size.
-        std::size_t divisions = std::size_t(std::pow(RealType(divisions_per_dimension),
-                                            RealType(maximal_resolution_level + 1)));
-        typename Space4D::Point4D min_cell_size = (p2 - p1) / RealType(divisions);
+        std::size_t total_divisions = std::size_t(std::pow(RealType(divisions_per_dimension),
+                                                  RealType(maximal_resolution_level + 1)));
+        typename Space4D::Point4D min_cell_size = (p2 - p1) / RealType(total_divisions);
+        typename Space4D::Size4D divisions_vec = typename Space4D::Size4D(divisions_per_dimension,
+                                                                          divisions_per_dimension,
+                                                                          divisions_per_dimension,
+                                                                          divisions_per_dimension);
 
-        Space4D s(typename Space4D::Box4D(p1, p2), min_cell_size, 0);
+        Space4D s(typename Space4D::Box4D(p1, p2), min_cell_size, divisions_vec, 0);
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -820,7 +876,7 @@ private:
             return;
 
         // Create the space subdivision.
-        s.subdivide(divisions_per_dimension);
+        s.subdivide();
 
         // Calculate the votes for the obtained subspaces.
         for (typename Space4D::Spaces::iterator it = s.get_subspaces().begin();
@@ -834,11 +890,11 @@ private:
 
         // The minimal number of spaces from the beginning of the space collection such
         // that the probability of maximal element is not less than the given value.
-        std::size_t n = SubPolicy::probabilistic(s.get_subspaces(), probability);
+        std::size_t n = SubPolicy::probabilistic_greedy(s.get_subspaces(), probability);
 
         for (std::size_t i = 0; i < n; ++i)
         {
-            // Continue the subdivision procedure for the ONE subspace with the maximal number of votes.
+            // Continue the subdivision procedure recursively.
             process_space(s.get_subspaces().at(i), object_features, probability, RealType(divisions_per_dimension),
                           RealType(maximal_resolution_level), scaling_range);
         }
