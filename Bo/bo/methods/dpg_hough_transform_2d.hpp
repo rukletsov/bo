@@ -80,6 +80,8 @@ public:
     // relatively to the line's direction vector.
     typedef std::pair<Line4D, SegmentCoordinates> Segment4D;
 
+    static std::size_t counter_;
+
     Space(const Box4D &box = Box4D(Point4D(0, 0, 0, 0), Point4D(0, 0, 0, 0)),
           const Size4D &divisions_per_dimension = Size4D(2, 2, 2, 2),
           std::size_t max_resolution_level = 1,
@@ -126,6 +128,8 @@ public:
     // Subdivides the space.
     void subdivide()
     {
+        ++counter_;
+
         subspaces_.clear();
 
         std::size_t subdivision_count_ = divisions_per_dimension_[0] * divisions_per_dimension_[1] *
@@ -498,8 +502,10 @@ public:
         while (n < spaces.size() &&
                p_max_value_in_subcollection(subcollection1, subcollection2) < p)
         {
-            subcollection1.push_back(subcollection2.front());
-            subcollection2.erase(subcollection2.begin());
+            typename Space<RealType>::Spaces::iterator it = subcollection2.begin();
+
+            subcollection1.push_back(*it);
+            subcollection2.erase(it);
             n = subcollection1.size();
         }
 
@@ -558,8 +564,17 @@ public:
     // Distribution function.
     static RealType F(std::size_t k, std::size_t n, std::size_t x)
     {
+        // Some cases of small values (k, n) are implemented explicitly
+        // avoiding the Gumbel-based approximation in order to increase
+        // precision.
         if (k == 0)
+        {
             return RealType(1);
+        }
+        if (n == 1)
+        {
+            return (x >= k) ? RealType(1) : RealType(0);
+        }
 
         return std::exp(-std::exp((mu(k, n) - x) / beta(k, n)));
     }
@@ -647,8 +662,8 @@ public:
         typename Space4D::Point4D p2(reference_box1.second[0], reference_box1.second[1],
                                   reference_box2.second[0], reference_box2.second[1]);
 
-        Space4D s (typename Space4D::Box4D(p1, p2), divisions_per_dimension, maximal_resolution_level,
-                   cell_resolution_increment, 0);
+        Space4D s (typename Space4D::Box4D(p1, p2), divisions_per_dimension,
+                   maximal_resolution_level, cell_resolution_increment, 0);
 
         // In the case if the scaling is incorrect.
         normalize_scaling_range(scaling_range);
@@ -677,6 +692,84 @@ public:
 
         return ref_votes;
     }
+
+    // Detects the references that define probable poses of the model within the
+    // given features.
+    ReferenceVotes cross_level_detect(const Features &object_features, RealType probability,
+                                      typename Space4D::Size4D divisions_per_dimension,
+                                      std::size_t maximal_resolution_level,
+                                      std::size_t cell_resolution_increment,
+                                      SearchArea reference_box1,
+                                      SearchArea reference_box2,
+                                      Point2D scaling_range = Point2D(0.95f, 1.05f))
+    {
+        ReferenceVotes ref_votes;
+
+        // Create the root space object.
+        typename Space4D::Point4D p1(reference_box1.first[0], reference_box1.first[1],
+                                  reference_box2.first[0], reference_box2.first[1]);
+        typename Space4D::Point4D p2(reference_box1.second[0], reference_box1.second[1],
+                                  reference_box2.second[0], reference_box2.second[1]);
+
+        Space4D s (typename Space4D::Box4D(p1, p2), divisions_per_dimension,
+                   maximal_resolution_level, cell_resolution_increment, 0);
+
+        // In the case if the scaling is incorrect.
+        normalize_scaling_range(scaling_range);
+
+        std::size_t divisions = divisions_per_dimension[0] * divisions_per_dimension[1] *
+                divisions_per_dimension[2] * divisions_per_dimension[3];
+
+        // Initialize temporary collections of spaces.
+        typename Space4D::Spaces in, out;
+        in.push_back(s);
+
+        for (std::size_t level = 0; level < maximal_resolution_level; ++level)
+        {
+            out.clear();
+            out.reserve(in.size() * divisions);
+
+            // Compute the votes for the level subdivision spaces.
+            for (typename Space4D::Spaces::iterator it = in.begin(); it != in.end(); ++it)
+            {
+                subdivide_with_votes(*it, object_features, scaling_range);
+                // Insert all subspaces into the output collection.
+                out.insert(out.end(), it->get_subspaces().begin(), it->get_subspaces().end());
+            }
+
+            // Sort the subspaces in descending order.
+            std::sort(out.rbegin(), out.rend());
+
+            // Find minimal number of subspaces that satisfy the probability constrains.
+            std::size_t n;
+            if (level == maximal_resolution_level - 1)
+            {
+                n = out.size();
+            }
+            else
+            {
+                n = SubPolicy::probabilistic(out, probability);
+            }
+
+            // Update the input collection with the best subspaces.
+            in.clear();
+            in.insert(in.end(), out.begin(), out.begin() + n);
+        }
+
+        // Extract the references.
+        for (typename Space4D::Spaces::const_iterator it = in.begin(); it != in.end(); ++it)
+        {
+            // Attention: the space is approximated by its mass center!
+            typename Space4D::Point4D c = it->get_mass_center();
+
+            Reference ref(Point2D(c[0], c[1]), Point2D(c[2], c[3]));
+            ReferenceVote rv(ref, it->get_votes());
+            ref_votes.push_back(rv);
+        }
+
+        return ref_votes;
+    }
+
 
     // Reconstructs the points of the model that has the pose defined by the given reference.
     Points2D reconstruct(const Reference &reference_points)
@@ -851,13 +944,9 @@ private:
             std::swap(scaling_range[0], scaling_range[1]);
     }
 
-    // Recursively fills in the space tree calculating votes for each subspace.
-    void process_space(Space4D &s, const Features &object_features, const Point2D &scaling_range,
-                       RealType probability)
+    inline void subdivide_with_votes(Space4D &s, const Features &object_features,
+                                     const Point2D &scaling_range)
     {
-        if (s.get_resolution_level() >= s.get_max_resolution_level())
-            return;
-
         // Create the space subdivision.
         s.subdivide();
 
@@ -867,12 +956,23 @@ private:
         {
             feature_to_vote(*it, object_features, scaling_range);
         }
+    }
+
+    // Recursively fills in the space tree calculating votes for each subspace.
+    void process_space(Space4D &s, const Features &object_features, const Point2D &scaling_range,
+                       RealType probability)
+    {
+        if (s.get_resolution_level() >= s.get_max_resolution_level())
+            return;
+
+        // Subdivide the space and compute votes for its subspaces.
+        subdivide_with_votes(s, object_features, scaling_range);
 
         // Sorting subspaces in descending order!
         std::sort(s.get_subspaces().rbegin(), s.get_subspaces().rend());
 
 
-        if (s.get_resolution_level() == 4)
+        if (s.get_resolution_level() == 5)
         {
             int iii = 0;
         }
@@ -963,7 +1063,7 @@ private:
     // Recursively traces the space tree and inserts into the container the elements from
     // the given resolution level.
     void get_resolution_level(const Space4D &s, typename Space4D::Spaces &container,
-                                         std::size_t resolution_level)
+                              std::size_t resolution_level)
     {
         if (s.get_resolution_level() == resolution_level)
             container.push_back(s);
