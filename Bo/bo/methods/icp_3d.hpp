@@ -220,6 +220,7 @@ RealType ICP3D<RealType>::next()
     blas::eigen_symmetric(Qpx);
 
     // Quaternion that defines the optimal rotation.
+//    Vector<RealType, 4> quaternion = blas::to_bo_vector(blas::column(Qpx, 3));
     boost::numeric::ublas::bounded_vector<RealType, 4> col(blas::column(Qpx, 3));
     Vector<RealType, 4> quaternion = blas::to_bo_vector(col);
 

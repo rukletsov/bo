@@ -82,6 +82,7 @@ class FwdOnePassTraverseRule: public TraverseRule<Container>
 public:
     typedef FwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_iterator FwdIterator;
+    typedef typename TraverseRule<Container>::Reference Reference;
 
     FwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
         : TraverseRule<Container>(contour), end_it_(contour->end())
@@ -90,7 +91,7 @@ public:
     virtual void add(std::size_t offset)
     { fwd_it_ += offset; }
 
-    virtual typename TraverseRule<Container>::Reference dereference() const
+    virtual Reference dereference() const
     { return *fwd_it_; }
 
     virtual bool check_validity() const
@@ -113,6 +114,7 @@ class BwdOnePassTraverseRule: public TraverseRule<Container>
 public:
     typedef BwdOnePassTraverseRule<Container> SelfType;
     typedef typename Container::const_reverse_iterator BwdIterator;
+    typedef typename TraverseRule<Container>::Reference Reference;
 
     BwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
         : TraverseRule<Container>(contour), end_it_(contour->rend())
@@ -121,7 +123,7 @@ public:
     virtual void add(std::size_t offset)
     { bwd_it_ += offset; }
 
-    virtual typename TraverseRule<Container>::Reference dereference() const
+    virtual Reference dereference() const
     { return *bwd_it_; }
 
     virtual bool check_validity() const
@@ -144,8 +146,9 @@ class FwdCircuitTraverseRule: public FwdOnePassTraverseRule<Container>
 {
 public:
     typedef FwdCircuitTraverseRule<Container> SelfType;
+    typedef typename TraverseRule<Container>::ContainerConstPtr ContainerConstPtr;
 
-    FwdCircuitTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour, std::size_t start_idx):
+    FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
         FwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
     { this->fwd_it_ += start_idx; }
 
@@ -196,8 +199,9 @@ class BwdCircuitTraverseRule: public BwdOnePassTraverseRule<Container>
 {
 public:
     typedef BwdCircuitTraverseRule<Container> SelfType;
+    typedef typename TraverseRule<Container>::ContainerConstPtr ContainerConstPtr;
 
-    BwdCircuitTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour, std::size_t start_idx):
+    BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
         BwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
     { this->bwd_it_ += (this->contour_->size() - 1 - start_idx); }
 

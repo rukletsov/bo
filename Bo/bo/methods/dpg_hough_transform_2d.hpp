@@ -106,9 +106,9 @@ public:
         // Compute the size of cells used for vote calculation.
         for (std::size_t i = 0; i < 4; ++i)
         {
-            std::size_t cells_in_dimension =
-                    static_cast<std::size_t>(std::pow(divisions_per_dimension_[i],
-                                                      max_resolution_level_ - resolution_level_));
+            std::size_t cells_in_dimension = static_cast<std::size_t>(
+                std::pow(divisions_per_dimension_[i],
+                         RealType(max_resolution_level_) - RealType(resolution_level_)));
 
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
         }
@@ -117,9 +117,8 @@ public:
         prob_element_count_ = 1;
         for (std::size_t i = 0; i < 4; ++i)
         {
-            std::size_t prob_elements_in_dimension =
-                    static_cast<std::size_t>(std::pow(divisions_per_dimension_[i],
-                                                      cell_resolution_increment_));
+            std::size_t prob_elements_in_dimension = static_cast<std::size_t>(
+                std::pow(divisions_per_dimension_[i], RealType(cell_resolution_increment_)));
 
             prob_element_count_ *= prob_elements_in_dimension;
         }
