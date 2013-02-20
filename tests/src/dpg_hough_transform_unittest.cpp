@@ -2,6 +2,19 @@
 
 #include "bo/methods/dpg_hough_transform_2d.hpp"
 
+// For testing. Remove.
+namespace bo{
+namespace methods{
+namespace recognition{
+namespace detail{
+    template <typename RealType>
+    std::size_t Space<RealType>::counter_ = 0;
+}
+}
+}
+}
+
+
 using namespace bo;
 using namespace bo::methods::recognition;
 using namespace bo::methods::recognition::detail;
@@ -25,6 +38,8 @@ protected:
         c2_ = DualPointGHT<float>::Point2D(5.f, 5.f);
         tang2_ = DualPointGHT<float>::Point2D(-1.f, -1.f);
 
+        grid_size_ = Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f);
+
 
         // Space-line intersection data.
         pb1_ = Space<float>::Point4D(0.f, 0.f, 0.f, 0.f);
@@ -35,7 +50,9 @@ protected:
         pb6_ = Space<float>::Point4D(0.5f, 0.5f, 0.5f, 0.5f);
         pb7_ = Space<float>::Point4D(0.1f, 0.f, 0.f, 0.f);
         pb8_ = Space<float>::Point4D(0.4f, 1.f, 0.5f, 0.f);
-        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_));
+        space1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_),
+                               Space<float>::Size4D(10, 10, 10, 10),
+                               1, 1, 0);
 
         space1x_ = Space<float>(Space<float>::Box4D(Space<float>::Point4D(-1.f, -1.f, -1.f, -1.f),
                                                     Space<float>::Point4D(1.f, 1.f, 1.f, 1.f)));
@@ -44,7 +61,9 @@ protected:
 
         // Space subdivision.
         pb9_ = Space<float>::Point4D(10.f, 10.f, 10.f, 10.f);
-        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_));
+        space2_ = Space<float>(Space<float>::Box4D(pb1_, pb9_),
+                               Space<float>::Size4D(10, 10, 10, 10),
+                               2, 2, 0);
 
 
         // Simple object detection.
@@ -69,8 +88,14 @@ protected:
                                                     DualPointGHT<float>::Point2D(2.f, 2.f));
 
 
-        grid_size_ = Space<float>::Point4D(0.1f, 0.1f, 0.1f, 0.1f);
         pb10_ = Space<float>::Point4D(1.f, 1.f, 1.f, 0.9f);
+
+
+
+        space3_1_ = Space<float>(Space<float>::Box4D(pb1_, pb2_),
+                                 Space<float>::Size4D(3, 3, 3, 3),
+                                 1, 1, 0);
+        space3_2_ = space3_1_;
     }
 
     DualPointGHT<float>::Point2D ref1_;
@@ -103,6 +128,9 @@ protected:
     DualPointGHT<float>::SearchArea bbox_;
     DualPointGHT<float>::Point2D ref3_;
     DualPointGHT<float>::Point2D ref4_;
+
+    Space<float> space3_1_;
+    Space<float> space3_2_;
 };
 
 TEST_F(HoughTransformTest, EncodeReconstruct)
@@ -194,7 +222,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -202,7 +230,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb5_, pb2_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 11);
 
@@ -210,7 +238,7 @@ TEST_F(HoughTransformTest, DescreteSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb1_, pb10_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_descrete(sg, grid_size_);
+    space1_.vote_descrete(sg);
 
     EXPECT_EQ(space1_.get_votes(), 18);
 }
@@ -222,7 +250,7 @@ TEST_F(HoughTransformTest, TaxicabSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_taxicab(sg, grid_size_);
+    space1_.vote_taxicab(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 }
@@ -233,7 +261,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     Space<float>::Line4D ln(pb1_, pb3_);
     Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -241,7 +269,7 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb5_, pb2_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(2.f, 4.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 
@@ -249,19 +277,17 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     space1_.reset_votes();
     ln = Space<float>::Line4D(pb1_, pb10_);
     sg = Space<float>::Segment4D(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
-    space1_.vote_maxnorm(sg, grid_size_);
+    space1_.vote_maxnorm(sg);
 
     EXPECT_EQ(space1_.get_votes(), 10);
 }
 
 TEST_F(HoughTransformTest, SpaceSubdivision)
 {
-    std::size_t n = 5;
+    space2_.subdivide();
+    Space<float>::Spaces subs = space2_.get_subspaces();
 
-    space2_.subdivide(n);
-    detail::Space<float>::Spaces subs = space2_.get_subspaces();
-
-    EXPECT_EQ(subs.size(), n * n * n * n);
+    EXPECT_EQ(subs.size(), 10000u);
 }
 
 TEST_F(HoughTransformTest, SelfDetection)
@@ -272,7 +298,10 @@ TEST_F(HoughTransformTest, SelfDetection)
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
 
-    DualPointGHT<float>::ReferenceVotes rv = ght.fast_detect(model_, 0.9f, 3, 6, bbox_, bbox_);
+    Space<float>::counter_ = 0;
+
+    DualPointGHT<float>::ReferenceVotes rv = ght.cross_level_detect(model_, 0.9f, Space<float>::Size4D(3, 3, 3, 3),
+                                                             6, 1, bbox_, bbox_);
 
     DualPointGHT<float>::Reference r = rv.front().first;
 
@@ -288,9 +317,22 @@ TEST_F(HoughTransformTest, ProbabilisticModel)
     std::size_t n = 37;
 
     // Test of the distribution function.
-    float f = detail::SubdivisionPolicy<float>::F(k, n, k);
+    float f = SubdivisionPolicy<float>::F(k, n, k);
 
     EXPECT_NEAR(f, 1.0, 0.0001);
 
-    //float e = detail::SubdivisionPolicy<float>::E(k, n);
+    Space<float>::Line4D ln(pb1_, pb3_);
+    Space<float>::Segment4D sg(ln, DualPointGHT<float>::Point2D(0.f, 1.f));
+    space3_1_.vote_maxnorm(sg);
+    space3_1_.vote_maxnorm(sg);
+    space3_2_.vote_maxnorm(sg);
+    Space<float>::Spaces subc;
+    subc.push_back(space3_1_);
+    subc.push_back(space3_2_);
+
+    float p = SubdivisionPolicy<float>::p_max_value_in_subcollection(subc, subc);
+
+    // P(max1 > max2) = P(max2 > max1), and
+    // P(max1 > max2) + P(max2 > max1) + P(max1 = max2) = 1.
+    EXPECT_EQ(2 * p < 1, true);
 }

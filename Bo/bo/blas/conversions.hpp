@@ -81,4 +81,4 @@ vector<T> from_std_vector(const std::vector<T>& from)
 } // namespace blas
 } // namespace bo
 
-#endif CONVERSIONS_HPP_0DE10BDD_4801_49EC_B589_F120F69732BA_
+#endif // CONVERSIONS_HPP_0DE10BDD_4801_49EC_B589_F120F69732BA_

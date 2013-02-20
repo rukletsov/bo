@@ -432,7 +432,7 @@ template <typename T>
 Mesh<T> Mesh<T>::from_vertices(const Vertices* vertices)
 {
     SelfType mesh(vertices->size());
-    for (Vertices::const_iterator it = vertices->begin(); it != vertices->end(); ++it)
+    for (typename Vertices::const_iterator it = vertices->begin(); it != vertices->end(); ++it)
         mesh.add_vertex(*it);
 
     return mesh;

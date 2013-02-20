@@ -171,7 +171,7 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
     Point3D point) const
 {
     // Convert Point3D to boost BLAS vector. Convert to homogeneous coordinates.
-    blas::bounded_vector<RealType, 4> homog_vec(4, 1);
+    blas::bounded_vector<RealType, 4> homog_vec;
     blas::subrange(homog_vec, 0, 3) = blas::from_bo_vector(point);
 
     // Perform multiplication.
@@ -179,7 +179,9 @@ typename Transformation3D<RealType>::Point3D Transformation3D<RealType>::operato
 
     // Convert back from boost BLAS vector to Point3D. Convert back from homogeneous
     // coordinates.
-    Point3D retvalue = blas::to_bo_vector(blas::subrange(result, 0, 3));
+//    Point3D retvalue = blas::to_bo_vector(blas::subrange(result, 0, 3));
+    blas::bounded_vector<RealType, 3> sub(blas::subrange(result, 0, 3));
+    Point3D retvalue = blas::to_bo_vector(sub);
 
     return
         retvalue;
@@ -250,7 +252,10 @@ template <typename RealType>
 void Transformation3D<RealType>::set_translation_block_(const Translation& t)
 {
     // Fill the last column (corresponding to translation) using given translation vector.
-    blas::subrange(blas::column(matrix_, 3), 0, 3) = t;
+//    blas::subrange(blas::column(matrix_, 3), 0, 3) = t;
+    matrix_(0, 3) = t[0];
+    matrix_(1, 3) = t[1];
+    matrix_(2, 3) = t[2];
 }
 
 } // namespace bo
