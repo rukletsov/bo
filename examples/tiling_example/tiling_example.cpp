@@ -36,6 +36,7 @@ struct Paths
         RawClosedPath = InDir / "2d_contour4_512x512_8bit.raw";
         PlyClosedPath01 = InDir / "2d_contour4_512x512_8bit.ply";
         PlyClosedPath02 = InDir / "2d_contour4_512x512_8bit_transformed.ply";
+        SheepInDir = InDir / "sheep";
         PlySheepPath = InDir / "sheep_plane.ply";
         FemurInDir = InDir / "femur";
         PlyFemurPath01 = FemurInDir / "femur_plane01.ply";
@@ -57,6 +58,7 @@ struct Paths
     path RawClosedPath;
     path PlyClosedPath01;
     path PlyClosedPath02;
+    path SheepInDir;
     path PlySheepPath;
     path FemurInDir;
     path PlyFemurPath01;
@@ -214,6 +216,51 @@ void ChrisitiansenFemurFull()
     mesh_to_ply(result_mesh, paths.PlyFemurOutMeshPath.string());
 }
 
+void ChrisitiansenSheepFull()
+{
+    typedef std::vector<path> ContourData;
+    typedef std::vector<TilingAlgo::PropagationResult> Contours;
+
+    TilingAlgo tiling;
+    ContourData contour_data;
+    Contours contours;
+    Mesh result_mesh;
+
+    // Load planes paths.
+    AssertPathExists(paths.SheepInDir);
+    for (directory_iterator it(paths.SheepInDir); it != directory_iterator(); ++it)
+    {
+        if (is_regular_file(*it))
+            contour_data.push_back(it->path());
+    }
+
+    // Sort paths in lsexicographic order, since directory iteration is not ordered
+    // on some file systems.
+    std::sort(contour_data.begin(), contour_data.end());
+
+    // Extract contours from contour data.
+    for (ContourData::const_iterator it = contour_data.begin(); it != contour_data.end(); ++it)
+    {
+        AssertPathExists(*it);
+        Mesh mesh = mesh_from_ply(it->string());
+        TilingAlgo::ParallelPlanePtr plane_data =
+                boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
+        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 2.f, 4.f);
+
+        contours.push_back(contour);
+    }
+
+    // Tile pair of contours and join it with the result mesh.
+    for (Contours::const_iterator it = contours.begin() + 1; it != contours.end(); ++it)
+    {
+        TriangAlgo triang((it - 1)->points, !(it - 1)->has_hole, it->points, !it->has_hole);
+        Mesh mesh = *triang.christiansen();
+        result_mesh.join(mesh);
+    }
+
+    mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -232,4 +279,5 @@ int main(int argc, char* argv[])
     ChrisitiansenClosed();
     ChrisitiansenFemur();
     ChrisitiansenFemurFull();
+    ChrisitiansenSheepFull();
 }

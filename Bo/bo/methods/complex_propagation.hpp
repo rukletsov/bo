@@ -77,16 +77,16 @@ public:
 public:
     struct PropagationResult
     {
-        PropagationResult(): complete(false), has_hole(false),
+        PropagationResult(): stopped(false), has_hole(false),
             points(boost::make_shared<ParallelPlane>())
         { }
 
         PropagationResult(bool maxsize_reached, bool hole_encountered,
                           ParallelPlanePtr pts):
-            complete(maxsize_reached), has_hole(hole_encountered), points(pts)
+            stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
         { }
 
-        bool complete;
+        bool stopped;
         bool has_hole;
         ParallelPlanePtr points;
     };
@@ -145,7 +145,7 @@ public:
              it != attempt1.points->end(); ++it)
             result->push_back(*it);
 
-        return PropagationResult(attempt1.complete && attempt2.complete,
+        return PropagationResult(attempt1.stopped || attempt2.stopped,
                                  attempt1.has_hole, result);
     }
 
@@ -230,7 +230,7 @@ private:
             // Restrict total length (to prevent looping).
             if (retvalue.points->size() > max_size)
             {
-                retvalue.complete = true;
+                retvalue.stopped = true;
                 break;
             }
 
