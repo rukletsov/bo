@@ -1,12 +1,12 @@
 
 /******************************************************************************
 
-  distances_3d.hpp, v 1.0.6 2012.09.16
+  distances_3d.hpp, v 1.0.6 2013.02.25
 
   Methods and algorithms for calculating distances between varios objects in
   a 3D-space.
 
-  Copyright (c) 2011, 2012
+  Copyright (c) 2011 - 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -327,6 +327,24 @@ bo::Vector<T, 3> find_closest_point_on_triangle(const bo::Vector<T, 3>& P,
     // on the triangle to the given point.
     bo::Vector<T, 3> closest_point = B + T(s) * E0 + T(t) * E1;
     return closest_point;
+}
+
+
+// Computes the projection of a point q onto a plane given by a point and a normal.
+template <typename T>
+bo::Vector<T, 3> project_point_onto_plane(const bo::Vector<T, 3>& point,
+    const bo::Vector<T, 3>& plane_origin, const bo::Vector<T, 3>& plane_norm)
+{
+    // Ensure the plane normal is normalized.
+    bo::Vector<T, 3> unit_norm(plane_norm.normalized(), 3);
+
+    // Find the distance to plane along the normal.
+    T dist = unit_norm * (point - plane_origin);
+
+    // Multiply the unit normal by the distance, and subtract this vector from the point.
+    bo::Vector<T, 3> retvalue = point - (unit_norm * dist);
+
+    return retvalue;
 }
 
 } // namespace methods
