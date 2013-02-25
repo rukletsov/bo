@@ -174,10 +174,12 @@ void ChrisitiansenFemurFull()
 {
     typedef std::vector<path> ContourData;
     typedef std::vector<TilingAlgo::PropagationResult> Contours;
+    typedef std::vector<TilingAlgo::ParallelPlanePtr> PlaneData;
 
     TilingAlgo tiling;
     ContourData contour_data;
     Contours contours;
+    PlaneData plane_data;
     Mesh result_mesh;
 
     // Load planes paths.
@@ -198,9 +200,20 @@ void ChrisitiansenFemurFull()
     {
         AssertPathExists(*it);
         Mesh mesh = mesh_from_ply(it->string());
-        TilingAlgo::ParallelPlanePtr plane_data =
-                boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
-        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 3.f, 7.f);
+        plane_data.push_back(boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices()));
+    }
+
+    // Run propagation for each contour.
+    for (PlaneData::const_iterator it = plane_data.begin() + 1; it != plane_data.end() - 1; ++it)
+    {
+        std::vector<TilingAlgo::ParallelPlaneConstPtr> neighbours;
+        neighbours.push_back(*(it - 1));
+        neighbours.push_back(*(it + 1));
+
+        TilingAlgo::PropagationResult contour = tiling.propagate(*it, neighbours,
+                                                                 0.5f, 3.f, 7.f);
+//        TilingAlgo::PropagationResult contour = tiling.propagate(*it,
+//                                                                 0.5f, 3.f, 7.f);
 
         contours.push_back(contour);
     }
