@@ -176,13 +176,13 @@ public:
         ParallelPlaneConstPtrs neighbour_projs;
         neighbour_projs.reserve(neighbours.size());
 
-        for (ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
+        for (typename ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
              plane_it != neighbours.end(); ++plane_it)
         {
             ParallelPlanePtr plane_proj = boost::make_shared<ParallelPlane>();
             plane_proj->reserve((*plane_it)->size());
 
-            for (ParallelPlane::const_iterator point_it = (*plane_it)->begin();
+            for (typename ParallelPlane::const_iterator point_it = (*plane_it)->begin();
                  point_it != (*plane_it)->end(); ++point_it)
             {
                 plane_proj->push_back(project_point_onto_plane(*point_it, origin, norm));
@@ -196,7 +196,7 @@ public:
         std::vector<Tree> neighbour_trees;
         neighbour_trees.reserve(neighbours.size());
 
-        for (ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
+        for (typename ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
              plane_it != neighbours.end(); ++plane_it)
         {
             Tree neigh_tree((*plane_it)->begin(), (*plane_it)->end(), std::ptr_fun(point3D_accessor_));
@@ -355,7 +355,7 @@ private:
             // Compute tangential propagations using neighbours.
             Points3D neighbours_tang;
             neighbours_tang.reserve(neighbour_trees.size());
-            for (std::vector<Tree>::const_iterator it = neighbour_trees.begin();
+            for (typename std::vector<Tree>::const_iterator it = neighbour_trees.begin();
                  it != neighbour_trees.end(); ++it)
             {
                 neighbours_tang.push_back(this_type::tangential_propagation_(
