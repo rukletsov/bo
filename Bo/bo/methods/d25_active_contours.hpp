@@ -64,81 +64,81 @@ namespace surfaces {
 typedef bo::Vector<float, 3> Vertex;
 typedef bo::Mesh<float> Mesh;
 
-struct HPointElement;
+/*! \class PointContainer.
+    \brief A general container of vertices.
+*/
+class PointContainer;
 
-/*! \class HTriangleElement.
+struct PointElement;
+
+/*! \class TriangleElement.
     \brief An elementary surface item (mesh element).
 */
-struct BO_DECL HTriangleElement
+struct BO_DECL TriangleElement
 {
     /*! First triangle's vertex. */
-    HPointElement* p1;
+    PointElement* p1;
 
     /*! Second triangle's vertex. */
-    HPointElement* p2;
+    PointElement* p2;
 
     /*! Third triangle's vertex. */
-    HPointElement* p3;
+    PointElement* p3;
 
     /*! Comparison operator. */
-    inline bool operator == (const HTriangleElement &other) const;
+    inline bool operator == (const TriangleElement &other) const;
 };
 
 
-/*! \struct HPointElement.
+/*! \struct PointElement.
     \brief An elementary point item.
 */
-struct BO_DECL HPointElement
+struct BO_DECL PointElement
 {
-    HPointElement(Vertex v = Vertex(0, 0, 0));
+    PointElement(Vertex v = Vertex(0, 0, 0));
 
     /*! 3D Point. */
     Vertex p;
 
     /*! Visits flag. */
-    bool isVisited;
+    bool is_visited;
 
     /*! Define whether the point element is a mesh node */
-    bool isNode();
+    bool is_node();
 
     /*! List of adjacent triangles of a node point */
-    std::list<HTriangleElement> adjacentTriangles;
+    std::list<TriangleElement> adjacent_triangles;
 
     /*! Access operator. */
     float operator [] (const size_t t) const;
 
     /*! Comparison operator. */
-    bool operator == (const HPointElement &other) const;
+    bool operator == (const PointElement &other) const;
 };
 
-/*! \class HPointContainer.
-    \brief A general container of vertices.
-*/
-class HPointContainer;
 
-
-/*! \class HEdgeElement.
+/*! \class EdgeElement.
     \brief An elementary edge item.
 */
-struct BO_DECL HEdgeElement
+struct BO_DECL EdgeElement
 {
     /*! Default constructor. */
-    HEdgeElement();
+    EdgeElement();
 
     /*! Constructor. */
-    HEdgeElement(HPointElement* p1, HPointElement* p2);
+    EdgeElement(PointElement* p1, PointElement* p2);
 
     /*! First node of the edge. */
-    HPointElement* p1;
+    PointElement* p1;
 
     /*! Second node of the edge. */
-    HPointElement* p2;
+    PointElement* p2;
 
     /*! Vector of the propagation direction. */
-    Vertex propagationVector;
+    Vertex propagation_vector;
 
     /*! Comparison operator. */
-    bool operator == (const HEdgeElement& other) const;
+    bool operator == (const EdgeElement& other) const;
 
     /*! Swaps the vertices of the edge. */ 
     void swap();
@@ -159,7 +159,7 @@ class BO_DECL D25ActiveContours
 public:
 
     /*! Simplified constructor.*/
-    D25ActiveContours(float averageFaceSide = 1.0f);
+    D25ActiveContours(float average_face_side = 1.0f);
 
     /*! Full-parameter constructor.
         \param minInitDistance The minimal allowed length of the initial triangle's side.
@@ -177,9 +177,9 @@ public:
         \param tetrahedronBaseAngle The angle (cos scale) between the side faces and the 
                base face of the tetrahedrons used for 3D triangles intersection analysis. 
     */
-    D25ActiveContours(float min_init_distance_, float max_init_distance_, float max_projection_node_distance_,
-                      float normal_neighborhood_radius_, float max_surface_depth_, float max_excluded_angle_,
-                      float inertial_factor_, float tetrahedron_base_angle_);
+    D25ActiveContours(float min_init_distance, float max_init_distance, float max_projection_node_distance,
+                      float normal_neighborhood_radius, float max_surface_depth, float max_excluded_angle,
+                      float inertial_factor, float tetrahedron_base_angle);
 
     /*! Destructor.*/
     ~D25ActiveContours();
@@ -187,27 +187,27 @@ public:
     /*! Load points cloud into the internal vertex container.
         \param v The list of vertices in 3D.
     */
-        void set_vertices(std::vector<Vertex> &v);
+    void set_vertices(std::vector<Vertex> &v);
 
     /*! Get vector of point items.
         \return Vector of point items.
     */
-    std::vector<HPointElement> get_vertices();
+    std::vector<PointElement> get_vertices();
 
     /*! Get the current list of edges that are prepared for propagation.   
         \return Active edges list.
     */
-    const std::list<HEdgeElement>* get_active_edges();
+    const std::list<EdgeElement>* get_active_edges();
 
     /*! Get the current list of edges that couldn't be propagated.
         \return Frozen edges list.
     */
-    const std::list<HEdgeElement>* get_frozen_edges();
+    const std::list<EdgeElement>* get_frozen_edges();
 
     /*! Get the current list of generated triangles.
         \return Triangles list.
     */
-    const std::list<HTriangleElement>* get_triangles();
+    const std::list<TriangleElement>* get_triangles();
 
     /*! Get the mesh object built from the current list of generated triangles.
         \return Reconstructed mesh.
@@ -237,16 +237,16 @@ public:
 protected:
 
     //! Container of input vertices. Internal realization as a k-DTree.
-    HPointContainer *vertices_;
+    PointContainer* vertices_;
 
     //! List of active edges.
-    std::list<HEdgeElement> active_edges_;
+    std::list<EdgeElement> active_edges_;
 
     //! List of passive edges.
-    std::list<HEdgeElement> frozen_edges_;
+    std::list<EdgeElement> frozen_edges_;
 
     //! List of triangles.
-    std::list<HTriangleElement> triangles_;
+    std::list<TriangleElement> triangles_;
 
     //! The minimal allowed length of the initial triangle's side.
     float min_init_distance_;
@@ -299,13 +299,12 @@ protected:
         add a triangle based on them if their propagated triangles intersect in 3D.
         \param e The stitched edge.
     */
-    void edge_stitch(HEdgeElement e);
+    void edge_stitch(EdgeElement e);
 
     /*! Perform one step of "post-stitching" procedure.
         Purpose: performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
     */  
     void post_stitch();
-
 
     /*! Find the closest point to the given \p ps that lies within the distance interval 
         (\p minInitDistance, \p maxInitDistance).
@@ -315,7 +314,7 @@ protected:
         \param checkVisited Flag: search among the visited vertices if true.
         \return Pointer to the resulting vertex.
     */
-    HPointElement* get_closest_point(const HPointElement &ps, bool checkNodes, bool checkVisited);
+    PointElement* get_closest_point(const PointElement &ps, bool checkNodes, bool checkVisited);
 
     /*! Find the closest point P to the given \p ps such that P, \p ps1 and \p ps2 are non-collinear. 
         Search among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
@@ -326,8 +325,8 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return A pointer to the resulting vertex.
     */
-    HPointElement* get_closest_noncollinear_point(const HPointElement &ps, const HPointElement &ps1, 
-        const HPointElement& ps2, bool checkNodes, bool checkVisited);
+    PointElement* get_closest_noncollinear_point(const PointElement &ps, const PointElement &ps1,
+        const PointElement& ps2, bool checkNodes, bool checkVisited);
 
     /*! Finds point P that minimizes F(P, \p ps1, \p ps2) = std::abs(|ps1-ps2|-|P-ps2|) + 
         std::abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among 
@@ -339,31 +338,31 @@ protected:
         \return A pointer to the resulting vertex.
         \see maxInitDistance.
     */
-    HPointElement* get_closest_min_func_point(const HPointElement &ps1, const HPointElement& ps2, bool checkNodes, bool checkVisited);
+    PointElement* get_closest_min_func_point(const PointElement &ps1, const PointElement& ps2, bool checkNodes, bool checkVisited);
 
     /*! Calculates the Euclidean distance between \p ps1 and \p ps2.
         \param ps1 First input vertex.
         \param ps2 Second input vertex.
         \return A non-negative number, the Euclidean distance.
     */
-    float get_distance(const HPointElement &ps1, const HPointElement &ps2);
+    float get_distance(const PointElement &ps1, const PointElement &ps2);
 
     /*! Makes the points from \p vertices "visited" if they are situated in the 
         truncated projections of the triangles from the given list \p newTriangles.
         \param newTriangles The list of triangles.
     */
-    void visit_points(std::list<HTriangleElement> &newTriangles);
+    void visit_points(std::list<TriangleElement> &newTriangles);
 
     /*! Makes the points from \p vertices "visited" if they are situated within the 
         triangle prism of the given \p triangle with the height \p maxSurfaceDepth.
         \param triangle The input triangle.
     */
-    void visit_points(HTriangleElement &triangle);
+    void visit_points(TriangleElement &triangle);
 
     /*! Marks \p p as "visited".
         \param p A pointer to a vertex from \p vertices.
     */
-    void visit_point(HPointElement* p);
+    void visit_point(PointElement* p);
 
     /*! Indicates intersection of two given triangles \p t1 and \p t2 and their 
         nonconformity to one non-selfintersecting surface.
@@ -381,14 +380,14 @@ protected:
         \see triangles_3d_intersection.
         \see triangles.
     */
-    bool triangle_mesh_3d_intersection(const HTriangleElement &t);
+    bool triangle_mesh_3d_intersection(const TriangleElement &t);
 
     /*! Checks whether the given triangle \p t is degenerate (at least one of it's 
         angles is too small). Returns true if so, otherwise returns false.
         \param t The input triangle.
         \return true if the given triangle is degenerate, otherwise returns false.
     */
-    bool triangle_degenerate(const HTriangleElement &t);
+    bool triangle_degenerate(const TriangleElement &t);
 
     /*! Alters the coordinates of \p ps in such a way that the angles between the 
         edges of the triangle built from \p e and \p ps, and the elements of \p edgeList 
@@ -400,7 +399,7 @@ protected:
         \return True if \p ps was changed, otherwise - false.
         \see maxExcludedAngle.
     */
-    bool stick_to_adjacent_edge(const HEdgeElement &e, HPointElement* &ps, std::list<HEdgeElement> &edgeList);
+    bool stick_to_adjacent_edge(const EdgeElement &e, PointElement* &ps, std::list<EdgeElement> &edgeList);
 
     /*! Performs \p stickToAdjacentEdge() for \p activeEdges and \p frozenEdges (if 
         the result for \p activeEdges is false), and returns their OR value.
@@ -410,7 +409,7 @@ protected:
         \see activeEdges.
         \see frozenEdges.
     */
-    bool exclude_small_angles(const HEdgeElement &e, HPointElement* &ps);
+    bool exclude_small_angles(const EdgeElement &e, PointElement* &ps);
 
     /*! Calculates the element from \p vertices that is nearest to the point of 
         propagation for the given edge \p e. Searches among the visited points if \p checkVisited is true.
@@ -418,12 +417,11 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return The pointer to the propagated vertex.
     */
-    HPointElement* get_propagated_vertex(const HEdgeElement &e, bool checkVisited);
+    PointElement* get_propagated_vertex(const EdgeElement &e, bool checkVisited);
 
     //Calculates the propagation vector for the edge e defined by the origin point and insert it into e
     //returns True if the vector was successfully calculated and embedded into e. Otherwise returns false.
-    bool get_edge_propagation( HEdgeElement &e, Vertex origin);
-
+    bool get_edge_propagation( EdgeElement &e, Vertex origin);
 
     /*! Calculates an approximation of the normal surface vector in point \p p. The 
         surface is defined by the points' cloud within \p vertices. The Procedure is 
@@ -438,7 +436,7 @@ protected:
 
     /*! Appends the given edge to the list of active edges if it is not yet there. 
     */
-    inline void add_active_edge(HEdgeElement &e);
+    inline void add_active_edge(EdgeElement &e);
 };
 
 } // namespace surfaces
