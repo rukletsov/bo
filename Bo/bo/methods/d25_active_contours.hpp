@@ -177,9 +177,9 @@ public:
         \param tetrahedronBaseAngle The angle (cos scale) between the side faces and the 
                base face of the tetrahedrons used for 3D triangles intersection analysis. 
     */
-    D25ActiveContours(float minInitDistance, float maxInitDistance, float maxProjectionNodeDistance,
-                      float normalNeighborhoodRadius, float maxSurfaceDepth, float maxExcludedAngle,
-                      float inertialFactor, float tetrahedronBaseAngle);
+    D25ActiveContours(float min_init_distance_, float max_init_distance_, float max_projection_node_distance_,
+                      float normal_neighborhood_radius_, float max_surface_depth_, float max_excluded_angle_,
+                      float inertial_factor_, float tetrahedron_base_angle_);
 
     /*! Destructor.*/
     ~D25ActiveContours();
@@ -235,6 +235,56 @@ public:
     void model_init();
 
 protected:
+
+    //! Container of input vertices. Internal realization as a k-DTree.
+    HPointContainer *vertices_;
+
+    //! List of active edges.
+    std::list<HEdgeElement> active_edges_;
+
+    //! List of passive edges.
+    std::list<HEdgeElement> frozen_edges_;
+
+    //! List of triangles.
+    std::list<HTriangleElement> triangles_;
+
+    //! The minimal allowed length of the initial triangle's side.
+    float min_init_distance_;
+
+    //! The maximal allowed length of the initial triangle's side.
+    float max_init_distance_;
+
+    //! The maximal allowed distance between a point and it's node-projection in 3D.
+    float max_projection_node_distance_;
+
+    //! The maximum analyzed depth of the points cloud layer.
+    float max_surface_depth_;
+
+    /*! The maximum value of angles (cos scale) between mesh edges that will be excluded
+        during the mesh construction.
+    */
+    float max_excluded_angle_;
+
+    //! The radius of the neighborhood system used for PCA-based normal vector calculation.
+    float normal_neighborhood_radius_;
+
+    /*! The linear proportion between PCA-based and triangle-based normals:
+        (1-inertialFactor) * <Tangential propagation> + inertialFactor * <Inertial propagation>.
+    */
+    float inertial_factor_;
+
+    /*! The angle (cos scale) between the side faces and the base face of the
+        tetrahedrons used for 3D triangles intersection analysis.
+    */
+    float tetrahedron_base_angle_;
+
+    //! Auxiliary variable. Current polygon square.
+    float init_square_;
+
+    //! Auxiliary variable. The number of the unvisited vertices.
+    unsigned int unvisited_count_;
+
+
 
     /*! Cleans and initializes the inner containers and counters. Vertex container must be 
         initialized before call of this function.
@@ -389,55 +439,6 @@ protected:
     /*! Appends the given edge to the list of active edges if it is not yet there. 
     */
     inline void add_active_edge(HEdgeElement &e);
-
-
-    //! Container of input vertices. Internal realization as a k-DTree.
-    HPointContainer *vertices;
-
-    //! List of active edges.
-    std::list<HEdgeElement> activeEdges;
-
-    //! List of passive edges.
-    std::list<HEdgeElement> frozenEdges;
-
-    //! List of triangles.
-    std::list<HTriangleElement> triangles;
-
-    //! The minimal allowed length of the initial triangle's side.
-    float minInitDistance;
-
-    //! The maximal allowed length of the initial triangle's side.
-    float maxInitDistance;
-
-    //! The maximal allowed distance between a point and it's node-projection in 3D.
-    float maxProjectionNodeDistance;
-
-    //! The maximum analyzed depth of the points cloud layer.
-    float maxSurfaceDepth;
-
-    /*! The maximum value of angles (cos scale) between mesh edges that will be excluded 
-        during the mesh construction.
-    */
-    float maxExcludedAngle;
-
-    //! The radius of the neighborhood system used for PCA-based normal vector calculation.
-    float normalNeighborhoodRadius;
-
-    /*! The linear proportion between PCA-based and triangle-based normals:
-        (1-inertialFactor) * <Tangential propagation> + inertialFactor * <Inertial propagation>.
-    */   
-    float inertialFactor;
-
-    /*! The angle (cos scale) between the side faces and the base face of the 
-        tetrahedrons used for 3D triangles intersection analysis. 
-    */
-    float tetrahedronBaseAngle;
-
-    //! Auxiliary variable. Current polygon square.
-    float initSquare;
-
-    //! Auxiliary variable. The number of the unvisited vertices.
-    unsigned int unvisitedCount;
 };
 
 } // namespace surfaces

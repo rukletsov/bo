@@ -502,35 +502,35 @@ struct TriangularDipyramid
 
 D25ActiveContours::D25ActiveContours(float averageFaceSide)
 {
-    minInitDistance = averageFaceSide;
+    min_init_distance_ = averageFaceSide;
     
-    maxInitDistance = 1.5f * averageFaceSide;
-    maxProjectionNodeDistance = 0.8f * averageFaceSide;
-    normalNeighborhoodRadius = 0.8f * averageFaceSide;
-    maxSurfaceDepth = 0.5f;
+    max_init_distance_ = 1.5f * averageFaceSide;
+    max_projection_node_distance_ = 0.8f * averageFaceSide;
+    normal_neighborhood_radius_ = 0.8f * averageFaceSide;
+    max_surface_depth_ = 0.5f;
 
-    maxExcludedAngle = 0.99f;
-    inertialFactor = 0.5;
-    tetrahedronBaseAngle = 0.95f;
+    max_excluded_angle_ = 0.99f;
+    inertial_factor_ = 0.5;
+    tetrahedron_base_angle_ = 0.95f;
 
-    vertices = 0;
+    vertices_ = 0;
 }
 
 D25ActiveContours::D25ActiveContours(float minInitDistance, float maxInitDistance,
                                      float maxProjectionNodeDistance, float normalNeighborhoodRadius,
                                      float maxSurfaceDepth, float maxExcludedAngle,
                                      float inertialFactor, float tetrahedronBaseAngle):
-    minInitDistance(minInitDistance), maxInitDistance(maxInitDistance),
-    maxProjectionNodeDistance(maxProjectionNodeDistance), maxSurfaceDepth(maxSurfaceDepth),
-    maxExcludedAngle(maxExcludedAngle), normalNeighborhoodRadius(normalNeighborhoodRadius),
-    inertialFactor(inertialFactor), tetrahedronBaseAngle(tetrahedronBaseAngle)
+    min_init_distance_(minInitDistance), max_init_distance_(maxInitDistance),
+    max_projection_node_distance_(maxProjectionNodeDistance), max_surface_depth_(maxSurfaceDepth),
+    max_excluded_angle_(maxExcludedAngle), normal_neighborhood_radius_(normalNeighborhoodRadius),
+    inertial_factor_(inertialFactor), tetrahedron_base_angle_(tetrahedronBaseAngle)
 {
-    vertices = 0;
+    vertices_ = 0;
 }
 
 D25ActiveContours::~D25ActiveContours()
 {
-    delete vertices;
+    delete vertices_;
 }
 
 inline HPointElement* D25ActiveContours::get_closest_point(const HPointElement &ps,
@@ -539,10 +539,10 @@ inline HPointElement* D25ActiveContours::get_closest_point(const HPointElement &
     HPointContainerItem ce(0);
 
     PredicateClosestPointBeyondMinDistance pred(HPointContainerItem(const_cast<HPointElement*>(&ps)),
-                                              minInitDistance,checkNodes,checkVisited);
-    std::pair<D3Tree::const_iterator, float> nif = vertices->tree.find_nearest_if(
-                HPointContainerItem(const_cast<HPointElement*>(&ps)),maxInitDistance,pred);
-    if (nif.first != vertices->tree.end())
+                                              min_init_distance_,checkNodes,checkVisited);
+    std::pair<D3Tree::const_iterator, float> nif = vertices_->tree.find_nearest_if(
+                HPointContainerItem(const_cast<HPointElement*>(&ps)),max_init_distance_,pred);
+    if (nif.first != vertices_->tree.end())
         ce=*nif.first;
 
     return ce.ps;
@@ -558,8 +558,8 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
     mid.p = (ps1.p + ps2.p) / 2;
 
     std::vector<HPointContainerItem> v;
-    float const range = maxInitDistance;
-    vertices->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
+    float const range = max_init_distance_;
+    vertices_->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
 
     HPointContainerItem ce(0);
     double func = -1;
@@ -576,8 +576,8 @@ HPointElement* D25ActiveContours::get_closest_min_func_point(const HPointElement
             double b = v2.euclidean_norm_d();
             double c = v3.euclidean_norm_d();
 
-            if (b < maxInitDistance && c < maxInitDistance && 
-                b > minInitDistance && c > minInitDistance)
+            if (b < max_init_distance_ && c < max_init_distance_ &&
+                b > min_init_distance_ && c > min_init_distance_)
             {
                 double f = std::abs(a-b) + std::abs(a-c);
 
@@ -607,10 +607,10 @@ inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HP
                                            checkNodes, checkVisited);
     pred.check_only_nodes(true);
 
-    std::pair<D3Tree::const_iterator,float> nif = vertices->tree.find_nearest_if(
-        HPointContainerItem(const_cast<HPointElement*>(&ps)), maxProjectionNodeDistance, pred);
+    std::pair<D3Tree::const_iterator,float> nif = vertices_->tree.find_nearest_if(
+        HPointContainerItem(const_cast<HPointElement*>(&ps)), max_projection_node_distance_, pred);
 
-    if (nif.first != vertices->tree.end())
+    if (nif.first != vertices_->tree.end())
     {
         ce = *nif.first;
     }
@@ -618,9 +618,9 @@ inline HPointElement* D25ActiveContours::get_closest_noncollinear_point(const HP
     {
         pred.check_only_nodes(false);
 
-        nif = vertices->tree.find_nearest_if(HPointContainerItem(const_cast<HPointElement*>(&ps)),
-                                             maxProjectionNodeDistance, pred);
-        if(nif.first != vertices->tree.end())
+        nif = vertices_->tree.find_nearest_if(HPointContainerItem(const_cast<HPointElement*>(&ps)),
+                                             max_projection_node_distance_, pred);
+        if(nif.first != vertices_->tree.end())
         {
             ce = *nif.first;
         }
@@ -639,8 +639,8 @@ void D25ActiveContours::model_init()
 {
     HPointElement *pps1 = 0, *pps2 = 0, *pps3 = 0;
 
-    D3Tree::mutable_iterator it = vertices->tree.begin();
-    while (it != vertices->tree.end())
+    D3Tree::mutable_iterator it = vertices_->tree.begin();
+    while (it != vertices_->tree.end())
     {
         // Take the first unvisited point from the point cloud.
         if (!(*it).ps->isVisited)
@@ -703,7 +703,7 @@ void D25ActiveContours::model_init()
                             visit_points(tr);
 
                             // Add new triangle into the mesh.
-                            triangles.push_back(tr);
+                            triangles_.push_back(tr);
 
                             return;
                         }
@@ -721,11 +721,11 @@ void D25ActiveContours::model_init()
 
 void D25ActiveContours::model_grow()
 {
-    if (activeEdges.size() == 0)
+    if (active_edges_.size() == 0)
         return;
 
     // Take the first edge from the list.
-    HEdgeElement e = *activeEdges.begin();
+    HEdgeElement e = *active_edges_.begin();
 
     // Try to calculate the propagated point from the point cloud.
     HPointElement* pps = get_propagated_vertex(e, false);
@@ -746,7 +746,7 @@ void D25ActiveContours::model_grow()
         // the list of passive edges for further processing.
         if(triangle_degenerate(tr))
         {
-            frozenEdges.push_back(e);
+            frozen_edges_.push_back(e);
         }
         // Test the triangle for collision with the mesh. If does not intersect:
         else if(!triangle_mesh_3d_intersection(tr))
@@ -768,7 +768,7 @@ void D25ActiveContours::model_grow()
                 visit_points(tr);	
 
                 // Add new triangle into the mesh.
-                triangles.push_back(tr);
+                triangles_.push_back(tr);
             } 
   
         }
@@ -782,13 +782,13 @@ void D25ActiveContours::model_grow()
     // If can not calculate the propagated point:
     else 
     {
-        frozenEdges.push_back(e);
+        frozen_edges_.push_back(e);
     }
 
     // Delete the processed (first) edge from the active edges if it is yet here.
-    std::list<HEdgeElement>::iterator it = activeEdges.begin();
-    if(it != activeEdges.end() && e == *it)
-        activeEdges.erase(it);
+    std::list<HEdgeElement>::iterator it = active_edges_.begin();
+    if(it != active_edges_.end() && e == *it)
+        active_edges_.erase(it);
 }
 
 bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
@@ -801,7 +801,7 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
 
     // Propagation norm is sqrt(3)/2 of min distance.
     // Tends to the median length of a equilateral triangle.
-    float pnorm = minInitDistance * 0.87f;
+    float pnorm = min_init_distance_ * 0.87f;
     
     // If (inertialFactor >= 1): Inertial edge propagation.
     Vector<float,3> p(0, 0, 0);
@@ -810,12 +810,12 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
         p = median / nmedian * pnorm;
 
     // If (inertialFactor < 1): Tangential PCA-based or adaptive (complex) edge propagation. 
-    if (inertialFactor < 1)
+    if (inertial_factor_ < 1)
     {
         size_t neighbourCount = 0;
 
         // Surface normal calculation in the middle point of the edge.
-        Vector<float,3> midNorm = get_surface_normal(mid, normalNeighborhoodRadius, neighbourCount);
+        Vector<float,3> midNorm = get_surface_normal(mid, normal_neighborhood_radius_, neighbourCount);
 
         // Vector parallel to the edge.
         Vector<float,3> v = e.p2->p - e.p1->p;
@@ -841,16 +841,16 @@ bool D25ActiveContours::get_edge_propagation(HEdgeElement &e, Vertex origin)
             prop = prop / nprop * pnorm;
 
         // Tangential PCA-based edge propagation.
-        if (inertialFactor >= 0)
+        if (inertial_factor_ >= 0)
         {
             // Linear combination of the inertial and tangential propagations.
-            p = (1 - inertialFactor) * prop + inertialFactor * p;
+            p = (1 - inertial_factor_) * prop + inertial_factor_ * p;
         }
         // Adaptive (complex) edge propagation. Lambda is defined as -inertialFactor.
         else 
         {            
             // Adaptive saturation.
-            float alpha = neighbourCount > -inertialFactor ? 1 : neighbourCount / (-inertialFactor);
+            float alpha = neighbourCount > -inertial_factor_ ? 1 : neighbourCount / (-inertial_factor_);
 
             // Linear combination of the inertial and tangential propagations.
             p = (1 - alpha) * p + alpha * prop;
@@ -905,7 +905,7 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
 
     // Define the neighbourhood radius. Find the maximum of maxSurfaceDepth and 
     // the distances from the triangle vertices to its mass centre.
-    float tmp, rad = maxSurfaceDepth;
+    float tmp, rad = max_surface_depth_;
     rad = rad > (tmp = float((tr.p1->p - mid).euclidean_norm_d())) ? rad : tmp;
     rad = rad > (tmp = float((tr.p2->p - mid).euclidean_norm_d())) ? rad : tmp;
     rad = rad > (tmp = float((tr.p3->p - mid).euclidean_norm_d())) ? rad : tmp;
@@ -914,7 +914,7 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
     HPointElement mids;
     mids.p = mid;
     std::vector<HPointContainerItem> v;
-    vertices->tree.find_within_range(HPointContainerItem(&mids), rad, std::back_inserter(v));
+    vertices_->tree.find_within_range(HPointContainerItem(&mids), rad, std::back_inserter(v));
 
     // Check if the selected points are inside the triangle prism with 
     // the height = 2*maxSurfaceDepth.
@@ -923,7 +923,7 @@ void D25ActiveContours::visit_points(HTriangleElement &tr)
         Vector<float,3> X = tr.p2->p - tr.p1->p;
         Vector<float,3> Y = tr.p3->p - tr.p1->p;
         Vector<float,3> Z = getNormalVector(tr); 
-        Z = Z / float(Z.euclidean_norm_d()) * maxSurfaceDepth;
+        Z = Z / float(Z.euclidean_norm_d()) * max_surface_depth_;
         Vector<float,3> O = tr.p1->p;
 
         // Calculate the triangle prism basis matrix.
@@ -979,7 +979,7 @@ inline void D25ActiveContours::visit_point( HPointElement* p )
     if(p->isVisited == false)
     {
         p->isVisited = true;
-        --unvisitedCount;
+        --unvisited_count_;
     }
 }
 
@@ -987,8 +987,8 @@ inline bool D25ActiveContours::exclude_small_angles( const HEdgeElement &e, HPoi
 {
     // Try to connect the given point element ps to the ends of adjacent edges from
     // the lists of active and passive edges (consiquently).
-    if (stick_to_adjacent_edge(e, ps, activeEdges) ||
-        stick_to_adjacent_edge(e, ps, frozenEdges))
+    if (stick_to_adjacent_edge(e, ps, active_edges_) ||
+        stick_to_adjacent_edge(e, ps, frozen_edges_))
     {
         return true;
     }
@@ -1048,7 +1048,7 @@ bool D25ActiveContours::stick_to_adjacent_edge(const HEdgeElement &e, HPointElem
                 double cosa = v1 * v2 / float(normV1 * normV2);
 
                 // If the angle is less than minimal allowed, perform sticking.
-                if(cosa > maxExcludedAngle)
+                if(cosa > max_excluded_angle_)
                 {
                     ps = ee.p2;
                     return true;
@@ -1099,8 +1099,8 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection(const HTriangleElem
 
     // Calculate the neighbourhood of the mass center.
     std::vector<HPointContainerItem> neighbours;
-    float const range = 3*minInitDistance;
-    vertices->tree.find_within_range(HPointContainerItem(&mass), range, std::back_inserter(neighbours));
+    float const range = 3*min_init_distance_;
+    vertices_->tree.find_within_range(HPointContainerItem(&mass), range, std::back_inserter(neighbours));
 
     // For all nodes from the neighbourhood check their adjacent triangles for 
     // intersection with the given triangle.
@@ -1137,7 +1137,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
         Triangle<Vector<float, 3> > t1(e.p1->p, e.p2->p, pps1->p);
 
         // Find all adjacent edges to the given one in the list of passive edges.
-        for(std::list<HEdgeElement>::iterator ite = frozenEdges.begin(); ite != frozenEdges.end(); ++ite)
+        for(std::list<HEdgeElement>::iterator ite = frozen_edges_.begin(); ite != frozen_edges_.end(); ++ite)
         {
             HEdgeElement ee = *ite;
 
@@ -1203,13 +1203,13 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
                             if (!triangle_mesh_3d_intersection(tr))
                             {
                                 // Delete the current frozen neighboring edge.
-                                frozenEdges.erase(ite);
+                                frozen_edges_.erase(ite);
 
                                 // Add a new active edge.
                                 add_active_edge(ne);
 
                                 // Add new triangle to the mesh.
-                                triangles.push_back(tr);
+                                triangles_.push_back(tr);
 
                                 isStitched=true;
 
@@ -1224,7 +1224,7 @@ void D25ActiveContours::edge_stitch(HEdgeElement e )
 
     // Add the edge to the frozen edges, if it wasn't stitched on this step.
     if (!isStitched)
-        frozenEdges.push_back(e);
+        frozen_edges_.push_back(e);
 }
 
 Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::size_t &neighbourCount)
@@ -1234,7 +1234,7 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
     ps.p = p;
     std::vector<HPointContainerItem> neighbours;
     float const range = windowRadius;
-    vertices->tree.find_within_range(HPointContainerItem(&ps), range,
+    vertices_->tree.find_within_range(HPointContainerItem(&ps), range,
                                      std::back_inserter(neighbours));
 
     size_t pointCount = neighbours.size();
@@ -1331,8 +1331,8 @@ std::vector<HPointElement> D25ActiveContours::get_vertices()
     std::vector<HPointElement> verts;
 
     // Compose a vector from the tree-based container.
-    D3Tree::mutable_iterator it = vertices->tree.begin();
-    while (it != vertices->tree.end())
+    D3Tree::mutable_iterator it = vertices_->tree.begin();
+    while (it != vertices_->tree.end())
     {
         HPointContainerItem c = *it;
         verts.push_back(*c.ps);
@@ -1344,17 +1344,17 @@ std::vector<HPointElement> D25ActiveContours::get_vertices()
 
 const std::list<HEdgeElement>* D25ActiveContours::get_active_edges()
 {
-    return &activeEdges;
+    return &active_edges_;
 }
 
 const std::list<HEdgeElement>* D25ActiveContours::get_frozen_edges()
 {
-    return &frozenEdges;
+    return &frozen_edges_;
 }
 
 const std::list<HTriangleElement>* D25ActiveContours::get_triangles()
 {
-    return &triangles;
+    return &triangles_;
 }
 
 
@@ -1365,7 +1365,7 @@ bool D25ActiveContours::triangles_3d_intersection(const Triangle<Vertex> &t1,
     // Define the minimal error value.
     const float eps = 0.001f;
     // Bound the angle from zero by eps.
-    float alpha = tetrahedronBaseAngle < eps ? eps : tetrahedronBaseAngle;
+    float alpha = tetrahedron_base_angle_ < eps ? eps : tetrahedron_base_angle_;
     
     // Create two dypiramids from the given triangles and the base angle alpha.
     TriangularDipyramid tdp1 = TriangularDipyramid::from_triangle_and_angle(t1, alpha);
@@ -1395,9 +1395,9 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
     float cos3 = v3a * v3b / float((v3a.euclidean_norm_d() * v3b.euclidean_norm_d()));
 
     // Compare the angles with the minimal allowed value. 
-    if ((std::fabs(cos1) > maxExcludedAngle) ||
-        (std::fabs(cos2) > maxExcludedAngle) ||
-        (std::fabs(cos3) > maxExcludedAngle))
+    if ((std::fabs(cos1) > max_excluded_angle_) ||
+        (std::fabs(cos2) > max_excluded_angle_) ||
+        (std::fabs(cos3) > max_excluded_angle_))
         return true;
     else return false;
 }
@@ -1405,9 +1405,9 @@ bool D25ActiveContours::triangle_degenerate(const HTriangleElement &t)
 void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 {
     // Create and fill in a vertex container.
-    if (vertices)
-        delete vertices;
-    vertices=new HPointContainer(v);
+    if (vertices_)
+        delete vertices_;
+    vertices_=new HPointContainer(v);
 
     // Clean and initialize auxiliary structures.
     prepare();
@@ -1416,16 +1416,16 @@ void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
 bool D25ActiveContours::grow_step()
 {	
     // If all the points have been processed and the list of the active edges is empty:
-    if (unvisitedCount == 0 && activeEdges.size() == 0)
+    if (unvisited_count_ == 0 && active_edges_.size() == 0)
     {
         // Perform the post-stitch step and check if new active or passive edges were
         // added during it (if so, return true).
-        std::size_t frozenBefore = frozenEdges.size();
+        std::size_t frozenBefore = frozen_edges_.size();
         post_stitch();
-        return (activeEdges.size() > 0) || (frozenEdges.size() < frozenBefore);
+        return (active_edges_.size() > 0) || (frozen_edges_.size() < frozenBefore);
     }
     // If there are active edges in the list:
-    else if (activeEdges.size() > 0)
+    else if (active_edges_.size() > 0)
     {
         // Perform a new growing step.
         model_grow();
@@ -1447,14 +1447,14 @@ void D25ActiveContours::post_stitch()
 Mesh D25ActiveContours::get_mesh()
 {
     //Construct a new mesh.
-    Mesh m(triangles.size());
+    Mesh m(triangles_.size());
 
     // Create a reference map (from the local triangles nodes to the mesh vertices).
     std::map<HPointElement*,size_t> mymap;
     
     // Fill in the mesh.
-    std::list<HTriangleElement>::const_iterator itt = triangles.begin();
-    while (itt != triangles.end())
+    std::list<HTriangleElement>::const_iterator itt = triangles_.begin();
+    while (itt != triangles_.end())
     {
         for (int j = 0; j < 3; ++j)
         {
@@ -1486,29 +1486,29 @@ Mesh D25ActiveContours::get_mesh()
 void D25ActiveContours::prepare()
 {
     // Cleaning all the auxiliary containers.
-    activeEdges.clear();
-    frozenEdges.clear();
-    triangles.clear();
+    active_edges_.clear();
+    frozen_edges_.clear();
+    triangles_.clear();
 
     // Initialize the counter.
-    unvisitedCount = static_cast<unsigned>(vertices->tree.size());
+    unvisited_count_ = static_cast<unsigned>(vertices_->tree.size());
 }
 
 void D25ActiveContours::add_active_edge( HEdgeElement &e )
 {
     bool isUnique = true;
 
-    std::list<HEdgeElement>::iterator it = activeEdges.begin();
+    std::list<HEdgeElement>::iterator it = active_edges_.begin();
     
     // Check if the given edge is unique. TODO: optimize!
-    while(it != activeEdges.end())
+    while(it != active_edges_.end())
     {
         if (e == *it)
         {
             isUnique = false;
             
             // Two equal active edges kill themselves. 
-            activeEdges.erase(it);
+            active_edges_.erase(it);
             
             break;
         }
@@ -1517,7 +1517,7 @@ void D25ActiveContours::add_active_edge( HEdgeElement &e )
     }
 
     if (isUnique)
-        activeEdges.push_back(e);
+        active_edges_.push_back(e);
 }
 
 } // namespace surfaces
