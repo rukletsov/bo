@@ -600,7 +600,7 @@ void D25ActiveContours::visit_points(TriangleElement &tr)
     // The mass center of the triangle.
     Vertex mid = (tr.p1->p + tr.p2->p + tr.p3->p) / 3;
 
-    // Define the neighbourhood radius. Find the maximum of maxSurfaceDepth and 
+    // Define the neighbourhood radius. Find the maximum of max_surface_depth and
     // the distances from the triangle vertices to its mass centre.
     float tmp, rad = max_surface_depth_;
     rad = rad > (tmp = float((tr.p1->p - mid).euclidean_norm_d())) ? rad : tmp;
@@ -619,7 +619,7 @@ void D25ActiveContours::visit_points(TriangleElement &tr)
         // Calculate the triangle prism coordinate axes.
         Vertex X = tr.p2->p - tr.p1->p;
         Vertex Y = tr.p3->p - tr.p1->p;
-        Vertex Z = normal_vector(tr);
+        Vertex Z = tr.normal_vector();
         Z = Z / float(Z.euclidean_norm_d()) * max_surface_depth_;
         Vertex O = tr.p1->p;
 
@@ -762,6 +762,17 @@ bool D25ActiveContours::stick_to_adjacent_edge(const EdgeElement &e, PointElemen
 }
 
 
+void D25ActiveContours::prepare()
+{
+    // Cleaning all the auxiliary containers.
+    active_edges_.clear();
+    frozen_edges_.clear();
+    triangles_.clear();
+
+    // Initialize the counter.
+    unvisited_count_ = static_cast<unsigned>(vertices_->tree.size());
+}
+
 Mesh D25ActiveContours::build_mesh(std::vector<Vertex> &v)
 {
     // Initialize the point cloud.
@@ -788,6 +799,26 @@ Mesh D25ActiveContours::build_mesh()
     return get_mesh();
 }
 
+bool D25ActiveContours::grow_step()
+{
+    // If all the points have been processed and the list of the active edges is empty:
+    if (unvisited_count_ == 0 && active_edges_.size() == 0)
+    {
+        return false;
+    }
+    // If there are active edges in the list:
+    else if (active_edges_.size() > 0)
+    {
+        // Perform a new growing step.
+        model_grow();
+    }
+    // If there are unprocessed points and no active edges in the list
+    // perform the initialization step.
+    else model_init();
+
+    return true;
+}
+
 inline bool D25ActiveContours::triangle_mesh_3d_intersection(const TriangleElement &t)
 {
     // Calculate the mass center of the triangle.
@@ -796,7 +827,7 @@ inline bool D25ActiveContours::triangle_mesh_3d_intersection(const TriangleEleme
 
     // Calculate the neighbourhood of the mass center.
     std::vector<PointContainerItem> neighbours;
-    float const range = 3*min_init_distance_;
+    float const range = 3 * max_init_distance_;
     vertices_->tree.find_within_range(PointContainerItem(&mass), range, std::back_inserter(neighbours));
 
     // For all nodes from the neighbourhood check their adjacent triangles for 
@@ -1110,37 +1141,6 @@ void D25ActiveContours::set_vertices( std::vector<Vertex> &v )
     prepare();
 }
 
-bool D25ActiveContours::grow_step()
-{	
-    // If all the points have been processed and the list of the active edges is empty:
-    if (unvisited_count_ == 0 && active_edges_.size() == 0)
-    {
-        // Perform the post-stitch step and check if new active or passive edges were
-        // added during it (if so, return true).
-        std::size_t frozenBefore = frozen_edges_.size();
-        post_stitch();
-        return (active_edges_.size() > 0) || (frozen_edges_.size() < frozenBefore);
-    }
-    // If there are active edges in the list:
-    else if (active_edges_.size() > 0)
-    {
-        // Perform a new growing step.
-        model_grow();
-    }
-    // If there are unprocessed points and no active edges in the list
-    // perform the initialization step. 
-    else model_init();
-
-    return true;
-}
-
-void D25ActiveContours::post_stitch()
-{
-    // TODO: complete this step if needed.
-    // Purpose: it performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
-}
-
-
 Mesh D25ActiveContours::get_mesh()
 {
     //Construct a new mesh.
@@ -1178,17 +1178,6 @@ Mesh D25ActiveContours::get_mesh()
     }
 
     return m;
-}
-
-void D25ActiveContours::prepare()
-{
-    // Cleaning all the auxiliary containers.
-    active_edges_.clear();
-    frozen_edges_.clear();
-    triangles_.clear();
-
-    // Initialize the counter.
-    unvisited_count_ = static_cast<unsigned>(vertices_->tree.size());
 }
 
 void D25ActiveContours::add_active_edge( EdgeElement &e )

@@ -128,6 +128,17 @@ struct BO_DECL TriangleElement
     {
         return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3);
     }
+
+    /*! Calculates the normal vector of the triangle element.
+        \return The normal vector.
+    */
+    Vertex normal_vector()
+    {
+        Vertex a = p2->p - p1->p;
+        Vertex b = p3->p - p1->p;
+
+        return a.cross_product(b);
+    }
 };
 
 
@@ -171,32 +182,6 @@ struct BO_DECL EdgeElement
     }
 };
 
-
-//General functions
-
-/*! Calculates the normal vector for the face of the given triangle \p t.
-    \param t The input triangle
-    \return The normal vector for \p t
-*/
-Vertex normal_vector(const Triangle<Vertex> &t)
-{
-    Vertex a = t.B() - t.A();
-    Vertex b = t.C() - t.A();
-
-    return a.cross_product(b);
-}
-
-/*! Calculates the normal vector for the face of the given triangle \p ts.
-    \param ts The input triangle
-    \return The normal vector for \p ts
-*/
-Vertex normal_vector(const TriangleElement &ts)
-{
-    Vertex a = ts.p2->p - ts.p1->p;
-    Vertex b = ts.p3->p - ts.p1->p;
-
-    return a.cross_product(b);
-}
 
 
 // Triangular dipyramid implmentation.
@@ -270,6 +255,18 @@ public:
         tdp.faces[5] = Triangle<Vertex>(t.C(), t.A(), p2);
 
         return tdp;
+    }
+
+    /*! Calculates the normal vector for the face of the given triangle \p t.
+        \param t The input triangle
+        \return The normal vector for \p t
+    */
+    static Vertex normal_vector(const Triangle<Vertex> &t)
+    {
+        Vertex a = t.B() - t.A();
+        Vertex b = t.C() - t.A();
+
+        return a.cross_product(b);
     }
 
     // Check intersection with another triangular dipyramid.
@@ -540,11 +537,6 @@ protected:
         \param e The stitched edge.
     */
     void edge_stitch(detail::EdgeElement e);
-
-    /*! Perform one step of "post-stitching" procedure.
-        Purpose: performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
-    */  
-    void post_stitch();
 
     /*! Find the closest point to the given \p ps that lies within the distance interval 
         (\p minInitDistance, \p maxInitDistance).
