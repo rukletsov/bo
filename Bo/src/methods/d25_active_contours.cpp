@@ -12,87 +12,31 @@ namespace bo {
 namespace methods {
 namespace surfaces {
 
-
-// HTringleElement implementation.
-
-bool TriangleElement::operator==(const TriangleElement &other) const
-{
-    return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3); 
-}
-
-
-// HPointElement implementation.
-
-PointElement::PointElement(Vertex v /*= bo::Vector<float,3>(0,0,0)*/)
-{
-    p = v;
-    is_visited = false;
-}
-
-bool PointElement::is_node()
-{
-    return (adjacent_triangles.size() > 0);
-}
-
-float PointElement::operator[](const size_t t) const
-{
-    return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
-}
-
-bool PointElement::operator==(const PointElement &other) const
-{
-    return (p == other.p) && (adjacent_triangles == other.adjacent_triangles) &&
-        (is_visited == other.is_visited);
-}
-
-
-// HEdgeElement implementation.
-
-EdgeElement::EdgeElement(PointElement* p1, PointElement* p2) : p1(p1), p2(p2)
-{
-}
-
-EdgeElement::EdgeElement() : p1(0), p2(0)
-{
-}
-
-bool EdgeElement::operator==(const EdgeElement& other) const
-{
-    // The propagation direction is not considered.
-    return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
-}
-
-void EdgeElement::swap()
-{
-    PointElement* tmp = p1;
-    p1 = p2;
-    p2 = tmp;
-}
+namespace detail {
 
 
 // Point container implementation.
-// Represents a wrapper of HPointElement for utilization in HPointContainer. 
-
-struct HPointContainerItem
+// Represents a wrapper of PointElement for utilization in PointContainer.
+struct PointContainerItem
 {
     // Default constructor.
-    HPointContainerItem() : ps(0)
+    PointContainerItem() : ps(0)
     {
     }
 
     // Constructor.
-    HPointContainerItem(PointElement* ps) : ps(ps)
+    PointContainerItem(PointElement* ps) : ps(ps)
     {
     }
 
     // Access operator.
-    inline float operator[](const size_t t) const 
+    inline float operator[](const size_t t) const
     {
         return (*ps)[t];
     }
 
     // Comparison operator.
-    inline bool operator==(const HPointContainerItem &other) const
+    inline bool operator==(const PointContainerItem &other) const
     {
         return (*ps) == (*other.ps);
     }
@@ -103,30 +47,30 @@ struct HPointContainerItem
 
 
 // HPointContainerItem brackets accessor.
-inline float point_bac(HPointContainerItem t, size_t k)
+inline float point_bac(PointContainerItem t, size_t k)
 { 
     return t[k]; 
 }
 
 // 3D Tree type.
-typedef bo::KDTree<3, HPointContainerItem,
-    std::pointer_to_binary_function<HPointContainerItem, size_t, float> > D3Tree;
+typedef bo::KDTree<3, PointContainerItem,
+    std::pointer_to_binary_function<PointContainerItem, size_t, float> > D3Tree;
 
 // A general container of vertices.
 class PointContainer
 {
 public:
 
-    PointContainer(std::vector<Vector<float,3> >& vertices):
+    PointContainer(std::vector<Vertex> &vertices):
                     tree(D3Tree(std::ptr_fun(point_bac)))
     {
         // Filling in the 3D Tree.
-        for (std::vector<Vector<float,3> >::const_iterator itp = vertices.begin();
+        for (std::vector<Vertex>::const_iterator itp = vertices.begin();
             itp != vertices.end(); ++itp)
         {
             PointElement* pe = new PointElement(*itp);
             
-            HPointContainerItem ce(pe);
+            PointContainerItem ce(pe);
             tree.insert(ce);
 
         }
@@ -145,14 +89,14 @@ class PredicateClosestPointBeyondMinDistance
 {
 public:
 
-    PredicateClosestPointBeyondMinDistance(HPointContainerItem const& searchCenter, float minDistance, 
+    PredicateClosestPointBeyondMinDistance(PointContainerItem const& searchCenter, float minDistance,
                                            bool checkNodes, bool checkVisited):
                                            searchCenter(*searchCenter.ps), minDistance(minDistance), 
                                            checkNodes(checkNodes), checkVisited(checkVisited)
     {
     }
 
-    inline bool operator()(HPointContainerItem const& ce) const
+    inline bool operator()(PointContainerItem const& ce) const
     {
         return ((!ce.ps->is_visited) || (checkNodes&&ce.ps->is_node()) ||
                 (checkVisited && ce.ps->is_visited)) &&
@@ -175,7 +119,7 @@ class PredicateClosestPointNonCollinear
 {
 public:
 
-    PredicateClosestPointNonCollinear(const HPointContainerItem &ce1, const HPointContainerItem& ce2,
+    PredicateClosestPointNonCollinear(const PointContainerItem &ce1, const PointContainerItem& ce2,
                                       bool checkNodes, bool checkVisited) :
                                       checkNodes(checkNodes), checkVisited(checkVisited),
                                       ce1(ce1), ce2(ce2)
@@ -193,7 +137,7 @@ public:
         this->only_nodes = only_nodes;
     }
 
-    inline bool operator()(HPointContainerItem const& ce) const
+    inline bool operator()(PointContainerItem const& ce) const
     {
         if (only_nodes)
         {
@@ -212,7 +156,7 @@ public:
             return false;
 
         // Collinearity test.
-        Vector<float,3> ca = ce.ps->p - ce1.ps->p;;
+        Vertex ca = ce.ps->p - ce1.ps->p;;
         double absCa2 = ca.x() * ca.x() + ca.y() * ca.y() + ca.z() * ca.z();
 
         double scalBaCa = ba * ca;
@@ -236,270 +180,21 @@ protected:
 
     double eps;
 
-    HPointContainerItem ce1;
+    PointContainerItem ce1;
 
-    HPointContainerItem ce2;
+    PointContainerItem ce2;
 
-    Vector<float,3> ba;
+    Vertex ba;
 
     double absBa;
 };
 
-
-//General functions
-
-
-/*! Calculates the normal vector of the plane formed by two given vectors \p v1 and \p v2
-    \param v1 The first input vector
-    \param v2 The second input vector
-    \return The normal vector to <v1,v2>
-*/
-Vector<float,3> getNormalVector(const Vector<float,3> a, const Vector<float,3> b)
-{
-    Vector<float,3> p;
-
-    p.x() = a.y() * b.z() - b.y() * a.z();
-    p.y() = a.z() * b.x() - b.z() * a.x();
-    p.z() = a.x() * b.y() - b.x() * a.y();
-
-    return p;
-}
-
-/*! Calculates the normal vector for the face of the given triangle \p t.
-    Attention: the direction depends on the vertices order
-    \param t The input triangle
-    \return The normal vector for \p t
-*/
-Vector<float, 3> getNormalVector(const Triangle<Vector<float, 3> > &t)
-{
-    Vector<float,3> a = t.B() - t.A();
-    Vector<float,3> b = t.C() - t.A();
-
-    return getNormalVector(a, b);
-}
-
-/*! Calculates the normal vector for the face of the given triangle \p ts.
-    Attention: the direction depends on the vertices order
-    \param ts The input triangle
-    \return The normal vector for \p ts
-*/
-Vector<float,3> getNormalVector(const surfaces::TriangleElement &ts)
-{
-    Vector<float,3> a = ts.p2->p - ts.p1->p;
-    Vector<float,3> b = ts.p3->p - ts.p1->p;
-
-    return getNormalVector(a, b);
-}
+} // namespace detail
 
 
-
-
-// Triangular dipyramid implmentation.
-
-
-struct TriangularDipyramid
-{
-    Vector<float,3> vertices[5];
-    Triangle<Vector<float,3> > faces[6];
-    Vector<float,3> center;
-    
-    // Triangular dipyramid based on the given triangle with the given base angle.
-    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vector<float,3> >& t,
-                                                       float baseAngleCos)
-    {
-        TriangularDipyramid tdp;
-        
-        // Normal calculation.
-        Vector<float,3> z = getNormalVector(t);
-
-        // Sides length.
-        float a = float((t.B() - t.C()).euclidean_norm_d());
-        float b = float((t.C() - t.A()).euclidean_norm_d());
-        float c = float((t.A() - t.B()).euclidean_norm_d());
-        
-        // Half-perimeter.
-        float p = (a + b + c) / 2;
-
-        // Radius of the incircle.
-        float r = std::sqrt((p - a) * (p - b) * ( p - c) / p);
-
-        // Center of the incircle.
-        tdp.center = (t.A() * a + t.B() * b + t.C() * c) / (a + b + c);
-
-        // Calculate the height of the pyramid such that cos of the angles 
-        // between the faces and the base are baseAngleCos.
-        float h = r * std::sqrt(1 / (baseAngleCos * baseAngleCos)-1);
-
-        // Height vector.
-        z = z / float(z.euclidean_norm_d()) * h;
-        
-        // Two top-vertices.
-        Vector<float,3> p1 = tdp.center + z;
-        Vector<float,3> p2 = tdp.center - z;
-
-        // Vertices of the dipyramid.
-        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
-        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
-
-        // Faces of the dipyramid.
-        tdp.faces[0] = Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
-        tdp.faces[1] = Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
-        tdp.faces[2] = Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
-        tdp.faces[3] = Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
-        tdp.faces[4] = Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
-        tdp.faces[5] = Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
-
-        return tdp;
-    }
-
-    // Triangular dipyramid based on the given triangle with the given height.
-    static TriangularDipyramid from_triangle_and_height(const Triangle<Vector<float, 3> >& t,
-                                                        float height)
-    {
-        TriangularDipyramid tdp;
-
-        // Normal calculation.
-        Vector<float, 3> z = getNormalVector(t);
-
-        // Sides length.
-        float a = float((t.B() - t.C()).euclidean_norm_d());
-        float b = float((t.C() - t.A()).euclidean_norm_d());
-        float c = float((t.A() - t.B()).euclidean_norm_d());
-
-        // Center of the incircle.
-        tdp.center=(t.A() * a + t.B() * b + t.C() * c) / ( a + b + c);
-
-        // Height vector.
-        z = z / float(z.euclidean_norm_d()) * height;
-
-        // Two top-vertices.
-        Vector<float, 3> p1 = tdp.center + z;
-        Vector<float, 3> p2 = tdp.center - z;
-
-        // Vertices of the dipyramid.
-        tdp.vertices[0] = t.A(); tdp.vertices[1] = t.B(); tdp.vertices[2] = t.C();
-        tdp.vertices[3] = p1; tdp.vertices[4] = p2;
-
-        // Faces of the dipyramid.
-        tdp.faces[0] = Triangle<Vector<float, 3> >(t.A(), t.B(), p1);
-        tdp.faces[1] = Triangle<Vector<float, 3> >(t.B(), t.C(), p1);
-        tdp.faces[2] = Triangle<Vector<float, 3> >(t.C(), t.A(), p1);
-        tdp.faces[3] = Triangle<Vector<float, 3> >(t.A(), t.B(), p2);
-        tdp.faces[4] = Triangle<Vector<float, 3> >(t.B(), t.C(), p2);
-        tdp.faces[5] = Triangle<Vector<float, 3> >(t.C(), t.A(), p2);
-
-        return tdp;
-    }
-
-    // Check intersection with another triangular dipyramid.
-    // Based on the Separating Axis Theorem.
-    bool intersects(TriangularDipyramid& other)
-    {
-        const float eps = 0.01f;
-        const float float_zero_eps = 0.001f;
-
-        TriangularDipyramid tp1 = *this, tp2 = other;
-
-        // Search for the separating axis among the face normals
-        // of the both dipyramids.
-        for (unsigned i = 0; i < 2; ++i)
-        {
-            for (unsigned int t = 0; t < 6; ++t)
-            {
-                bo::Triangle<Vertex > face = tp1.faces[t];
-                Vertex norm = getNormalVector(face);
-
-                // Calculating min and max of the projection of the first dipyramid 
-                // on the current normal vector.
-                float t1MinProj = 0, t1MaxProj = 0;
-                tp1.get_min_max_projection(norm, t1MinProj, t1MaxProj);
-
-                // Calculating min and max of the projection of the second dipyramid 
-                // on the current normal vector.
-                float t2MinProj = 0, t2MaxProj = 0;
-                tp2.get_min_max_projection(norm, t2MinProj, t2MaxProj);
-
-                // If the projection intervals do not intersect, 
-                // than the convex polygons are separated.
-                if(t1MaxProj < t2MinProj + eps || t2MaxProj < t1MinProj + eps)
-                    return false;
-            }
-
-            // Swap the dipyramids.
-            TriangularDipyramid tmp = tp1;
-            tp1 = tp2;
-            tp2 = tmp;
-        }
-
-        // Search for the separating axis among cross products of all pairs of edges
-        // from different dipyramids.
-        for (unsigned i1 = 0; i1 < 3; ++i1)
-            for (unsigned i2 = i1 + 1; i2 < 5; ++i2) // 9 edges from this.
-                for (unsigned j1 = 0; j1 < 3; ++j1)
-                    for (unsigned j2 = j1 + 1; j2 < 5; ++j2) // 9 edges from other.
-                    {
-                        Vertex e1 = tp1.vertices[i2] - tp1.vertices[i1];
-                        Vertex e2 = tp2.vertices[j2] - tp2.vertices[j1];
-
-                        Vertex norm = getNormalVector(e1, e2);
-                        
-                        // For non-zero cross products perform the test.
-                        float d = static_cast<float>(norm.euclidean_norm_d());
-                        if (d > float_zero_eps)
-                        {
-                            // Normalize, just for order.
-                            norm = norm / d;
-
-                            // Calculating min and max of the projection of the first dipyramid 
-                            // on the current normal vector.
-                            float t1MinProj = 0, t1MaxProj = 0;
-                            tp1.get_min_max_projection(norm, t1MinProj, t1MaxProj);
-
-                            // Calculating min and max of the projection of the second dipyramid 
-                            // on the current normal vector.
-                            float t2MinProj = 0, t2MaxProj = 0;
-                            tp2.get_min_max_projection(norm, t2MinProj, t2MaxProj);
-
-                            // If the projection intervals do not intersect, 
-                            // than the convex polygons are separated.
-                            if(t1MaxProj < t2MinProj + eps || t2MaxProj < t1MinProj + eps)
-                                return false;
-                        } 
-                    }
-
-        return true;
-    }
-
-    // Calculates minimum and maximum of the dipyramid projection on the vector v.
-    void get_min_max_projection(const Vector<float,3> &v, float &minProjection, float &maxProjection)
-    {
-        minProjection = 0;
-        maxProjection = 0;
-
-        for (int k = 0; k < 5; ++k)
-        {
-            float dot = v * vertices[k];
-           
-            if (k == 0)
-            {
-                minProjection = maxProjection = dot;
-            }
-            else
-            {
-                if (maxProjection < dot)
-                    maxProjection = dot;
-                if (minProjection > dot)
-                    minProjection = dot;
-            }
-        }
-    }
-};
-
-
-
+using namespace detail;
 
 //Implementation of D25ActiveContours
-
 D25ActiveContours::D25ActiveContours(float average_face_side)
 {
     min_init_distance_ = average_face_side;
@@ -535,14 +230,14 @@ D25ActiveContours::~D25ActiveContours()
 }
 
 inline PointElement* D25ActiveContours::get_closest_point(const PointElement &ps,
-                                                        bool checkNodes, bool checkVisited)
+                                                          bool checkNodes, bool checkVisited)
 {
-    HPointContainerItem ce(0);
+    PointContainerItem ce(0);
 
-    PredicateClosestPointBeyondMinDistance pred(HPointContainerItem(const_cast<PointElement*>(&ps)),
+    PredicateClosestPointBeyondMinDistance pred(PointContainerItem(const_cast<PointElement*>(&ps)),
                                               min_init_distance_,checkNodes,checkVisited);
     std::pair<D3Tree::const_iterator, float> nif = vertices_->tree.find_nearest_if(
-                HPointContainerItem(const_cast<PointElement*>(&ps)),max_init_distance_,pred);
+                PointContainerItem(const_cast<PointElement*>(&ps)),max_init_distance_,pred);
     if (nif.first != vertices_->tree.end())
         ce=*nif.first;
 
@@ -550,29 +245,30 @@ inline PointElement* D25ActiveContours::get_closest_point(const PointElement &ps
 }
 
 PointElement* D25ActiveContours::get_closest_min_func_point(const PointElement &ps1,
-    const PointElement& ps2, bool checkNodes, bool checkVisited)
+                                                            const PointElement &ps2,
+                                                            bool checkNodes, bool checkVisited)
 {
-    Vector<float,3> v1 = ps2.p - ps1.p;
+    Vertex v1 = ps2.p - ps1.p;
     double a = v1.euclidean_norm_d();
 
     PointElement mid;
     mid.p = (ps1.p + ps2.p) / 2;
 
-    std::vector<HPointContainerItem> v;
+    std::vector<PointContainerItem> v;
     float const range = max_init_distance_;
-    vertices_->tree.find_within_range(HPointContainerItem(&mid), range, std::back_inserter(v));
+    vertices_->tree.find_within_range(PointContainerItem(&mid), range, std::back_inserter(v));
 
-    HPointContainerItem ce(0);
+    PointContainerItem ce(0);
     double func = -1;
 
-    std::vector<HPointContainerItem>::const_iterator it = v.begin();
+    std::vector<PointContainerItem>::const_iterator it = v.begin();
     while (it != v.end())
     {
         if ((!(*it).ps->is_visited) || (checkNodes&&(*it).ps->is_node()) ||
             (checkVisited && (*it).ps->is_visited))
         {	
-            Vector<float,3> v2 = (*it).ps->p - ps2.p;
-            Vector<float,3> v3 = ps1.p - (*it).ps->p;
+            Vertex v2 = (*it).ps->p - ps2.p;
+            Vertex v3 = ps1.p - (*it).ps->p;
 
             double b = v2.euclidean_norm_d();
             double c = v3.euclidean_norm_d();
@@ -601,15 +297,15 @@ PointElement* D25ActiveContours::get_closest_min_func_point(const PointElement &
 inline PointElement* D25ActiveContours::get_closest_noncollinear_point(const PointElement &ps,
     const PointElement &ps1, const PointElement &ps2, bool checkNodes, bool checkVisited)
 {
-    HPointContainerItem ce(0);
+    PointContainerItem ce(0);
 
-    PredicateClosestPointNonCollinear pred(HPointContainerItem(const_cast<PointElement*>(&ps1)),
-                                           HPointContainerItem(const_cast<PointElement*>(&ps2)),
+    PredicateClosestPointNonCollinear pred(PointContainerItem(const_cast<PointElement*>(&ps1)),
+                                           PointContainerItem(const_cast<PointElement*>(&ps2)),
                                            checkNodes, checkVisited);
     pred.check_only_nodes(true);
 
     std::pair<D3Tree::const_iterator,float> nif = vertices_->tree.find_nearest_if(
-        HPointContainerItem(const_cast<PointElement*>(&ps)), max_projection_node_distance_, pred);
+        PointContainerItem(const_cast<PointElement*>(&ps)), max_projection_node_distance_, pred);
 
     if (nif.first != vertices_->tree.end())
     {
@@ -619,7 +315,7 @@ inline PointElement* D25ActiveContours::get_closest_noncollinear_point(const Poi
     {
         pred.check_only_nodes(false);
 
-        nif = vertices_->tree.find_nearest_if(HPointContainerItem(const_cast<PointElement*>(&ps)),
+        nif = vertices_->tree.find_nearest_if(PointContainerItem(const_cast<PointElement*>(&ps)),
                                              max_projection_node_distance_, pred);
         if(nif.first != vertices_->tree.end())
         {
@@ -795,17 +491,17 @@ void D25ActiveContours::model_grow()
 bool D25ActiveContours::get_edge_propagation(EdgeElement &e, Vertex origin)
 {           
     // The middle point of the edge.
-    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;   
+    Vertex mid = (e.p1->p + e.p2->p) / 2;
 
     // The median segment[origin, mid].
-    Vector<float,3> median = mid - origin;
+    Vertex median = mid - origin;
 
     // Propagation norm is sqrt(3)/2 of min distance.
     // Tends to the median length of a equilateral triangle.
     float pnorm = min_init_distance_ * 0.87f;
     
     // If (inertialFactor >= 1): Inertial edge propagation.
-    Vector<float,3> p(0, 0, 0);
+    Vertex p(0, 0, 0);
     float nmedian = (float)median.euclidean_norm_d();
     if (nmedian != 0)
         p = median / nmedian * pnorm;
@@ -816,13 +512,13 @@ bool D25ActiveContours::get_edge_propagation(EdgeElement &e, Vertex origin)
         size_t neighbourCount = 0;
 
         // Surface normal calculation in the middle point of the edge.
-        Vector<float,3> midNorm = get_surface_normal(mid, normal_neighborhood_radius_, neighbourCount);
+        Vertex midNorm = get_surface_normal(mid, normal_neighborhood_radius_, neighbourCount);
 
         // Vector parallel to the edge.
-        Vector<float,3> v = e.p2->p - e.p1->p;
+        Vertex v = e.p2->p - e.p1->p;
 
         // Propagation direction as cross product of v and the normal.
-        Vector<float,3> prop = v.cross_product(midNorm);
+        Vertex prop = v.cross_product(midNorm);
 
         // The propagation vector is corrected to be directed outward of the triangle
         // formed by the edge e and the origin point [e, origin].
@@ -870,13 +566,13 @@ inline PointElement* D25ActiveContours::get_propagated_vertex(const EdgeElement 
     PointElement p;
 
     // The middle point of the edge.
-    Vector<float,3> mid = (e.p1->p + e.p2->p) / 2;
+    Vertex mid = (e.p1->p + e.p2->p) / 2;
 
     // Estimate the propagated vertex position.
     p.p = mid + e.propagation_vector;
 
     // Find the closest vertex from the point cloud.
-    PointElement* ps=get_closest_noncollinear_point(p,*e.p1,*e.p2,true, checkVisited);
+    PointElement* ps=get_closest_noncollinear_point(p, *e.p1, *e.p2, true, checkVisited);
 
     return ps;
 }
@@ -902,7 +598,7 @@ void D25ActiveContours::visit_points(TriangleElement &tr)
     tr.p3->adjacent_triangles.push_back(tr);
 
     // The mass center of the triangle.
-    Vector<float,3> mid = (tr.p1->p + tr.p2->p + tr.p3->p) / 3;
+    Vertex mid = (tr.p1->p + tr.p2->p + tr.p3->p) / 3;
 
     // Define the neighbourhood radius. Find the maximum of maxSurfaceDepth and 
     // the distances from the triangle vertices to its mass centre.
@@ -914,18 +610,18 @@ void D25ActiveContours::visit_points(TriangleElement &tr)
     // Pre-search: choose all points in the range (sphere with radius = rad).
     PointElement mids;
     mids.p = mid;
-    std::vector<HPointContainerItem> v;
-    vertices_->tree.find_within_range(HPointContainerItem(&mids), rad, std::back_inserter(v));
+    std::vector<PointContainerItem> v;
+    vertices_->tree.find_within_range(PointContainerItem(&mids), rad, std::back_inserter(v));
 
     // Check if the selected points are inside the triangle prism with 
     // the height = 2*maxSurfaceDepth.
     {
         // Calculate the triangle prism coordinate axes.
-        Vector<float,3> X = tr.p2->p - tr.p1->p;
-        Vector<float,3> Y = tr.p3->p - tr.p1->p;
-        Vector<float,3> Z = getNormalVector(tr); 
+        Vertex X = tr.p2->p - tr.p1->p;
+        Vertex Y = tr.p3->p - tr.p1->p;
+        Vertex Z = normal_vector(tr);
         Z = Z / float(Z.euclidean_norm_d()) * max_surface_depth_;
-        Vector<float,3> O = tr.p1->p;
+        Vertex O = tr.p1->p;
 
         // Calculate the triangle prism basis matrix.
         blas::matrix<float> m(3,3);
@@ -939,7 +635,7 @@ void D25ActiveContours::visit_points(TriangleElement &tr)
         // coordinate system using the inverse basis matrix. 
         if (blas::invert_matrix(m,im))
         {
-            std::vector<HPointContainerItem>::iterator it = v.begin();
+            std::vector<PointContainerItem>::iterator it = v.begin();
             while (it!=v.end())
             {
                 if (!it->ps->is_visited)
@@ -1024,7 +720,7 @@ bool D25ActiveContours::stick_to_adjacent_edge(const EdgeElement &e, PointElemen
         // Sticking procedure.
         {
             // The common vertex of e and ee.
-            Vector<float,3> p;
+            Vertex p;
 
             // Define the adjacent edge.
             if (((p = e.p1->p) == ee.p1->p) || (e.p1->p == ee.p2->p) ||
@@ -1035,11 +731,11 @@ bool D25ActiveContours::stick_to_adjacent_edge(const EdgeElement &e, PointElemen
                     ee.swap();
                 
                 // Vector [ps, p]. 
-                Vector<float,3> v1 = ps->p - p;
+                Vertex v1 = ps->p - p;
                 double normV1 = v1.euclidean_norm_d();
 
                 // Vector [ee.p2, p].
-                Vector<float,3> v2 = ee.p2->p - p;
+                Vertex v2 = ee.p2->p - p;
                 double normV2 = v2.euclidean_norm_d();
 
                 if(normV1==0 || normV2==0)
@@ -1095,23 +791,23 @@ Mesh D25ActiveContours::build_mesh()
 inline bool D25ActiveContours::triangle_mesh_3d_intersection(const TriangleElement &t)
 {
     // Calculate the mass center of the triangle.
-    Triangle<Vector<float,3> > t1(t.p1->p, t.p2->p, t.p3->p);
+    Triangle<Vertex> t1(t.p1->p, t.p2->p, t.p3->p);
     PointElement mass((t1.A() + t1.B() + t1.C())/3);
 
     // Calculate the neighbourhood of the mass center.
-    std::vector<HPointContainerItem> neighbours;
+    std::vector<PointContainerItem> neighbours;
     float const range = 3*min_init_distance_;
-    vertices_->tree.find_within_range(HPointContainerItem(&mass), range, std::back_inserter(neighbours));
+    vertices_->tree.find_within_range(PointContainerItem(&mass), range, std::back_inserter(neighbours));
 
     // For all nodes from the neighbourhood check their adjacent triangles for 
     // intersection with the given triangle.
-    std::vector<HPointContainerItem>::const_iterator it = neighbours.begin();
+    std::vector<PointContainerItem>::const_iterator it = neighbours.begin();
     while(it != neighbours.end())
     {
         std::list<TriangleElement>::const_iterator tit = it->ps->adjacent_triangles.begin();
         while(tit != it->ps->adjacent_triangles.end())
         {
-            Triangle<Vector<float, 3> > t2(tit->p1->p ,tit->p2->p, tit->p3->p);
+            Triangle<Vertex> t2(tit->p1->p ,tit->p2->p, tit->p3->p);
 
             if (triangles_3d_intersection(t1, t2))
                 return true;
@@ -1135,7 +831,7 @@ void D25ActiveContours::edge_stitch(EdgeElement e )
     if (pps1)
     {
         // Create a new triangle based on the given edge and the propagated point.
-        Triangle<Vector<float, 3> > t1(e.p1->p, e.p2->p, pps1->p);
+        Triangle<Vertex> t1(e.p1->p, e.p2->p, pps1->p);
 
         // Find all adjacent edges to the given one in the list of passive edges.
         for(std::list<EdgeElement>::iterator ite = frozen_edges_.begin(); ite != frozen_edges_.end(); ++ite)
@@ -1160,7 +856,7 @@ void D25ActiveContours::edge_stitch(EdgeElement e )
                 {
                     // Create a new triangle based on this adjacent edge and the
                     // propagated point
-                    Triangle<Vector<float, 3> > t2(ee.p1->p, ee.p2->p, pps2->p);
+                    Triangle<Vertex> t2(ee.p1->p, ee.p2->p, pps2->p);
 
                     // If these two triangles are concurrent, create one stitch triangle based
                     // on the considered adjacent edges.
@@ -1233,9 +929,9 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
     // Select points from the neighborhood.
     PointElement ps;
     ps.p = p;
-    std::vector<HPointContainerItem> neighbours;
+    std::vector<PointContainerItem> neighbours;
     float const range = windowRadius;
-    vertices_->tree.find_within_range(HPointContainerItem(&ps), range,
+    vertices_->tree.find_within_range(PointContainerItem(&ps), range,
                                      std::back_inserter(neighbours));
 
     size_t pointCount = neighbours.size();
@@ -1247,13 +943,13 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
 
     // Perform the Principal Component Analysis (PCA):
     
-    Vector<float,3> mean(0,0,0);
+    Vertex mean(0,0,0);
 
     // The mean calculation.
-    std::vector<HPointContainerItem>::const_iterator itp = neighbours.begin();
+    std::vector<PointContainerItem>::const_iterator itp = neighbours.begin();
     while(itp != neighbours.end())
     {
-        Vector<float,3> pp = (*itp).ps->p;
+        Vertex pp = (*itp).ps->p;
         mean = mean + pp;
 
         ++itp;
@@ -1275,7 +971,7 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
         itp = neighbours.begin();
         while (itp != neighbours.end())
         {
-            Vector<float,3> pp = (*itp).ps->p;
+            Vertex pp = (*itp).ps->p;
 
             A[0][0] += (pp.x()-mean.x()) * (pp.x()-mean.x()); 
             A[1][0] += (pp.y()-mean.y()) * (pp.x()-mean.x()); 
@@ -1311,7 +1007,7 @@ Vertex D25ActiveContours::get_surface_normal(Vertex p, float windowRadius, std::
 
     // The eigenvector the corresponds to the minimal eigenvalue. This vector is taken
     // as an approximation the point cloud surface normal.
-    Vector<float,3> v((float)A[3][minIndex], (float)A[4][minIndex], (float)A[5][minIndex]);
+    Vertex v((float)A[3][minIndex], (float)A[4][minIndex], (float)A[5][minIndex]);
 
     // Release the resources.
     for (int i = 0; i < 6; ++i)
@@ -1335,7 +1031,7 @@ std::vector<PointElement> D25ActiveContours::get_vertices()
     D3Tree::mutable_iterator it = vertices_->tree.begin();
     while (it != vertices_->tree.end())
     {
-        HPointContainerItem c = *it;
+        PointContainerItem c = *it;
         verts.push_back(*c.ps);
         ++it;
     }
@@ -1381,14 +1077,14 @@ bool D25ActiveContours::triangle_degenerate(const TriangleElement &t)
 {
     // Adjacent vectors of the triangle angles.
     // Angle a:
-    Vector<float,3> v1a = t.p2->p - t.p1->p;
-    Vector<float,3> v1b = t.p3->p - t.p1->p;
+    Vertex v1a = t.p2->p - t.p1->p;
+    Vertex v1b = t.p3->p - t.p1->p;
     // Angle b:
-    Vector<float,3> v2a = t.p1->p - t.p2->p;
-    Vector<float,3> v2b = t.p3->p - t.p2->p; 
+    Vertex v2a = t.p1->p - t.p2->p;
+    Vertex v2b = t.p3->p - t.p2->p;
     // Angle c:
-    Vector<float,3> v3a = t.p1->p - t.p3->p;
-    Vector<float,3> v3b = t.p2->p - t.p3->p;
+    Vertex v3a = t.p1->p - t.p3->p;
+    Vertex v3b = t.p2->p - t.p3->p;
  
     // Calculate cos of the angles a, b and c.
     float cos1 = v1a * v1b / float((v1a.euclidean_norm_d() * v1b.euclidean_norm_d()));

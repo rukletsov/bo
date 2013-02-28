@@ -64,12 +64,50 @@ namespace surfaces {
 typedef bo::Vector<float, 3> Vertex;
 typedef bo::Mesh<float> Mesh;
 
-/*! \class PointContainer.
-    \brief A general container of vertices.
-*/
-class PointContainer;
+namespace detail {
 
-struct PointElement;
+// Predeclaration.
+struct TriangleElement;
+
+/*! \struct PointElement.
+    \brief An elementary point item.
+*/
+struct BO_DECL PointElement
+{
+    PointElement(Vertex v = Vertex(0, 0, 0))
+    {
+        p = v;
+        is_visited = false;
+    }
+
+    /*! 3D Point. */
+    Vertex p;
+
+    /*! Visits flag. */
+    bool is_visited;
+
+    /*! Define whether the point element is a mesh node */
+    bool is_node()
+    {
+        return (adjacent_triangles.size() > 0);
+    }
+
+    /*! List of adjacent triangles of a node point */
+    std::list<TriangleElement> adjacent_triangles;
+
+    /*! Access operator. */
+    float operator [] (const size_t t) const
+    {
+        return (t == 0) ? p.x() : ( (t == 1) ? p.y() : p.z() );
+    }
+
+    /*! Comparison operator. */
+    bool operator == (const PointElement &other) const
+    {
+        return (p == other.p) && (adjacent_triangles == other.adjacent_triangles) &&
+            (is_visited == other.is_visited);
+    }
+};
 
 /*! \class TriangleElement.
     \brief An elementary surface item (mesh element).
@@ -86,34 +124,10 @@ struct BO_DECL TriangleElement
     PointElement* p3;
 
     /*! Comparison operator. */
-    inline bool operator == (const TriangleElement &other) const;
-};
-
-
-/*! \struct PointElement.
-    \brief An elementary point item.
-*/
-struct BO_DECL PointElement
-{
-    PointElement(Vertex v = Vertex(0, 0, 0));
-
-    /*! 3D Point. */
-    Vertex p;
-
-    /*! Visits flag. */
-    bool is_visited;
-
-    /*! Define whether the point element is a mesh node */
-    bool is_node();
-
-    /*! List of adjacent triangles of a node point */
-    std::list<TriangleElement> adjacent_triangles;
-
-    /*! Access operator. */
-    float operator [] (const size_t t) const;
-
-    /*! Comparison operator. */
-    bool operator == (const PointElement &other) const;
+    inline bool operator == (const TriangleElement &other) const
+    {
+        return (*p1 == *other.p1) && (*p2 == *other.p2) && (*p3 == *other.p3);
+    }
 };
 
 
@@ -123,10 +137,14 @@ struct BO_DECL PointElement
 struct BO_DECL EdgeElement
 {
     /*! Default constructor. */
-    EdgeElement();
+    EdgeElement()
+    : p1(0), p2(0)
+    { }
 
     /*! Constructor. */
-    EdgeElement(PointElement* p1, PointElement* p2);
+    EdgeElement(PointElement* p1, PointElement* p2)
+    : p1(p1), p2(p2)
+    { }
 
     /*! First node of the edge. */
     PointElement* p1;
@@ -138,11 +156,233 @@ struct BO_DECL EdgeElement
     Vertex propagation_vector;
 
     /*! Comparison operator. */
-    bool operator == (const EdgeElement& other) const;
+    bool operator == (const EdgeElement &other) const
+    {
+        // The propagation direction is not considered.
+        return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
+    }
 
     /*! Swaps the vertices of the edge. */ 
-    void swap();
+    void swap()
+    {
+        PointElement* tmp = p1;
+        p1 = p2;
+        p2 = tmp;
+    }
 };
+
+
+//General functions
+
+/*! Calculates the normal vector for the face of the given triangle \p t.
+    \param t The input triangle
+    \return The normal vector for \p t
+*/
+Vertex normal_vector(const Triangle<Vertex> &t)
+{
+    Vertex a = t.B() - t.A();
+    Vertex b = t.C() - t.A();
+
+    return a.cross_product(b);
+}
+
+/*! Calculates the normal vector for the face of the given triangle \p ts.
+    \param ts The input triangle
+    \return The normal vector for \p ts
+*/
+Vertex normal_vector(const TriangleElement &ts)
+{
+    Vertex a = ts.p2->p - ts.p1->p;
+    Vertex b = ts.p3->p - ts.p1->p;
+
+    return a.cross_product(b);
+}
+
+
+// Triangular dipyramid implmentation.
+class TriangularDipyramid
+{
+public:
+
+    Vertex vertices[5];
+    Triangle<Vertex> faces[6];
+    Vertex center;
+
+    // Triangular dipyramid based on the given triangle with the given base angle.
+    static TriangularDipyramid from_triangle_and_angle(const Triangle<Vertex> &t,
+                                                       float base_angle_cos)
+    {
+        // Sides length.
+        float a = float((t.B() - t.C()).euclidean_norm_d());
+        float b = float((t.C() - t.A()).euclidean_norm_d());
+        float c = float((t.A() - t.B()).euclidean_norm_d());
+
+        // Half-perimeter.
+        float p = (a + b + c) / 2;
+
+        // Radius of the incircle.
+        float r = std::sqrt((p - a) * (p - b) * ( p - c) / p);
+
+        // Calculate the height of the pyramid such that cos of the angles
+        // between the faces and the base are base_angle_cos.
+        float h = r * std::sqrt(1 / (base_angle_cos * base_angle_cos) - 1);
+
+        return from_triangle_and_height(t, h);
+    }
+
+    // Triangular dipyramid based on the given triangle with the given height.
+    static TriangularDipyramid from_triangle_and_height(const Triangle<Vertex>& t,
+                                                        float height)
+    {
+        TriangularDipyramid tdp;
+
+        // Normal calculation.
+        Vertex z = normal_vector(t);
+
+        // Sides length.
+        float a = float((t.B() - t.C()).euclidean_norm_d());
+        float b = float((t.C() - t.A()).euclidean_norm_d());
+        float c = float((t.A() - t.B()).euclidean_norm_d());
+
+        // Center of the incircle.
+        tdp.center=(t.A() * a + t.B() * b + t.C() * c) / ( a + b + c);
+
+        // Height vector.
+        z = z / float(z.euclidean_norm_d()) * height;
+
+        // Two top-vertices.
+        Vertex p1 = tdp.center + z;
+        Vertex p2 = tdp.center - z;
+
+        // Vertices of the dipyramid.
+        tdp.vertices[0] = t.A();
+        tdp.vertices[1] = t.B();
+        tdp.vertices[2] = t.C();
+        tdp.vertices[3] = p1;
+        tdp.vertices[4] = p2;
+
+        // Faces of the dipyramid.
+        tdp.faces[0] = Triangle<Vertex>(t.A(), t.B(), p1);
+        tdp.faces[1] = Triangle<Vertex>(t.B(), t.C(), p1);
+        tdp.faces[2] = Triangle<Vertex>(t.C(), t.A(), p1);
+        tdp.faces[3] = Triangle<Vertex>(t.A(), t.B(), p2);
+        tdp.faces[4] = Triangle<Vertex>(t.B(), t.C(), p2);
+        tdp.faces[5] = Triangle<Vertex>(t.C(), t.A(), p2);
+
+        return tdp;
+    }
+
+    // Check intersection with another triangular dipyramid.
+    // Based on the Separating Axis Theorem.
+    bool intersects(TriangularDipyramid& other)
+    {
+        const float eps = 0.01f;
+        const float float_zero_eps = 0.001f;
+
+        TriangularDipyramid tp1 = *this, tp2 = other;
+
+        // Search for the separating axis among the face normals
+        // of the both dipyramids.
+        for (unsigned int i = 0; i < 2; ++i)
+        {
+            for (unsigned int t = 0; t < 6; ++t)
+            {
+                bo::Triangle<Vertex> face = tp1.faces[t];
+                Vertex norm = normal_vector(face);
+
+                // Calculating min and max of the projection of the first dipyramid
+                // on the current normal vector.
+                float t1_min_proj = 0, t1_max_proj = 0;
+                tp1.get_min_max_projection(norm, t1_min_proj, t1_max_proj);
+
+                // Calculating min and max of the projection of the second dipyramid
+                // on the current normal vector.
+                float t2_min_proj = 0, t2_max_proj = 0;
+                tp2.get_min_max_projection(norm, t2_min_proj, t2_max_proj);
+
+                // If the projection intervals do not intersect,
+                // than the convex polygons are separated.
+                if(t1_max_proj < t2_min_proj + eps || t2_max_proj < t1_min_proj + eps)
+                    return false;
+            }
+
+            // Swap the dipyramids.
+            TriangularDipyramid tmp = tp1;
+            tp1 = tp2;
+            tp2 = tmp;
+        }
+
+        // Search for the separating axis among cross products of all pairs of edges
+        // from different dipyramids.
+        for (unsigned i1 = 0; i1 < 3; ++i1)
+            for (unsigned i2 = i1 + 1; i2 < 5; ++i2) // 9 edges from this.
+                for (unsigned j1 = 0; j1 < 3; ++j1)
+                    for (unsigned j2 = j1 + 1; j2 < 5; ++j2) // 9 edges from other.
+                    {
+                        Vertex e1 = tp1.vertices[i2] - tp1.vertices[i1];
+                        Vertex e2 = tp2.vertices[j2] - tp2.vertices[j1];
+
+                        Vertex norm = e1.cross_product(e2);
+
+                        // For non-zero cross products perform the test.
+                        float d = static_cast<float>(norm.euclidean_norm_d());
+                        if (d > float_zero_eps)
+                        {
+                            // Normalize, just for order.
+                            norm = norm / d;
+
+                            // Calculating min and max of the projection of the first dipyramid
+                            // on the current normal vector.
+                            float t1_min_proj = 0, t1_max_proj = 0;
+                            tp1.get_min_max_projection(norm, t1_min_proj, t1_max_proj);
+
+                            // Calculating min and max of the projection of the second dipyramid
+                            // on the current normal vector.
+                            float t2_min_proj = 0, t2_max_proj = 0;
+                            tp2.get_min_max_projection(norm, t2_min_proj, t2_max_proj);
+
+                            // If the projection intervals do not intersect,
+                            // than the convex polygons are separated.
+                            if(t1_max_proj < t2_min_proj + eps || t2_max_proj < t1_min_proj + eps)
+                                return false;
+                        }
+                    }
+
+        return true;
+    }
+
+    // Calculates minimum and maximum of the dipyramid projection on the vector v.
+    void get_min_max_projection(const Vertex &v, float &min_projection, float &max_projection)
+    {
+        min_projection = 0;
+        max_projection = 0;
+
+        for (std::size_t k = 0; k < 5; ++k)
+        {
+            float dot = v * vertices[k];
+
+            if (k == 0)
+            {
+                min_projection = max_projection = dot;
+            }
+            else
+            {
+                if (max_projection < dot)
+                    max_projection = dot;
+                if (min_projection > dot)
+                    min_projection = dot;
+            }
+        }
+    }
+};
+
+
+/*! \class PointContainer.
+    \brief A general container of vertices.
+*/
+class PointContainer;
+
+} // namespace detail
 
 
 /*! \class D25ActiveContours.
@@ -192,22 +432,22 @@ public:
     /*! Get vector of point items.
         \return Vector of point items.
     */
-    std::vector<PointElement> get_vertices();
+    std::vector<detail::PointElement> get_vertices();
 
     /*! Get the current list of edges that are prepared for propagation.   
         \return Active edges list.
     */
-    const std::list<EdgeElement>* get_active_edges();
+    const std::list<detail::EdgeElement>* get_active_edges();
 
     /*! Get the current list of edges that couldn't be propagated.
         \return Frozen edges list.
     */
-    const std::list<EdgeElement>* get_frozen_edges();
+    const std::list<detail::EdgeElement>* get_frozen_edges();
 
     /*! Get the current list of generated triangles.
         \return Triangles list.
     */
-    const std::list<TriangleElement>* get_triangles();
+    const std::list<detail::TriangleElement>* get_triangles();
 
     /*! Get the mesh object built from the current list of generated triangles.
         \return Reconstructed mesh.
@@ -237,16 +477,16 @@ public:
 protected:
 
     //! Container of input vertices. Internal realization as a k-DTree.
-    PointContainer* vertices_;
+    detail::PointContainer* vertices_;
 
     //! List of active edges.
-    std::list<EdgeElement> active_edges_;
+    std::list<detail::EdgeElement> active_edges_;
 
     //! List of passive edges.
-    std::list<EdgeElement> frozen_edges_;
+    std::list<detail::EdgeElement> frozen_edges_;
 
     //! List of triangles.
-    std::list<TriangleElement> triangles_;
+    std::list<detail::TriangleElement> triangles_;
 
     //! The minimal allowed length of the initial triangle's side.
     float min_init_distance_;
@@ -299,7 +539,7 @@ protected:
         add a triangle based on them if their propagated triangles intersect in 3D.
         \param e The stitched edge.
     */
-    void edge_stitch(EdgeElement e);
+    void edge_stitch(detail::EdgeElement e);
 
     /*! Perform one step of "post-stitching" procedure.
         Purpose: performs mutual stitch of the frozenEdges based on some rule R(edge1, edge2). 
@@ -314,7 +554,8 @@ protected:
         \param checkVisited Flag: search among the visited vertices if true.
         \return Pointer to the resulting vertex.
     */
-    PointElement* get_closest_point(const PointElement &ps, bool checkNodes, bool checkVisited);
+    detail::PointElement* get_closest_point(const detail::PointElement &ps,
+                                            bool checkNodes, bool checkVisited);
 
     /*! Find the closest point P to the given \p ps such that P, \p ps1 and \p ps2 are non-collinear. 
         Search among the nodes if \p checkNodes is true, and among the visited points if \p checkVisited is true.
@@ -325,8 +566,10 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return A pointer to the resulting vertex.
     */
-    PointElement* get_closest_noncollinear_point(const PointElement &ps, const PointElement &ps1,
-        const PointElement& ps2, bool checkNodes, bool checkVisited);
+    detail::PointElement* get_closest_noncollinear_point(const detail::PointElement &ps,
+                                                         const detail::PointElement &ps1,
+                                                         const detail::PointElement &ps2,
+                                                         bool checkNodes, bool checkVisited);
 
     /*! Finds point P that minimizes F(P, \p ps1, \p ps2) = std::abs(|ps1-ps2|-|P-ps2|) + 
         std::abs(|ps1-ps2|-|P-ps1|), |P-ps1|,|P-ps2|<\p maxInitDistance. Searches among 
@@ -338,31 +581,33 @@ protected:
         \return A pointer to the resulting vertex.
         \see maxInitDistance.
     */
-    PointElement* get_closest_min_func_point(const PointElement &ps1, const PointElement& ps2, bool checkNodes, bool checkVisited);
+    detail::PointElement* get_closest_min_func_point(const detail::PointElement &ps1,
+                                                     const detail::PointElement &ps2,
+                                                     bool checkNodes, bool checkVisited);
 
     /*! Calculates the Euclidean distance between \p ps1 and \p ps2.
         \param ps1 First input vertex.
         \param ps2 Second input vertex.
         \return A non-negative number, the Euclidean distance.
     */
-    float get_distance(const PointElement &ps1, const PointElement &ps2);
+    float get_distance(const detail::PointElement &ps1, const detail::PointElement &ps2);
 
     /*! Makes the points from \p vertices "visited" if they are situated in the 
         truncated projections of the triangles from the given list \p newTriangles.
         \param newTriangles The list of triangles.
     */
-    void visit_points(std::list<TriangleElement> &newTriangles);
+    void visit_points(std::list<detail::TriangleElement> &newTriangles);
 
     /*! Makes the points from \p vertices "visited" if they are situated within the 
         triangle prism of the given \p triangle with the height \p maxSurfaceDepth.
         \param triangle The input triangle.
     */
-    void visit_points(TriangleElement &triangle);
+    void visit_points(detail::TriangleElement &triangle);
 
     /*! Marks \p p as "visited".
         \param p A pointer to a vertex from \p vertices.
     */
-    void visit_point(PointElement* p);
+    void visit_point(detail::PointElement* p);
 
     /*! Indicates intersection of two given triangles \p t1 and \p t2 and their 
         nonconformity to one non-selfintersecting surface.
@@ -380,14 +625,14 @@ protected:
         \see triangles_3d_intersection.
         \see triangles.
     */
-    bool triangle_mesh_3d_intersection(const TriangleElement &t);
+    bool triangle_mesh_3d_intersection(const detail::TriangleElement &t);
 
     /*! Checks whether the given triangle \p t is degenerate (at least one of it's 
         angles is too small). Returns true if so, otherwise returns false.
         \param t The input triangle.
         \return true if the given triangle is degenerate, otherwise returns false.
     */
-    bool triangle_degenerate(const TriangleElement &t);
+    bool triangle_degenerate(const detail::TriangleElement &t);
 
     /*! Alters the coordinates of \p ps in such a way that the angles between the 
         edges of the triangle built from \p e and \p ps, and the elements of \p edgeList 
@@ -399,7 +644,8 @@ protected:
         \return True if \p ps was changed, otherwise - false.
         \see maxExcludedAngle.
     */
-    bool stick_to_adjacent_edge(const EdgeElement &e, PointElement* &ps, std::list<EdgeElement> &edgeList);
+    bool stick_to_adjacent_edge(const detail::EdgeElement &e, detail::PointElement* &ps,
+                                std::list<detail::EdgeElement> &edgeList);
 
     /*! Performs \p stickToAdjacentEdge() for \p activeEdges and \p frozenEdges (if 
         the result for \p activeEdges is false), and returns their OR value.
@@ -409,7 +655,7 @@ protected:
         \see activeEdges.
         \see frozenEdges.
     */
-    bool exclude_small_angles(const EdgeElement &e, PointElement* &ps);
+    bool exclude_small_angles(const detail::EdgeElement &e, detail::PointElement* &ps);
 
     /*! Calculates the element from \p vertices that is nearest to the point of 
         propagation for the given edge \p e. Searches among the visited points if \p checkVisited is true.
@@ -417,11 +663,11 @@ protected:
         \param checkVisited A flag. Search among the visited vertices if true.
         \return The pointer to the propagated vertex.
     */
-    PointElement* get_propagated_vertex(const EdgeElement &e, bool checkVisited);
+    detail::PointElement* get_propagated_vertex(const detail::EdgeElement &e, bool checkVisited);
 
     //Calculates the propagation vector for the edge e defined by the origin point and insert it into e
     //returns True if the vector was successfully calculated and embedded into e. Otherwise returns false.
-    bool get_edge_propagation( EdgeElement &e, Vertex origin);
+    bool get_edge_propagation(detail::EdgeElement &e, Vertex origin);
 
     /*! Calculates an approximation of the normal surface vector in point \p p. The 
         surface is defined by the points' cloud within \p vertices. The Procedure is 
@@ -436,7 +682,7 @@ protected:
 
     /*! Appends the given edge to the list of active edges if it is not yet there. 
     */
-    inline void add_active_edge(EdgeElement &e);
+    inline void add_active_edge(detail::EdgeElement &e);
 };
 
 } // namespace surfaces
