@@ -2,19 +2,6 @@
 
 #include "bo/methods/dpg_hough_transform_2d.hpp"
 
-// For testing. Remove.
-namespace bo{
-namespace methods{
-namespace recognition{
-namespace detail{
-    template <typename RealType>
-    std::size_t Space<RealType>::counter_ = 0;
-}
-}
-}
-}
-
-
 using namespace bo;
 using namespace bo::methods::recognition;
 using namespace bo::methods::recognition::detail;
@@ -297,8 +284,6 @@ TEST_F(HoughTransformTest, SelfDetection)
 
     // Create a transformation and encode the feature.
     DualPointGHT<float> ght(model_, ref, 0.01f);
-
-    Space<float>::counter_ = 0;
 
     DualPointGHT<float>::ReferenceVotes rv = ght.cross_level_detect(model_, 0.9f, Space<float>::Size4D(3, 3, 3, 3),
                                                              6, 0, bbox_, bbox_);

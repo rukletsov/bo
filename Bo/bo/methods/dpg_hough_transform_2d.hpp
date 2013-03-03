@@ -80,8 +80,6 @@ public:
     // relatively to the line's direction vector.
     typedef std::pair<Line4D, SegmentCoordinates> Segment4D;
 
-    static std::size_t counter_;
-
     Space(const Box4D &box = Box4D(Point4D(0, 0, 0, 0), Point4D(0, 0, 0, 0)),
           const Size4D &divisions_per_dimension = Size4D(2, 2, 2, 2),
           std::size_t max_resolution_level = 1,
@@ -127,8 +125,6 @@ public:
     // Subdivides the space.
     void subdivide()
     {
-        ++counter_;
-
         subspaces_.clear();
 
         std::size_t subdivision_count_ = divisions_per_dimension_[0] * divisions_per_dimension_[1] *
