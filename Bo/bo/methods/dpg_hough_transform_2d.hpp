@@ -883,6 +883,8 @@ private:
     // and two reference points.
     void encode(const Features &model_features)
     {
+        const RealType epsilon = RealType(0.001);
+
         // Define the number of discrete tangent angles.
         unsigned int tangent_angle_number = static_cast<unsigned int>(2 * pi_ / tangent_accuracy_);
 
@@ -914,7 +916,7 @@ private:
             // Correction for the points located on the reference line.
             // This case is encoded as: alpha = 0; beta = coordinate of the current model point
             // on the reference line relatively to the reference vector.
-            if (std::sin(beta) == 0)
+            if (std::abs(std::sin(beta)) < epsilon)
             {
                 alpha = 0;
                 RealType abnorm =  ab.euclidean_norm();
