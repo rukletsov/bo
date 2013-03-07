@@ -258,7 +258,7 @@ void ChrisitiansenSheepFull()
         Mesh mesh = mesh_from_ply(it->string());
         TilingAlgo::ParallelPlanePtr plane_data =
                 boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
-        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 2.f, 4.f, 20.f);
+        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.7f, 2.f, 5.f, 15.f);
 
         contours.push_back(contour);
     }
@@ -288,10 +288,10 @@ int main(int argc, char* argv[])
 
     paths.SetUp();
 
-    PropagateSheep();
+//    PropagateSheep();
     PropagateClosed();
     ChrisitiansenClosed();
-    ChrisitiansenFemur();
-    ChrisitiansenFemurFull();
+//    ChrisitiansenFemur();
+//    ChrisitiansenFemurFull();
     ChrisitiansenSheepFull();
 }
