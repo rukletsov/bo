@@ -92,7 +92,7 @@ void PropagateClosed()
                 paths.RawClosedPath.string(), 512, 512);
     TilingAlgo::ParallelPlanePtr plane_data = tiling.load_plane(test_image);
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 3.f, 7.f);
+    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 3.f, 10.f, 20.f);
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
@@ -106,7 +106,7 @@ void PropagateFemur01()
     TilingAlgo::ParallelPlanePtr plane_data =
         boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 3.f, 7.f);
+    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 3.f, 7.f, 20.f);
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
@@ -120,7 +120,7 @@ void PropagateSheep()
     TilingAlgo::ParallelPlanePtr plane_data =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 5.f, 10.f);
+    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 5.f, 10.f, 20.f);
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
@@ -139,8 +139,8 @@ void ChrisitiansenFemur()
     TilingAlgo::ParallelPlanePtr plane_data2 =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
-    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f, 3.f, 7.f);
-    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f, 3.f, 7.f);
+    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f, 3.f, 7.f, 20.f);
+    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f, 3.f, 7.f, 20.f);
 
     TriangAlgo triang(contour1.points, !contour1.has_hole, contour2.points, !contour2.has_hole);
     Mesh mesh = *triang.christiansen();
@@ -162,8 +162,8 @@ void ChrisitiansenClosed()
     TilingAlgo::ParallelPlanePtr plane_data2 =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
-    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f, 3.f, 7.f);
-    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.2f, 3.f, 7.f);
+    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1, 0.5f, 3.f, 10.f, 20.f);
+    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2, 0.5f, 3.f, 10.f, 20.f);
 
     TriangAlgo triang(contour1.points, !(contour1.has_hole), contour2.points, !(contour2.has_hole));
     Mesh mesh = *triang.christiansen();
@@ -211,9 +211,9 @@ void ChrisitiansenFemurFull()
         neighbours.push_back(*(it + 1));
 
         TilingAlgo::PropagationResult contour = tiling.propagate(*it, neighbours,
-                                                                 0.5f, 3.f, 7.f);
+                                                                 0.5f, 3.f, 7.f, 20.f);
 //        TilingAlgo::PropagationResult contour = tiling.propagate(*it,
-//                                                                 0.5f, 3.f, 7.f);
+//                                                                 0.5f, 3.f, 7.f, 20.f);
 
         contours.push_back(contour);
     }
@@ -258,7 +258,7 @@ void ChrisitiansenSheepFull()
         Mesh mesh = mesh_from_ply(it->string());
         TilingAlgo::ParallelPlanePtr plane_data =
                 boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
-        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 2.f, 4.f);
+        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data, 0.5f, 2.f, 4.f, 20.f);
 
         contours.push_back(contour);
     }
@@ -289,6 +289,7 @@ int main(int argc, char* argv[])
     paths.SetUp();
 
     PropagateSheep();
+    PropagateClosed();
     ChrisitiansenClosed();
     ChrisitiansenFemur();
     ChrisitiansenFemurFull();

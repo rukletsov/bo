@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.0.24 2013.02.01
+  complex_propagation.hpp, v 1.0.25 2013.03.07
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -107,7 +107,8 @@ public:
     }
 
     static PropagationResult propagate(ParallelPlaneConstPtr plane, RealType ratio,
-                                       RealType delta_min, RealType delta_max)
+                                       RealType delta_min, RealType delta_max,
+                                       RealType tangential_radius)
     {
         // Check contours' length.
         if (plane->size() < 2)
@@ -124,18 +125,17 @@ public:
         // tangential component, since inertial cannot be defined.
         Point3D start = (*plane)[0];
         Point3D initial_prop = this_type::tangential_propagation_(start, tree,
-            delta_max, Point3D(RealType(0)));
+            tangential_radius, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
         PropagationResult attempt1 = propagate_(start, start, initial_prop, tree,
-                                                std::vector<Tree>(),
-            delta_min, delta_max, 1000, metric, ratio);
+            std::vector<Tree>(), delta_min, delta_max, 1000, metric, ratio, tangential_radius);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop,
-                tree, std::vector<Tree>(), delta_min, delta_max, 1000, metric, ratio);
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, tree,
+                std::vector<Tree>(), delta_min, delta_max, 1000, metric, ratio, tangential_radius);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -153,7 +153,8 @@ public:
     static PropagationResult propagate(ParallelPlaneConstPtr plane,
                                        const std::vector<ParallelPlaneConstPtr>& neighbours,
                                        RealType ratio,
-                                       RealType delta_min, RealType delta_max)
+                                       RealType delta_min, RealType delta_max,
+                                       RealType tangential_radius)
     {
         // Check contours' length.
         if (plane->size() < 2)
@@ -207,17 +208,17 @@ public:
         // tangential component, since inertial cannot be defined.
         Point3D start = (*plane)[0];
         Point3D initial_prop = this_type::tangential_propagation_(start, tree,
-            delta_max, Point3D(RealType(0)));
+            tangential_radius, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
         PropagationResult attempt1 = propagate_(start, start, initial_prop, tree, neighbour_trees,
-            delta_min, delta_max, 1000, metric, ratio);
+            delta_min, delta_max, 1000, metric, ratio, tangential_radius);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop,
-                tree, neighbour_trees, delta_min, delta_max, 1000, metric, ratio);
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, tree,
+                neighbour_trees, delta_min, delta_max, 1000, metric, ratio, tangential_radius);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -301,7 +302,8 @@ private:
                                        Point3D total_prop, const Tree& tree,
                                         const std::vector<Tree>& neighbour_trees,
                                        RealType delta_min, RealType delta_max,
-                                       std::size_t max_size, Metric metric, RealType ratio)
+                                       std::size_t max_size, Metric metric, RealType ratio,
+                                        RealType tangential_radius)
     {
         typedef ArchedStrip<RealType, 3> ArchedStrip;
 
@@ -347,10 +349,10 @@ private:
             Point3D previous = current;
             current = candidate;
 
-            // Compute inertial and tangential propagations using inly current plane.
+            // Compute inertial and tangential propagations using only current plane.
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
             Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
-                delta_max, inertial_prop);
+                tangential_radius, inertial_prop);
 
             // Compute tangential propagations using neighbours.
             Points3D neighbours_tang;
@@ -359,7 +361,7 @@ private:
                  it != neighbour_trees.end(); ++it)
             {
                 neighbours_tang.push_back(this_type::tangential_propagation_(
-                                              current, *it, delta_max, inertial_prop));
+                                              current, *it, tangential_radius, inertial_prop));
             }
 
             // Derive mean tangential propagation.
@@ -371,8 +373,8 @@ private:
                 //total_tangential_prop = *(tree.find_nearest(total_tangential_prop, delta_min).first);
             }
 
-            std::cout << "Tangential diff: " << (total_tangential_prop - tangential_prop)
-                      << std::endl;
+//            std::cout << "Tangential diff: " << (total_tangential_prop - tangential_prop)
+//                      << std::endl;
 
             // Compute total propagation.
             total_prop = this_type::total_propagation_(total_tangential_prop, inertial_prop, ratio);
