@@ -288,10 +288,10 @@ int main(int argc, char* argv[])
 
     paths.SetUp();
 
-//    PropagateSheep();
+    PropagateSheep();
     PropagateClosed();
     ChrisitiansenClosed();
-//    ChrisitiansenFemur();
-//    ChrisitiansenFemurFull();
+    ChrisitiansenFemur();
+    ChrisitiansenFemurFull();
     ChrisitiansenSheepFull();
 }

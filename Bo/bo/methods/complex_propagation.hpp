@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.0.25 2013.03.07
+  complex_propagation.hpp, v 1.0.26 2013.03.07
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -310,6 +310,11 @@ private:
         PropagationResult retvalue;
         retvalue.points->push_back(start);
 
+        // Flags for so-called "smooth-ending". It is necessary to keep the distance
+        // between the points in the end phase as close to delta_min as possible,
+        // despite a delta_max point has been already found.
+        bool end_detected = false;
+
         Point3D current = start;
         do
         {
@@ -340,10 +345,32 @@ private:
             }
 
             // Check if the candidate "sees" the end point "in front".
-            if ((delta_max < metric(end, candidate)) || (total_prop * (end - candidate)) < 0)
+            if (!end_detected)
+            {
                 retvalue.points->push_back(candidate);
+                if ((delta_max >= metric(end, candidate)) && (total_prop * (end - candidate)) > 0)
+                    end_detected = true;
+            }
             else
-                candidate = end;
+            {
+                RealType cur_dist = (end - retvalue.points->back()).euclidean_norm();
+                RealType candidate_dist1 = (candidate - retvalue.points->back()).euclidean_norm();
+                RealType candidate_dist2 = (end - candidate).euclidean_norm();
+
+                if (delta_min > metric(end, candidate))
+                {
+                    retvalue.points->push_back(candidate);
+                    candidate = end;
+                }
+                else if ((cur_dist > candidate_dist1) && (cur_dist > candidate_dist2))
+                {
+                    retvalue.points->push_back(candidate);
+                }
+                else
+                {
+                    candidate = end;
+                }
+            }
 
             // Update algortihm's state.
             Point3D previous = current;
