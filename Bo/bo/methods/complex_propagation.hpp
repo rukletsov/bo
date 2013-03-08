@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.4 2013.03.08
+  complex_propagation.hpp, v 1.1.5 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -60,25 +60,21 @@ template <typename RealType>
 class ComplexPropagation: public boost::noncopyable
 {
 public:
-    typedef ComplexPropagation<RealType> this_type;
-
     typedef Vector<RealType, 3> Point3D;
-    typedef std::vector<Point3D> Points3D;
     typedef std::vector<Point3D> ParallelPlane;
-    typedef RawImage2D<RealType> Image2D;
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
     typedef std::vector<ParallelPlanePtr> ParallelPlanePtrs;
     typedef std::vector<ParallelPlaneConstPtr> ParallelPlaneConstPtrs;
+    typedef RawImage2D<RealType> Image2D;
     typedef std::vector<RealType> Weights;
 
+private:
+    typedef ComplexPropagation<RealType> this_type;
+
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
-
-    typedef KDTree<3, Point3D,
-        boost::function<RealType (Point3D, std::size_t)> > Tree;
+    typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
     typedef std::vector<Tree> Trees;
-
-    typedef blas::PCA<RealType, 3> PCAEngine;
 
 public:
     struct PropagationResult
@@ -235,11 +231,13 @@ private:
                                            RealType radius, Point3D inertial)
     {
         // Search for nearby points.
+        typedef std::vector<Point3D> Points3D;
         Points3D neighbours;
         tree.find_within_range(pt, radius, std::back_inserter(neighbours));
 
         // Employ PCA to extract the tangential propagation vector from the set of
         // nearby points.
+        typedef blas::PCA<RealType, 3> PCAEngine;
         PCAEngine pca;
         typename PCAEngine::Result result = pca(neighbours);
         Point3D tangential = result.template get<1>()[2];
@@ -249,6 +247,18 @@ private:
             tangential = - tangential;
 
         return tangential;
+    }
+
+    // Computes the total propagation vector from tangential and inertial components.
+    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio)
+    {
+        Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
+
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D total_normalized(total.normalized(), 3);
+
+        return total_normalized;
     }
 
     Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial)
@@ -277,18 +287,6 @@ private:
         Point3D total_tangential_normalized(total_tangential.normalized(), 3);
 
         return total_tangential_normalized;
-    }
-
-    // Computes the total propagation vector from tangential and inertial components.
-    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio)
-    {
-        Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
-
-        // TODO: remove this block by refactoring bo::Vector class.
-        // Normalize vector.
-        Point3D total_normalized(total.normalized(), 3);
-
-        return total_normalized;
     }
 
     // End point is not included, start is always included.
