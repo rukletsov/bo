@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.1 2013.03.08
+  complex_propagation.hpp, v 1.1.2 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -106,7 +106,7 @@ public:
         // because there is no sense in doing propagation for 0 or 1 points, we throw
         // an error instead of returning the plane unchanged.
         if (plane->size() < 2)
-            throw std::logic_error("Cannot run propagation for planes consisting of"
+            throw std::logic_error("Cannot run propagation for planes consisting of "
                                    "less than 2 vertices.");
 
         // Build kd-tree from the given points.
@@ -126,53 +126,26 @@ public:
         return plane;
     }
 
-    PropagationResult propagate()
+    void add_neighbour_planes(const ParallelPlaneConstPtrs& neighbour_planes,
+                              const Weights& neighbour_weights)
     {
-        // Choose initial point and initial propagation. It solely consists of the
-        // tangential component, since inertial cannot be defined.
-        Point3D start = (*main_plane_)[0];
-        Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
-            tangential_radius_, Point3D(RealType(0)));
+        // Weights should correspond to plane number.
+        if (neighbour_planes.size() != neighbour_weights.size())
+            throw std::logic_error("Provided weights quantity doesn't correspond to "
+                                   "planes number");
 
-        // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_,
-            std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
-
-        // If the hole was detected, run propagation in a different direction.
-        PropagationResult attempt2;
-        if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
-                std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_,
-                                  tangential_radius_);
-
-        // Glue propagation results together.
-        ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
-        for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
-             rit != attempt2.points->rend(); ++rit)
-            result->push_back(*rit);
-        for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
-             it != attempt1.points->end(); ++it)
-            result->push_back(*it);
-
-        return PropagationResult(attempt1.stopped || attempt2.stopped,
-                                 attempt1.has_hole, result);
-    }
-
-    PropagationResult propagate(const ParallelPlaneConstPtrs& neighbours)
-    {
-        // Define current plane as origin + normal.
+        // Define main plane as origin + normal.
         Point3D origin = main_plane_->at(0);
         Point3D norm = (main_plane_->at(1) - main_plane_->at(0)).cross_product(
                     main_plane_->at(2) - main_plane_->at(0));
 
         // Project all neighbours to the current plane.
         // TODO: rewrite using transform?
-        typedef std::vector<ParallelPlaneConstPtr> ParallelPlaneConstPtrs;
         ParallelPlaneConstPtrs neighbour_projs;
-        neighbour_projs.reserve(neighbours.size());
+        neighbour_projs.reserve(neighbour_planes.size());
 
-        for (typename ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
-             plane_it != neighbours.end(); ++plane_it)
+        for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
+             neighbour_planes.begin(); plane_it != neighbour_planes.end(); ++plane_it)
         {
             ParallelPlanePtr plane_proj = boost::make_shared<ParallelPlane>();
             plane_proj->reserve((*plane_it)->size());
@@ -186,18 +159,22 @@ public:
             neighbour_projs.push_back(plane_proj);
         }
 
-        // Compute kd-trees for all neighbours.
-        typedef std::vector<Tree> Trees;
-        std::vector<Tree> neighbour_trees;
-        neighbour_trees.reserve(neighbours.size());
-
-        for (typename ParallelPlaneConstPtrs::const_iterator plane_it = neighbours.begin();
-             plane_it != neighbours.end(); ++plane_it)
+        // Compute kd-trees for projected neighbour planes.
+        neighbour_trees_.reserve(neighbour_projs.size());
+        for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
+             neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
         {
-            Tree neigh_tree((*plane_it)->begin(), (*plane_it)->end(), std::ptr_fun(point3D_accessor_));
-            neighbour_trees.push_back(neigh_tree);
+            Tree neighbour_tree((*plane_it)->begin(), (*plane_it)->end(),
+                                std::ptr_fun(point3D_accessor_));
+            neighbour_trees_.push_back(neighbour_tree);
         }
 
+        // Store neighbour weights.
+        neighbour_weights_ = neighbour_weights;
+    }
+
+    PropagationResult propagate()
+    {
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
         Point3D start = (*main_plane_)[0];
@@ -206,13 +183,14 @@ public:
 
         // Run propagation. It may bump into a hole or return a circuit.
         PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_,
-            neighbour_trees, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
+            neighbour_trees_, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
             attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
-                neighbour_trees, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
+                neighbour_trees_, delta_min_, delta_max_, 1000, metric_, ratio_,
+                                  tangential_radius_);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();

@@ -206,14 +206,13 @@ void ChrisitiansenFemurFull()
     // Run propagation for each contour.
     for (PlaneData::const_iterator it = plane_data.begin() + 1; it != plane_data.end() - 1; ++it)
     {
-        std::vector<TilingAlgo::ParallelPlaneConstPtr> neighbours;
+        TilingAlgo::ParallelPlaneConstPtrs neighbours;
         neighbours.push_back(*(it - 1));
         neighbours.push_back(*(it + 1));
 
         TilingAlgo tiling(*it, 3.f, 7.f, 0.5f, 20.f);
-        TilingAlgo::PropagationResult contour = tiling.propagate(neighbours);
-//        TilingAlgo::PropagationResult contour = tiling.propagate(*it,
-//                                                                 0.5f, 3.f, 7.f, 20.f);
+        tiling.add_neighbour_planes(neighbours, TilingAlgo::Weights());
+        TilingAlgo::PropagationResult contour = tiling.propagate();
 
         contours.push_back(contour);
     }
