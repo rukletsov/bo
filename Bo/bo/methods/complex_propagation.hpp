@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.6 2013.03.08
+  complex_propagation.hpp, v 1.1.7 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -46,6 +46,7 @@
 #include <boost/function.hpp>
 
 #include "bo/raw_image_2d.hpp"
+#include "bo/mesh.hpp"
 #include "bo/kdtree.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/blas/pca.hpp"
@@ -61,7 +62,7 @@ class ComplexPropagation: public boost::noncopyable
 {
 public:
     typedef ComplexPropagation<RealType> this_type;
-    typedef std::auto_ptr<this_type> Ptr;
+    typedef boost::shared_ptr<this_type> Ptr;
 
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> ParallelPlane;
@@ -69,8 +70,12 @@ public:
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
     typedef std::vector<ParallelPlanePtr> ParallelPlanePtrs;
     typedef std::vector<ParallelPlaneConstPtr> ParallelPlaneConstPtrs;
-    typedef RawImage2D<RealType> Image2D;
+
     typedef std::vector<RealType> Weights;
+
+    // Used by factory functions.
+    typedef RawImage2D<RealType> Image2D;
+    typedef Mesh<RealType> Mesh;
 
 private:
 
@@ -96,23 +101,26 @@ public:
     };
 
 public:
-    ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
-                       RealType ratio, RealType tangential_radius):
-        main_plane_(plane), delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
-        tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>)
+    // Creates an instance of the class with the provided parameters.
+    static Ptr create(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
+                      RealType ratio, RealType tangential_radius)
     {
-        // If points number is less than 2, propagation cannot be initialized. And
-        // because there is no sense in doing propagation for 0 or 1 points, we throw
-        // an error instead of returning the plane unchanged.
-        if (plane->size() < 2)
-            throw std::logic_error("Cannot run propagation for planes consisting of "
-                                   "less than 2 vertices.");
-
-        // Build kd-tree from the given points.
-        // TODO: provide kd-tree with current metric?.
-        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+        // C-tor is declared private, using boost::make_shared gets complicated.
+        Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
+        return ptr;
     }
 
+    // Creates an instace of the class from the provided mesh and algorithm parameters.
+    static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
+                         RealType ratio, RealType tangential_radius)
+    {
+        ParallelPlanePtr plane = boost::make_shared<ParallelPlane>(mesh.get_all_vertices());
+        return
+            create(plane, delta_min, delta_max, ratio, tangential_radius);
+    }
+
+    // Creates an instace of the class from the provided RawImage and algorithm
+    // parameters.
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
                           RealType ratio, RealType tangential_radius)
     {
@@ -124,9 +132,8 @@ public:
                 if (data(col, row) > 0)
                     plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
 
-        // Create an instance of the class with the provided parameters.
-        Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
-        return ptr;
+        return
+            create(plane, delta_min, delta_max, ratio, tangential_radius);
     }
 
     void add_neighbour_planes(const ParallelPlaneConstPtrs& neighbour_planes,
@@ -175,7 +182,7 @@ public:
         neighbour_weights_ = neighbour_weights;
     }
 
-    PropagationResult propagate()
+    void propagate()
     {
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
@@ -192,19 +199,46 @@ public:
             attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, 1000);
 
         // Glue propagation results together.
-        ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
         for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
              rit != attempt2.points->rend(); ++rit)
-            result->push_back(*rit);
+            contour_->push_back(*rit);
         for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
              it != attempt1.points->end(); ++it)
-            result->push_back(*it);
+            contour_->push_back(*it);
 
-        return PropagationResult(attempt1.stopped || attempt2.stopped,
-                                 attempt1.has_hole, result);
+        // Set markers.
+        stopped_ = attempt1.stopped || attempt2.stopped;
+        has_hole_ = attempt1.has_hole;
     }
 
+    bool has_stopped() const
+    { return stopped_; }
+
+    bool has_hole() const
+    { return has_hole_; }
+
+    ParallelPlanePtr contour() const
+    { return contour_; }
+
 private:
+    ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
+                       RealType ratio, RealType tangential_radius):
+        main_plane_(plane), delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
+        tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>),
+        stopped_(false), has_hole_(false), contour_(boost::make_shared<ParallelPlane>())
+    {
+        // If points number is less than 2, propagation cannot be initialized. And
+        // because there is no sense in doing propagation for 0 or 1 points, we throw
+        // an error instead of returning the plane unchanged.
+        if (plane->size() < 2)
+            throw std::logic_error("Cannot run propagation for planes consisting of "
+                                   "less than 2 vertices.");
+
+        // Build kd-tree from the given points.
+        // TODO: provide kd-tree with current metric?.
+        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+    }
+
     // Helper function for KDTree instance.
     static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
     {
@@ -266,7 +300,7 @@ private:
         return total_normalized;
     }
 
-    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial)
+    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const
     {
         // Get the tangential propagation for the main plane.
         Point3D total_tangential = this_type::tangential_propagation_(pt, main_tree_,
@@ -397,6 +431,11 @@ private:
     Tree main_tree_;
     Trees neighbour_trees_;
     Weights neighbour_weights_;
+
+    // Markers and final contour.
+    bool stopped_;
+    bool has_hole_;
+    ParallelPlanePtr contour_;
 };
 
 } // namespace surfaces
