@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.0 2013.03.08
+  complex_propagation.hpp, v 1.1.1 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -97,11 +97,22 @@ public:
     };
 
 public:
-    ComplexPropagation(RealType delta_min, RealType delta_max,
+    ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
                        RealType ratio, RealType tangential_radius):
-        delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
+        main_plane_(plane), delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
         tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>)
-    { }
+    {
+        // If points number is less than 2, propagation cannot be initialized. And
+        // because there is no sense in doing propagation for 0 or 1 points, we throw
+        // an error instead of returning the plane unchanged.
+        if (plane->size() < 2)
+            throw std::logic_error("Cannot run propagation for planes consisting of"
+                                   "less than 2 vertices.");
+
+        // Build kd-tree from the given points.
+        // TODO: provide kd-tree with current metric?.
+        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+    }
 
     static ParallelPlanePtr load_plane(Image2D data)
     {
@@ -115,22 +126,11 @@ public:
         return plane;
     }
 
-    PropagationResult propagate(ParallelPlaneConstPtr plane)
+    PropagationResult propagate()
     {
-        // If points number is less than 2, propagation cannot be initialized. And
-        // because there is no sense in doing propagation for 0 or 1 points, we throw
-        // an error instead of returning the plane unchanged.
-        if (plane->size() < 2)
-            throw std::logic_error("Cannot run propagation for planes consisting of"
-                                   "less than 2 vertices.");
-
-        // Build kd-tree from the given points.
-        // TODO: provide kd-tree with current metric?.
-        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
-
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
-        Point3D start = (*plane)[0];
+        Point3D start = (*main_plane_)[0];
         Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
             tangential_radius_, Point3D(RealType(0)));
 
@@ -142,7 +142,8 @@ public:
         PropagationResult attempt2;
         if (attempt1.has_hole)
             attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
-                std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
+                std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_,
+                                  tangential_radius_);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -157,21 +158,12 @@ public:
                                  attempt1.has_hole, result);
     }
 
-    PropagationResult propagate(ParallelPlaneConstPtr plane,
-                                const ParallelPlaneConstPtrs& neighbours)
+    PropagationResult propagate(const ParallelPlaneConstPtrs& neighbours)
     {
-        // Check contours' length.
-        if (plane->size() < 2)
-            throw std::logic_error("Cannot run propagation for planes consisting of"
-                                   "less than 2 vertices.");
-
-        // Build kd-tree from given points.
-        // TODO: provide kd-tree with current metric.
-        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
-
         // Define current plane as origin + normal.
-        Point3D origin = plane->at(0);
-        Point3D norm = (plane->at(1) - plane->at(0)).cross_product(plane->at(2) - plane->at(0));
+        Point3D origin = main_plane_->at(0);
+        Point3D norm = (main_plane_->at(1) - main_plane_->at(0)).cross_product(
+                    main_plane_->at(2) - main_plane_->at(0));
 
         // Project all neighbours to the current plane.
         // TODO: rewrite using transform?
@@ -208,13 +200,13 @@ public:
 
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
-        Point3D start = (*plane)[0];
+        Point3D start = (*main_plane_)[0];
         Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
             tangential_radius_, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_, neighbour_trees,
-            delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
+        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_,
+            neighbour_trees, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;

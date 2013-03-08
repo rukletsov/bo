@@ -90,9 +90,9 @@ void PropagateClosed()
                 paths.RawClosedPath.string(), 512, 512);
     TilingAlgo::ParallelPlanePtr plane_data = TilingAlgo::load_plane(test_image);
 
-    TilingAlgo tiling(3.f, 10.f, 0.5f, 20.f);
+    TilingAlgo tiling(plane_data, 3.f, 10.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data);
+    TilingAlgo::PropagationResult contour = tiling.propagate();
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
@@ -104,9 +104,9 @@ void PropagateFemur01()
     TilingAlgo::ParallelPlanePtr plane_data =
         boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
-    TilingAlgo tiling(3.f, 7.f, 0.5f, 20.f);
+    TilingAlgo tiling(plane_data, 3.f, 7.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data);
+    TilingAlgo::PropagationResult contour = tiling.propagate();
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
@@ -118,9 +118,9 @@ void PropagateSheep()
     TilingAlgo::ParallelPlanePtr plane_data =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh.get_all_vertices());
 
-    TilingAlgo tiling(5.f, 10.f, 0.5f, 20.f);
+    TilingAlgo tiling(plane_data, 5.f, 10.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour = tiling.propagate(plane_data);
+    TilingAlgo::PropagationResult contour = tiling.propagate();
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
@@ -137,10 +137,11 @@ void ChrisitiansenFemur()
     TilingAlgo::ParallelPlanePtr plane_data2 =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
-    TilingAlgo tiling(3.f, 7.f, 0.5f, 20.f);
+    TilingAlgo tiling1(plane_data1, 3.f, 7.f, 0.5f, 20.f);
+    TilingAlgo tiling2(plane_data2, 3.f, 7.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1);
-    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2);
+    TilingAlgo::PropagationResult contour1 = tiling1.propagate();
+    TilingAlgo::PropagationResult contour2 = tiling2.propagate();
 
     TriangAlgo triang(contour1.points, !contour1.has_hole, contour2.points, !contour2.has_hole);
     Mesh mesh = *triang.christiansen();
@@ -159,10 +160,11 @@ void ChrisitiansenClosed()
     TilingAlgo::ParallelPlanePtr plane_data2 =
             boost::make_shared<TilingAlgo::ParallelPlane>(test_mesh2.get_all_vertices());
 
-    TilingAlgo tiling(3.f, 10.f, 0.5f, 20.f);
+    TilingAlgo tiling1(plane_data1, 3.f, 10.f, 0.5f, 20.f);
+    TilingAlgo tiling2(plane_data2, 3.f, 10.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour1 = tiling.propagate(plane_data1);
-    TilingAlgo::PropagationResult contour2 = tiling.propagate(plane_data2);
+    TilingAlgo::PropagationResult contour1 = tiling1.propagate();
+    TilingAlgo::PropagationResult contour2 = tiling2.propagate();
 
     TriangAlgo triang(contour1.points, !(contour1.has_hole), contour2.points, !(contour2.has_hole));
     Mesh mesh = *triang.christiansen();
@@ -202,14 +204,14 @@ void ChrisitiansenFemurFull()
     }
 
     // Run propagation for each contour.
-    TilingAlgo tiling(3.f, 7.f, 0.5f, 20.f);
     for (PlaneData::const_iterator it = plane_data.begin() + 1; it != plane_data.end() - 1; ++it)
     {
         std::vector<TilingAlgo::ParallelPlaneConstPtr> neighbours;
         neighbours.push_back(*(it - 1));
         neighbours.push_back(*(it + 1));
 
-        TilingAlgo::PropagationResult contour = tiling.propagate(*it, neighbours);
+        TilingAlgo tiling(*it, 3.f, 7.f, 0.5f, 20.f);
+        TilingAlgo::PropagationResult contour = tiling.propagate(neighbours);
 //        TilingAlgo::PropagationResult contour = tiling.propagate(*it,
 //                                                                 0.5f, 3.f, 7.f, 20.f);
 
@@ -232,7 +234,6 @@ void ChrisitiansenSheepFull()
     typedef std::vector<path> ContourData;
     typedef std::vector<TilingAlgo::PropagationResult> Contours;
 
-    TilingAlgo tiling(2.f, 5.f, 0.7f, 15.f);
     ContourData contour_data;
     Contours contours;
     Mesh result_mesh;
@@ -256,7 +257,9 @@ void ChrisitiansenSheepFull()
         Mesh mesh = mesh_from_ply(it->string());
         TilingAlgo::ParallelPlanePtr plane_data =
                 boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices());
-        TilingAlgo::PropagationResult contour = tiling.propagate(plane_data);
+
+        TilingAlgo tiling(plane_data, 2.f, 5.f, 0.7f, 15.f);
+        TilingAlgo::PropagationResult contour = tiling.propagate();
 
         contours.push_back(contour);
     }
