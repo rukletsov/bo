@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.2 2013.03.08
+  complex_propagation.hpp, v 1.1.3 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -182,15 +182,12 @@ public:
             tangential_radius_, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_,
-            neighbour_trees_, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
+        PropagationResult attempt1 = propagate_(start, start, initial_prop, 1000);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
-                neighbour_trees_, delta_min_, delta_max_, 1000, metric_, ratio_,
-                                  tangential_radius_);
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, 1000);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -270,12 +267,8 @@ private:
     }
 
     // End point is not included, start is always included.
-    static PropagationResult propagate_(const Point3D& start, const Point3D& end,
-                                       Point3D total_prop, const Tree& tree,
-                                        const std::vector<Tree>& neighbour_trees,
-                                       RealType delta_min, RealType delta_max,
-                                       std::size_t max_size, Metric metric, RealType ratio,
-                                        RealType tangential_radius)
+    PropagationResult propagate_(const Point3D& start, const Point3D& end,
+                                       Point3D total_prop, std::size_t max_size)
     {
         typedef ArchedStrip<RealType, 3> ArchedStrip;
 
@@ -300,17 +293,17 @@ private:
             // Search for the propagation candidate. It should lie on the arced strip
             // bounded by delta_min and delta_max circumferences and a plane containing
             // current point and normal to propagation vector.
-            Point3D phantom_candidate = current + total_prop * delta_min;
+            Point3D phantom_candidate = current + total_prop * delta_min_;
 
             // TODO: get rid of max radius.
             std::pair<typename Tree::const_iterator, RealType> candidate_data =
-                    tree.find_nearest_if(phantom_candidate, delta_max,
-                        ArchedStrip(current, delta_min, delta_max, total_prop, metric));
+                    main_tree_.find_nearest_if(phantom_candidate, delta_max_,
+                        ArchedStrip(current, delta_min_, delta_max_, total_prop, metric_));
             RealType candidate_distance = candidate_data.second;
             Point3D candidate = *(candidate_data.first);
 
             // Check if we bump into a hole.
-            if (candidate_distance >= delta_max)
+            if (candidate_distance >= delta_max_)
             {
                 retvalue.has_hole = true;
                 break;
@@ -320,7 +313,8 @@ private:
             if (!end_detected)
             {
                 retvalue.points->push_back(candidate);
-                if ((delta_max >= metric(end, candidate)) && (total_prop * (end - candidate)) > 0)
+                if ((delta_max_ >= metric_(end, candidate)) &&
+                    (total_prop * (end - candidate)) > 0)
                     end_detected = true;
             }
             else
@@ -329,7 +323,7 @@ private:
                 RealType candidate_dist1 = (candidate - retvalue.points->back()).euclidean_norm();
                 RealType candidate_dist2 = (end - candidate).euclidean_norm();
 
-                if (delta_min > metric(end, candidate))
+                if (delta_min_ > metric_(end, candidate))
                 {
                     retvalue.points->push_back(candidate);
                     candidate = end;
@@ -350,29 +344,29 @@ private:
 
             // Compute inertial and tangential propagations using only current plane.
             Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D tangential_prop = this_type::tangential_propagation_(current, tree,
-                tangential_radius, inertial_prop);
+            Point3D tangential_prop = this_type::tangential_propagation_(current,
+                main_tree_, tangential_radius_, inertial_prop);
 
             // Compute tangential propagations using neighbours.
             Points3D neighbours_tang;
-            neighbours_tang.reserve(neighbour_trees.size());
-            for (typename std::vector<Tree>::const_iterator it = neighbour_trees.begin();
-                 it != neighbour_trees.end(); ++it)
+            neighbours_tang.reserve(neighbour_trees_.size());
+            for (typename std::vector<Tree>::const_iterator it = neighbour_trees_.begin();
+                 it != neighbour_trees_.end(); ++it)
             {
                 neighbours_tang.push_back(this_type::tangential_propagation_(
-                                              current, *it, tangential_radius, inertial_prop));
+                                              current, *it, tangential_radius_, inertial_prop));
             }
 
             // Derive mean tangential propagation.
             Point3D total_tangential_prop = tangential_prop;
-            if (neighbour_trees.size() > 0)
+            if (neighbour_trees_.size() > 0)
             {
                 Point3D neighbours_total_tang = mean(neighbours_tang);
                 total_tangential_prop = 0.5 * tangential_prop + 0.5 * neighbours_total_tang;
             }
 
             // Compute total propagation.
-            total_prop = this_type::total_propagation_(total_tangential_prop, inertial_prop, ratio);
+            total_prop = this_type::total_propagation_(total_tangential_prop, inertial_prop, ratio_);
 
         } while (current != end);
 

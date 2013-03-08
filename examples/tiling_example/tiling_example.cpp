@@ -203,6 +203,11 @@ void ChrisitiansenFemurFull()
         plane_data.push_back(boost::make_shared<TilingAlgo::ParallelPlane>(mesh.get_all_vertices()));
     }
 
+    // Prepare weights for all slices.
+    TilingAlgo::Weights weights;
+    weights.push_back(0.5f);
+    weights.push_back(0.5f);
+
     // Run propagation for each contour.
     for (PlaneData::const_iterator it = plane_data.begin() + 1; it != plane_data.end() - 1; ++it)
     {
@@ -211,7 +216,7 @@ void ChrisitiansenFemurFull()
         neighbours.push_back(*(it + 1));
 
         TilingAlgo tiling(*it, 3.f, 7.f, 0.5f, 20.f);
-        tiling.add_neighbour_planes(neighbours, TilingAlgo::Weights());
+        tiling.add_neighbour_planes(neighbours, weights);
         TilingAlgo::PropagationResult contour = tiling.propagate();
 
         contours.push_back(contour);
