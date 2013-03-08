@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.7 2013.03.08
+  complex_propagation.hpp, v 1.1.8 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -82,23 +82,6 @@ private:
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
     typedef std::vector<Tree> Trees;
-
-public:
-    struct PropagationResult
-    {
-        PropagationResult(): stopped(false), has_hole(false),
-            points(boost::make_shared<ParallelPlane>())
-        { }
-
-        PropagationResult(bool maxsize_reached, bool hole_encountered,
-                          ParallelPlanePtr pts):
-            stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
-        { }
-
-        bool stopped;
-        bool has_hole;
-        ParallelPlanePtr points;
-    };
 
 public:
     // Creates an instance of the class with the provided parameters.
@@ -219,6 +202,22 @@ public:
 
     ParallelPlanePtr contour() const
     { return contour_; }
+
+private:
+    struct PropagationResult
+    {
+        PropagationResult(): stopped(false), has_hole(false),
+            points(boost::make_shared<ParallelPlane>())
+        { }
+
+        PropagationResult(bool maxsize_reached, bool hole_encountered, ParallelPlanePtr pts):
+            stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
+        { }
+
+        bool stopped;
+        bool has_hole;
+        ParallelPlanePtr points;
+    };
 
 private:
     ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
