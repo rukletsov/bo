@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.3 2013.03.08
+  complex_propagation.hpp, v 1.1.4 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -39,6 +39,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -210,7 +211,7 @@ private:
     }
 
     // Computes the inertial propagation vector from current and previous mesh vertices.
-    static Point3D inertial_propagation_(Point3D current, Point3D previous)
+    static Point3D inertial_propagation_norm_(Point3D current, Point3D previous)
     {
         Point3D inertial = (current -= previous);
 
@@ -229,7 +230,7 @@ private:
         return inertial_normalized;
     }
 
-    // Computes the tangential propagation vector for the given point.
+    // Computes the tangential propagation vector for the given point and kd-tree.
     static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
                                            RealType radius, Point3D inertial)
     {
@@ -247,11 +248,35 @@ private:
         if (tangential * inertial < 0)
             tangential = - tangential;
 
+        return tangential;
+    }
+
+    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial)
+    {
+        // Get the tangential propagation for the main plane.
+        Point3D total_tangential = this_type::tangential_propagation_(pt, main_tree_,
+            tangential_radius_, inertial);
+
+        // Make sure neighbour data is consistent.
+        BOOST_ASSERT((neighbour_weights_.size() == neighbour_trees_.size()) &&
+                     "Number of provided neighbour planes doesn't correspond to the "
+                     "number of weights.");
+
+        // Compute weighted tangential propagations for neighbours and add them  to the
+        // total tangential propagation.
+        for (std::size_t idx = 0; idx < neighbour_trees_.size(); ++idx)
+        {
+            Point3D cur_tang = this_type::tangential_propagation_(pt,
+                neighbour_trees_[idx], tangential_radius_, inertial);
+            RealType cur_weight = neighbour_weights_[idx];
+            total_tangential += (cur_tang * cur_weight);
+        }
+
         // TODO: remove this block by refactoring bo::Vector class.
         // Normalize vector.
-        Point3D tangential_normalized(tangential.normalized(), 3);
+        Point3D total_tangential_normalized(total_tangential.normalized(), 3);
 
-        return tangential_normalized;
+        return total_tangential_normalized;
     }
 
     // Computes the total propagation vector from tangential and inertial components.
@@ -275,7 +300,7 @@ private:
         PropagationResult retvalue;
         retvalue.points->push_back(start);
 
-        // Flags for so-called "smooth-ending". It is necessary to keep the distance
+        // Flag for so-called "smooth-ending". It is necessary to keep the distance
         // between the points in the end phase as close to delta_min as possible,
         // despite a delta_max point has been already found.
         bool end_detected = false;
@@ -343,27 +368,9 @@ private:
             current = candidate;
 
             // Compute inertial and tangential propagations using only current plane.
-            Point3D inertial_prop = this_type::inertial_propagation_(current, previous);
-            Point3D tangential_prop = this_type::tangential_propagation_(current,
-                main_tree_, tangential_radius_, inertial_prop);
-
-            // Compute tangential propagations using neighbours.
-            Points3D neighbours_tang;
-            neighbours_tang.reserve(neighbour_trees_.size());
-            for (typename std::vector<Tree>::const_iterator it = neighbour_trees_.begin();
-                 it != neighbour_trees_.end(); ++it)
-            {
-                neighbours_tang.push_back(this_type::tangential_propagation_(
-                                              current, *it, tangential_radius_, inertial_prop));
-            }
-
-            // Derive mean tangential propagation.
-            Point3D total_tangential_prop = tangential_prop;
-            if (neighbour_trees_.size() > 0)
-            {
-                Point3D neighbours_total_tang = mean(neighbours_tang);
-                total_tangential_prop = 0.5 * tangential_prop + 0.5 * neighbours_total_tang;
-            }
+            Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
+            Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
+                inertial_prop);
 
             // Compute total propagation.
             total_prop = this_type::total_propagation_(total_tangential_prop, inertial_prop, ratio_);
