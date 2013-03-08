@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.8 2013.03.08
+  complex_propagation.hpp, v 1.1.9 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -78,130 +78,39 @@ public:
     typedef Mesh<RealType> Mesh;
 
 private:
-
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
     typedef std::vector<Tree> Trees;
 
 public:
-    // Creates an instance of the class with the provided parameters.
+    // Factory functions. Create an instance of the class from either of the supported
+    // input with the provided parameters.
     static Ptr create(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
-                      RealType ratio, RealType tangential_radius)
-    {
-        // C-tor is declared private, using boost::make_shared gets complicated.
-        Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
-        return ptr;
-    }
+                      RealType ratio, RealType tangential_radius);
 
-    // Creates an instace of the class from the provided mesh and algorithm parameters.
     static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
-                         RealType ratio, RealType tangential_radius)
-    {
-        ParallelPlanePtr plane = boost::make_shared<ParallelPlane>(mesh.get_all_vertices());
-        return
-            create(plane, delta_min, delta_max, ratio, tangential_radius);
-    }
+                         RealType ratio, RealType tangential_radius);
 
-    // Creates an instace of the class from the provided RawImage and algorithm
-    // parameters.
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
-                          RealType ratio, RealType tangential_radius)
-    {
-        // Load plane data from an istance of RawImage2D.
-        ParallelPlanePtr plane = boost::make_shared<ParallelPlane>();
+                          RealType ratio, RealType tangential_radius);
 
-        for (std::size_t row = 0; row < data.height(); ++row)
-            for (std::size_t col = 0; col < data.width(); ++col)
-                if (data(col, row) > 0)
-                    plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
-
-        return
-            create(plane, delta_min, delta_max, ratio, tangential_radius);
-    }
-
+    // Adds neighbour planes with corresponding weights. These planes are used in
+    // the calculation of the tangential component of the propagation, making it
+    // dependent of the neighbour planes. This should lead to the desirable smoothing.
     void add_neighbour_planes(const ParallelPlaneConstPtrs& neighbour_planes,
-                              const Weights& neighbour_weights)
-    {
-        // Weights should correspond to plane number.
-        if (neighbour_planes.size() != neighbour_weights.size())
-            throw std::logic_error("Provided weights quantity doesn't correspond to "
-                                   "planes number");
+                              const Weights& neighbour_weights);
 
-        // Define main plane as origin + normal.
-        Point3D origin = main_plane_->at(0);
-        Point3D norm = (main_plane_->at(1) - main_plane_->at(0)).cross_product(
-                    main_plane_->at(2) - main_plane_->at(0));
+    // Performs propagation in either one or two steps depending on whether the
+    // contour has a hole.
+    void propagate();
 
-        // Project all neighbours to the current plane.
-        // TODO: rewrite using transform?
-        ParallelPlaneConstPtrs neighbour_projs;
-        neighbour_projs.reserve(neighbour_planes.size());
-        for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
-             neighbour_planes.begin(); plane_it != neighbour_planes.end(); ++plane_it)
-        {
-            ParallelPlanePtr plane_proj = boost::make_shared<ParallelPlane>();
-            plane_proj->reserve((*plane_it)->size());
-
-            for (typename ParallelPlane::const_iterator point_it = (*plane_it)->begin();
-                 point_it != (*plane_it)->end(); ++point_it)
-            {
-                plane_proj->push_back(project_point_onto_plane(*point_it, origin, norm));
-            }
-
-            neighbour_projs.push_back(plane_proj);
-        }
-
-        // Compute kd-trees for projected neighbour planes.
-        neighbour_trees_.reserve(neighbour_projs.size());
-        for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
-             neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
-        {
-            Tree neighbour_tree((*plane_it)->begin(), (*plane_it)->end(),
-                                std::ptr_fun(point3D_accessor_));
-            neighbour_trees_.push_back(neighbour_tree);
-        }
-
-        // Store neighbour weights.
-        neighbour_weights_ = neighbour_weights;
-    }
-
-    void propagate()
-    {
-        // Choose initial point and initial propagation. It solely consists of the
-        // tangential component, since inertial cannot be defined.
-        Point3D start = (*main_plane_)[0];
-        Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
-            tangential_radius_, Point3D(RealType(0)));
-
-        // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, 1000);
-
-        // If the hole was detected, run propagation in a different direction.
-        PropagationResult attempt2;
-        if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, 1000);
-
-        // Glue propagation results together.
-        for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
-             rit != attempt2.points->rend(); ++rit)
-            contour_->push_back(*rit);
-        for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
-             it != attempt1.points->end(); ++it)
-            contour_->push_back(*it);
-
-        // Set markers.
-        stopped_ = attempt1.stopped || attempt2.stopped;
-        has_hole_ = attempt1.has_hole;
-    }
-
-    bool has_stopped() const
-    { return stopped_; }
-
-    bool has_hole() const
-    { return has_hole_; }
-
-    ParallelPlanePtr contour() const
-    { return contour_; }
+    // Accessor functions to the final contour and algorithm markers. Calling these
+    // functions makes sense only after calling propagate(). If has_stopped() marker
+    // is set to false, the algortihm is most probably stuck (e.g. jumping between two
+    // adjacent points or traversing the cosed contour multiple times).
+    bool has_stopped() const;
+    bool has_hole() const;
+    ParallelPlanePtr contour() const;
 
 private:
     struct PropagationResult
@@ -436,6 +345,141 @@ private:
     bool has_hole_;
     ParallelPlanePtr contour_;
 };
+
+
+// Factories.
+template <typename RealType> inline
+typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
+        ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
+        RealType ratio, RealType tangential_radius)
+{
+    // C-tor is declared private, using boost::make_shared gets complicated.
+    Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
+    return ptr;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_mesh(
+        const Mesh& mesh, RealType delta_min, RealType delta_max,
+        RealType ratio, RealType tangential_radius)
+{
+    ParallelPlanePtr plane = boost::make_shared<ParallelPlane>(mesh.get_all_vertices());
+    return
+        create(plane, delta_min, delta_max, ratio, tangential_radius);
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_raw_image(
+        Image2D data, RealType delta_min, RealType delta_max,
+        RealType ratio, RealType tangential_radius)
+{
+    // Load plane data from an istance of RawImage2D.
+    ParallelPlanePtr plane = boost::make_shared<ParallelPlane>();
+
+    for (std::size_t row = 0; row < data.height(); ++row)
+        for (std::size_t col = 0; col < data.width(); ++col)
+            if (data(col, row) > 0)
+                plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
+
+    return
+        create(plane, delta_min, delta_max, ratio, tangential_radius);
+}
+
+template <typename RealType>
+void ComplexPropagation<RealType>::add_neighbour_planes(
+        const ParallelPlaneConstPtrs& neighbour_planes, const Weights& neighbour_weights)
+{
+    // Weights should correspond to plane number.
+    if (neighbour_planes.size() != neighbour_weights.size())
+        throw std::logic_error("Provided weights quantity doesn't correspond to "
+                               "planes number");
+
+    // Define main plane as origin + normal.
+    Point3D origin = main_plane_->at(0);
+    Point3D norm = (main_plane_->at(1) - main_plane_->at(0)).cross_product(
+                main_plane_->at(2) - main_plane_->at(0));
+
+    // Project all neighbours to the current plane.
+    // TODO: rewrite using transform?
+    ParallelPlaneConstPtrs neighbour_projs;
+    neighbour_projs.reserve(neighbour_planes.size());
+    for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
+         neighbour_planes.begin(); plane_it != neighbour_planes.end(); ++plane_it)
+    {
+        ParallelPlanePtr plane_proj = boost::make_shared<ParallelPlane>();
+        plane_proj->reserve((*plane_it)->size());
+
+        for (typename ParallelPlane::const_iterator point_it = (*plane_it)->begin();
+             point_it != (*plane_it)->end(); ++point_it)
+        {
+            plane_proj->push_back(project_point_onto_plane(*point_it, origin, norm));
+        }
+
+        neighbour_projs.push_back(plane_proj);
+    }
+
+    // Compute kd-trees for projected neighbour planes.
+    neighbour_trees_.reserve(neighbour_projs.size());
+    for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
+         neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
+    {
+        Tree neighbour_tree((*plane_it)->begin(), (*plane_it)->end(),
+                            std::ptr_fun(point3D_accessor_));
+        neighbour_trees_.push_back(neighbour_tree);
+    }
+
+    // Store neighbour weights.
+    neighbour_weights_ = neighbour_weights;
+}
+
+template <typename RealType>
+void ComplexPropagation<RealType>::propagate()
+{
+    // Choose initial point and initial propagation. It solely consists of the
+    // tangential component, since inertial cannot be defined.
+    Point3D start = (*main_plane_)[0];
+    Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
+        tangential_radius_, Point3D(RealType(0)));
+
+    // Run propagation. It may bump into a hole or return a circuit.
+    PropagationResult attempt1 = propagate_(start, start, initial_prop, 1000);
+
+    // If the hole was detected, run propagation in a different direction.
+    PropagationResult attempt2;
+    if (attempt1.has_hole)
+        attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, 1000);
+
+    // Glue propagation results together.
+    for (typename ParallelPlane::const_reverse_iterator rit = attempt2.points->rbegin();
+         rit != attempt2.points->rend(); ++rit)
+        contour_->push_back(*rit);
+    for (typename ParallelPlane::const_iterator it = attempt1.points->begin() + 1;
+         it != attempt1.points->end(); ++it)
+        contour_->push_back(*it);
+
+    // Set markers.
+    stopped_ = attempt1.stopped || attempt2.stopped;
+    has_hole_ = attempt1.has_hole;
+}
+
+template <typename RealType>
+bool ComplexPropagation<RealType>::has_stopped() const
+{
+    return stopped_;
+}
+
+template <typename RealType>
+bool ComplexPropagation<RealType>::has_hole() const
+{
+    return has_hole_;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::ParallelPlanePtr
+    ComplexPropagation<RealType>::contour() const
+{
+    return contour_;
+}
 
 } // namespace surfaces
 } // namespace methods
