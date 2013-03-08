@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.0.26 2013.03.07
+  complex_propagation.hpp, v 1.1.0 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -67,10 +67,15 @@ public:
     typedef RawImage2D<RealType> Image2D;
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
     typedef boost::shared_ptr<const ParallelPlane> ParallelPlaneConstPtr;
+    typedef std::vector<ParallelPlanePtr> ParallelPlanePtrs;
+    typedef std::vector<ParallelPlaneConstPtr> ParallelPlaneConstPtrs;
+    typedef std::vector<RealType> Weights;
+
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
 
     typedef KDTree<3, Point3D,
         boost::function<RealType (Point3D, std::size_t)> > Tree;
+    typedef std::vector<Tree> Trees;
 
     typedef blas::PCA<RealType, 3> PCAEngine;
 
@@ -92,7 +97,11 @@ public:
     };
 
 public:
-    ComplexPropagation() { }
+    ComplexPropagation(RealType delta_min, RealType delta_max,
+                       RealType ratio, RealType tangential_radius):
+        delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
+        tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>)
+    { }
 
     static ParallelPlanePtr load_plane(Image2D data)
     {
@@ -106,36 +115,34 @@ public:
         return plane;
     }
 
-    static PropagationResult propagate(ParallelPlaneConstPtr plane, RealType ratio,
-                                       RealType delta_min, RealType delta_max,
-                                       RealType tangential_radius)
+    PropagationResult propagate(ParallelPlaneConstPtr plane)
     {
-        // Check contours' length.
+        // If points number is less than 2, propagation cannot be initialized. And
+        // because there is no sense in doing propagation for 0 or 1 points, we throw
+        // an error instead of returning the plane unchanged.
         if (plane->size() < 2)
             throw std::logic_error("Cannot run propagation for planes consisting of"
                                    "less than 2 vertices.");
 
-        Metric metric(&euclidean_distance<RealType, 3>);
-
-        // Build kd-tree from given points.
-        // TODO: provide kd-tree with current metric.
-        Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+        // Build kd-tree from the given points.
+        // TODO: provide kd-tree with current metric?.
+        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
         Point3D start = (*plane)[0];
-        Point3D initial_prop = this_type::tangential_propagation_(start, tree,
-            tangential_radius, Point3D(RealType(0)));
+        Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
+            tangential_radius_, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, tree,
-            std::vector<Tree>(), delta_min, delta_max, 1000, metric, ratio, tangential_radius);
+        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_,
+            std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, tree,
-                std::vector<Tree>(), delta_min, delta_max, 1000, metric, ratio, tangential_radius);
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
+                std::vector<Tree>(), delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -150,22 +157,17 @@ public:
                                  attempt1.has_hole, result);
     }
 
-    static PropagationResult propagate(ParallelPlaneConstPtr plane,
-                                       const std::vector<ParallelPlaneConstPtr>& neighbours,
-                                       RealType ratio,
-                                       RealType delta_min, RealType delta_max,
-                                       RealType tangential_radius)
+    PropagationResult propagate(ParallelPlaneConstPtr plane,
+                                const ParallelPlaneConstPtrs& neighbours)
     {
         // Check contours' length.
         if (plane->size() < 2)
             throw std::logic_error("Cannot run propagation for planes consisting of"
                                    "less than 2 vertices.");
 
-        Metric metric(&euclidean_distance<RealType, 3>);
-
         // Build kd-tree from given points.
         // TODO: provide kd-tree with current metric.
-        Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
         // Define current plane as origin + normal.
         Point3D origin = plane->at(0);
@@ -207,18 +209,18 @@ public:
         // Choose initial point and initial propagation. It solely consists of the
         // tangential component, since inertial cannot be defined.
         Point3D start = (*plane)[0];
-        Point3D initial_prop = this_type::tangential_propagation_(start, tree,
-            tangential_radius, Point3D(RealType(0)));
+        Point3D initial_prop = this_type::tangential_propagation_(start, main_tree_,
+            tangential_radius_, Point3D(RealType(0)));
 
         // Run propagation. It may bump into a hole or return a circuit.
-        PropagationResult attempt1 = propagate_(start, start, initial_prop, tree, neighbour_trees,
-            delta_min, delta_max, 1000, metric, ratio, tangential_radius);
+        PropagationResult attempt1 = propagate_(start, start, initial_prop, main_tree_, neighbour_trees,
+            delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // If the hole was detected, run propagation in a different direction.
         PropagationResult attempt2;
         if (attempt1.has_hole)
-            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, tree,
-                neighbour_trees, delta_min, delta_max, 1000, metric, ratio, tangential_radius);
+            attempt2 = propagate_(start, attempt1.points->back(), - initial_prop, main_tree_,
+                neighbour_trees, delta_min_, delta_max_, 1000, metric_, ratio_, tangential_radius_);
 
         // Glue propagation results together.
         ParallelPlanePtr result = boost::make_shared<ParallelPlane>();
@@ -397,11 +399,7 @@ private:
             {
                 Point3D neighbours_total_tang = mean(neighbours_tang);
                 total_tangential_prop = 0.5 * tangential_prop + 0.5 * neighbours_total_tang;
-                //total_tangential_prop = *(tree.find_nearest(total_tangential_prop, delta_min).first);
             }
-
-//            std::cout << "Tangential diff: " << (total_tangential_prop - tangential_prop)
-//                      << std::endl;
 
             // Compute total propagation.
             total_prop = this_type::total_propagation_(total_tangential_prop, inertial_prop, ratio);
@@ -410,6 +408,21 @@ private:
 
         return retvalue;
     }
+
+private:
+    // Parameters and options of the propagation algorithm.
+    RealType delta_min_;
+    RealType delta_max_;
+    RealType ratio_; // tangential constituent weight.
+    RealType tangential_radius_;
+    Metric metric_;
+
+    // Propagation data: main plane and neighbours with corresponding weights.
+    // Note that main plane has weight 1.
+    ParallelPlaneConstPtr main_plane_;
+    Tree main_tree_;
+    Trees neighbour_trees_;
+    Weights neighbour_weights_;
 };
 
 } // namespace surfaces
