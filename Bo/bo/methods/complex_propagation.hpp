@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.5 2013.03.08
+  complex_propagation.hpp, v 1.1.6 2013.03.08
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -60,6 +60,9 @@ template <typename RealType>
 class ComplexPropagation: public boost::noncopyable
 {
 public:
+    typedef ComplexPropagation<RealType> this_type;
+    typedef std::auto_ptr<this_type> Ptr;
+
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> ParallelPlane;
     typedef boost::shared_ptr<ParallelPlane> ParallelPlanePtr;
@@ -70,7 +73,6 @@ public:
     typedef std::vector<RealType> Weights;
 
 private:
-    typedef ComplexPropagation<RealType> this_type;
 
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
@@ -111,8 +113,10 @@ public:
         main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
     }
 
-    static ParallelPlanePtr load_plane(Image2D data)
+    static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
+                          RealType ratio, RealType tangential_radius)
     {
+        // Load plane data from an istance of RawImage2D.
         ParallelPlanePtr plane = boost::make_shared<ParallelPlane>();
 
         for (std::size_t row = 0; row < data.height(); ++row)
@@ -120,7 +124,9 @@ public:
                 if (data(col, row) > 0)
                     plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
 
-        return plane;
+        // Create an instance of the class with the provided parameters.
+        Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
+        return ptr;
     }
 
     void add_neighbour_planes(const ParallelPlaneConstPtrs& neighbour_planes,
@@ -140,7 +146,6 @@ public:
         // TODO: rewrite using transform?
         ParallelPlaneConstPtrs neighbour_projs;
         neighbour_projs.reserve(neighbour_planes.size());
-
         for (typename ParallelPlaneConstPtrs::const_iterator plane_it =
              neighbour_planes.begin(); plane_it != neighbour_planes.end(); ++plane_it)
         {

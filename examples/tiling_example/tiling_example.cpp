@@ -88,11 +88,10 @@ void PropagateClosed()
     AssertPathExists(paths.RawClosedPath);
     TilingAlgo::Image2D test_image = load_raw_image_8bpps<float>(
                 paths.RawClosedPath.string(), 512, 512);
-    TilingAlgo::ParallelPlanePtr plane_data = TilingAlgo::load_plane(test_image);
 
-    TilingAlgo tiling(plane_data, 3.f, 10.f, 0.5f, 20.f);
+    TilingAlgo::Ptr tiling_ptr = TilingAlgo::from_raw_image(test_image, 3.f, 10.f, 0.5f, 20.f);
 
-    TilingAlgo::PropagationResult contour = tiling.propagate();
+    TilingAlgo::PropagationResult contour = tiling_ptr->propagate();
     Mesh mesh = Mesh::from_vertices(contour.points.get());
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
