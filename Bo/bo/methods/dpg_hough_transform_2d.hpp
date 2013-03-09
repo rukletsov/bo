@@ -48,6 +48,7 @@
 
 #include "bo/vector.hpp"
 #include "bo/blas/blas.hpp"
+#include "bo/raw_image_2d.hpp"
 
 #include <iostream>
 
@@ -639,6 +640,82 @@ public:
         model_base_ = (model_reference_.second - model_reference_.first).euclidean_norm();
     }
 
+    void project_detected_lines(const Features &object_features, const Point2D &scaling_range,
+                                bo::RawImage2D<RealType> &image1, bo::RawImage2D<RealType> &image2)
+    {
+        for (typename Features::const_iterator it = object_features.begin();
+             it != object_features.end(); ++it)
+        {
+            // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
+            for (std::size_t index = 0; index < atable_.size(); ++index)
+            {
+                // Probable angle between the directional vector and the tangent.
+                RealType gamma = atable_gamma(index);
+
+                // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
+                // the current table row.
+                for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
+                     abit !=  atable_.at(index).end(); ++abit)
+                {
+                    typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(*it, gamma, *abit);
+
+                    // Create two segments on this line that correspond to the given scaling range.
+                    Point2D v1(line4.second[0], line4.second[1]);
+                    Point2D v2(line4.second[2], line4.second[3]);
+                    RealType vnorm = (v2 - v1).euclidean_norm();
+                    Point2D segment_coords = scaling_range * model_base_ / vnorm;
+
+                    typename Space4D::Segment4D segment1(line4,  segment_coords);
+                    typename Space4D::Segment4D segment2(line4, -segment_coords);
+
+                    project_segment(segment1, image1, image2);
+                    project_segment(segment2, image1, image2);
+                }
+            }
+        }
+    }
+
+    void project_segment(const typename Space4D::Segment4D &segment, bo::RawImage2D<RealType> &image1,
+                         bo::RawImage2D<RealType> &image2)
+    {
+        const RealType delta_t = RealType(0.01);
+
+        RealType t1 = segment.second[0];
+        RealType t2 = segment.second[1];
+
+        typename Space4D::Point4D p = segment.first.first;
+        typename Space4D::Point4D v = segment.first.second;
+
+        if (t1 > t2)
+            std::swap(t1, t2);
+
+        Vector<int, 4> tmp(0, 0, 0, 0);
+
+        for (RealType t = t1; t < t2; t += delta_t)
+        {
+            typename Space4D::Point4D xt = p + v * t;
+
+            Vector<int, 4> rounded((int)xt[0], (int)xt[1], (int)xt[2], (int)xt[3]);
+
+            if (rounded != tmp)
+            {
+                tmp = rounded;
+
+                if (rounded[0] >= 0 && rounded[0] < image1.width() &&
+                    rounded[1] >= 0 && rounded[1] < image1.height())
+                {
+                    image1(rounded[0], rounded[1]) += 1;
+                }
+
+                if (rounded[2] >= 0 && rounded[2] < image2.width() &&
+                    rounded[3] >= 0 && rounded[3] < image2.height())
+                {
+                    image2(rounded[2], rounded[3]) += 1;
+                }
+            }
+        }
+    }
+
     // Detects the references that define probable poses of the model within the 
     // given features.
     ReferenceVotes fast_detect(const Features &object_features, RealType probability, 
@@ -873,7 +950,8 @@ private:
         BOOST_ASSERT(sinb != 0);
 
         // The coordinate of the intersection point relatively to v1.
-        RealType t = ab[0] / (v1[0] - v2[0] * sina / sinb);
+        std::size_t max_index = std::abs(ab[0]) > std::abs(ab[1]) ? 0 : 1;
+        RealType t = ab[max_index] / (v1[max_index] - v2[max_index] * sina / sinb);
 
         return p1 + t * v1;
     }
@@ -1004,46 +1082,22 @@ private:
     // and increase the number of the space votes.
     inline void feature_to_vote(Space4D &s, const Feature &f, const Point2D &scaling_range)
     {
-        Point2D c = f.first;
-        Point2D tan = f.second;
-
         // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
         for (std::size_t index = 0; index < atable_.size(); ++index)
         {
             // Probable angle between the directional vector and the tangent.
             RealType gamma = atable_gamma(index);
 
-            // Probable normalized directional vector.
-            Point2D v1 = rotate(tan, -gamma);
-            v1 = v1 / v1.euclidean_norm();
-
             // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
             // the current table row.
             for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                  abit !=  atable_.at(index).end(); ++abit)
             {
-                RealType alpha = abit->first;
-                RealType beta = abit->second;
-
-                Point2D v2 = rotate(v1, beta - alpha);
-
-                // Consider the directional vectors ratio.
-                if (alpha != 0)
-                    // The conventional case.
-                    v2 *= std::sin(alpha) / std::sin(beta);
-                else
-                    // The directional vectors are located on the reference line.
-                    v2 *= 1 - 1 / beta;
-
-                // Compose a 4D line.
-                // The point on this line.
-                typename Space4D::Point4D p4(c.x(), c.y(), c.x(), c.y());
-                // The directional vector of the line.
-                typename Space4D::Point4D v4(v1.x(), v1.y(), v2.x(), v2.y());
-                // The line in 4D.
-                typename Space4D::Line4D line4(p4, v4);
+                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, *abit);
 
                 // Create two segments on this line that correspond to the given scaling range.
+                Point2D v1(line4.second[0], line4.second[1]);
+                Point2D v2(line4.second[2], line4.second[3]);
                 RealType vnorm = (v2 - v1).euclidean_norm();
                 Point2D segment_coords = scaling_range * model_base_ / vnorm;
 
@@ -1055,6 +1109,41 @@ private:
                 s.vote_maxnorm(s.intersect(segment2));
             }
         }
+    }
+
+    inline typename Space4D::Line4D line4_from_feature_and_atable_element(const Feature &f,
+                                                                          RealType gamma,
+                                                                          const ATableElement &e)
+    {
+        Point2D c = f.first;
+        Point2D tan = f.second;
+
+        // Normalized directional vector.
+        Point2D v1 = rotate(tan, -gamma);
+        v1 = v1 / v1.euclidean_norm();
+
+        RealType alpha = e.first;
+        RealType beta = e.second;
+
+        Point2D v2 = rotate(v1, beta - alpha);
+
+        // Consider the directional vectors ratio.
+        if (alpha != 0)
+            // The conventional case.
+            v2 *= std::sin(alpha) / std::sin(beta);
+        else
+            // The directional vectors are located on the reference line.
+            v2 *= 1 - 1 / beta;
+
+        // Compose a 4D line.
+        // The point on this line.
+        typename Space4D::Point4D p4(c.x(), c.y(), c.x(), c.y());
+        // The directional vector of the line.
+        typename Space4D::Point4D v4(v1.x(), v1.y(), v2.x(), v2.y());
+        // The line in 4D.
+        typename Space4D::Line4D line4(p4, v4);
+
+        return line4;
     }
 
     // Recursively traces the space tree and inserts into the container the elements from
