@@ -75,7 +75,7 @@ public:
 
     // Used by factory functions.
     typedef RawImage2D<RealType> Image2D;
-    typedef Mesh<RealType> Mesh;
+    typedef Mesh<RealType> Mesh3D;
 
 private:
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
@@ -88,7 +88,7 @@ public:
     static Ptr create(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
                       RealType ratio, RealType tangential_radius);
 
-    static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
+    static Ptr from_mesh(const Mesh3D& mesh, RealType delta_min, RealType delta_max,
                          RealType ratio, RealType tangential_radius);
 
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
@@ -131,9 +131,10 @@ private:
 private:
     ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
                        RealType ratio, RealType tangential_radius):
-        main_plane_(plane), delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
+        delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
         tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>),
-        stopped_(false), has_hole_(false), contour_(boost::make_shared<ParallelPlane>())
+        main_plane_(plane), stopped_(false), has_hole_(false),
+        contour_(boost::make_shared<ParallelPlane>())
     {
         // If points number is less than 2, propagation cannot be initialized. And
         // because there is no sense in doing propagation for 0 or 1 points, we throw
@@ -360,7 +361,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_mesh(
-        const Mesh& mesh, RealType delta_min, RealType delta_max,
+        const Mesh3D& mesh, RealType delta_min, RealType delta_max,
         RealType ratio, RealType tangential_radius)
 {
     ParallelPlanePtr plane = boost::make_shared<ParallelPlane>(mesh.get_all_vertices());
