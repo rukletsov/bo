@@ -1046,20 +1046,9 @@ private:
         // Sorting subspaces in descending order!
         std::sort(s.get_subspaces().rbegin(), s.get_subspaces().rend());
 
-
-        if (s.get_resolution_level() == 5)
-        {
-            int iii = 0;
-        }
-
         // The minimal number of spaces from the beginning of the space collection such
         // that the probability of maximal element is not less than the given value.
         std::size_t n = SubPolicy::probabilistic(s.get_subspaces(), probability);
-
-        if (s.get_subspaces().at(n-1).get_votes() == 0)
-        {
-            int iii = 0;
-        }
 
         for (std::size_t i = 0; i < n; ++i)
         {
