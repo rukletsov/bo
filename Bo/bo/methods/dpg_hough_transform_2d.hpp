@@ -106,7 +106,7 @@ public:
         for (std::size_t i = 0; i < 4; ++i)
         {
             std::size_t cells_in_dimension = static_cast<std::size_t>(
-                std::pow(divisions_per_dimension_[i],
+                std::pow(RealType(divisions_per_dimension_[i]),
                          RealType(max_resolution_level_) - RealType(resolution_level_)));
 
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
@@ -117,7 +117,7 @@ public:
         for (std::size_t i = 0; i < 4; ++i)
         {
             std::size_t prob_elements_in_dimension = static_cast<std::size_t>(
-                std::pow(divisions_per_dimension_[i], RealType(cell_resolution_increment_)));
+                std::pow(RealType(divisions_per_dimension_[i]), RealType(cell_resolution_increment_)));
 
             prob_element_count_ *= prob_elements_in_dimension;
         }
@@ -519,7 +519,7 @@ public:
         for (typename Space4D::Spaces::const_iterator it = subcollection1.begin();
              it != subcollection1.end(); ++it)
         {
-            std::size_t votes = it->get_votes();
+            std::size_t votes = std::size_t(it->get_votes());
             if (max_votes < votes)
             {
                 max_votes = votes;
@@ -551,7 +551,7 @@ public:
         for (typename Space4D::Spaces::const_iterator it = spaces.begin();
              it != spaces.end(); ++it)
         {
-            f *= F(it->get_votes(), it->get_prob_element_count(), x);
+            f *= F(std::size_t(it->get_votes()), it->get_prob_element_count(), x);
         }
 
         return f;
@@ -586,12 +586,12 @@ public:
 
     static RealType mu(std::size_t k, std::size_t n)
     {
-        return 1.16f * k * std::pow(n, -2.0 / 3) + 1;
+        return RealType(1.16) * k * std::pow(RealType(n), RealType(-2) / 3) + 1;
     }
 
     static RealType beta(std::size_t k, std::size_t n)
     {
-        return 0.4f * k * std::pow(n, -4.0 / 5) + 0.32;
+        return RealType(0.4) * k * std::pow(RealType(n), RealType(-4) / 5) + RealType(0.32);
     }
 };
 
@@ -601,9 +601,12 @@ public:
 template <typename RealType>
 bool operator < (const Space<RealType> &s1, const Space<RealType> &s2)
 {
-    return SubdivisionPolicy<RealType>::E(s1.get_votes(), s1.get_prob_element_count()) <
-           SubdivisionPolicy<RealType>::E(s2.get_votes(), s2.get_prob_element_count()) ?
-           true : false;
+    RealType mean1 = SubdivisionPolicy<RealType>::E(std::size_t(s1.get_votes()),
+                                                    s1.get_prob_element_count());
+    RealType mean2 = SubdivisionPolicy<RealType>::E(std::size_t(s2.get_votes()),
+                                                    s2.get_prob_element_count());
+    return
+        (mean1 < mean2) ? true : false;
 }
 
 
