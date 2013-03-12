@@ -896,7 +896,7 @@ private:
         return rotate(v, pi_ / 2);
     }
 
-    // Computes the signed angle in radians [-pi/2, pi/2] betwen the vectors relatively to
+    // Computes the signed angle in radians [-pi, pi] betwen the vectors relatively to
     // the base vector.
     RealType angle(const Point2D &base, const Point2D &v)
     {
@@ -934,24 +934,18 @@ private:
             return p1 + e.second * ab;
         }
 
-        // Find the first normalized direction.
+        // Find the first direction with the base norm.
         Point2D v1 = rotate(ab, e.first);
-        v1 = v1 / v1.euclidean_norm();
-
-        // Find the second normalized direction.
-        Point2D v2 = rotate(ab, e.second);
-        v2 = v2 / v2.euclidean_norm();
 
         // Calculate the intersection point.
-        RealType sina = std::sin(e.first);
         RealType sinb = std::sin(e.second);
+        RealType sinba = std::sin(e.second - e.first);
 
-        // The intersection is not on the reference line.
-        BOOST_ASSERT(sinb != 0);
+        // The intersection is not on the reference line and not in the infinity.
+        BOOST_ASSERT(sinba != 0);
 
         // The coordinate of the intersection point relatively to v1.
-        std::size_t max_index = std::abs(ab[0]) > std::abs(ab[1]) ? 0 : 1;
-        RealType t = ab[max_index] / (v1[max_index] - v2[max_index] * sina / sinb);
+        RealType t = sinb / sinba;
 
         return p1 + t * v1;
     }
