@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.9 2013.03.08
+  complex_propagation.hpp, v 1.1.10 2013.03.12
 
   Implementation of the complex propagation technique used in surface
   reconstruction.
@@ -128,86 +128,22 @@ private:
         ParallelPlanePtr points;
     };
 
-private:
+protected:
     ComplexPropagation(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
-                       RealType ratio, RealType tangential_radius):
-        delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
-        tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>),
-        main_plane_(plane), stopped_(false), has_hole_(false),
-        contour_(boost::make_shared<ParallelPlane>())
-    {
-        // If points number is less than 2, propagation cannot be initialized. And
-        // because there is no sense in doing propagation for 0 or 1 points, we throw
-        // an error instead of returning the plane unchanged.
-        if (plane->size() < 2)
-            throw std::logic_error("Cannot run propagation for planes consisting of "
-                                   "less than 2 vertices.");
-
-        // Build kd-tree from the given points.
-        // TODO: provide kd-tree with current metric?.
-        main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
-    }
+                       RealType ratio, RealType tangential_radius);
 
     // Helper function for KDTree instance.
-    static inline RealType point3D_accessor_(Point3D pt, std::size_t k)
-    {
-        return pt[k];
-    }
+    static RealType point3D_accessor_(Point3D pt, std::size_t k);
 
     // Computes the inertial propagation vector from current and previous mesh vertices.
-    static Point3D inertial_propagation_norm_(Point3D current, Point3D previous)
-    {
-        Point3D inertial = (current -= previous);
-
-        // TODO: remove this by redesigning the algorithm and requiring inertial
-        // vector to be non-zero.
-        Point3D inertial_normalized(0);
-        try
-        {
-            // TODO: remove this block by refactoring bo::Vector class.
-            // Normalize vector.
-            inertial_normalized.assign(inertial.normalized(), 3);
-        }
-        catch (...)
-        { }
-
-        return inertial_normalized;
-    }
+    static Point3D inertial_propagation_norm_(Point3D current, Point3D previous);
 
     // Computes the tangential propagation vector for the given point and kd-tree.
     static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
-                                           RealType radius, Point3D inertial)
-    {
-        // Search for nearby points.
-        typedef std::vector<Point3D> Points3D;
-        Points3D neighbours;
-        tree.find_within_range(pt, radius, std::back_inserter(neighbours));
-
-        // Employ PCA to extract the tangential propagation vector from the set of
-        // nearby points.
-        typedef blas::PCA<RealType, 3> PCAEngine;
-        PCAEngine pca;
-        typename PCAEngine::Result result = pca(neighbours);
-        Point3D tangential = result.template get<1>()[2];
-
-        // Ensure that tangential and inertial components are codirectional.
-        if (tangential * inertial < 0)
-            tangential = - tangential;
-
-        return tangential;
-    }
+                                           RealType radius, Point3D inertial);
 
     // Computes the total propagation vector from tangential and inertial components.
-    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio)
-    {
-        Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
-
-        // TODO: remove this block by refactoring bo::Vector class.
-        // Normalize vector.
-        Point3D total_normalized(total.normalized(), 3);
-
-        return total_normalized;
-    }
+    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio);
 
     Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const
     {
@@ -348,6 +284,30 @@ private:
 };
 
 
+// C-tor.
+template <typename RealType>
+ComplexPropagation<RealType>::ComplexPropagation(ParallelPlaneConstPtr plane,
+                                                 RealType delta_min,
+                                                 RealType delta_max,
+                                                 RealType ratio,
+                                                 RealType tangential_radius):
+    delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
+    tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>),
+    main_plane_(plane), stopped_(false), has_hole_(false),
+    contour_(boost::make_shared<ParallelPlane>())
+{
+    // If points number is less than 2, propagation cannot be initialized. And
+    // because there is no sense in doing propagation for 0 or 1 points, we throw
+    // an error instead of returning the plane unchanged.
+    if (plane->size() < 2)
+        throw std::logic_error("Cannot run propagation for planes consisting of "
+                               "less than 2 vertices.");
+
+    // Build kd-tree from the given points.
+    // TODO: provide kd-tree with current metric?.
+    main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+}
+
 // Factories.
 template <typename RealType> inline
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
@@ -386,6 +346,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
         create(plane, delta_min, delta_max, ratio, tangential_radius);
 }
 
+// Public control functions.
 template <typename RealType>
 void ComplexPropagation<RealType>::add_neighbour_planes(
         const ParallelPlaneConstPtrs& neighbour_planes, const Weights& neighbour_weights)
@@ -463,23 +424,89 @@ void ComplexPropagation<RealType>::propagate()
     has_hole_ = attempt1.has_hole;
 }
 
-template <typename RealType>
+template <typename RealType> inline
 bool ComplexPropagation<RealType>::has_stopped() const
 {
     return stopped_;
 }
 
-template <typename RealType>
+template <typename RealType> inline
 bool ComplexPropagation<RealType>::has_hole() const
 {
     return has_hole_;
 }
 
-template <typename RealType>
+template <typename RealType> inline
 typename ComplexPropagation<RealType>::ParallelPlanePtr
     ComplexPropagation<RealType>::contour() const
 {
     return contour_;
+}
+
+// Private static helper functions.
+template <typename RealType> inline
+RealType ComplexPropagation<RealType>::point3D_accessor_(Point3D pt, std::size_t k)
+{
+    return pt[k];
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::inertial_propagation_norm_(Point3D current, Point3D previous)
+{
+    Point3D inertial = (current -= previous);
+
+    // TODO: remove this by redesigning the algorithm and requiring inertial
+    // vector to be non-zero.
+    Point3D inertial_normalized(0);
+    try
+    {
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        inertial_normalized.assign(inertial.normalized(), 3);
+    }
+    catch (...)
+    { }
+
+    return inertial_normalized;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::tangential_propagation_(Point3D pt, const Tree& tree,
+                                                      RealType radius, Point3D inertial)
+{
+    // Search for nearby points.
+    typedef std::vector<Point3D> Points3D;
+    Points3D neighbours;
+    tree.find_within_range(pt, radius, std::back_inserter(neighbours));
+
+    // Employ PCA to extract the tangential propagation vector from the set of
+    // nearby points.
+    typedef blas::PCA<RealType, 3> PCAEngine;
+    PCAEngine pca;
+    typename PCAEngine::Result result = pca(neighbours);
+    Point3D tangential = result.template get<1>()[2];
+
+    // Ensure that tangential and inertial components are codirectional.
+    if (tangential * inertial < 0)
+        tangential = - tangential;
+
+    return tangential;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::total_propagation_(Point3D tangential, Point3D inertial,
+                                                 RealType ratio)
+{
+    Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
+
+    // TODO: remove this block by refactoring bo::Vector class.
+    // Normalize vector.
+    Point3D total_normalized(total.normalized(), 3);
+
+    return total_normalized;
 }
 
 } // namespace surfaces
