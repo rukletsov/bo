@@ -195,6 +195,7 @@ void ChrisitiansenFemurFull()
     weights.push_back(0.3f);
     weights.push_back(0.1f);
 
+    // Run propagation for every plane.
     PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 3.f, 7.f, 0.5f, 20.f);
     for (PropagAlgo::Ptrs::const_iterator it = props.begin(); it != props.end(); ++it)
     {
@@ -217,9 +218,11 @@ void ChrisitiansenFemurFull()
 void ChrisitiansenSheepFull()
 {
     typedef std::vector<path> ContourData;
-    typedef std::vector<PropagAlgo::Ptr> Contours;
+    typedef PropagAlgo::Ptrs Contours;
+    typedef PropagAlgo::ParallelPlaneConstPtrs PlaneData;
 
     ContourData contour_data;
+    PlaneData plane_data;
     Contours contours;
     Mesh result_mesh;
 
@@ -240,13 +243,22 @@ void ChrisitiansenSheepFull()
     {
         AssertPathExists(*it);
         Mesh mesh = mesh_from_ply(it->string());
-        PropagAlgo::ParallelPlanePtr plane_data =
-                boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices());
+        plane_data.push_back(boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices()));
+    }
 
-        PropagAlgo::Ptr tiling_ptr = PropagAlgo::create(plane_data, 2.f, 5.f, 0.7f, 15.f);
-        tiling_ptr->propagate();
+    // Prepare weights for all slices.
+    PropagAlgo::Weights weights;
+    weights.push_back(0.8f);
+    weights.push_back(0.5f);
+    weights.push_back(0.3f);
+    weights.push_back(0.1f);
 
-        contours.push_back(tiling_ptr);
+    // Run propagation for every plane.
+    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.7f, 15.f);
+    for (PropagAlgo::Ptrs::const_iterator it = props.begin(); it != props.end(); ++it)
+    {
+        (*it)->propagate();
+        contours.push_back(*it);
     }
 
     // Tile pair of contours and join it with the result mesh.
