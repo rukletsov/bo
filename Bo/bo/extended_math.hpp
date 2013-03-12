@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  extended_math.hpp, v 1.0.4 2013.01.13
-
   Extension of the standard <cmath> header.
 
   Copyright (c) 2011 - 2013

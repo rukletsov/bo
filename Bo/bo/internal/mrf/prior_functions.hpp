@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  prior_functions.hpp, v 0.1.4 2012.09.14
-
   Various prior energy functions for MRF models.
 
   Copyright (c) 2012

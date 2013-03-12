@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  distances_3d.hpp, v 1.0.6 2013.02.25
-
   Methods and algorithms for calculating distances between varios objects in
   a 3D-space.
 

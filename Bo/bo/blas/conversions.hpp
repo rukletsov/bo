@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  conversions.hpp, v 1.0.0 2012.12.11
-
   Conversions to and from from boost::numeric::ublas types.
 
   Copyright (c) 2012

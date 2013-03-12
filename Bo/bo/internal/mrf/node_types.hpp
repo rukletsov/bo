@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  node_types.hpp, v 0.2.6 2012.09.20
-
   Non-trivial node types (class lables) for MRF models.
 
   Copyright (c) 2012

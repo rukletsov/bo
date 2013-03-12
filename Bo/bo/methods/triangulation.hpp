@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  triangulation.hpp, v 1.1.5 2013.02.01
-
   Triangulation algorithms for surface reconstruction problems.
 
   Copyright (c) 2013

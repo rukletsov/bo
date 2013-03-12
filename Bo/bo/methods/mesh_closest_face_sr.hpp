@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  mesh_closest_face_sr.hpp, v 1.0.2 2012.09.16
-
   For the given mesh the method calculates the set of closest faces 
   (and the corresponding distances, considering the euclidean norm) to
   a given point cloud in 3D-space. The method utilizes the maximal 

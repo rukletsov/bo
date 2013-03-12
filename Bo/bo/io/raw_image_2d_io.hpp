@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  raw_image_2d_io.hpp, v 1.0.5 2013.01.03
-
   I/O for RawImage2D class. OpenCV library can be used for working with
   image files. This file provides necessary convertion and utility functions
   to work with OpenCV types. Be advised that different versions of OpenCV

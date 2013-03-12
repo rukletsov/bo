@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  logging.hpp, v 1.0.5 2012.09.28
-
   Routines for logging messages and errors.
 
   Copyright (c) 2010 - 2012

@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  mbutterfly_mesh_subdiv.hpp, v 1.0.2 2012.12.11
-
   Implementation of the Modified Butterfly subdivision surface method.
 
   Reference paper: Zorin, D., Schroeder, P. and Sweldens, W., 

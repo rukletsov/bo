@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  pca.hpp, v 1.0.2 2013.01.03
-
   Principal component analysis implementation using the covariance method.
 
   Copyright (c) 2012, 2013

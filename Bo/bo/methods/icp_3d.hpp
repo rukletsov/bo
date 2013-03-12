@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  icp_3d.hpp, v 0.0.4 2012.12.11
-
   Point-to-point implementation of the ICP registration algorithm for 3D point
   clouds.
 

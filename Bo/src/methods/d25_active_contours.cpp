@@ -14,7 +14,6 @@ namespace surfaces {
 
 namespace detail {
 
-
 // Point container implementation.
 // Represents a wrapper of PointElement for utilization in PointContainer.
 struct PointContainerItem

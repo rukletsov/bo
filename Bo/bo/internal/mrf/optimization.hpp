@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  optimization.hpp, v 0.1.7 2012.10.01
-
   Various energy minimization algorithms for MRF models.
 
   Copyright (c) 2012

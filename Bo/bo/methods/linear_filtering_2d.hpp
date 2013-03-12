@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  linear_filtering_2d.hpp, v 1.0.3 2011.10.19
-
   Methods and algorithms for applying linear filters for 2D images.
 
   Copyright (c) 2011

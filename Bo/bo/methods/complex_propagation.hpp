@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  complex_propagation.hpp, v 1.1.10 2013.03.12
-
   Implementation of the complex propagation technique used in surface
   reconstruction.
 

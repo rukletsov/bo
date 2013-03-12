@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  dpg_hough_transform_2d.hpp, v 1.0.2 2013.01.12
-
   Fast dual-point generalized Hough Transform for 2D object recognition.
 
   Copyright (c) 2013

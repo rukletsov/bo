@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  config.hpp, v 1.0.0 2012.03.17
-
   Library configuration and declarations for porting Bo to various platforms.
 
   Copyright (c) 2012

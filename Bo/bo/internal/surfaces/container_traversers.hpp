@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  container_traversers.hpp, v 1.1.5 2013.01.18
-
   Various traversers for containers with contour points. Intended for use in
   triangulation algorithms.
 

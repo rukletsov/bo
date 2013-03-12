@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  mrf.hpp, v 1.0.4 2012.09.14
-
   A collection of classes and helpers for defining MRFs.
 
   Copyright (c) 2012

@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  uon_basic_configuration.hpp, v 1.0.1 2011.06.28
-
   Basic template class for reading and storing data from a config file in 
   the basic UON (UltraOsteon) format (*.conf file). 
   Supports Bo's vector and matrix types. Suppors Atk library types

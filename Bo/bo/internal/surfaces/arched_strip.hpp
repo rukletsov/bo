@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  arched_strip.hpp, v 1.0.0 2013.01.30
-
   Functor that detects whether a point lies inside an arched strip of a
   certain form with additional conditions.
 

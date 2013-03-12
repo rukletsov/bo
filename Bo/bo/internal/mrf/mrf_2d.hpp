@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  mrf_2d.hpp, v 0.1.1 2012.10.01
-
   Markov random field model for regular 2D lattice.
 
   Copyright (c) 2009 - 2012

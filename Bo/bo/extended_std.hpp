@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  extended_std.hpp, v 1.0.2 2012.09.15
-
   Extension of the STL I/O streaming.
 
   Copyright (c) 2012

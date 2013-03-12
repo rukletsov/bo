@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  basic_configuration.hpp, v 1.0.1 2011.07.06
-
   Basic class for reading and writing data from/to a configuration file.
 
   Copyright (c) 2011

@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  ini_reader.hpp, v 1.0.3 2012.03.17
-
   IniReader implemetation for plain ini-files with common syntax.
 
   Copyright (c) 2009 - 2012

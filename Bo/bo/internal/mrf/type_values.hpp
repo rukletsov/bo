@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  type_values.hpp, v 0.2.4 2012.09.20
-
   Collection of classes specifying and providing access to possible values for
   types used as MRF nodes.
 

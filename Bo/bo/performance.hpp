@@ -1,8 +1,6 @@
 
 /******************************************************************************
 
-  performance.hpp, v 1.1.2 2011.06.30
-
   Timer class for performance evaluation. By default uses boost::timer
   class. However on Windows a special more precise alternative can be used
   (based on performance counter and Windows API).
