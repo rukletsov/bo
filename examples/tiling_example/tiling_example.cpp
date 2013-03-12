@@ -159,8 +159,8 @@ void ChrisitiansenClosed()
 void ChrisitiansenFemurFull()
 {
     typedef std::vector<path> ContourData;
-    typedef std::vector<PropagAlgo::Ptr> Contours;
-    typedef std::vector<PropagAlgo::ParallelPlanePtr> PlaneData;
+    typedef PropagAlgo::Ptrs Contours;
+    typedef PropagAlgo::ParallelPlaneConstPtrs PlaneData;
 
     ContourData contour_data;
     Contours contours;
@@ -190,21 +190,16 @@ void ChrisitiansenFemurFull()
 
     // Prepare weights for all slices.
     PropagAlgo::Weights weights;
+    weights.push_back(0.8f);
     weights.push_back(0.5f);
-    weights.push_back(0.5f);
+    weights.push_back(0.3f);
+    weights.push_back(0.1f);
 
-    // Run propagation for each contour.
-    for (PlaneData::const_iterator it = plane_data.begin() + 1; it != plane_data.end() - 1; ++it)
+    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 3.f, 7.f, 0.5f, 20.f);
+    for (PropagAlgo::Ptrs::const_iterator it = props.begin(); it != props.end(); ++it)
     {
-        PropagAlgo::ParallelPlaneConstPtrs neighbours;
-        neighbours.push_back(*(it - 1));
-        neighbours.push_back(*(it + 1));
-
-        PropagAlgo::Ptr tiling_ptr = PropagAlgo::create(*it, 3.f, 7.f, 0.5f, 20.f);
-        tiling_ptr->add_neighbour_planes(neighbours, weights);
-        tiling_ptr->propagate();
-
-        contours.push_back(tiling_ptr);
+        (*it)->propagate();
+        contours.push_back(*it);
     }
 
     // Tile pair of contours and join it with the result mesh.

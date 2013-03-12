@@ -61,6 +61,7 @@ class ComplexPropagation: public boost::noncopyable
 public:
     typedef ComplexPropagation<RealType> this_type;
     typedef boost::shared_ptr<this_type> Ptr;
+    typedef std::vector<Ptr> Ptrs;
 
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> ParallelPlane;
@@ -91,6 +92,13 @@ public:
 
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
                           RealType ratio, RealType tangential_radius);
+
+    // A special factory. Creates a set of instances one per given plane. Additionally
+    // passes a set of neighbours with corresponding weights to each instance.
+    static Ptrs create(const ParallelPlaneConstPtrs& planes,
+                       const Weights& neighbour_weights,
+                       RealType delta_min, RealType delta_max,
+                       RealType ratio, RealType tangential_radius);
 
     // Adds neighbour planes with corresponding weights. These planes are used in
     // the calculation of the tangential component of the propagation, making it
@@ -306,6 +314,7 @@ ComplexPropagation<RealType>::ComplexPropagation(ParallelPlaneConstPtr plane,
     main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 }
 
+
 // Factories.
 template <typename RealType> inline
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
@@ -343,6 +352,65 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
     return
         create(plane, delta_min, delta_max, ratio, tangential_radius);
 }
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
+        const ParallelPlaneConstPtrs& planes, const Weights& neighbour_weights,
+        RealType delta_min, RealType delta_max, RealType ratio, RealType tangential_radius)
+{
+    // Check neighbours count (in one direction) is not greater than planes count - 1.
+    if (neighbour_weights.size() >= planes.size() - 1)
+        throw std::logic_error("Neighbours count in one direction exceeds reasonable "
+                               "limit.");
+
+    // Cache values and prepare output container.
+    std::size_t planes_count = planes.size();
+    std::size_t radius = neighbour_weights.size();
+    Ptrs propagators;
+    propagators.reserve(planes_count);
+
+    // Compute neighbours for each plane and create an instance of the class for it.
+    for (std::size_t idx = 0; idx < planes_count; ++idx)
+    {
+        ParallelPlaneConstPtrs neighbours;
+        Weights weights;
+
+        // Try add neighbours before the current idx. We add radius items at most,
+        // but less if no neighbours are available (close to container front).
+        std::size_t neighbour_idx = idx - 1;
+        std::size_t added_count = 0;
+        std::size_t maxval = std::size_t(-1); // dirty hack to workaround int behaviour for size_t.
+        while ((neighbour_idx < maxval) && (added_count < radius))
+        {
+            neighbours.push_back(planes[neighbour_idx]);
+            weights.push_back(neighbour_weights[added_count]);
+            ++added_count;
+            --neighbour_idx;
+        }
+
+        // Try add neighbours after the current idx. We add radius items at most,
+        // but less if no neighbours are available (close to container end).
+        neighbour_idx = idx + 1;
+        added_count = 0;
+        while ((neighbour_idx < planes_count) && (added_count < radius))
+        {
+            neighbours.push_back(planes[neighbour_idx]);
+            weights.push_back(neighbour_weights[added_count]);
+            ++added_count;
+            ++neighbour_idx;
+        }
+
+        // Create an instance, register neighbours and return.
+        Ptr propagator = create(planes[idx], delta_min, delta_max, ratio,
+                                tangential_radius);
+        propagator->add_neighbour_planes(neighbours, weights);
+
+        propagators.push_back(propagator);
+    }
+
+    return propagators;
+}
+
 
 // Public control functions.
 template <typename RealType>
@@ -440,6 +508,7 @@ typename ComplexPropagation<RealType>::ParallelPlanePtr
 {
     return contour_;
 }
+
 
 // Private static helper functions.
 template <typename RealType> inline
