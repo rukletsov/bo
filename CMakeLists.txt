@@ -18,6 +18,17 @@ SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET (TESTS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
+# Check that one of the officially supported compilers is used.
+IF (MSVC)
+    MESSAGE (STATUS "Supported compiler used: MSVC")
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    MESSAGE (STATUS "Supported compiler used: GCC")
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    MESSAGE (STATUS "Supported compiler used: Clang")
+ELSE ()
+    MESSAGE ("Unsupported compiler used: ${CMAKE_CXX_COMPILER_ID}")
+ENDIF (MSVC)
+
 # Gloabl dependencies (for all projects).
 INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT})
 

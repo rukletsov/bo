@@ -180,7 +180,11 @@ IF (MSVC)
     # the "pch.obj" file when using precompiled headers.
     SET_TARGET_PROPERTIES (bo PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
 
-ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
+
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS "-Weverything")
+
 ENDIF (MSVC)

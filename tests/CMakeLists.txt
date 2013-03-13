@@ -100,9 +100,13 @@ IF (MSVC)
     SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
 
-ELSEIF (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
                            "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
+
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS "-Weverything")
+
 ENDIF (MSVC)
 
 # Create tests from the current binary and pass a directory where test data is stored
