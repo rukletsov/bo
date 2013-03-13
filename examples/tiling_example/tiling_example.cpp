@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <string>
 #include <algorithm>
+#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
@@ -179,10 +180,10 @@ void ChrisitiansenFemurFull()
     std::sort(contour_data.begin(), contour_data.end());
 
     // Extract contours from contour data.
-    for (ContourData::const_iterator it = contour_data.begin(); it != contour_data.end(); ++it)
+    BOOST_FOREACH(path contour_path, contour_data)
     {
-        AssertPathExists(*it);
-        Mesh3D mesh = mesh_from_ply(it->string());
+        AssertPathExists(contour_path);
+        Mesh3D mesh = mesh_from_ply(contour_path.string());
         plane_data.push_back(boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices()));
     }
 
@@ -195,8 +196,8 @@ void ChrisitiansenFemurFull()
 
     // Run propagation for every plane.
     PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 3.f, 7.f, 0.5f, 20.f);
-    for (PropagAlgo::Ptrs::const_iterator it = props.begin(); it != props.end(); ++it)
-        (*it)->propagate();
+    BOOST_FOREACH(PropagAlgo::Ptr propagator, props)
+    { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
     for (PropagAlgo::Ptrs::const_iterator it = props.begin() + 1; it != props.end(); ++it)
@@ -232,10 +233,10 @@ void ChrisitiansenSheepFull()
     std::sort(contour_data.begin(), contour_data.end());
 
     // Extract contours from contour data.
-    for (ContourData::const_iterator it = contour_data.begin(); it != contour_data.end(); ++it)
+    BOOST_FOREACH(path contour_path, contour_data)
     {
-        AssertPathExists(*it);
-        Mesh3D mesh = mesh_from_ply(it->string());
+        AssertPathExists(contour_path);
+        Mesh3D mesh = mesh_from_ply(contour_path.string());
         plane_data.push_back(boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices()));
     }
 
@@ -248,8 +249,8 @@ void ChrisitiansenSheepFull()
 
     // Run propagation for every plane.
     PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.7f, 15.f);
-    for (PropagAlgo::Ptrs::const_iterator it = props.begin(); it != props.end(); ++it)
-        (*it)->propagate();
+    BOOST_FOREACH(PropagAlgo::Ptr propagator, props)
+    { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
     for (PropagAlgo::Ptrs::const_iterator it = props.begin() + 1; it != props.end(); ++it)
