@@ -75,22 +75,6 @@ SET_TARGET_PROPERTIES (BoTest PROPERTIES DEBUG_POSTFIX "d")
 
 # Compiler-specific features and options.
 IF (MSVC)
-    # Remove default warning level from .cpp and .c sources to avoid conflicts with
-    # desired warning which is manually set later.
-    IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-        # Replace exisiting warning level with a desired one.
-        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-
-    IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        # Replace exisiting warning level with a desired one.
-        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    ENDIF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-
-    # Set a desired warning level. If it has been already set and differs from the
-    # provided one, a D9025 warning is raised.
-    ADD_DEFINITIONS ("/W4")
-
     # Disable C4245 warning. Conversions from negatibe integers to size_t are used
     # widely within the tests. It's done on purpose in order to test incorrect
     # indexation.
@@ -99,14 +83,6 @@ IF (MSVC)
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
                            "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
-
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS
-                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
-
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    SET_TARGET_PROPERTIES (BoTest PROPERTIES COMPILE_FLAGS "-Weverything")
-
 ENDIF (MSVC)
 
 # Create tests from the current binary and pass a directory where test data is stored

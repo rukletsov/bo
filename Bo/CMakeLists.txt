@@ -148,22 +148,6 @@ IF (MSVC)
         ADD_DEFINITIONS (-D_WIN32_WINNT=0x0601)
     ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
 
-    # Remove default warning level from .cpp and .c sources to avoid conflicts with
-    # desired warning which is manually set later.
-    IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-        # Replace exisiting warning level with a desired one.
-        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-
-    IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        # Replace exisiting warning level with a desired one.
-        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    ENDIF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-
-    # Set a desired warning level. If it has been already set and differs from the
-    # provided one, a D9025 warning is raised.
-    ADD_DEFINITIONS ("/W4")
-
     # Disable C4512 warning. There are a some boost classes, for which assignment
     # operator cannot be generated. The warning seems not to be important.
     ADD_DEFINITIONS ("/wd4512")
@@ -179,12 +163,5 @@ IF (MSVC)
     # Supress "no public symbols found" MSVC's linker warning (this can occur for
     # the "pch.obj" file when using precompiled headers.
     SET_TARGET_PROPERTIES (bo PROPERTIES STATIC_LIBRARY_FLAGS "/IGNORE:4221")
-
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
-                           "-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
-
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS "-Weverything")
 
 ENDIF (MSVC)
