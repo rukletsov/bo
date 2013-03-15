@@ -34,6 +34,33 @@ INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT})
 
 LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib)
 
+# Increase default warning level for sources in the current directory and below.
+# Supports MSVC, GCC and Clang compilers.
+IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # Remove default warning level from .cpp and .c sources to avoid conflicts with
+    # desired warning, which is manually set later.
+    IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+        # Replace exisiting warning level with the empty one.
+        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+
+    IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+        # Replace exisiting warning level with the empty one.
+        STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    ENDIF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+
+    # Set the desired warning level. If it has been already set and differs from the
+    # provided one, a D9025 warning is raised.
+    ADD_DEFINITIONS ("/W4")
+
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    ADD_DEFINITIONS ("-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
+
+ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    ADD_DEFINITIONS ("-Weverything")
+
+ENDIF ()
+
 # Projects list with root paths.
 SET (BO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Bo)
 SET (BOTEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -51,42 +78,3 @@ ENDIF (BuildTests)
 IF (BuildExamples)
     ADD_SUBDIRECTORY (${BOEXAMPLES_ROOT})
 ENDIF (BuildExamples)
-
-# Increases default warning level for sources in the current directory and below.
-# Supports MSVC, GCC and Clang compilers.
-FUNCTION (IncreaseWarningLevel)
-    MESSAGE (STATUS
-             "Increasing warning level for the directory \"${CMAKE_CURRENT_SOURCE_DIR}\"."
-    )
-
-    # MSVC
-    IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        # Remove default warning level from .cpp and .c sources to avoid conflicts with
-        # desired warning, which is manually set later.
-        IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-            # Replace exisiting warning level with the empty one.
-            STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-        ENDIF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-
-        IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-            # Replace exisiting warning level with the empty one.
-            STRING (REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-        ENDIF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-
-        # Set the desired warning level. If it has been already set and differs from the
-        # provided one, a D9025 warning is raised.
-        ADD_DEFINITIONS ("/W4")
-
-    # GCC
-    ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        ADD_DEFINITIONS ("-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
-
-    # Clang
-    ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        ADD_DEFINITIONS ("-Weverything")
-
-    ENDIF ()
-
-ENDFUNCTION (IncreaseWarningLevel)
-
-IncreaseWarningLevel()

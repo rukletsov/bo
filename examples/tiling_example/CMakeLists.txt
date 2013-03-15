@@ -1,8 +1,6 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 
-PROJECT (TilingExample)
-
 SET (TilingExample_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/tiling_example.cpp
 )
@@ -48,5 +46,5 @@ SET_TARGET_PROPERTIES (TilingExample PROPERTIES DEBUG_POSTFIX "d")
 IF (MSVC)
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (TilingExample PROPERTIES COMPILE_FLAGS
-                           "/W4 /D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
+                           "/D _CRT_SECURE_NO_DEPRECATE /D _SCL_SECURE_NO_WARNINGS")
 ENDIF (MSVC)

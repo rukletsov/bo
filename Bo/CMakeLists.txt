@@ -1,7 +1,7 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 
-PROJECT (bo)
+PROJECT (Bo)
 
 # Specify project's C++ source files.
 SET (BO_SRCS
