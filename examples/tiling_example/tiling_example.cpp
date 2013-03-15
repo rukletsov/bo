@@ -82,6 +82,7 @@ Paths paths;
 void AssertPathExists(const path& filepath)
 {
     BOOST_ASSERT(exists(filepath));
+    BO_UNUSED(filepath);
 }
 
 void PropagateClosed()
@@ -180,7 +181,7 @@ void ChrisitiansenFemurFull()
     std::sort(contour_data.begin(), contour_data.end());
 
     // Extract contours from contour data.
-    BOOST_FOREACH(path contour_path, contour_data)
+    BOOST_FOREACH (path contour_path, contour_data)
     {
         AssertPathExists(contour_path);
         Mesh3D mesh = mesh_from_ply(contour_path.string());
@@ -196,7 +197,7 @@ void ChrisitiansenFemurFull()
 
     // Run propagation for every plane.
     PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 3.f, 7.f, 0.5f, 20.f);
-    BOOST_FOREACH(PropagAlgo::Ptr propagator, props)
+    BOOST_FOREACH (PropagAlgo::Ptr propagator, props)
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
@@ -233,7 +234,7 @@ void ChrisitiansenSheepFull()
     std::sort(contour_data.begin(), contour_data.end());
 
     // Extract contours from contour data.
-    BOOST_FOREACH(path contour_path, contour_data)
+    BOOST_FOREACH (path contour_path, contour_data)
     {
         AssertPathExists(contour_path);
         Mesh3D mesh = mesh_from_ply(contour_path.string());
@@ -244,19 +245,20 @@ void ChrisitiansenSheepFull()
     PropagAlgo::Weights weights;
     weights.push_back(0.8f);
     weights.push_back(0.5f);
-    weights.push_back(0.3f);
-    weights.push_back(0.1f);
 
     // Run propagation for every plane.
-    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.7f, 15.f);
-    BOOST_FOREACH(PropagAlgo::Ptr propagator, props)
+    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.4f, 15.f);
+    BOOST_FOREACH (PropagAlgo::Ptr propagator, props)
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
     for (PropagAlgo::Ptrs::const_iterator it = props.begin() + 1; it != props.end(); ++it)
     {
-        TriangAlgo triang((*(it - 1))->contour(), !((*(it - 1))->has_hole()),
-                          (*it)->contour(), !((*it)->has_hole()));
+        PropagAlgo::Ptr cur_contour = *it;
+        PropagAlgo::Ptr prev_contour = *(it - 1);
+
+        TriangAlgo triang(prev_contour->contour(), !(prev_contour->has_hole()),
+                          cur_contour->contour(), !(cur_contour->has_hole()));
         Mesh3D mesh = *triang.christiansen();
         result_mesh.join(mesh);
     }
