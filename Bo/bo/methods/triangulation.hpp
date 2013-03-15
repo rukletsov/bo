@@ -142,7 +142,12 @@ public:
         // for the second contour may be determined incorrectly.
         if (closed1_ && !closed2_)
         {
-            contour1_->swap(*contour2_);
+            // Clone data before swapping in order not to spoil original contours.
+            ContourPtr new_contour2(new Contour(*contour1_));
+            ContourPtr new_contour1(new Contour(*contour2_));
+            contour1_ = new_contour1;
+            contour2_ = new_contour2;
+
             std::swap(closed1_, closed2_);
         }
 
