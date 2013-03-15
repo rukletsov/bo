@@ -3,7 +3,7 @@
 
   Library configuration and declarations for porting Bo to various platforms.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -49,5 +49,7 @@
 #ifndef BO_DECL
 #   define BO_DECL
 #endif
+
+#define BO_UNUSED(x) (void)(x)
 
 #endif // CONFIG_HPP_FE9AAB4E_25DD_4157_A536_7D3DBDD812C3_

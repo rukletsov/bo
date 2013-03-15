@@ -43,6 +43,7 @@ Paths paths;
 void AssertPathExists(const path& filepath)
 {
     BOOST_ASSERT(exists(filepath));
+    BO_UNUSED(filepath);
 }
 
 void Join()
