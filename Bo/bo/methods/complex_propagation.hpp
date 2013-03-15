@@ -359,7 +359,7 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
         RealType delta_min, RealType delta_max, RealType ratio, RealType tangential_radius)
 {
     // Check neighbours count (in one direction) is not greater than planes count - 1.
-    if (neighbour_weights.size() >= planes.size() - 1)
+    if (neighbour_weights.size() > planes.size() - 1)
         throw std::logic_error("Neighbours count in one direction exceeds reasonable "
                                "limit.");
 
