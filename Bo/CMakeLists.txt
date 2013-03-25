@@ -13,7 +13,7 @@ SET (BO_SRCS
 
 # A special section for C sources, which should be compiled using C compiler, not C++
 SET (BO_CSRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.1.2/rply/rply.c
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.c
 )
 
@@ -59,7 +59,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/config_parser/basic_configuration.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/config_parser/uon_basic_configuration.hpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.01/rply/rply.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rply-1.1.2/rply/rply.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/svd/svd.h
 
@@ -108,7 +108,7 @@ ENDIF (UsePch)
 # For additional dependencies check the root CMakeLists.
 INCLUDE_DIRECTORIES (./
                      ./3rdparty
-                     ./3rdparty/rply-1.01
+                     ./3rdparty/rply-1.1.2
 )
 
 # Let the sources know, that this is our own source.

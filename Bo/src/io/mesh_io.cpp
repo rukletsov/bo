@@ -98,7 +98,7 @@ PlyMesh mesh_from_ply(const std::string& file_path)
     long nvertices, ntriangles;
 
     // Open .ply file for reading.
-    p_ply ply = ply_open(file_path.c_str(), NULL);
+    p_ply ply = ply_open(file_path.c_str(), NULL, 0, NULL);
     if (!ply)
         return invalid_mesh;
 
@@ -139,7 +139,7 @@ PlyMesh mesh_from_ply(const std::string& file_path)
 bool mesh_to_ply(const PlyMesh& mesh, const std::string& file_path)
 {
     // Create .ply file in ascii format.
-    p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL);
+    p_ply oply = ply_create(file_path.c_str(), PLY_ASCII, NULL, 0, NULL);
     if (!oply)
         return false;
 
