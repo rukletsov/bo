@@ -74,7 +74,7 @@ public:
 
     // Used by factory functions.
     typedef RawImage2D<RealType> Image2D;
-    typedef Mesh<RealType> Mesh3D;
+    typedef bo::Mesh<RealType> Mesh;
 
 private:
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
@@ -87,7 +87,7 @@ public:
     static Ptr create(ParallelPlaneConstPtr plane, RealType delta_min, RealType delta_max,
                       RealType ratio, RealType tangential_radius);
 
-    static Ptr from_mesh(const Mesh3D& mesh, RealType delta_min, RealType delta_max,
+    static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
                          RealType ratio, RealType tangential_radius);
 
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
@@ -328,7 +328,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_mesh(
-        const Mesh3D& mesh, RealType delta_min, RealType delta_max,
+        const Mesh& mesh, RealType delta_min, RealType delta_max,
         RealType ratio, RealType tangential_radius)
 {
     ParallelPlanePtr plane = boost::make_shared<ParallelPlane>(mesh.get_all_vertices());
