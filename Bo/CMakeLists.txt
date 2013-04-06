@@ -33,6 +33,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/mrf.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/image_operations.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/kdtree.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/topology.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/blas.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/conversions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/blas/pca.hpp
