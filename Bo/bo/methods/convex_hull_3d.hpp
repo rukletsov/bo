@@ -110,6 +110,37 @@ public:
         return Faces3D(faces_.begin(), faces_.end());
     }
 
+    // Computes the volume of the convex hull using the discrete case
+    // of the Gauss-Ostrogradsky's Divergence theorem.
+    RealType get_volume()
+    {
+        RealType v = 0;
+
+        Point3D mass = centroid();
+
+        for (typename FaceSet3D::const_iterator it = faces_.begin();
+             it != faces_.end(); ++it)
+        {
+            Face3D f = *it;
+
+            Point3D n = normal(f);
+
+            // Face barycenter.
+            Point3D c = (f.A() + f.B() + f.C()) / 3;
+
+            // Direct the face normal outside the volume.
+            Point3D in_direction = mass - c;
+            if (n * in_direction > 0)
+                n = -n;
+
+            RealType a = area(f);
+
+            v += (n * c) * a;
+        }
+
+        return v / 3;
+    }
+
 private:
 
     // Faces comparator used for the set container.
@@ -281,6 +312,11 @@ private:
     inline Point3D normal(const Face3D &f)
     {
         return (f.B() - f.A()).cross_product(f.C() - f.A());
+    }
+
+    inline RealType area(const Face3D &f)
+    {
+        return normal(f).euclidean_norm() / 2;
     }
 
     Points3D points_;
