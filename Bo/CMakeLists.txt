@@ -46,6 +46,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/dpg_hough_transform_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/complex_propagation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/triangulation.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/convex_hull_3d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/likelihood_functions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/node_types.hpp
