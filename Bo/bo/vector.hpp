@@ -87,6 +87,8 @@ public:
     // on this topic see
     //     http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm
     bool operator==(const this_type& other) const;
+    // Lexicographical comparison operator.
+    bool operator<(const this_type& other) const;
 
     const this_type& operator+=(const this_type& other);
     const this_type& operator-=(const this_type& other);
@@ -327,6 +329,20 @@ bool Vector<T, N>::operator==(const Vector<T, N>& other) const
             return false;
 
     return true;
+}
+
+template <typename T, std::size_t N>
+bool Vector<T, N>::operator<(const Vector<T, N>& other) const
+{
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        if (components_[i] < other.components_[i])
+            return true;
+        if (components_[i] > other.components_[i])
+            return false;
+    }
+
+    return false;
 }
 
 template <typename T, std::size_t N>
