@@ -48,6 +48,8 @@
 #include "bo/blas/blas.hpp"
 #include "bo/raw_image_2d.hpp"
 #include "bo/topology.hpp"
+#include "bo/blas/blas.hpp"
+#include "bo/methods/convex_hull_3d.hpp"
 
 #include <iostream>
 
@@ -463,6 +465,52 @@ public:
         }
 
         return vertices;
+    }
+
+    void vote(Plane4D plane)
+    {
+        // The number of votes that the space receives is equal to the volume
+        // of the resulting hyperrectangle-hyperplane intersection.
+
+        // The points of intersection with the plane in 4D.
+        Points4D vertices4 = intersect(plane);
+        Point4D n = plane.normal;
+
+        // "Projection" matrix.
+        blas::matrix<RealType> m(4, 4);
+        m(0, 0) =  n[3]; m(0, 1) =  n[2]; m(0, 2) = -n[1]; m(0, 3) = -n[0];
+        m(1, 0) = -n[2]; m(1, 1) =  n[3]; m(1, 2) =  n[0]; m(1, 3) = -n[1];
+        m(2, 0) =  n[1]; m(2, 1) = -n[0]; m(2, 2) =  n[3]; m(2, 3) = -n[2];
+        m(3, 0) =  n[0]; m(3, 1) =  n[1]; m(3, 2) =  n[2]; m(3, 3) =  n[3];
+        m = m / (n * n);
+
+        // Container for projections.
+        typedef methods::surfaces::IncrementalConvexHull3D<RealType> Hull;
+        typename Hull::Points3D vertices3;
+
+        // Project the vertices into 3D.
+        for (typename Points4D::const_iterator it = vertices4.begin();
+             it != vertices4.end(); ++it)
+        {
+            Point4D p = *it;
+
+            blas::matrix<RealType> v(4, 1);
+            v(0, 0) = p[0];
+            v(1, 0) = p[1];
+            v(2, 0) = p[2];
+            v(3, 0) = p[3];
+
+            v = blas::prod(m, v);
+
+            typename Hull::Point3D q(v(0, 0), v(1, 0), v(2, 0));
+            vertices3.push_back(q);
+        }
+
+        // Compute the convex hull and its volume.
+        Hull hull3d(vertices3);
+        RealType volume = hull3d.get_volume();
+
+        votes_ += volume;
     }
 
 
