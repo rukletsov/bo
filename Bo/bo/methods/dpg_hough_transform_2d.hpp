@@ -66,7 +66,7 @@ public:
     typedef std::vector<Point4D> Points4D;
     typedef Vector<std::size_t, 4> Size4D;
     typedef std::pair<Point4D, Point4D> Box4D;
-    typedef bo::topology::OrthotopeGeometry<RealType, 4> Geometry;
+    typedef bo::topology::OrthotopeTopology<RealType, 4> Geometry;
 
     // A line in 4D is defined by any point located
     // on this line and its directional vector.

@@ -45,7 +45,7 @@ namespace topology{
 
 // Basic N-dimensional hyperrectangle (N-orthotope) geometry.
 template <typename RealType, std::size_t N>
-class OrthotopeGeometry
+class OrthotopeTopology
 {
 private:
     BOOST_STATIC_ASSERT(N > 0);
@@ -73,6 +73,18 @@ public:
     static std::size_t edge_count()
     {
         return (1 << (N - 1)) * N;
+    }
+
+    // Returns the number of vertices in a N-orthotope.
+    static std::size_t vertex_count()
+    {
+        return 1 << N;
+    }
+
+    // Returns the number of facets ((N-1)-dimensional faces) in a N-othotope.
+    static std::size_t facet_count()
+    {
+        return 2 * N;
     }
 
 private:
