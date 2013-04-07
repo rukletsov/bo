@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  Fast dual-point generalized Hough Transform for 2D object recognition.
+  Dual-point generalized Hough Transform for 2D object recognition.
 
   Copyright (c) 2013
   Dzmitry Hlindzich <hlindzich@gmail.com>
@@ -47,6 +47,7 @@
 #include "bo/vector.hpp"
 #include "bo/blas/blas.hpp"
 #include "bo/raw_image_2d.hpp"
+#include "bo/topology.hpp"
 
 #include <iostream>
 
@@ -56,20 +57,48 @@ namespace recognition {
 
 namespace detail{
 
-
-
 template <typename RealType>
 class Space
 {
 public:
 
     typedef Vector<RealType, 4> Point4D;
+    typedef std::vector<Point4D> Points4D;
     typedef Vector<std::size_t, 4> Size4D;
     typedef std::pair<Point4D, Point4D> Box4D;
+    typedef bo::topology::OrthotopeGeometry<RealType, 4> Geometry;
 
     // A line in 4D is defined by any point located
     // on this line and its directional vector.
-    typedef std::pair<Point4D, Point4D> Line4D;
+    struct Line4D
+    {
+        Line4D()
+            : point(Point4D(0)), direction(Point4D(0))
+        { }
+
+        Line4D(const Point4D &_point, const Point4D &_direction)
+            : point(_point), direction(_direction)
+        { }
+
+        Point4D point;
+        Point4D direction;
+    };
+
+    // A hyperplane in 4D is defined by a point located
+    // on this plane and the plane's normal vector.
+    struct Plane4D
+    {
+        Plane4D()
+            : point(Point4D(0)), normal(Point4D(0))
+        { }
+
+        Plane4D(const Point4D &_point, const Point4D &_normal)
+            : point(_point), normal(_normal)
+        { }
+
+        Point4D point;
+        Point4D normal;
+    };
 
     typedef Vector<RealType, 2> SegmentCoordinates;
     typedef std::vector<Space> Spaces;
@@ -110,7 +139,7 @@ public:
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
         }
 
-        // Comput the number of probabilistic elements used for the subdivision policy.
+        // Compute the number of probabilistic elements used for the subdivision policy.
         prob_element_count_ = 1;
         for (std::size_t i = 0; i < 4; ++i)
         {
@@ -203,7 +232,7 @@ public:
         // The number of votes that the space receives in the result of the intersection
         // equals to the lenght of the resulting segment.
         // Compute the segment.
-        Point4D s = segment.first.second * (segment.second[1] - segment.second[0]);
+        Point4D s = segment.first.direction * (segment.second[1] - segment.second[0]);
 
         // Increase the votes.
         // Continuous. Attention: has no effect if the intersection is in one point.
@@ -243,7 +272,7 @@ public:
         order(t1, t2);
 
         // Segment direction.
-        Point4D v = segment.first.second;
+        Point4D v = segment.first.direction;
 
         // For each dimension define the coordinate step beetween two cells (dimension levels).
         for (std::size_t d = 0; d < 4; ++d)
@@ -282,11 +311,11 @@ public:
         Point4D top = box_.second;
 
         // The end points of the segment.
-        Point4D p1 = segment.first.first + segment.first.second * segment.second[0];
-        Point4D p2 = segment.first.first + segment.first.second * segment.second[1];
+        Point4D p1 = segment.first.point + segment.first.direction * segment.second[0];
+        Point4D p2 = segment.first.point + segment.first.direction * segment.second[1];
 
         // Segment direction.
-        Point4D v = segment.first.second;
+        Point4D v = segment.first.direction;
 
         // For each dimension define the coordinate step beetween two cells (dimension levels).
         for (std::size_t d = 0; d < 4; ++d)
@@ -331,11 +360,11 @@ public:
         Point4D top = box_.second;
 
         // The end points of the segment.
-        Point4D p1 = segment.first.first + segment.first.second * segment.second[0];
-        Point4D p2 = segment.first.first + segment.first.second * segment.second[1];
+        Point4D p1 = segment.first.point + segment.first.direction * segment.second[0];
+        Point4D p2 = segment.first.point + segment.first.direction * segment.second[1];
 
         // Segment direction.
-        Point4D v = segment.first.second;
+        Point4D v = segment.first.direction;
 
         // For each dimension define the coordinate step beetween two cells (dimension levels).
         for (std::size_t d = 0; d < 4; ++d)
@@ -391,6 +420,52 @@ public:
         return intersect(infinite_seg);
     }
 
+    // Returns the points that define the polyhedron of the hyperplane-hyperrectangle
+    // intersection.
+    Points4D intersect(Plane4D plane)
+    {
+        Points4D vertices;
+
+        Point4D d = box_.second - box_.first;
+
+        typename Geometry::Edges edges = Geometry::edges();
+
+        for (typename Geometry::Edges::const_iterator it = edges.begin();
+             it != edges.end(); ++it)
+        {
+            typename Geometry::Point e1 = it->first;
+            typename Geometry::Point e2 = it->second;
+
+            // Calculate the adjacent vertices of the box edges.
+            Point4D q1 = box_.first + Point4D(e1[0] * d[0], e1[1] * d[1],
+                                              e1[2] * d[2], e1[3] * d[3]);
+            Point4D q2 = box_.first + Point4D(e2[0] * d[0], e2[1] * d[1],
+                                              e2[2] * d[2], e2[3] * d[3]);
+            Point4D e = q2 - q1;
+
+            // Calculate intersection with the plane.
+            Point4D normal = plane.normal;
+
+            RealType dot1 = e * normal;
+
+            if (dot1 != 0)
+            {
+
+                Point4D q1p = plane.point - q1;
+
+                RealType t = (q1p * normal) / dot1;
+
+                if (t >= 0 && t <= 1)
+                {
+                    vertices.push_back(q1 + t * e);
+                }
+            }
+        }
+
+        return vertices;
+    }
+
+
 private:
 
     Spaces subspaces_;
@@ -410,8 +485,8 @@ private:
         order(level1, level2);
 
         // The origin point and the direction.
-        Point4D p = seg.first.first;
-        Point4D v = seg.first.second;
+        Point4D p = seg.first.point;
+        Point4D v = seg.first.direction;
 
         // If the segment is parallel to the levels of this dimension.
         if (v[dimension] == 0)
@@ -1080,8 +1155,8 @@ private:
                 typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, *abit);
 
                 // Create two segments on this line that correspond to the given scaling range.
-                Point2D v1(line4.second[0], line4.second[1]);
-                Point2D v2(line4.second[2], line4.second[3]);
+                Point2D v1(line4.direction[0], line4.direction[1]);
+                Point2D v2(line4.direction[2], line4.direction[3]);
                 RealType vnorm = (v2 - v1).euclidean_norm();
                 Point2D segment_coords = scaling_range * model_base_ / vnorm;
 

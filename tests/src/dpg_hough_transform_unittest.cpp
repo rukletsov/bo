@@ -269,6 +269,13 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
     EXPECT_EQ(space1_.get_votes(), 10);
 }
 
+TEST_F(HoughTransformTest, SpacePlaneIntersection)
+{
+    Space<float>::Plane4D pl(pb6_, pb3_);
+    Space<float>::Points4D p = space1_.intersect(pl);
+    EXPECT_EQ(p.size(), 8U);
+}
+
 TEST_F(HoughTransformTest, SpaceSubdivision)
 {
     space2_.subdivide();
