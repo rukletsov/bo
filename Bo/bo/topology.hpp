@@ -40,8 +40,8 @@
 
 #include "bo/vector.hpp"
 
-namespace bo{
-namespace topology{
+namespace bo {
+namespace topology {
 
 // Basic N-dimensional hyperrectangle (N-orthotope) geometry.
 template <typename RealType, std::size_t N>
@@ -89,23 +89,7 @@ public:
 
 private:
 
-    struct PointCompare
-    {
-        bool operator()(const Point &p1, const Point &p2) const
-        {
-            for (std::size_t i = 0; i < N; ++i)
-            {
-                if (p1[i] < p2[i])
-                    return true;
-                if (p1[i] > p2[i])
-                    return false;
-            }
-
-            return false;
-        }
-    };
-
-    typedef std::set<Point, PointCompare> PointSet;
+    typedef std::set<Point> PointSet;
 
     // Recursively traverses the edges of a N-orthotope starting from the given set
     // of vertices in ascending order and pushes the edges into the given container.
