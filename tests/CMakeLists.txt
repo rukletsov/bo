@@ -15,6 +15,7 @@ SET (BoTest_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d25_active_contours_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/geometry_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/topology_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/convex_hull_3d_unittest.cpp
 )
 
 SET (BoTest_HDRS
@@ -104,3 +105,4 @@ TestCase(Math)
 TestCase(HoughTransform)
 TestCase(Geometry)
 TestCase(Topology)
+TestCase(ConvexHull3D)
