@@ -288,9 +288,9 @@ Mesh mbutterfly_subdivision(const Mesh &source, int iterations)
             }
 
             // Generate new four faces.
-            mdst.add_face(Mesh::Face(it->A(), inds_div[2], inds_div[0]));
-            mdst.add_face(Mesh::Face(it->B(), inds_div[0], inds_div[1]));
-            mdst.add_face(Mesh::Face(it->C(), inds_div[1], inds_div[2]));
+            mdst.add_face(Mesh::Face(it->A(), inds_div[0], inds_div[2]));
+            mdst.add_face(Mesh::Face(it->B(), inds_div[1], inds_div[0]));
+            mdst.add_face(Mesh::Face(it->C(), inds_div[2], inds_div[1]));
             mdst.add_face(Mesh::Face(inds_div[0], inds_div[1], inds_div[2]));
 
             ++it;
