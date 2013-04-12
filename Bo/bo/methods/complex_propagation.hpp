@@ -422,10 +422,13 @@ void ComplexPropagation<RealType>::add_neighbour_planes(
         throw std::logic_error("Provided weights quantity doesn't correspond to "
                                "planes number");
 
-    // Define main plane as origin + normal.
+    // Define main plane as origin + normal. Employ PCA to estimate plane normal.
     Point3D origin = main_plane_->at(0);
-    Point3D norm = (main_plane_->at(1) - main_plane_->at(0)).cross_product(
-                main_plane_->at(2) - main_plane_->at(0));
+
+    typedef blas::PCA<RealType, 3> PCAEngine;
+    PCAEngine pca;
+    typename PCAEngine::Result result = pca(*main_plane_);
+    Point3D norm = result.template get<1>()[0];
 
     // Project all neighbours to the current plane.
     // TODO: rewrite using transform?
