@@ -96,6 +96,7 @@ PlyMesh mesh_from_ply(const std::string& file_path)
 {
     PlyMesh invalid_mesh(0);
     long nvertices, ntriangles;
+    BO_UNUSED(ntriangles);
 
     // Open .ply file for reading.
     p_ply ply = ply_open(file_path.c_str(), NULL, 0, NULL);
