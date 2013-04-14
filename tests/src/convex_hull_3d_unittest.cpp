@@ -30,6 +30,7 @@ TEST_F(ConvexHull3DTest, UnitCubeHull)
     points.push_back(Hull::Point3D(0, 1, 1));
     points.push_back(Hull::Point3D(1, 0, 1));
     points.push_back(Hull::Point3D(1, 1, 1));
+    points.push_back(Hull::Point3D(0.5f, 0.5f, 0.5f));
 
     Hull conhul3d(points);
     Hull::Faces3D f = conhul3d.get_faces();
@@ -38,5 +39,30 @@ TEST_F(ConvexHull3DTest, UnitCubeHull)
 
     float volume = conhul3d.get_volume();
 
-    EXPECT_EQ(volume, 1.0f);
+    EXPECT_NEAR(volume, 1.0f, 0.001f);
+}
+
+TEST_F(ConvexHull3DTest, NegativeCubeHull)
+{
+    typedef IncrementalConvexHull3D<float> Hull;
+
+    Hull::Points3D points;
+    points.push_back(Hull::Point3D(-0.25, -0.25, -0.25));
+    points.push_back(Hull::Point3D(0.25, -0.25, -0.25));
+    points.push_back(Hull::Point3D(-0.25, 0.25, -0.25));
+    points.push_back(Hull::Point3D(-0.25, -0.25, 0.25));
+    points.push_back(Hull::Point3D(0.25, 0.25, -0.25));
+    points.push_back(Hull::Point3D(-0.25, 0.25, 0.25));
+    points.push_back(Hull::Point3D(0.25, -0.25, 0.25));
+    points.push_back(Hull::Point3D(0.25, 0.25, 0.25));
+    points.push_back(Hull::Point3D(0.2f, -0.2f, 0.2f));
+
+    Hull conhul3d(points);
+    Hull::Faces3D f = conhul3d.get_faces();
+
+    EXPECT_EQ(f.size(), 12U);
+
+    float volume = conhul3d.get_volume();
+
+    EXPECT_NEAR(volume, 0.125f, 0.001f);
 }
