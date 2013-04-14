@@ -164,11 +164,6 @@ public:
         if (is_collinear || is_coplanar)
             v = 0;
 
-        if (v < 0)
-        {
-            get_volume();
-        }
-
         BOOST_ASSERT(v >= 0);
 
         return v / 3;
