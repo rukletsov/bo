@@ -39,6 +39,7 @@
 #include <set>
 #include <cmath>
 #include <algorithm>
+#include <complex>
 
 #include <boost/noncopyable.hpp>
 #include <boost/assert.hpp>
@@ -59,6 +60,108 @@ namespace recognition {
 
 namespace detail{
 
+// A 4-dimensional hyperplane defined by a point located
+// on this plane and the plane's normal vector.
+template <typename RealType>
+class Hyperplane4D
+{
+public:
+    typedef Vector<RealType, 4> Point4D;
+
+    Hyperplane4D(const Point4D &point, const Point4D &normal)
+        : point_(point), kEpsilon(0.0001)
+    {
+        Point4D n = normal / normal.euclidean_norm();
+        normal_ = n;
+
+        // Decomposition matrix (inverse of the base one).
+        m_ = blas::matrix<RealType>(4, 4);
+        m_(0, 0) =  n[3]; m_(0, 1) =  n[2]; m_(0, 2) = -n[1]; m_(0, 3) = -n[0];
+        m_(1, 0) = -n[2]; m_(1, 1) =  n[3]; m_(1, 2) =  n[0]; m_(1, 3) = -n[1];
+        m_(2, 0) =  n[1]; m_(2, 1) = -n[0]; m_(2, 2) =  n[3]; m_(2, 3) = -n[2];
+        m_(3, 0) =  n[0]; m_(3, 1) =  n[1]; m_(3, 2) =  n[2]; m_(3, 3) =  n[3];
+    }
+
+    inline const Point4D& point() const
+    {
+        return point_;
+    }
+
+    inline const Point4D& normal() const
+    {
+        return normal_;
+    }
+
+    // Computes intersection of a line defined by two 4-dimensional points
+    // with the hyperplane. Considers the intersection as a linear coordinate 't'
+    // such that the intersection point is calculated as P = q1 + t * (q2 - q1).
+    // If the line intersects with the hyperplane, returns true and updates the
+    // function parameter 't'. Otherwise returns false.
+    bool intersect(const Point4D& q1, const Point4D& q2, RealType& t)
+    {
+        Point4D q1p = point_ - q1;
+        Point4D e = q2 - q1;
+        RealType dot1 = q1p * normal_;
+
+        RealType e_norm = e.euclidean_norm();
+        // This case is needed for continuity, when two very close points
+        // both belong to the hyperplane.
+        if (e_norm < kEpsilon)
+        {
+            if (dot1 < kEpsilon)
+            {
+                t = RealType(0);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        RealType dot2 = e * normal_;
+
+        if (std::abs(dot2 / e_norm) > kEpsilon)
+        {
+            // If the line is not parallel to the hyperplane.
+            t = dot1 / dot2;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    // Computes the decomposition of the point in the hyperplane's
+    // coordinate system defined by the decomposition matrix.
+    Point4D decompose(const Point4D& p)
+    {
+        Point4D q = p - point_;
+
+        blas::matrix<RealType> v(4, 1);
+        v(0, 0) = q[0];
+        v(1, 0) = q[1];
+        v(2, 0) = q[2];
+        v(3, 0) = q[3];
+
+        // Compute decomposition in the projection basis.
+        v = blas::prod(m_, v);
+
+        return Point4D(v(0, 0), v(1, 0), v(2, 0), v(3, 0));
+    }
+
+private:
+
+    Point4D point_;
+    Point4D normal_;
+
+    // Hyperplane's decomposition matrix.
+    blas::matrix<RealType> m_;
+
+    const RealType kEpsilon;
+};
+
 template <typename RealType>
 class Space
 {
@@ -69,6 +172,7 @@ public:
     typedef Vector<std::size_t, 4> Size4D;
     typedef std::pair<Point4D, Point4D> Box4D;
     typedef bo::topology::OrthotopeTopology<RealType, 4> Geometry;
+    typedef detail::Hyperplane4D<RealType> Hyperplane;
 
     // A line in 4D is defined by any point located
     // on this line and its directional vector.
@@ -86,21 +190,7 @@ public:
         Point4D direction;
     };
 
-    // A hyperplane in 4D is defined by a point located
-    // on this plane and the plane's normal vector.
-    struct Plane4D
-    {
-        Plane4D()
-            : point(Point4D(0)), normal(Point4D(0))
-        { }
 
-        Plane4D(const Point4D &_point, const Point4D &_normal)
-            : point(_point), normal(_normal)
-        { }
-
-        Point4D point;
-        Point4D normal;
-    };
 
     typedef Vector<RealType, 2> SegmentCoordinates;
     typedef std::vector<Space> Spaces;
@@ -140,6 +230,8 @@ public:
 
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
         }
+
+        min_cell_volume_ = std::pow((cell_size_[0] + cell_size_[1] + cell_size_[2] + cell_size_[3]) / 4, 3);
 
         // Compute the number of probabilistic elements used for the subdivision policy.
         prob_element_count_ = 1;
@@ -424,7 +516,7 @@ public:
 
     // Returns the points that define the polyhedron of the hyperplane-hyperrectangle
     // intersection.
-    Points4D intersect(Plane4D plane)
+    Points4D intersect(Hyperplane plane)
     {
         Points4D vertices;
 
@@ -443,23 +535,15 @@ public:
                                               e1[2] * d[2], e1[3] * d[3]);
             Point4D q2 = box_.first + Point4D(e2[0] * d[0], e2[1] * d[1],
                                               e2[2] * d[2], e2[3] * d[3]);
-            Point4D e = q2 - q1;
 
-            // Calculate intersection with the plane.
-            Point4D normal = plane.normal;
-
-            RealType dot1 = e * normal;
-
-            if (dot1 != 0)
+            // Calculate intersection of the edge with the plane.
+            RealType t;
+            if (plane.intersect(q1, q2, t))
             {
-
-                Point4D q1p = plane.point - q1;
-
-                RealType t = (q1p * normal) / dot1;
-
+                // Add the intersection point if it belongs to the edge.
                 if (t >= 0 && t <= 1)
                 {
-                    vertices.push_back(q1 + t * e);
+                    vertices.push_back(q1 + t * (q2 - q1));
                 }
             }
         }
@@ -467,22 +551,12 @@ public:
         return vertices;
     }
 
-    void vote(Plane4D plane)
+    RealType intersection_volume(Hyperplane plane)
     {
-        // The number of votes that the space receives is equal to the volume
-        // of the resulting hyperrectangle-hyperplane intersection.
+        RealType kEpsilon(0.001);
 
         // The points of intersection with the plane in 4D.
         Points4D vertices4 = intersect(plane);
-        Point4D n = plane.normal;
-
-        // "Projection" matrix.
-        blas::matrix<RealType> m(4, 4);
-        m(0, 0) =  n[3]; m(0, 1) =  n[2]; m(0, 2) = -n[1]; m(0, 3) = -n[0];
-        m(1, 0) = -n[2]; m(1, 1) =  n[3]; m(1, 2) =  n[0]; m(1, 3) = -n[1];
-        m(2, 0) =  n[1]; m(2, 1) = -n[0]; m(2, 2) =  n[3]; m(2, 3) = -n[2];
-        m(3, 0) =  n[0]; m(3, 1) =  n[1]; m(3, 2) =  n[2]; m(3, 3) =  n[3];
-        m = m / (n * n);
 
         // Container for projections.
         typedef methods::surfaces::IncrementalConvexHull3D<RealType> Hull;
@@ -492,27 +566,48 @@ public:
         for (typename Points4D::const_iterator it = vertices4.begin();
              it != vertices4.end(); ++it)
         {
-            Point4D p = *it;
+            Point4D p = plane.decompose(*it);
 
-            blas::matrix<RealType> v(4, 1);
-            v(0, 0) = p[0];
-            v(1, 0) = p[1];
-            v(2, 0) = p[2];
-            v(3, 0) = p[3];
+            // The vertex must lie in 3D!
+            BOOST_ASSERT(std::abs(p[3]) < kEpsilon);
 
-            v = blas::prod(m, v);
+            // Projection.
+            typename Hull::Point3D pr(p[0], p[1], p[2]);
 
-            typename Hull::Point3D q(v(0, 0), v(1, 0), v(2, 0));
-            vertices3.push_back(q);
+            vertices3.push_back(pr);
         }
 
-        // Compute the convex hull and its volume.
-        Hull hull3d(vertices3);
-        RealType volume = hull3d.get_volume();
+        if(vertices3.size() > 3)
+        {
+            // Compute the convex hull and its volume.
+            Hull hull3d(vertices3);
+            return hull3d.get_volume();
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    // The number of votes that the space receives is equal to the volume
+    // of the resulting hyperrectangle-hyperplane intersection.
+    void vote(Hyperplane plane)
+    {
+        RealType volume = intersection_volume(plane);
 
         votes_ += volume;
     }
 
+    // The number of votes that the space receives is equal to the number
+    // of the cells that the hyperrectangle-hyperplane intersection "covers".
+    void vote_descrete(Hyperplane plane)
+    {
+        RealType volume = intersection_volume(plane);
+
+        RealType vote = volume / min_cell_volume_;
+
+        votes_ += std::floor(vote) + 1;
+    }
 
 private:
 
@@ -524,6 +619,7 @@ private:
     std::size_t resolution_level_;
     RealType votes_;
     Point4D cell_size_;
+    RealType min_cell_volume_;
     std::size_t prob_element_count_;
 
     // Cuts the segment in the given dimension according to two given levels.
@@ -1252,6 +1348,44 @@ private:
 
         return line4;
     }
+
+    // Intersects the given space with the hyperplane defined by the feature (position and tangent)
+    // and increase the number of the space votes.
+    inline void feature_to_vote2(Space4D &s, const Feature &f, const Point2D &scaling_range)
+    {
+        // Reconstruct all the 4D hyperplanes from the alpha-table relatively to the current feature.
+        for (std::size_t index = 0; index < atable_.size(); ++index)
+        {
+            // Probable angle between the directional vector and the tangent.
+            RealType gamma = atable_gamma(index);
+
+            // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
+            // the current table row.
+            for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
+                 abit !=  atable_.at(index).end(); ++abit)
+            {
+                typename Space4D::Hyperplane plane4 = plane4_from_feature_and_atable_element(f, gamma, *abit);
+
+                // Check the constrains here.
+
+                s.vote_descrete(plane4);
+            }
+        }
+    }
+
+    inline typename Space4D::Hyperplane plane4_from_feature_and_atable_element(const Feature &f,
+                                                               RealType gamma,
+                                                               const ATableElement &e)
+    {
+        typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, e);
+
+        // Normal of the hyperplane.
+        typename Space4D::Point4D n(line4.direction[3], line4.direction[2],
+                                    -line4.direction[1], -line4.direction[0]);
+
+        return typename Space4D::Hyperplane(line4.point, n);
+    }
+
 
     // Recursively traces the space tree and inserts into the container the elements from
     // the given resolution level.
