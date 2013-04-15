@@ -247,7 +247,7 @@ void ChrisitiansenSheepFull()
     weights.push_back(0.5f);
 
     // Run propagation for every plane.
-    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.f, 15.f);
+    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.4f, 15.f);
     BOOST_FOREACH (PropagAlgo::Ptr propagator, props)
     { propagator->propagate(); }
 
