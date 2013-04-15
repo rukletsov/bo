@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <cstdlib>
+#include <ctime>
+
 #include "bo/methods/dpg_hough_transform_2d.hpp"
 
 using namespace bo;
@@ -271,9 +274,70 @@ TEST_F(HoughTransformTest, MaxnormSpaceLineIntersection)
 
 TEST_F(HoughTransformTest, SpacePlaneIntersection)
 {
-    Space<float>::Plane4D pl(pb6_, pb3_);
+    Hyperplane4D<float> pl(pb6_, pb3_);
     Space<float>::Points4D p = space1_.intersect(pl);
     EXPECT_EQ(p.size(), 8U);
+}
+
+Hyperplane4D<float>::Point4D random_vec()
+{
+    Hyperplane4D<float>::Point4D p;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        p[i] = 100 * (std::rand() + 0.0f) / RAND_MAX;
+    }
+
+    return p;
+}
+
+TEST_F(HoughTransformTest, PlaneIntersectionDecomposition)
+{
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        Hyperplane4D<float> plane(random_vec(), random_vec());
+
+        Hyperplane4D<float>::Point4D pd = plane.decompose(plane.point());
+
+        EXPECT_NEAR(pd[3], 0, 0.001);
+
+        Hyperplane4D<float>::Point4D q1 = random_vec();
+        Hyperplane4D<float>::Point4D q2 = random_vec();
+        float t;
+        if (plane.intersect(q1, q2, t))
+        {
+            Hyperplane4D<float>::Point4D inters = q1 + t * (q2 - q1);
+
+            pd = plane.decompose(inters);
+
+            EXPECT_NEAR(pd[3], 0, 0.001);
+        }
+
+    }
+}
+
+TEST_F(HoughTransformTest, SpaceVolumeSubdivision)
+{
+    Space<float> s = Space<float>(Space<float>::Box4D(pb1_, pb2_),
+                           Space<float>::Size4D(2, 2, 2, 2),
+                           1, 1, 0);
+
+    Hyperplane4D<float> pl(pb6_ / 2, pb3_);
+    s.vote(pl);
+
+    EXPECT_NEAR(s.get_votes(), 1, 0.001);
+
+    s.subdivide();
+    float votes_acc = 0;
+
+    for (Space<float>::Spaces::iterator it = s.get_subspaces().begin();
+         it != s.get_subspaces().end(); ++it)
+    {
+        it->vote(pl);
+        votes_acc += it->get_votes();
+    }
+
+    EXPECT_NEAR(s.get_votes(), votes_acc, 0.001);
 }
 
 TEST_F(HoughTransformTest, SpaceSubdivision)

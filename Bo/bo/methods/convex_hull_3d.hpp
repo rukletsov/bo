@@ -50,7 +50,7 @@ namespace surfaces {
 
 // Computes the convex hull of the given points using the incremental algorithm (Michael Kallay,
 // "The Complexity of Incremental Convex Hull Algorithms in Rd" Inf. Process. Lett. 19(4): 197 (1984)).
-// Attention: the code is not optimized yet.
+// The input points must be not coplanar.
 template <typename RealType>
 class IncrementalConvexHull3D
 {
@@ -115,16 +115,27 @@ public:
     // of the Gauss-Ostrogradsky's Divergence theorem.
     RealType get_volume()
     {
+        const RealType kEpsilon(0.001);
+
         RealType v = 0;
 
         Point3D mass = centroid();
+
+        bool is_collinear = true;
+        bool is_coplanar = true;
+        Point3D n_first;
 
         for (typename FaceSet3D::const_iterator it = faces_.begin();
              it != faces_.end(); ++it)
         {
             Face3D f = *it;
 
+            // Normal vector must be normalized.
             Point3D n = normal(f);
+            n /= n.euclidean_norm();
+
+            if (it == faces_.begin())
+                n_first = n;
 
             // Face barycenter.
             Point3D c = (f.A() + f.B() + f.C()) / 3;
@@ -136,8 +147,25 @@ public:
 
             RealType a = area(f);
 
+            BOOST_ASSERT(a >= 0);
+
+            // Test the points for collinearity or coplanarity. If it is performed, the calculated
+            // volume is not valid and must be set to zero.
+            // If the points are not collinear, there is at least one face with non-zero area.
+            if (a > kEpsilon)
+                is_collinear = false;
+            // If the points are not coplanar, there is at least one face with the normal non-collinaer
+            // with the other normals.
+            if (std::abs(std::abs(n_first * n) - 1) > kEpsilon)
+                is_coplanar = false;
+
             v += (n * c) * a;
         }
+
+        if (is_collinear || is_coplanar)
+            v = 0;
+
+        BOOST_ASSERT(v >= 0);
 
         return v / 3;
     }
@@ -184,7 +212,7 @@ private:
 
     typedef std::set<Face3D, FaceCompare> FaceSet3D;
 
-    // Find the initial tetrahedron.
+    // Finds the initial tetrahedron.
     void initialize_convex_hull()
     {
         if (points_.size() >= 4)
@@ -227,7 +255,7 @@ private:
         }
     }
 
-    // Insert faces of the tetrahedron.
+    // Inserts faces of the tetrahedron.
     void insert_tetrahedron(const Point3D &p1, const Point3D &p2, const Point3D &p3, const Point3D &p4)
     {
         process_face(Face3D(p1, p2, p3));
@@ -236,7 +264,7 @@ private:
         process_face(Face3D(p3, p1, p4));
     }
 
-    // Insert the face if it is not in the set yet, otherwise delete it from the set.
+    // Inserts the face if it is not in the set yet, otherwise deletes it from the set.
     void process_face(const Face3D &f)
     {
         typename FaceSet3D::iterator it = faces_.find(f);
