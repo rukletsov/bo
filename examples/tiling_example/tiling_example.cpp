@@ -161,7 +161,7 @@ void ChrisitiansenClosed()
 void ChrisitiansenFemurFull()
 {
     typedef std::vector<path> ContourData;
-    typedef PropagAlgo::ParallelPlaneConstPtrs PlaneData;
+    typedef PropagAlgo::Points3DConstPtrs PlaneData;
 
     ContourData contour_data;
     PlaneData plane_data;
@@ -185,7 +185,7 @@ void ChrisitiansenFemurFull()
     {
         AssertPathExists(contour_path);
         Mesh3D mesh = mesh_from_ply(contour_path.string());
-        plane_data.push_back(boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices()));
+        plane_data.push_back(boost::make_shared<PropagAlgo::Points3D>(mesh.get_all_vertices()));
     }
 
     // Prepare weights for all slices.
@@ -215,7 +215,7 @@ void ChrisitiansenFemurFull()
 void ChrisitiansenSheepFull()
 {
     typedef std::vector<path> ContourData;
-    typedef PropagAlgo::ParallelPlaneConstPtrs PlaneData;
+    typedef PropagAlgo::Points3DConstPtrs PlaneData;
 
     ContourData contour_data;
     PlaneData plane_data;
@@ -238,7 +238,7 @@ void ChrisitiansenSheepFull()
     {
         AssertPathExists(contour_path);
         Mesh3D mesh = mesh_from_ply(contour_path.string());
-        plane_data.push_back(boost::make_shared<PropagAlgo::ParallelPlane>(mesh.get_all_vertices()));
+        plane_data.push_back(boost::make_shared<PropagAlgo::Points3D>(mesh.get_all_vertices()));
     }
 
     // Prepare weights for all slices.
@@ -247,7 +247,7 @@ void ChrisitiansenSheepFull()
     weights.push_back(0.5f);
 
     // Run propagation for every plane.
-    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.4f, 15.f);
+    PropagAlgo::Ptrs props = PropagAlgo::create(plane_data, weights, 2.f, 5.f, 0.f, 15.f);
     BOOST_FOREACH (PropagAlgo::Ptr propagator, props)
     { propagator->propagate(); }
 
