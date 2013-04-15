@@ -1,3 +1,4 @@
+
 /******************************************************************************
 
   Computation of a convex hull in 3D for a point cloud.
@@ -29,8 +30,8 @@
 
 *******************************************************************************/
 
-#ifndef CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622_
-#define CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622_
+#ifndef CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622
+#define CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622
 
 #include <set>
 #include <map>
@@ -323,9 +324,8 @@ private:
     FaceSet3D faces_;
 };
 
-
 } // namespace surfaces
 } // namespace methods
 } // namespace bo
 
-#endif // CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622_
+#endif // CONVEX_HULL_3D_HPP_1CB416FB_1F43_4159_A19B_202B43247622
