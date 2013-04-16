@@ -96,20 +96,19 @@ public:
     // Factory functions. Create an instance of the class from either of the supported
     // input with the provided parameters.
     static Ptr create(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
-                      RealType ratio, RealType tangential_radius);
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
     static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
-                         RealType ratio, RealType tangential_radius);
+        RealType inertial_weight, RealType centrifugal_weight,RealType tangential_radius);
 
     static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
-                          RealType ratio, RealType tangential_radius);
+        RealType inertial_weight, RealType centrifugal_weight,RealType tangential_radius);
 
     // A special factory. Creates a set of instances one per given plane. Additionally
     // passes a set of neighbours with corresponding weights to each instance.
-    static Ptrs create(const Points3DConstPtrs& planes,
-                       const Weights& neighbour_weights,
-                       RealType delta_min, RealType delta_max,
-                       RealType ratio, RealType tangential_radius);
+    static Ptrs create(const Points3DConstPtrs& planes, const Weights& neighbour_weights,
+        RealType delta_min, RealType delta_max, RealType inertial_weight,
+        RealType centrifugal_weight, RealType tangential_radius);
 
     // Adds neighbour planes with corresponding weights. These planes are used in
     // the calculation of the tangential component of the propagation, making it
@@ -147,13 +146,18 @@ private:
 
 protected:
     ComplexPropagation(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
-                       RealType ratio, RealType tangential_radius);
+                       RealType inertial_weight, RealType centrifugal_weight,
+                       RealType tangential_radius);
 
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(Point3D pt, std::size_t k);
 
     // Computes the inertial propagation vector from current and previous mesh vertices.
     static Point3D inertial_propagation_norm_(Point3D current, Point3D previous);
+
+    // Computes the centrifugal propagation vector pointing from the centre of mass to
+    // the current point.
+    static Point3D centrifugal_propagation_norm(Point3D current, Point3D center_of_mass);
 
     // Computes the tangential propagation vector for the given point and kd-tree.
     static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
@@ -164,7 +168,9 @@ protected:
     Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const;
 
     // Computes the total propagation vector from tangential and inertial components.
-    static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio);
+    // Note that the sum of inertial and centrifugal weights should be not greater than 1.
+    static Point3D total_propagation_(Point3D inertial, Point3D centrifugal, Point3D tangential,
+                                      RealType inertial_weight, RealType centrifugal_weight);
 
     // Tries performing propagation from the start point to the end point.
     // Note that end point is not included in result, while start is always included.
@@ -175,7 +181,8 @@ private:
     // Parameters and options of the propagation algorithm.
     RealType delta_min_;
     RealType delta_max_;
-    RealType ratio_; // tangential constituent weight.
+    RealType inertial_weight_;      // The sum of inertial and centrifugal weights
+    RealType centrifugal_weight_;   // should lie in [0; 1].
     RealType tangential_radius_;
     Metric metric_;
 
@@ -198,11 +205,15 @@ template <typename RealType>
 ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
                                                  RealType delta_min,
                                                  RealType delta_max,
-                                                 RealType ratio,
+                                                 RealType inertial_weight,
+                                                 RealType centrifugal_weight,
                                                  RealType tangential_radius):
-    delta_min_(delta_min), delta_max_(delta_max), ratio_(ratio),
-    tangential_radius_(tangential_radius), metric_(&euclidean_distance<RealType, 3>),
-    main_plane_(boost::make_shared<Plane>(*plane)), stopped_(false), has_hole_(false),
+    delta_min_(delta_min), delta_max_(delta_max),
+    inertial_weight_(inertial_weight), centrifugal_weight_(centrifugal_weight),
+    tangential_radius_(tangential_radius),
+    metric_(&euclidean_distance<RealType, 3>),
+    main_plane_(boost::make_shared<Plane>(*plane)),
+    stopped_(false), has_hole_(false),
     contour_(boost::make_shared<PropContour>())
 {
     // If points number is less than 2, propagation cannot be initialized. And
@@ -220,29 +231,31 @@ ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
 
 // Factories.
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
+typename ComplexPropagation<RealType>::Ptr
+ComplexPropagation<RealType>::create(
         Points3DConstPtr plane, RealType delta_min, RealType delta_max,
-        RealType ratio, RealType tangential_radius)
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // C-tor is declared private, using boost::make_shared gets complicated.
-    Ptr ptr(new this_type(plane, delta_min, delta_max, ratio, tangential_radius));
+    Ptr ptr(new this_type(plane, delta_min, delta_max, inertial_weight,
+                          centrifugal_weight, tangential_radius));
     return ptr;
 }
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_mesh(
         const Mesh& mesh, RealType delta_min, RealType delta_max,
-        RealType ratio, RealType tangential_radius)
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     Points3DConstPtr plane = boost::make_shared<Points3D>(mesh.get_all_vertices());
     return
-        create(plane, delta_min, delta_max, ratio, tangential_radius);
+        create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight, tangential_radius);
 }
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_raw_image(
         Image2D data, RealType delta_min, RealType delta_max,
-        RealType ratio, RealType tangential_radius)
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Load plane data from an istance of RawImage2D.
     Points3DPtr plane = boost::make_shared<Points3D>();
@@ -253,13 +266,14 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
                 plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
 
     return
-        create(plane, delta_min, delta_max, ratio, tangential_radius);
+        create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight, tangential_radius);
 }
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
         const Points3DConstPtrs &planes, const Weights& neighbour_weights,
-        RealType delta_min, RealType delta_max, RealType ratio, RealType tangential_radius)
+        RealType delta_min, RealType delta_max, RealType inertial_weight,
+        RealType centrifugal_weight, RealType tangential_radius)
 {
     // Check neighbours count (in one direction) is not greater than planes count - 1.
     if (neighbour_weights.size() > planes.size() - 1)
@@ -304,8 +318,8 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
         }
 
         // Create an instance, register neighbours and return.
-        Ptr propagator = create(planes[idx], delta_min, delta_max, ratio,
-                                tangential_radius);
+        Ptr propagator = create(planes[idx], delta_min, delta_max, inertial_weight,
+                                centrifugal_weight, tangential_radius);
         propagator->add_neighbour_planes(neighbours, weights);
 
         propagators.push_back(propagator);
@@ -441,6 +455,28 @@ ComplexPropagation<RealType>::inertial_propagation_norm_(Point3D current, Point3
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::centrifugal_propagation_norm(Point3D current,
+                                                           Point3D center_of_mass)
+{
+    Point3D centrifugal = (current -= center_of_mass);
+
+    // TODO: remove this by redesigning the algorithm and requiring inertial
+    // vector to be non-zero.
+    Point3D centrifugal_normalized(0);
+    try
+    {
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        centrifugal_normalized.assign(centrifugal.normalized(), 3);
+    }
+    catch (...)
+    { }
+
+    return centrifugal_normalized;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
 ComplexPropagation<RealType>::tangential_propagation_(Point3D pt, const Tree& tree,
                                                       RealType radius, Point3D inertial)
 {
@@ -495,10 +531,13 @@ ComplexPropagation<RealType>::total_tangential_propagation_norm_(Point3D pt,
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Point3D
-ComplexPropagation<RealType>::total_propagation_(Point3D tangential, Point3D inertial,
-                                                 RealType ratio)
+ComplexPropagation<RealType>::total_propagation_(Point3D inertial, Point3D centrifugal,
+                                                 Point3D tangential, RealType inertial_weight,
+                                                 RealType centrifugal_weight)
 {
-    Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
+    Point3D total = inertial * inertial_weight + centrifugal * centrifugal_weight +
+            tangential * (RealType(1) - inertial_weight - centrifugal_weight);
+
     // TODO: remove this block by refactoring bo::Vector class.
     // Normalize vector.
     Point3D total_normalized(total.normalized(), 3);
@@ -583,14 +622,16 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         Point3D previous = current;
         current = candidate;
 
-        // Compute inertial and tangential propagations using only current plane.
+        // Compute inertial, centrifugal and tangential propagations.
         Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
+        Point3D centrifugal_prop = this_type::centrifugal_propagation_norm(current,
+            main_plane_->origin());
         Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
             inertial_prop);
 
         // Compute total propagation.
-        total_prop = this_type::total_propagation_(total_tangential_prop,
-                                                   inertial_prop, ratio_);
+        total_prop = this_type::total_propagation_(inertial_prop, centrifugal_prop,
+            total_tangential_prop, inertial_weight_, centrifugal_weight_);
 
     } while (current != end);
 
