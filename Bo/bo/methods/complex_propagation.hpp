@@ -83,12 +83,6 @@ public:
     typedef std::vector<Point3D> PropContour;
     typedef boost::shared_ptr<PropContour> PropContourPtr;
 
-//    typedef std::vector<Point3D> ParallelPlane;
-//    typedef boost::shared_ptr<Points3D> ParallelPlanePtr;
-//    typedef boost::shared_ptr<const Points3D> ParallelPlaneConstPtr;
-//    typedef std::vector<ParallelPlanePtr> ParallelPlanePtrs;
-//    typedef std::vector<ParallelPlaneConstPtr> ParallelPlaneConstPtrs;
-
     // Used by factory functions.
     typedef RawImage2D<RealType> Image2D;
     typedef bo::Mesh<RealType> Mesh;
@@ -165,126 +159,17 @@ protected:
     static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
                                            RealType radius, Point3D inertial);
 
+    // Computes the total tangential propagation vector from weighted tangential
+    // propagations of the current plane and its neighbours.
+    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const;
+
     // Computes the total propagation vector from tangential and inertial components.
     static Point3D total_propagation_(Point3D tangential, Point3D inertial, RealType ratio);
 
-    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const
-    {
-        // Get the tangential propagation for the main plane.
-        Point3D total_tangential = this_type::tangential_propagation_(pt, main_tree_,
-            tangential_radius_, inertial);
-
-        // Make sure neighbour data is consistent.
-        BOOST_ASSERT((neighbour_weights_.size() == neighbour_trees_.size()) &&
-                     "Number of provided neighbour planes doesn't correspond to the "
-                     "number of weights.");
-
-        // Compute weighted tangential propagations for neighbours and add them  to the
-        // total tangential propagation.
-        for (std::size_t idx = 0; idx < neighbour_trees_.size(); ++idx)
-        {
-            Point3D cur_tang = this_type::tangential_propagation_(pt,
-                neighbour_trees_[idx], tangential_radius_, inertial);
-            RealType cur_weight = neighbour_weights_[idx];
-            total_tangential += (cur_tang * cur_weight);
-        }
-
-        // TODO: remove this block by refactoring bo::Vector class.
-        // Normalize vector.
-        Point3D total_tangential_normalized(total_tangential.normalized(), 3);
-
-        return total_tangential_normalized;
-    }
-
-    // End point is not included, start is always included.
+    // Tries performing propagation from the start point to the end point.
+    // Note that end point is not included in result, while start is always included.
     PropagationResult propagate_(const Point3D& start, const Point3D& end,
-                                       Point3D total_prop, std::size_t max_size)
-    {
-        typedef ArchedStrip<RealType, 3> ArchedStrip;
-
-        PropagationResult retvalue;
-        retvalue.points->push_back(start);
-
-        // Flag for so-called "smooth-ending". It is necessary to keep the distance
-        // between the points in the end phase as close to delta_min as possible,
-        // despite a delta_max point has been already found.
-        bool end_detected = false;
-
-        Point3D current = start;
-        do
-        {
-            // Restrict total length (to prevent looping).
-            if (retvalue.points->size() > max_size)
-            {
-                retvalue.stopped = true;
-                break;
-            }
-
-            // Search for the propagation candidate. It should lie on the arced strip
-            // bounded by delta_min and delta_max circumferences and a plane containing
-            // current point and normal to propagation vector.
-            Point3D phantom_candidate = current + total_prop * delta_min_;
-
-            // TODO: get rid of max radius.
-            std::pair<typename Tree::const_iterator, RealType> candidate_data =
-                    main_tree_.find_nearest_if(phantom_candidate, delta_max_,
-                        ArchedStrip(current, delta_min_, delta_max_, total_prop, metric_));
-            RealType candidate_distance = candidate_data.second;
-            Point3D candidate = *(candidate_data.first);
-
-            // Check if we bump into a hole.
-            if (candidate_distance >= delta_max_)
-            {
-                retvalue.has_hole = true;
-                break;
-            }
-
-            // Check if the candidate "sees" the end point "in front".
-            if (!end_detected)
-            {
-                retvalue.points->push_back(candidate);
-                if ((delta_max_ >= metric_(end, candidate)) &&
-                    (total_prop * (end - candidate)) > 0)
-                    end_detected = true;
-            }
-            else
-            {
-                RealType cur_dist = (end - retvalue.points->back()).euclidean_norm();
-                RealType candidate_dist1 = (candidate - retvalue.points->back()).euclidean_norm();
-                RealType candidate_dist2 = (end - candidate).euclidean_norm();
-
-                if (delta_min_ > metric_(end, candidate))
-                {
-                    retvalue.points->push_back(candidate);
-                    candidate = end;
-                }
-                else if ((cur_dist > candidate_dist1) && (cur_dist > candidate_dist2))
-                {
-                    retvalue.points->push_back(candidate);
-                }
-                else
-                {
-                    candidate = end;
-                }
-            }
-
-            // Update algortihm's state.
-            Point3D previous = current;
-            current = candidate;
-
-            // Compute inertial and tangential propagations using only current plane.
-            Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
-            Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
-                inertial_prop);
-
-            // Compute total propagation.
-            total_prop = this_type::total_propagation_(total_tangential_prop,
-                                                       inertial_prop, ratio_);
-
-        } while (current != end);
-
-        return retvalue;
-    }
+                                       Point3D total_prop, std::size_t max_size);
 
 private:
     // Parameters and options of the propagation algorithm.
@@ -579,16 +464,137 @@ ComplexPropagation<RealType>::tangential_propagation_(Point3D pt, const Tree& tr
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::total_tangential_propagation_norm_(Point3D pt,
+                                                                 Point3D inertial) const
+{
+    // Get the tangential propagation for the main plane.
+    Point3D total_tangential = this_type::tangential_propagation_(pt, main_tree_,
+        tangential_radius_, inertial);
+
+    // Make sure neighbour data is consistent.
+    BOOST_ASSERT((neighbour_weights_.size() == neighbour_trees_.size()) &&
+                 "Number of provided neighbour planes doesn't correspond to the "
+                 "number of weights.");
+
+    // Compute weighted tangential propagations for neighbours and add them  to the
+    // total tangential propagation.
+    for (std::size_t idx = 0; idx < neighbour_trees_.size(); ++idx)
+    {
+        Point3D cur_tang = this_type::tangential_propagation_(pt,
+            neighbour_trees_[idx], tangential_radius_, inertial);
+        RealType cur_weight = neighbour_weights_[idx];
+        total_tangential += (cur_tang * cur_weight);
+    }
+
+    // TODO: remove this block by refactoring bo::Vector class.
+    // Normalize vector.
+    Point3D total_tangential_normalized(total_tangential.normalized(), 3);
+
+    return total_tangential_normalized;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
 ComplexPropagation<RealType>::total_propagation_(Point3D tangential, Point3D inertial,
                                                  RealType ratio)
 {
     Point3D total = tangential * ratio + inertial * (RealType(1) - ratio);
-
     // TODO: remove this block by refactoring bo::Vector class.
     // Normalize vector.
     Point3D total_normalized(total.normalized(), 3);
 
     return total_normalized;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::PropagationResult
+ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& end,
+                                         Point3D total_prop, std::size_t max_size)
+{
+    typedef ArchedStrip<RealType, 3> ArchedStrip;
+
+    PropagationResult retvalue;
+    retvalue.points->push_back(start);
+
+    // Flag for so-called "smooth-ending". It is necessary to keep the distance
+    // between the points in the end phase as close to delta_min as possible,
+    // despite a delta_max point has been already found.
+    bool end_detected = false;
+
+    Point3D current = start;
+    do
+    {
+        // Restrict total length (to prevent looping).
+        if (retvalue.points->size() > max_size)
+        {
+            retvalue.stopped = true;
+            break;
+        }
+
+        // Search for the propagation candidate. It should lie on the arced strip
+        // bounded by delta_min and delta_max circumferences and a plane containing
+        // current point and normal to propagation vector.
+        Point3D phantom_candidate = current + total_prop * delta_min_;
+
+        // TODO: get rid of max radius.
+        std::pair<typename Tree::const_iterator, RealType> candidate_data =
+                main_tree_.find_nearest_if(phantom_candidate, delta_max_,
+                    ArchedStrip(current, delta_min_, delta_max_, total_prop, metric_));
+        RealType candidate_distance = candidate_data.second;
+        Point3D candidate = *(candidate_data.first);
+
+        // Check if we bump into a hole.
+        if (candidate_distance >= delta_max_)
+        {
+            retvalue.has_hole = true;
+            break;
+        }
+
+        // Check if the candidate "sees" the end point "in front".
+        if (!end_detected)
+        {
+            retvalue.points->push_back(candidate);
+            if ((delta_max_ >= metric_(end, candidate)) &&
+                (total_prop * (end - candidate)) > 0)
+                end_detected = true;
+        }
+        else
+        {
+            RealType cur_dist = (end - retvalue.points->back()).euclidean_norm();
+            RealType candidate_dist1 = (candidate - retvalue.points->back()).euclidean_norm();
+            RealType candidate_dist2 = (end - candidate).euclidean_norm();
+
+            if (delta_min_ > metric_(end, candidate))
+            {
+                retvalue.points->push_back(candidate);
+                candidate = end;
+            }
+            else if ((cur_dist > candidate_dist1) && (cur_dist > candidate_dist2))
+            {
+                retvalue.points->push_back(candidate);
+            }
+            else
+            {
+                candidate = end;
+            }
+        }
+
+        // Update algortihm's state.
+        Point3D previous = current;
+        current = candidate;
+
+        // Compute inertial and tangential propagations using only current plane.
+        Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
+        Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
+            inertial_prop);
+
+        // Compute total propagation.
+        total_prop = this_type::total_propagation_(total_tangential_prop,
+                                                   inertial_prop, ratio_);
+
+    } while (current != end);
+
+    return retvalue;
 }
 
 } // namespace surfaces
