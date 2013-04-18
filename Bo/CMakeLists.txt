@@ -55,6 +55,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/type_values.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/container_traversers.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/arched_strip.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/types.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/raw_image_2d_io.hpp
