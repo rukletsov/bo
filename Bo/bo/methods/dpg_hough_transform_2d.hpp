@@ -1368,7 +1368,7 @@ private:
 
                 // Check the constrains here.
 
-                s.vote_descrete(plane4);
+                s.vote(plane4);
             }
         }
     }

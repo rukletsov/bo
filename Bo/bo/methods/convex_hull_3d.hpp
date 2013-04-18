@@ -114,15 +114,9 @@ public:
     // of the Gauss-Ostrogradsky's Divergence theorem.
     RealType get_volume()
     {
-        const RealType kEpsilon(0.001);
-
         RealType v = 0;
 
         Point3D mass = centroid();
-
-        bool is_collinear = true;
-        bool is_coplanar = true;
-        Point3D n_first;
 
         for (typename FaceSet3D::const_iterator it = faces_.begin();
              it != faces_.end(); ++it)
@@ -132,9 +126,6 @@ public:
             // Normal vector must be normalized.
             Point3D n = normal(f);
             n /= n.euclidean_norm();
-
-            if (it == faces_.begin())
-                n_first = n;
 
             // Face barycenter.
             Point3D c = (f.A() + f.B() + f.C()) / 3;
@@ -148,21 +139,8 @@ public:
 
             BOOST_ASSERT(a >= 0);
 
-            // Test the points for collinearity or coplanarity. If it is performed, the calculated
-            // volume is not valid and must be set to zero.
-            // If the points are not collinear, there is at least one face with non-zero area.
-            if (a > kEpsilon)
-                is_collinear = false;
-            // If the points are not coplanar, there is at least one face with the normal non-collinaer
-            // with the other normals.
-            if (std::abs(std::abs(n_first * n) - 1) > kEpsilon)
-                is_coplanar = false;
-
             v += (n * c) * a;
         }
-
-        if (is_collinear || is_coplanar)
-            v = 0;
 
         BOOST_ASSERT(v >= 0);
 
@@ -214,28 +192,31 @@ private:
     // Finds the initial tetrahedron.
     void initialize_convex_hull()
     {
+        const RealType kEpsilon(0.001);
+
         if (points_.size() >= 4)
         {
             typedef typename Points3D::iterator Iterator;
 
             for (Iterator it1 = points_.begin(); it1 != points_.end() - 3; ++it1)
                 for (Iterator it2 = it1 + 1; it2 != points_.end() - 2; ++it2)
-                    for (Iterator it3 = it2 + 1; it2 != points_.end() - 1; ++it3)
+                    for (Iterator it3 = it2 + 1; it3 != points_.end() - 1; ++it3)
                     {
                         Point3D v1 = *it2 - *it1;
                         Point3D v2 = *it3 - *it1;
 
-                        // Check for non-collinearity.
-                        if (std::abs(v1 * v2) != v1.euclidean_norm() * v2.euclidean_norm())
+                        // Only if non-collinear.
+                        if (std::abs(std::abs(v1 * v2) -
+                                     v1.euclidean_norm() * v2.euclidean_norm()) > kEpsilon)
                         {
                             Point3D c = v1.cross_product(v2);
 
-                            for (Iterator it4 = it3 + 1; it3 != points_.end(); ++it4)
+                            for (Iterator it4 = it3 + 1; it4 != points_.end(); ++it4)
                             {
                                 Point3D v3 = *it4 - *it1;
 
-                                // Check for non-planarity.
-                                if (c * v3 != 0)
+                                // Only if non-planar.
+                                if (std::abs(c * v3) > kEpsilon)
                                 {
                                     // Create faces of the initial tetrahedron.
                                     insert_tetrahedron(*it1, *it2, *it3, *it4);
@@ -281,6 +262,8 @@ private:
     // Incremental expansion of the convex hull.
     void expand_convex_hull()
     {
+        const RealType kEpsilon(0.0001);
+
         if (faces_.size() > 3)
         {
             for (typename Points3D::const_iterator itp = points_.begin(); itp != points_.end(); ++itp)
@@ -296,15 +279,18 @@ private:
                 {
                     Face3D f = *it;
                     Point3D v_c = c - f.A();
+                    v_c = v_c / v_c.euclidean_norm();
                     Point3D v_p = p - f.A();
+                    v_p = v_p / v_p.euclidean_norm();
 
                     Point3D n = normal(f);
+                    n = n / n.euclidean_norm();
 
                     RealType dot_c = n * v_c;
                     RealType dot_p = n * v_p;
 
                     // If the face is "visible" from point p.
-                    if (dot_c * dot_p < 0)
+                    if (dot_c * dot_p < -kEpsilon)
                     {
                         visible_faces.push_back(f);
                     }
