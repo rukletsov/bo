@@ -47,6 +47,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/complex_propagation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/triangulation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/convex_hull_3d.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/methods/hough_transform.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/mrf_2d.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/likelihood_functions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/node_types.hpp
@@ -55,7 +56,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/mrf/type_values.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/container_traversers.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/arched_strip.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/internal/surfaces/types.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/mesh_io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/ini_reader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/io/raw_image_2d_io.hpp
