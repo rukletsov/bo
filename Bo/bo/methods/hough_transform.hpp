@@ -47,6 +47,9 @@
 #include <boost/math/constants/constants.hpp>
 
 #include <cmath>
+#include <utility>
+#include <algorithm>
+#include <vector>
 
 namespace bo {
 namespace methods {
@@ -58,6 +61,13 @@ class HoughTransform
 public:
 
     typedef bo::RawImage2D<float> Image;
+    // Pair (rho, theta) used in the transform.
+    typedef std::pair<RealType, RealType> RhoTheta;
+    typedef std::vector<RhoTheta> RhoThetas;
+    // Pixel in the transformed image. First element corresponds to
+    // theta, the second one to rho.
+    typedef std::pair<std::size_t, std::size_t> HoughPixel;
+    typedef std::vector<HoughPixel> HoughPixels;
 
     HoughTransform(const Image &image): input_image_(image),
         max_vote_(0)
@@ -109,7 +119,7 @@ public:
                         RealType theta = min_theta_ + x / theta_scaling_;
                         RealType rho = i * std::cos(theta) + j * std::sin(theta);
 
-                        std::size_t y = static_cast<std::size_t>(rho_scaling_ * (rho - min_rho_));
+                        std::size_t y = round(rho_scaling_ * (rho - min_rho_));
 
                         RealType vote = ++hough(x, y);
 
@@ -124,11 +134,105 @@ public:
         return hough;
     }
 
-    Image reconstruct_lines(RealType threshold, RealType quantity, std::size_t accu_width = 1024,
+    // Returns the image with the lines reconstructed from the given Hough parameters.
+    Image reconstruct_lines(const RhoThetas &parameters)
+    {
+        const RealType kEpsilon(0.001);
+
+        // Allocate the output image.
+        std::size_t w = input_image_.width();
+        std::size_t h = input_image_.height();
+        Image line_image(w, h, 0);
+
+        for (typename RhoThetas::const_iterator it = parameters.begin();
+             it != parameters.end(); ++it)
+        {
+            RealType rho = it->first;
+            RealType theta = it->second;
+
+            RealType sint = std::sin(theta);
+            RealType cost = std::cos(theta);
+
+            RealType t1, t2;
+
+            // Find the min (t1) and max (t2) parametric values of the line
+            // segment within the image.
+            if (std::abs(sint) < kEpsilon)
+            {
+                t1 = 0;
+                t2 = h;
+            }
+            else if (std::abs(cost) < kEpsilon)
+            {
+                t1 = -w;
+                t2 = 0;
+            }
+            else
+            {
+                RealType tc = rho * cost / sint;
+                t1 = t2 = tc;
+
+                tc = -rho * sint / cost;
+                t1 = std::min(t1, tc);
+                t2 = std::max(t2, tc);
+
+                tc = (rho * cost - w) / sint;
+                t1 = std::min(t1, tc);
+                t2 = std::max(t2, tc);
+
+                tc = (h - rho * sint) / cost;
+                t1 = std::min(t1, tc);
+                t2 = std::max(t2, tc);
+            }
+
+            RealType delta_t = RealType(1);
+            RealType t = t1;
+
+            // Draw the segment of the line.
+            while (t < t2)
+            {
+                std::size_t x = round(rho * cost - t * sint);
+                std::size_t y = round(rho * sint + t * cost);
+
+                if (x >= 0 && x < w && y >= 0 && y < h)
+                {
+                    line_image(x, y) = 1;
+                }
+
+                t += delta_t;
+            }
+        }
+
+        return line_image;
+    }
+
+    // Returns the image with the lines reconstructed from the given subset of pixels
+    // from the Hough image returned by compute() method.
+    Image reconstruct_lines(const HoughPixels &pixels)
+    {
+        RhoThetas parameters;
+
+        // Transform the pixels into rho-theta parameters.
+        for (HoughPixels::const_iterator it = pixels.begin(); it != pixels.end(); ++it)
+        {
+            RealType rho = min_rho_ + it->second / rho_scaling_;
+            RealType theta = min_theta_ + it->first / theta_scaling_;
+
+            parameters.push_back(RhoTheta(rho, theta));
+        }
+
+        return reconstruct_lines(parameters);
+    }
+
+    // Returns the image with the lines detected in the input image. Only the points
+    // whose values exceed the given threshold are considered. The number of the
+    // detected lines is defined by quantity parameter. Only the lines with the
+    // number of votes not less than quantity * (maximal vote in the accumulator)
+    // are reconstructed.
+    Image reconstruct_lines(RealType threshold, RealType quantity,
+                            std::size_t accu_width = 1024,
                             std::size_t accu_height = 1024)
     {
-        const RealType kEpsilon(0.01);
-
         BOOST_ASSERT(quantity >= RealType(0) && quantity <= RealType(1));
 
         // Compute the accumulator.
@@ -136,75 +240,40 @@ public:
 
         RealType accu_threshold = max_vote_ * quantity;
 
-        // Allocate the output image.
-        std::size_t w = input_image_.width();
-        std::size_t h = input_image_.height();
-        Image line_image(w, h, 0);
+        RhoThetas detected;
 
-        // Draw the lines.
+        // Collect the best parameters from the accumulator.
         for (std::size_t i = 0; i < accu_width; ++i)
             for (std::size_t j = 0; j < accu_height; ++j)
             {
                 if (hough(i, j) >= accu_threshold)
                 {
-                    RealType theta = min_theta_ + i / theta_scaling_;
                     RealType rho = min_rho_ + j / rho_scaling_;
+                    RealType theta = min_theta_ + i / theta_scaling_;
 
-                    RealType sint = std::sin(theta);
-                    RealType cost = std::cos(theta);
-
-                    RealType t1, t2;
-
-                    if (std::abs(sint) < kEpsilon)
-                    {
-                        t1 = 0;
-                        t2 = h;
-                    }
-                    else if (std::abs(cost) < kEpsilon)
-                    {
-                        t1 = -w;
-                        t2 = 0;
-                    }
-                    else
-                    {
-                        RealType tc = rho * cost / sint;
-                        t1 = t2 = tc;
-
-                        tc = -rho * sint / cost;
-                        t1 = std::min(t1, tc);
-                        t2 = std::max(t2, tc);
-
-                        tc = (rho * cost - w) / sint;
-                        t1 = std::min(t1, tc);
-                        t2 = std::max(t2, tc);
-
-                        tc = (h - rho * sint) / cost;
-                        t1 = std::min(t1, tc);
-                        t2 = std::max(t2, tc);
-                    }
-
-                    RealType delta_t = RealType(1);
-                    RealType t = t1;
-
-                    while (t < t2)
-                    {
-                        std::size_t x = rho * cost - t * sint;
-                        std::size_t y = rho * sint + t * cost;
-
-                        if (x >= 0 && x < w && y >= 0 && y < h)
-                        {
-                            line_image(x, y) = 1;
-                        }
-
-                        t += delta_t;
-                    }
+                    detected.push_back(RhoTheta(rho, theta));
                 }
             }
 
-        return line_image;
+        return reconstruct_lines(detected);
+    }
+
+    RealType get_rho_scaling()
+    {
+        return rho_scaling_;
+    }
+
+    RealType get_theta_scaling()
+    {
+        return theta_scaling_;
     }
 
 protected:
+
+    inline std::size_t round(RealType x) const
+    {
+        return static_cast<std::size_t>(std::floor(x + 0.5));
+    }
 
     Image input_image_;
 
