@@ -98,7 +98,9 @@ float face_bac(FaceTreeElement<T> fte, size_t k)
 template <typename T>
 struct D3Tree
 {
-    typedef bo::KDTree<3, FaceTreeElement<T>, std::pointer_to_binary_function<FaceTreeElement<T>, size_t, float> > Type;
+    typedef bo::KDTree<3, FaceTreeElement<T>,
+            std::pointer_to_binary_function<FaceTreeElement<T>, size_t, float> >
+        Type;
 };
 
 // Inserts the faces of the given mesh into the k-d tree structure.
@@ -246,8 +248,8 @@ std::pair<std::size_t, T> mesh_closest_face_exh(const bo::Mesh<T> &mesh, const b
         typename bo::Mesh<T>::Face face = faces[faceid];
 
         // Calculate the closest vertex to the given one within the given face.
-        bo::Vector<T, 3> closest_vertex = find_closest_point_on_triangle<T>(p, vertices[face.A()], vertices[face.B()],
-            vertices[face.C()]);
+        bo::Vector<T, 3> closest_vertex = find_closest_point_on_triangle<T>(p,
+                vertices[face.A()], vertices[face.B()], vertices[face.C()]);
         
         T dist = euclidean_distance<T, 3>(p, closest_vertex);
 
@@ -269,8 +271,8 @@ std::pair<std::size_t, T> mesh_closest_face_exh(const bo::Mesh<T> &mesh, const b
 // the result of the function: mesh_closest_face_sr(mesh, p, max_shape_radius, tree).
 template <typename T>
 std::vector<std::pair<std::size_t, T> > mesh_closest_face_sr(const bo::Mesh<T> &mesh,
-                                                                  const std::vector<bo::Vector<T, 3> > &point_cloud,
-                                                                  const T &max_shape_radius)
+                                                             const std::vector<bo::Vector<T, 3> > &point_cloud,
+                                                             const T &max_shape_radius)
 {
     std::vector<std::pair<std::size_t, T> > facesd;
 
