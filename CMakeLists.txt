@@ -56,9 +56,6 @@ IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     ADD_DEFINITIONS ("-Wall -Wextra -Wno-long-long -Wno-variadic-macros -pedantic")
 
-ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    ADD_DEFINITIONS ("-Weverything")
-
 ENDIF ()
 
 # Projects list with root paths.
