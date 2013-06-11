@@ -44,9 +44,12 @@
 #include <stdexcept>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
+#include "bo/kdtree.hpp"
 #include "bo/methods/distances_3d.hpp"
 
 namespace bo {
@@ -84,14 +87,27 @@ public:
     typedef std::set<std::size_t> AdjacentFacesPerVertex;
     typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
+private:
+    typedef KDTree<3, Vertex, boost::function<T (Vertex, std::size_t)> > Tree;
+    typedef boost::scoped_ptr<Tree> TreePtr;
+
 public:
     // Creates an empty mesh ready to store initial_count vertices.
     Mesh(std::size_t initial_count = 0);
 
-    // Adds a new vertex to the mesh and return its index.
+    // Custom copy c-tor for correct copying of the k-d tree.
+    Mesh(const Mesh& other);
+
+    // Idiomatic swap.
+    void swap(Mesh& other);
+
+    // Idiomatic assignment operator for correct assignment.
+    Mesh& operator=(Mesh other);
+
+    // Adds a new vertex to the mesh and returns its index.
     std::size_t add_vertex(const Vertex& vertex);
 
-    // Adds a new face and return its index. Update dependent collections.
+    // Adds a new face and returns its index. Updates dependent collections.
     std::size_t add_face(const Face& face);
 
     // Returns face normal. Throws if face_index is out of range.
@@ -129,6 +145,10 @@ public:
     const Faces& get_all_faces() const;
     const Normals& get_all_face_normals() const;
 
+    // The k-d tree management functions.
+    void build_tree();
+    void destroy_tree();
+
     // Allow mesh stream operator<< access Mesh members.
     template <typename V>
     friend std::ostream& operator<<(std::ostream& os, const Mesh<V>& obj);
@@ -148,8 +168,11 @@ private:
     Vertex closest_point_on_face(std::size_t face_index, const Vertex& P) const;
 
     // Range checkers. Throw if an index is out of range.
-    void vertex_rangecheck(std::size_t vertex_index) const;
-    void face_rangecheck(std::size_t face_index) const;
+    void vertex_rangecheck_(std::size_t vertex_index) const;
+    void face_rangecheck_(std::size_t face_index) const;
+
+    // Helper function for k-d tree.
+    static T point3D_accessor_(Vertex pt, std::size_t k);
 
 private:
     // Basic mesh data.
@@ -159,6 +182,10 @@ private:
     // Some other properties can be used, e.g. triangle strips (for speeding up
     // rendering), curvature information, BBox, grid, etc (See TriMesh implementation
     // by Szymon Rusinkiewicz as an example.)
+
+    // The k-d tree for mesh vertices. Created on demand, can be used for finding
+    // existed vertices when trying inserting a new one.
+    TreePtr tree_;
 
     // Connectivity structures.
     AdjacentVertices neighbours_;
@@ -255,6 +282,34 @@ Mesh<T>::Mesh(std::size_t initial_count)
 }
 
 template <typename T>
+Mesh<T>::Mesh(const Mesh& other): vertices_(other.vertices_), faces_(other.faces_),
+    face_normals_(other.face_normals_), neighbours_(other.neighbours_),
+    adjacent_faces_(other.adjacent_faces_)
+{
+    // Copies k-d tree if it exists. Can be expensive.
+    if (other.tree_)
+        tree_.reset(new Tree(*other.tree_));
+}
+
+template <typename T>
+void Mesh<T>::swap(Mesh& other)
+{
+    vertices_.swap(other.vertices_);
+    faces_.swap(other.faces_);
+    face_normals_.swap(other.face_normals_);
+    tree_.swap(other.tree_);
+    neighbours_.swap(other.neighbours_);
+    adjacent_faces_.swap(other.adjacent_faces_);
+}
+
+template <typename T>
+Mesh<T>& Mesh<T>::operator=(Mesh other)
+{
+    other.swap(*this);
+    return *this;
+}
+
+template <typename T>
 std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
 {
     // Actually, a syncro primitive should be added here.
@@ -318,7 +373,7 @@ template <typename T>
 typename Mesh<T>::Normal Mesh<T>::get_face_normal(std::size_t face_index) const
 {
     // Check if the given face exists in the mesh.
-    face_rangecheck(face_index);
+    face_rangecheck_(face_index);
 
     return face_normals_[face_index];
 }
@@ -329,7 +384,7 @@ typename Mesh<T>::Normal Mesh<T>::get_vertex_normal(std::size_t vertex_index) co
     // TODO: add caching for computed normals.
 
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     // A normal of a vertex is a sum of weighted normals of adjacent faces.
     Normal normal;
@@ -441,7 +496,7 @@ const typename Mesh<T>::AdjacentVerticesPerVertex& Mesh<T>::get_neighbouring_ver
     std::size_t vertex_index) const
 {
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     return neighbours_[vertex_index];
 }
@@ -451,7 +506,7 @@ const typename Mesh<T>::AdjacentFacesPerVertex& Mesh<T>::get_neighbouring_faces_
     std::size_t vertex_index) const
 {
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     return adjacent_faces_[vertex_index];
 }
@@ -472,6 +527,18 @@ template <typename T> inline
 const typename Mesh<T>::Normals& Mesh<T>::get_all_face_normals() const
 {
     return face_normals_;
+}
+
+template <typename T>
+void Mesh<T>::build_tree()
+{
+    tree_.reset(new Tree(vertices_.begin(), vertices_.end(), std::ptr_fun(point3D_accessor_)));
+}
+
+template <typename T>
+void Mesh<T>::destroy_tree()
+{
+    tree_.reset();
 }
 
 
@@ -538,17 +605,23 @@ typename Mesh<T>::Vertex Mesh<T>::closest_point_on_face(std::size_t face_index,
 }
 
 template <typename T>
-void Mesh<T>::vertex_rangecheck(std::size_t vertex_index) const
+void Mesh<T>::vertex_rangecheck_(std::size_t vertex_index) const
 {
     if (vertices_.size() <= vertex_index)
         throw std::out_of_range("Specified vertex doesn't exist.");
 }
 
 template <typename T>
-void Mesh<T>::face_rangecheck(std::size_t face_index) const
+void Mesh<T>::face_rangecheck_(std::size_t face_index) const
 {
     if (faces_.size() <= face_index)
         throw std::out_of_range("Specified face doesn't exist.");
+}
+
+template <typename T> inline
+T Mesh<T>::point3D_accessor_(Vertex pt, std::size_t k)
+{
+    return pt[k];
 }
 
 } // namespace bo
