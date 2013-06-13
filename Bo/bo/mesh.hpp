@@ -42,9 +42,11 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <functional>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "bo/vector.hpp"
@@ -176,6 +178,9 @@ private:
     // more information see
     //    http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
     Vertex closest_point_on_face(std::size_t face_index, const Vertex& P) const;
+
+    template <typename F>
+    SelfType& join(const SelfType& other, F inserter);
 
     // Range checkers. Throw if an index is out of range.
     void vertex_rangecheck_(std::size_t vertex_index) const;
@@ -483,61 +488,15 @@ double Mesh<T>::distance(const Vertex& point) const
 template <typename T>
 Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
 {
-    // Cache vertices count.
-    std::size_t other_size = other.vertices_.size();
-
-    // Lookup table for faces transformation.
-    std::vector<std::size_t> lookup_table(other_size);
-
-    // Insert vertices and fill lookup table.
-    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
-    {
-        std::size_t new_idx = this->add_vertex(other.vertices_[other_idx]);
-        lookup_table[other_idx] = new_idx;
-    }
-
-    // Transform and insert faces.
-    typename Faces::const_iterator other_end = other.faces_.end();
-    for (typename Faces::const_iterator old_face = other.faces_.begin();
-         old_face != other_end; ++old_face)
-    {
-        std::size_t new_a = lookup_table[old_face->A()];
-        std::size_t new_b = lookup_table[old_face->B()];
-        std::size_t new_c = lookup_table[old_face->C()];
-        this->add_face(Face(new_a, new_b, new_c));
-    }
-
-    return (*this);
+    return
+        join(other, std::mem_fun(&SelfType::add_vertex));
 }
 
 template <typename T>
 Mesh<T>& Mesh<T>::join_checked(const Mesh<T>& other, T search_radius)
 {
-    // Cache vertices count.
-    std::size_t other_size = other.vertices_.size();
-
-    // Lookup table for faces transformation.
-    std::vector<std::size_t> lookup_table(other_size);
-
-    // Insert vertices and fill lookup table.
-    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
-    {
-        std::size_t new_idx = this->add_vertex_checked(other.vertices_[other_idx], search_radius);
-        lookup_table[other_idx] = new_idx;
-    }
-
-    // Transform and insert faces.
-    typename Faces::const_iterator other_end = other.faces_.end();
-    for (typename Faces::const_iterator old_face = other.faces_.begin();
-         old_face != other_end; ++old_face)
-    {
-        std::size_t new_a = lookup_table[old_face->A()];
-        std::size_t new_b = lookup_table[old_face->B()];
-        std::size_t new_c = lookup_table[old_face->C()];
-        this->add_face(Face(new_a, new_b, new_c));
-    }
-
-    return (*this);
+    return
+        join(other, boost::bind(&SelfType::add_vertex_checked, _1, _2, search_radius));
 }
 
 template <typename T>
@@ -673,6 +632,36 @@ typename Mesh<T>::Vertex Mesh<T>::closest_point_on_face(std::size_t face_index,
         vertices_[faces_[face_index].C()]);
 
     return closest_point;
+}
+
+template <typename T> template <typename F>
+Mesh<T>& Mesh<T>::join(const Mesh<T>& other, F inserter)
+{
+    // Cache vertices count.
+    std::size_t other_size = other.vertices_.size();
+
+    // Lookup table for faces transformation.
+    std::vector<std::size_t> lookup_table(other_size);
+
+    // Insert vertices and fill lookup table.
+    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
+    {
+        std::size_t new_idx = inserter(this, other.vertices_[other_idx]);
+        lookup_table[other_idx] = new_idx;
+    }
+
+    // Transform and insert faces.
+    typename Faces::const_iterator other_end = other.faces_.end();
+    for (typename Faces::const_iterator old_face = other.faces_.begin();
+         old_face != other_end; ++old_face)
+    {
+        std::size_t new_a = lookup_table[old_face->A()];
+        std::size_t new_b = lookup_table[old_face->B()];
+        std::size_t new_c = lookup_table[old_face->C()];
+        this->add_face(Face(new_a, new_b, new_c));
+    }
+
+    return *this;
 }
 
 template <typename T>
