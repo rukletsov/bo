@@ -225,7 +225,7 @@ void ChrisitiansenSheepFull()
     AssertPathExists(paths.SheepInDir);
     for (directory_iterator it(paths.SheepInDir); it != directory_iterator(); ++it)
     {
-        if (is_regular_file(*it))
+        if (is_regular_file(*it) && (it->path().extension() == path(".ply")))
             contour_data.push_back(it->path());
     }
 
