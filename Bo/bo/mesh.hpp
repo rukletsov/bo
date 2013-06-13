@@ -88,7 +88,8 @@ public:
     typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
 private:
-    typedef KDTree<3, Vertex, boost::function<T (Vertex, std::size_t)> > Tree;
+    typedef std::pair<Vertex, std::size_t> TreeNode;
+    typedef KDTree<3, TreeNode, boost::function<T (TreeNode, std::size_t)> > Tree;
     typedef boost::scoped_ptr<Tree> TreePtr;
 
 public:
@@ -106,6 +107,11 @@ public:
 
     // Adds a new vertex to the mesh and returns its index.
     std::size_t add_vertex(const Vertex& vertex);
+
+    // Adds a new vertex to the mesh only if there are no vertices at the distance
+    // of search_radius. Returns either the index of the new vertex or the index
+    // of the closest vertex that already exists in the mesh.
+    std::size_t add_vertex_checked(const Vertex& vertex, T search_radius);
 
     // Adds a new face and returns its index. Updates dependent collections.
     std::size_t add_face(const Face& face);
@@ -131,6 +137,10 @@ public:
     // Joins the given mesh into the current one. First adds points, then recalculates
     // faces and finally adds faces.
     SelfType& join(const SelfType& other);
+
+    // Joins the given mesh into the current one. Instead of adding all points, tries
+    // to use existed vertices that are close to candidates for insertion.
+    SelfType& join_checked(const SelfType& other, T search_radius);
 
     static SelfType from_vertices(const Vertices* vertices);
 
@@ -172,7 +182,7 @@ private:
     void face_rangecheck_(std::size_t face_index) const;
 
     // Helper function for k-d tree.
-    static T point3D_accessor_(Vertex pt, std::size_t k);
+    static T point3D_accessor_(TreeNode pt, std::size_t k);
 
 private:
     // Basic mesh data.
@@ -331,6 +341,25 @@ std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
 }
 
 template <typename T>
+std::size_t Mesh<T>::add_vertex_checked(const Vertex& vertex, T search_radius)
+{
+    // If k-d tree is not built, build it.
+    if (!tree_)
+        build_tree();
+
+    // Search for an existed vertex in a given radius. A coversion is needed so that
+    // candidate type and tree node type are identical.
+    typename Tree::const_iterator candidate = tree_->find_nearest(
+        std::make_pair(vertex, std::numeric_limits<std::size_t>::max()), search_radius).first;
+
+    // If found
+    std::size_t vertex_id = (candidate == tree_->end()) ?
+                add_vertex(vertex) : candidate->second;
+
+    return vertex_id;
+}
+
+template <typename T>
 std::size_t Mesh<T>::add_face(const Face& face)
 {
     // Check if all vertices exist in the mesh.
@@ -454,7 +483,7 @@ double Mesh<T>::distance(const Vertex& point) const
 template <typename T>
 Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
 {
-    // Cache vertex and face count.
+    // Cache vertices count.
     std::size_t other_size = other.vertices_.size();
 
     // Lookup table for faces transformation.
@@ -464,6 +493,36 @@ Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
     for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
     {
         std::size_t new_idx = this->add_vertex(other.vertices_[other_idx]);
+        lookup_table[other_idx] = new_idx;
+    }
+
+    // Transform and insert faces.
+    typename Faces::const_iterator other_end = other.faces_.end();
+    for (typename Faces::const_iterator old_face = other.faces_.begin();
+         old_face != other_end; ++old_face)
+    {
+        std::size_t new_a = lookup_table[old_face->A()];
+        std::size_t new_b = lookup_table[old_face->B()];
+        std::size_t new_c = lookup_table[old_face->C()];
+        this->add_face(Face(new_a, new_b, new_c));
+    }
+
+    return (*this);
+}
+
+template <typename T>
+Mesh<T>& Mesh<T>::join_checked(const Mesh<T>& other, T search_radius)
+{
+    // Cache vertices count.
+    std::size_t other_size = other.vertices_.size();
+
+    // Lookup table for faces transformation.
+    std::vector<std::size_t> lookup_table(other_size);
+
+    // Insert vertices and fill lookup table.
+    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
+    {
+        std::size_t new_idx = this->add_vertex_checked(other.vertices_[other_idx], search_radius);
         lookup_table[other_idx] = new_idx;
     }
 
@@ -532,7 +591,19 @@ const typename Mesh<T>::Normals& Mesh<T>::get_all_face_normals() const
 template <typename T>
 void Mesh<T>::build_tree()
 {
-    tree_.reset(new Tree(vertices_.begin(), vertices_.end(), std::ptr_fun(point3D_accessor_)));
+    // Copy vertex data with corresponding indices to a separate container. This is
+    // necessary as we are going to store in the tree vertices ids in addition to
+    // vertices themselves. For this reason, std::transform cannot be used.
+    std::vector<TreeNode> nodes_container;
+    std::size_t vertices_count = vertices_.size();
+    nodes_container.reserve(vertices_count);
+    for (std::size_t idx = 0; idx < vertices_count; ++idx)
+        nodes_container.push_back(std::make_pair(vertices_[idx], idx));
+
+    // Create an empty k-d tree and then construct it from the prepared container.
+    // The container is changed, but it is OK.
+    tree_.reset(new Tree(std::ptr_fun(point3D_accessor_)));
+    tree_->efficient_replace_and_optimise(nodes_container);
 }
 
 template <typename T>
@@ -619,9 +690,9 @@ void Mesh<T>::face_rangecheck_(std::size_t face_index) const
 }
 
 template <typename T> inline
-T Mesh<T>::point3D_accessor_(Vertex pt, std::size_t k)
+T Mesh<T>::point3D_accessor_(TreeNode pt, std::size_t k)
 {
-    return pt[k];
+    return pt.first[k];
 }
 
 } // namespace bo
