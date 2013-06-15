@@ -42,11 +42,16 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <functional>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "bo/vector.hpp"
 #include "bo/triangle.hpp"
+#include "bo/kdtree.hpp"
 #include "bo/methods/distances_3d.hpp"
 
 namespace bo {
@@ -84,14 +89,33 @@ public:
     typedef std::set<std::size_t> AdjacentFacesPerVertex;
     typedef std::vector<AdjacentFacesPerVertex> AdjacentFaces;
 
+private:
+    typedef std::pair<Vertex, std::size_t> TreeNode;
+    typedef KDTree<3, TreeNode, boost::function<T (TreeNode, std::size_t)> > Tree;
+    typedef boost::scoped_ptr<Tree> TreePtr;
+
 public:
     // Creates an empty mesh ready to store initial_count vertices.
     Mesh(std::size_t initial_count = 0);
 
-    // Adds a new vertex to the mesh and return its index.
+    // Custom copy c-tor for correct copying of the k-d tree.
+    Mesh(const Mesh& other);
+
+    // Idiomatic swap.
+    void swap(Mesh& other);
+
+    // Idiomatic assignment operator for correct assignment.
+    Mesh& operator=(Mesh other);
+
+    // Adds a new vertex to the mesh and returns its index.
     std::size_t add_vertex(const Vertex& vertex);
 
-    // Adds a new face and return its index. Update dependent collections.
+    // Adds a new vertex to the mesh only if there are no vertices at the distance
+    // of search_radius. Returns either the index of the new vertex or the index
+    // of the closest vertex that already exists in the mesh.
+    std::size_t add_vertex_checked(const Vertex& vertex, T search_radius);
+
+    // Adds a new face and returns its index. Updates dependent collections.
     std::size_t add_face(const Face& face);
 
     // Returns face normal. Throws if face_index is out of range.
@@ -116,6 +140,10 @@ public:
     // faces and finally adds faces.
     SelfType& join(const SelfType& other);
 
+    // Joins the given mesh into the current one. Instead of adding all points, tries
+    // to use existed vertices that are close to candidates for insertion.
+    SelfType& join_checked(const SelfType& other, T search_radius);
+
     static SelfType from_vertices(const Vertices* vertices);
 
     // Returns data from connectivity structures. Throws if face index is out of range.
@@ -128,6 +156,10 @@ public:
     const Vertices& get_all_vertices() const;
     const Faces& get_all_faces() const;
     const Normals& get_all_face_normals() const;
+
+    // The k-d tree management functions.
+    void build_tree();
+    void destroy_tree();
 
     // Allow mesh stream operator<< access Mesh members.
     template <typename V>
@@ -147,9 +179,15 @@ private:
     //    http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
     Vertex closest_point_on_face(std::size_t face_index, const Vertex& P) const;
 
+    template <typename F>
+    SelfType& join(const SelfType& other, F inserter);
+
     // Range checkers. Throw if an index is out of range.
-    void vertex_rangecheck(std::size_t vertex_index) const;
-    void face_rangecheck(std::size_t face_index) const;
+    void vertex_rangecheck_(std::size_t vertex_index) const;
+    void face_rangecheck_(std::size_t face_index) const;
+
+    // Helper function for k-d tree.
+    static T point3D_accessor_(TreeNode pt, std::size_t k);
 
 private:
     // Basic mesh data.
@@ -159,6 +197,10 @@ private:
     // Some other properties can be used, e.g. triangle strips (for speeding up
     // rendering), curvature information, BBox, grid, etc (See TriMesh implementation
     // by Szymon Rusinkiewicz as an example.)
+
+    // The k-d tree for mesh vertices. Created on demand, can be used for finding
+    // existed vertices when trying inserting a new one.
+    TreePtr tree_;
 
     // Connectivity structures.
     AdjacentVertices neighbours_;
@@ -255,6 +297,34 @@ Mesh<T>::Mesh(std::size_t initial_count)
 }
 
 template <typename T>
+Mesh<T>::Mesh(const Mesh& other): vertices_(other.vertices_), faces_(other.faces_),
+    face_normals_(other.face_normals_), neighbours_(other.neighbours_),
+    adjacent_faces_(other.adjacent_faces_)
+{
+    // Copies k-d tree if it exists. Can be expensive.
+    if (other.tree_)
+        tree_.reset(new Tree(*other.tree_));
+}
+
+template <typename T>
+void Mesh<T>::swap(Mesh& other)
+{
+    vertices_.swap(other.vertices_);
+    faces_.swap(other.faces_);
+    face_normals_.swap(other.face_normals_);
+    tree_.swap(other.tree_);
+    neighbours_.swap(other.neighbours_);
+    adjacent_faces_.swap(other.adjacent_faces_);
+}
+
+template <typename T>
+Mesh<T>& Mesh<T>::operator=(Mesh other)
+{
+    other.swap(*this);
+    return *this;
+}
+
+template <typename T>
 std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
 {
     // Actually, a syncro primitive should be added here.
@@ -273,6 +343,25 @@ std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
                      "Vertex connectivity structures are of different sizes.");
 
     return new_vertex_index;
+}
+
+template <typename T>
+std::size_t Mesh<T>::add_vertex_checked(const Vertex& vertex, T search_radius)
+{
+    // If k-d tree is not built, build it.
+    if (!tree_)
+        build_tree();
+
+    // Search for an existed vertex in a given radius. A coversion is needed so that
+    // candidate type and tree node type are identical.
+    typename Tree::const_iterator candidate = tree_->find_nearest(
+        std::make_pair(vertex, std::numeric_limits<std::size_t>::max()), search_radius).first;
+
+    // If found
+    std::size_t vertex_id = (candidate == tree_->end()) ?
+                add_vertex(vertex) : candidate->second;
+
+    return vertex_id;
 }
 
 template <typename T>
@@ -318,7 +407,7 @@ template <typename T>
 typename Mesh<T>::Normal Mesh<T>::get_face_normal(std::size_t face_index) const
 {
     // Check if the given face exists in the mesh.
-    face_rangecheck(face_index);
+    face_rangecheck_(face_index);
 
     return face_normals_[face_index];
 }
@@ -329,7 +418,7 @@ typename Mesh<T>::Normal Mesh<T>::get_vertex_normal(std::size_t vertex_index) co
     // TODO: add caching for computed normals.
 
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     // A normal of a vertex is a sum of weighted normals of adjacent faces.
     Normal normal;
@@ -399,31 +488,15 @@ double Mesh<T>::distance(const Vertex& point) const
 template <typename T>
 Mesh<T>& Mesh<T>::join(const Mesh<T>& other)
 {
-    // Cache vertex and face count.
-    std::size_t other_size = other.vertices_.size();
+    return
+        join(other, std::mem_fun(&SelfType::add_vertex));
+}
 
-    // Lookup table for faces transformation.
-    std::vector<std::size_t> lookup_table(other_size);
-
-    // Insert vertices and fill lookup table.
-    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
-    {
-        std::size_t new_idx = this->add_vertex(other.vertices_[other_idx]);
-        lookup_table[other_idx] = new_idx;
-    }
-
-    // Transform and insert faces.
-    typename Faces::const_iterator other_end = other.faces_.end();
-    for (typename Faces::const_iterator old_face = other.faces_.begin();
-         old_face != other_end; ++old_face)
-    {
-        std::size_t new_a = lookup_table[old_face->A()];
-        std::size_t new_b = lookup_table[old_face->B()];
-        std::size_t new_c = lookup_table[old_face->C()];
-        this->add_face(Face(new_a, new_b, new_c));
-    }
-
-    return (*this);
+template <typename T>
+Mesh<T>& Mesh<T>::join_checked(const Mesh<T>& other, T search_radius)
+{
+    return
+        join(other, boost::bind(&SelfType::add_vertex_checked, _1, _2, search_radius));
 }
 
 template <typename T>
@@ -441,7 +514,7 @@ const typename Mesh<T>::AdjacentVerticesPerVertex& Mesh<T>::get_neighbouring_ver
     std::size_t vertex_index) const
 {
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     return neighbours_[vertex_index];
 }
@@ -451,7 +524,7 @@ const typename Mesh<T>::AdjacentFacesPerVertex& Mesh<T>::get_neighbouring_faces_
     std::size_t vertex_index) const
 {
     // Check if the given vertex exists in the mesh.
-    vertex_rangecheck(vertex_index);
+    vertex_rangecheck_(vertex_index);
 
     return adjacent_faces_[vertex_index];
 }
@@ -472,6 +545,30 @@ template <typename T> inline
 const typename Mesh<T>::Normals& Mesh<T>::get_all_face_normals() const
 {
     return face_normals_;
+}
+
+template <typename T>
+void Mesh<T>::build_tree()
+{
+    // Copy vertex data with corresponding indices to a separate container. This is
+    // necessary as we are going to store in the tree vertices ids in addition to
+    // vertices themselves. For this reason, std::transform cannot be used.
+    std::vector<TreeNode> nodes_container;
+    std::size_t vertices_count = vertices_.size();
+    nodes_container.reserve(vertices_count);
+    for (std::size_t idx = 0; idx < vertices_count; ++idx)
+        nodes_container.push_back(std::make_pair(vertices_[idx], idx));
+
+    // Create an empty k-d tree and then construct it from the prepared container.
+    // The container is changed, but it is OK.
+    tree_.reset(new Tree(std::ptr_fun(point3D_accessor_)));
+    tree_->efficient_replace_and_optimise(nodes_container);
+}
+
+template <typename T>
+void Mesh<T>::destroy_tree()
+{
+    tree_.reset();
 }
 
 
@@ -537,18 +634,54 @@ typename Mesh<T>::Vertex Mesh<T>::closest_point_on_face(std::size_t face_index,
     return closest_point;
 }
 
+template <typename T> template <typename F>
+Mesh<T>& Mesh<T>::join(const Mesh<T>& other, F inserter)
+{
+    // Cache vertices count.
+    std::size_t other_size = other.vertices_.size();
+
+    // Lookup table for faces transformation.
+    std::vector<std::size_t> lookup_table(other_size);
+
+    // Insert vertices and fill lookup table.
+    for (std::size_t other_idx = 0; other_idx < other_size; ++other_idx)
+    {
+        std::size_t new_idx = inserter(this, other.vertices_[other_idx]);
+        lookup_table[other_idx] = new_idx;
+    }
+
+    // Transform and insert faces.
+    typename Faces::const_iterator other_end = other.faces_.end();
+    for (typename Faces::const_iterator old_face = other.faces_.begin();
+         old_face != other_end; ++old_face)
+    {
+        std::size_t new_a = lookup_table[old_face->A()];
+        std::size_t new_b = lookup_table[old_face->B()];
+        std::size_t new_c = lookup_table[old_face->C()];
+        this->add_face(Face(new_a, new_b, new_c));
+    }
+
+    return *this;
+}
+
 template <typename T>
-void Mesh<T>::vertex_rangecheck(std::size_t vertex_index) const
+void Mesh<T>::vertex_rangecheck_(std::size_t vertex_index) const
 {
     if (vertices_.size() <= vertex_index)
         throw std::out_of_range("Specified vertex doesn't exist.");
 }
 
 template <typename T>
-void Mesh<T>::face_rangecheck(std::size_t face_index) const
+void Mesh<T>::face_rangecheck_(std::size_t face_index) const
 {
     if (faces_.size() <= face_index)
         throw std::out_of_range("Specified face doesn't exist.");
+}
+
+template <typename T> inline
+T Mesh<T>::point3D_accessor_(TreeNode pt, std::size_t k)
+{
+    return pt.first[k];
 }
 
 } // namespace bo

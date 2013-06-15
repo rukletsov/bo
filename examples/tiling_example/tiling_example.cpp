@@ -225,7 +225,7 @@ void ChrisitiansenSheepFull()
     AssertPathExists(paths.SheepInDir);
     for (directory_iterator it(paths.SheepInDir); it != directory_iterator(); ++it)
     {
-        if (is_regular_file(*it))
+        if (is_regular_file(*it) && (it->path().extension() == path(".ply")))
             contour_data.push_back(it->path());
     }
 
@@ -260,7 +260,11 @@ void ChrisitiansenSheepFull()
         TriangAlgo triang(prev_contour->contour(), !(prev_contour->has_hole()),
                           cur_contour->contour(), !(cur_contour->has_hole()));
         Mesh3D mesh = *triang.christiansen();
-        result_mesh.join(mesh);
+
+        // Join meshes avoiding duplicates of vertices. A k-d tree must be rebuilt
+        // before joining!
+        result_mesh.build_tree();
+        result_mesh.join_checked(mesh, 1e-5f);
     }
 
     mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
