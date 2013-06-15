@@ -609,6 +609,12 @@ public:
         votes_ += std::floor(vote) + 1;
     }
 
+    void vote_unit(Hyperplane plane)
+    {
+        if (intersect(plane).size() > 0)
+            votes_ += 1;
+    }
+
 private:
 
     Spaces subspaces_;
@@ -880,8 +886,8 @@ public:
                     typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(*it, gamma, *abit);
 
                     // Create two segments on this line that correspond to the given scaling range.
-                    Point2D v1(line4.second[0], line4.second[1]);
-                    Point2D v2(line4.second[2], line4.second[3]);
+                    Point2D v1(line4.direction[0], line4.direction[1]);
+                    Point2D v2(line4.direction[2], line4.direction[3]);
                     RealType vnorm = (v2 - v1).euclidean_norm();
                     Point2D segment_coords = scaling_range * model_base_ / vnorm;
 
@@ -903,8 +909,8 @@ public:
         RealType t1 = segment.second[0];
         RealType t2 = segment.second[1];
 
-        typename Space4D::Point4D p = segment.first.first;
-        typename Space4D::Point4D v = segment.first.second;
+        typename Space4D::Point4D p = segment.first.point;
+        typename Space4D::Point4D v = segment.first.direction;
 
         if (t1 > t2)
             std::swap(t1, t2);
@@ -1102,7 +1108,7 @@ private:
     }
 
     // Rotates the given vector in a radians.
-    inline Point2D rotate(const Point2D &v, RealType a)
+    inline Point2D rotate(const Point2D &v, RealType a) const
     {
         RealType cosa = std::cos(a);
         RealType sina = std::sin(a);
@@ -1277,7 +1283,7 @@ private:
     {
         for (typename Features::const_iterator it = object_features.begin(); it != object_features.end(); ++it)
         {
-            feature_to_vote(s, *it, scaling_range);
+            feature_to_vote2(s, *it, scaling_range);
         }
     }
 
@@ -1364,28 +1370,138 @@ private:
             for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                  abit !=  atable_.at(index).end(); ++abit)
             {
-                typename Space4D::Hyperplane plane4 = plane4_from_feature_and_atable_element(f, gamma, *abit);
+                // Reconstruct the 4D line.
+                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, *abit);
 
-                // Check the constrains here.
+                // Use the hyperplane paradigm.
+                typename Space4D::Point4D norm(line4.direction[3], line4.direction[2],
+                                            -line4.direction[1], -line4.direction[0]);
+                typename Space4D::Point4D point = line4.point;
+                typename Space4D::Hyperplane plane(point, norm);
 
-                s.vote(plane4);
+                // Check the plane constrains here and vote.
+                if (is_in_scaling_constrains(s, plane, scaling_range) &&
+                    is_in_tangent_constrains(s, plane, RealType(0.3)))
+                {
+                     s.vote_descrete(plane);
+                }
             }
         }
     }
 
-    inline typename Space4D::Hyperplane plane4_from_feature_and_atable_element(const Feature &f,
-                                                               RealType gamma,
-                                                               const ATableElement &e)
+    int location_by_line(const Point2D &bot, const Point2D &top,
+                         const Point2D &b, const Point2D &normal) const
     {
-        typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, e);
+        Point2D d = top - bot;
 
-        // Normal of the hyperplane.
-        typename Space4D::Point4D n(line4.direction[3], line4.direction[2],
-                                    -line4.direction[1], -line4.direction[0]);
+        RealType proj_min = std::numeric_limits<RealType>::max();
+        RealType proj_max = -proj_min;
 
-        return typename Space4D::Hyperplane(line4.point, n);
+        for (std::size_t i = 0; i < 2; ++i)
+            for (std::size_t j = 0; j < 2; ++j)
+            {
+                Point2D p = bot + Point2D(d[0] * i, d[1] * j);
+
+                RealType proj = (p - b) * normal;
+
+                if (proj_min > proj)
+                    proj_min = proj;
+
+                if (proj_max < proj)
+                    proj_max = proj;
+            }
+
+        if ((proj_min == 0 && proj_max == 0) || proj_min * proj_max < 0)
+            return 0;
+
+        return proj_max > 0 ? 1 : -1;
     }
 
+    bool is_in_scaling_constrains(const Space4D &s,
+                                  const typename Space4D::Hyperplane &plane,
+                                  const Point2D &scaling_range) const
+    {
+        // Compute directional vectors.
+        Point2D v1(-plane.normal()[3], -plane.normal()[2]);
+        Point2D v2(plane.normal()[1], plane.normal()[0]);
+
+        RealType vnorm = (v2 - v1).euclidean_norm();
+        Point2D scaling = scaling_range * model_base_ / vnorm;
+
+        typename Space4D::Box4D box = s.get_bounding_box();
+
+        // Box projections.
+        Point2D bot_v1(box.first[0], box.first[1]);
+        Point2D top_v1(box.second[0], box.second[1]);
+        Point2D bot_v2(box.first[2], box.first[3]);
+        Point2D top_v2(box.second[2], box.second[3]);
+
+        Point2D b(plane.point()[0], plane.point()[1]);
+
+        // Points on the lines.
+        Point2D b_v1q1 = b + v1 * scaling[0];
+        Point2D b_v1q2 = b + v1 * scaling[1];
+        Point2D b_v2q1 = b + v2 * scaling[0];
+        Point2D b_v2q2 = b + v2 * scaling[1];
+
+        Point2D b_v1q1_inv = b - v1 * scaling[0];
+        Point2D b_v1q2_inv = b - v1 * scaling[1];
+        Point2D b_v2q1_inv = b - v2 * scaling[0];
+        Point2D b_v2q2_inv = b - v2 * scaling[1];
+
+        return (location_by_line(bot_v1, top_v1, b_v1q1, v1) >= 0 &&
+                location_by_line(bot_v1, top_v1, b_v1q2, v1) <= 0 &&
+                location_by_line(bot_v2, top_v2, b_v2q1, v2) >= 0 &&
+                location_by_line(bot_v2, top_v2, b_v2q2, v2) <= 0) ||
+               (location_by_line(bot_v1, top_v1, b_v1q1_inv, -v1) >= 0 &&
+                location_by_line(bot_v1, top_v1, b_v1q2_inv, -v1) <= 0 &&
+                location_by_line(bot_v2, top_v2, b_v2q1_inv, -v2) >= 0 &&
+                location_by_line(bot_v2, top_v2, b_v2q2_inv, -v2) <= 0);
+    }
+
+    inline void sector_constraint(const Point2D &v, RealType sigma,
+                                  Point2D &nw) const
+    {
+        Point2D w = rotate(v, sigma);
+
+        nw[0] = -w[1];
+        nw[1] = w[0];
+
+        // Correct the sign of the normal.
+        if (nw * (v - w) > 0)
+            nw *= -1;
+    }
+
+    bool is_in_tangent_constrains(const Space4D &s,
+                                  const typename Space4D::Hyperplane &plane,
+                                  const RealType sigma) const
+    {
+        // Compute directional vectors v1 and v2.
+        Point2D v1(-plane.normal()[3], -plane.normal()[2]);
+        Point2D v2(plane.normal()[1], plane.normal()[0]);
+
+        typename Space4D::Box4D box = s.get_bounding_box();
+
+        // Box projections.
+        Point2D bot_v1(box.first[0], box.first[1]);
+        Point2D top_v1(box.second[0], box.second[1]);
+        Point2D bot_v2(box.first[2], box.first[3]);
+        Point2D top_v2(box.second[2], box.second[3]);
+
+        Point2D b(plane.point()[0], plane.point()[1]);
+
+        // Calculate vectors constraining the sigma-sector.
+        Point2D nw1, nw2, nu1, nu2;
+        sector_constraint(v1, sigma, nw1);
+        sector_constraint(v1, -sigma, nu1);
+        sector_constraint(v2, sigma, nw2);
+        sector_constraint(v2, -sigma, nu2);
+
+        return (location_by_line(bot_v1, top_v1, b, nw1) *
+                location_by_line(bot_v1, top_v1, b, nu1) >= 0) &&
+               (location_by_line(bot_v2, top_v2, b, nw2) *
+                location_by_line(bot_v2, top_v2, b, nu2) >= 0);
+    }
 
     // Recursively traces the space tree and inserts into the container the elements from
     // the given resolution level.
