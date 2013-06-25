@@ -225,7 +225,7 @@ private:
             retvalue = ContourTraverser(TraverseFactory::Create(contour2_, c2min_idx, true));
 
             // Contour2 traverse direction should be swapped in order to correspond
-            // with the contoru1 direction.
+            // with the contour1 direction.
             Point3D direction1 = *(traverser1 + 1) - *traverser1;
             Point3D direction2 = *(retvalue + 1) - *retvalue;
             if (direction1 * direction2 < 0)

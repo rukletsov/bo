@@ -53,13 +53,16 @@ public:
     typedef typename Container::const_iterator ContainerConstIterator;
     typedef typename std::iterator_traits<ContainerConstIterator>::reference Reference;
 
-    TraverseRule(ContainerConstPtr contour): contour_(contour)
+    TraverseRule(ContainerConstPtr contour, std::size_t index)
+        : contour_(contour), current_index_(index)
     { }
 
     virtual void add(std::size_t offset) = 0;
     virtual Reference dereference() const = 0;
     virtual bool check_validity() const = 0;
     virtual SelfType* clone() const = 0;
+    virtual std::size_t index()
+    { return current_index_; }
 
     virtual ~TraverseRule()
     { }
@@ -71,6 +74,7 @@ public:
 
 protected:
     ContainerConstPtr contour_;
+    std::size_t current_index_;
 };
 
 // This traverse rule iterates the container forward from begin() to end().
@@ -83,11 +87,11 @@ public:
     typedef typename TraverseRule<Container>::Reference Reference;
 
     FwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
-        : TraverseRule<Container>(contour), end_it_(contour->end())
+        : TraverseRule<Container>(contour, 0), end_it_(contour->end())
     { fwd_it_ = this->contour_->begin(); }
 
     virtual void add(std::size_t offset)
-    { fwd_it_ += offset; }
+    { fwd_it_ += offset; this->current_index_ += offset; }
 
     virtual Reference dereference() const
     { return *fwd_it_; }
@@ -115,11 +119,11 @@ public:
     typedef typename TraverseRule<Container>::Reference Reference;
 
     BwdOnePassTraverseRule(typename TraverseRule<Container>::ContainerConstPtr contour)
-        : TraverseRule<Container>(contour), end_it_(contour->rend())
+        : TraverseRule<Container>(contour, contour->size() - 1), end_it_(contour->rend())
     { bwd_it_ = this->contour_->rbegin(); }
 
     virtual void add(std::size_t offset)
-    { bwd_it_ += offset; }
+    { bwd_it_ += offset; this->current_index_ -= offset; }
 
     virtual Reference dereference() const
     { return *bwd_it_; }
@@ -148,7 +152,10 @@ public:
 
     FwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
         FwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
-    { this->fwd_it_ += start_idx; }
+    {
+        this->fwd_it_ += start_idx;
+        this->current_index_ = start_idx;
+    }
 
     virtual void add(std::size_t offset)
     {
@@ -165,12 +172,15 @@ public:
                 {
                     // Iterator's new position is before end().
                     this->fwd_it_ += offset;
+                    this->current_index_ += offset;
                 }
                 else
                 {
                     // Start iterating from the beginning, mind skipped items.
                     this->fwd_it_ = this->contour_->begin();
-                    this->fwd_it_ += (offset - dist_to_end);
+                    std::size_t additional_shift = offset - dist_to_end;
+                    this->fwd_it_ += additional_shift;
+                    this->current_index_ = additional_shift;
                 }
             }
             else
@@ -201,7 +211,10 @@ public:
 
     BwdCircuitTraverseRule(ContainerConstPtr contour, std::size_t start_idx):
         BwdOnePassTraverseRule<Container>(contour), left_items_(contour->size())
-    { this->bwd_it_ += (this->contour_->size() - 1 - start_idx); }
+    {
+        this->bwd_it_ += (this->contour_->size() - 1 - start_idx);
+        this->current_index_ = start_idx;
+    }
 
     virtual void add(std::size_t offset)
     {
@@ -218,12 +231,14 @@ public:
                 {
                     // Iterator's new position is after rend().
                     this->bwd_it_ += offset;
+                    this->current_index_ -= offset;
                 }
                 else
                 {
                     // Start iterating from the end backwards, mind skipped itemd.
                     this->bwd_it_ = this->contour_->rbegin();
                     this->bwd_it_ += (offset - dist_to_end);
+                    this->current_index_ = this->contour_->size() - 1 - offset + dist_to_end;
                 }
             }
             else
@@ -309,6 +324,11 @@ public:
 
         return
             rule_->dereference();
+    }
+
+    std::size_t index() const
+    {
+        return rule_->index();
     }
 
     // Necessary for assignment operator.
