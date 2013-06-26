@@ -62,7 +62,8 @@ public:
     typedef boost::shared_ptr<Mesh3D> MeshPtr;
 
 public:
-    TStrip(const Vertex& vertex1, const Vertex& vertex2, std::size_t initial_count = 2)
+    TStrip(std::size_t id1, std::size_t id2, const Vertex& vertex1,
+           const Vertex& vertex2, std::size_t initial_count = 2): id1_(id1), id2_(id2)
     {
         mesh_ = boost::make_shared<Mesh3D>(initial_count);
         current1_idx_ = mesh_->add_vertex(vertex1);
@@ -91,6 +92,8 @@ private:
     }
 
 private:
+    std::size_t id1_;
+    std::size_t id2_;
     MeshPtr mesh_;
     std::size_t current1_idx_;
     std::size_t current2_idx_;
@@ -117,9 +120,10 @@ public:
     typedef typename TStrip::MeshPtr MeshPtr;
 
 public:
-    Triangulation(ContourPtr contour1, bool closed1,
-                  ContourPtr contour2, bool closed2):
-        contour1_(contour1), closed1_(closed1), contour2_(contour2), closed2_(closed2)
+    Triangulation(std::size_t id1, ContourPtr contour1, bool closed1,
+                  std::size_t id2, ContourPtr contour2, bool closed2):
+        id1_(id1), contour1_(contour1), closed1_(closed1),
+        id2_(id2), contour2_(contour2), closed2_(closed2)
     {
         metric_ = &euclidean_distance<RealType, 3>;
     }
@@ -159,7 +163,7 @@ public:
         ContourTraverser candidate2 = current2 + 1;
 
         // Initialize output mesh.
-        TStrip tstrip(*current1, *current2, contour1_->size() + contour2_->size());
+        TStrip tstrip(id1_, id2_, *current1, *current2, contour1_->size() + contour2_->size());
 
         // Iterate until both contours are exhausted.
         while (candidate1.is_valid() || candidate2.is_valid())
@@ -259,8 +263,11 @@ private:
     }
 
 private:
+    std::size_t id1_;
     ContourPtr contour1_;
     bool closed1_;
+
+    std::size_t id2_;
     ContourPtr contour2_;
     bool closed2_;
 
