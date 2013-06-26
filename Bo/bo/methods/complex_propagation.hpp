@@ -126,6 +126,7 @@ public:
     // adjacent points or traversing the cosed contour multiple times).
     bool has_stopped() const;
     bool has_hole() const;
+    bool is_closed() const;
     PropContourPtr contour() const;
 
 private:
@@ -415,6 +416,12 @@ template <typename RealType> inline
 bool ComplexPropagation<RealType>::has_hole() const
 {
     return has_hole_;
+}
+
+template <typename RealType> inline
+bool ComplexPropagation<RealType>::is_closed() const
+{
+    return !(this->has_hole());
 }
 
 template <typename RealType> inline
