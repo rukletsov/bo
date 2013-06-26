@@ -37,6 +37,8 @@
 #include <limits>
 #include <stdexcept>
 #include <algorithm>
+#include <utility>
+#include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -52,51 +54,74 @@ namespace surfaces {
 
 namespace detail {
 
-// A class representing a triangle strip from two contours.
+// A class representing a triangle strip from two contours. Only vertex indices and
+// contour ids are stored.
 template <typename RealType>
 class TStrip
 {
 public:
-    typedef Vector<RealType, 3> Vertex;
-    typedef bo::Mesh<RealType> Mesh3D;
-    typedef boost::shared_ptr<Mesh3D> MeshPtr;
+    typedef std::vector<TStrip> TStrips;
+
+    typedef std::pair<std::size_t, std::size_t> ContourNodeID;
+    typedef Triangle<ContourNodeID> Face;
+    typedef std::vector<Face> Faces;
 
 public:
-    TStrip(std::size_t id1, std::size_t id2, const Vertex& vertex1,
-           const Vertex& vertex2, std::size_t initial_count = 2): id1_(id1), id2_(id2)
+    TStrip(std::size_t faces_count)
     {
-        mesh_ = boost::make_shared<Mesh3D>(initial_count);
-        current1_idx_ = mesh_->add_vertex(vertex1);
-        current2_idx_ = mesh_->add_vertex(vertex2);
+        faces_.reserve(faces_count);
     }
 
-    // Adds a new vertex and shifts span in the direction of *first* vertex.
-    void add1(const Vertex& vertex)
-    { current1_idx_ = add_(vertex); }
+    TStrip(std::size_t id1, std::size_t vertex_index1,
+           std::size_t id2, std::size_t vertex_index2, std::size_t initial_count = 2)
+        : id1_(id1), id2_(id2)
+    {
+        faces_.reserve(initial_count);
+        current1_node_ = std::make_pair(id1_, vertex_index1);
+        current2_node_ = std::make_pair(id2_, vertex_index2);
+    }
 
-    // Adds a new vertex and shifts span in the direction of the *second* vertex.
-    void add2(const Vertex& vertex)
-    { current2_idx_ = add_(vertex); }
+    // Adds a new node and shifts span in the direction of the *first* contour.
+    void add1(std::size_t vertex_idx)
+    { current1_node_ = add_(id1_, vertex_idx); }
 
-    MeshPtr mesh()
-    { return mesh_; }
+    // Adds a new node and shifts span in the direction of the *second* contour.
+    void add2(std::size_t vertex_idx)
+    { current2_node_ = add_(id2_, vertex_idx); }
+
+    const Faces& get_faces() const
+    { return faces_; }
+
+    static TStrip join(const TStrips& tstrips)
+    {
+        std::size_t total_faces = 0;
+        BOOST_FOREACH (const TStrip& tstrip, tstrips)
+        { total_faces += tstrip.faces_.size(); }
+
+        TStrip joined(total_faces);
+        BOOST_FOREACH (const TStrip& tstrip, tstrips)
+        { joined.faces_.insert(joined.faces_.end(), tstrip.faces_.begin(), tstrip.faces_.end()); }
+
+        return joined;
+    }
 
 private:
-    // Adds new vertex and face based on the current span to the mesh. Doesn't update
-    // the current span.
-    std::size_t add_(const Vertex& vertex)
+    // Adds a new node and face based on the current span. Doesn't update current span.
+    ContourNodeID add_(std::size_t contour_id, std::size_t vertex_idx)
     {
-        std::size_t new_idx = mesh_->add_vertex(vertex);
-        mesh_->add_face(typename Mesh3D::Face(current1_idx_, new_idx, current2_idx_));
-        return new_idx;
+        ContourNodeID new_node = std::make_pair(contour_id, vertex_idx);
+        faces_.push_back(Face(current1_node_, new_node, current2_node_));
+
+        return new_node;
     }
 
 private:
     std::size_t id1_;
     std::size_t id2_;
-    MeshPtr mesh_;
-    std::size_t current1_idx_;
-    std::size_t current2_idx_;
+
+    Faces faces_;
+    ContourNodeID current1_node_;
+    ContourNodeID current2_node_;
 };
 
 } // namespace detail
@@ -113,11 +138,11 @@ public:
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef std::vector<Point3D> Contour;
     typedef boost::shared_ptr<Contour> ContourPtr;
+    typedef bo::Mesh<RealType> Mesh3D;
 
     typedef ContainerConstTraverser<Contour> ContourTraverser;
     typedef TraverseRuleFactory<Contour> TraverseFactory;
     typedef detail::TStrip<RealType> TStrip;
-    typedef typename TStrip::MeshPtr MeshPtr;
 
 public:
     Triangulation(std::size_t id1, ContourPtr contour1, bool closed1,
@@ -135,7 +160,7 @@ public:
     //
     // If a contour has exactly one hole (i.e. opened), it is traversed once
     // from the start to the end (from one hole edge to the other).
-    MeshPtr christiansen()
+    TStrip christiansen()
     {
         // Check contours' length.
         if ((contour1_->size() < 2) && (contour2_->size() < 2))
@@ -153,6 +178,7 @@ public:
             contour2_ = new_contour2;
 
             std::swap(closed1_, closed2_);
+            std::swap(id1_, id2_);
         }
 
         // Create traversers for contours.
@@ -163,7 +189,8 @@ public:
         ContourTraverser candidate2 = current2 + 1;
 
         // Initialize output mesh.
-        TStrip tstrip(id1_, id2_, *current1, *current2, contour1_->size() + contour2_->size());
+        TStrip tstrip(id1_, current1.index(), id2_, current2.index(),
+                      contour1_->size() + contour2_->size());
 
         // Iterate until both contours are exhausted.
         while (candidate1.is_valid() || candidate2.is_valid())
@@ -175,19 +202,67 @@ public:
             // Choose and add candidate vertex and corresponding face.
             if (span1_norm > span2_norm)
             {
-                tstrip.add2(*candidate2);
+                tstrip.add2(candidate2.index());
                 current2 = candidate2;
                 ++candidate2;
             }
             else
             {
-                tstrip.add1(*candidate1);
+                tstrip.add1(candidate1.index());
                 current1 = candidate1;
                 ++candidate1;
             }
         }
 
-        return tstrip.mesh();
+        return tstrip;
+    }
+
+    template <typename ContourTypePtr>
+    static Mesh3D christiansen(const std::vector<ContourTypePtr>& contours)
+    {
+        std::size_t total_contours = contours.size();
+        std::vector<TStrip> tstrips_;
+
+        for (std::size_t idx = 1; idx < total_contours; ++idx)
+        {
+            ContourTypePtr cur_contour = contours[idx];
+            ContourTypePtr prev_contour = contours[idx - 1];
+
+            this_type triang(idx - 1, prev_contour->contour(), prev_contour->is_closed(),
+                             idx, cur_contour->contour(), cur_contour->is_closed());
+
+            TStrip tstrip = triang.christiansen();
+            tstrips_.push_back(tstrip);
+        }
+
+        // Union all tstrips into one mesh.
+        TStrip joined_tstrips = TStrip::join(tstrips_);
+
+        // Calculate the total number of vertices to create mesh efficiently.
+        std::size_t total_vertices = 0;
+        BOOST_FOREACH (const ContourTypePtr& c, contours)
+        { total_vertices += c->contour()->size(); }
+
+        // Populate the result mesh with vertices and create lookup tables.
+        Mesh3D mesh(total_vertices);
+        std::vector<std::size_t> lookup_table(contours.size());
+        for (std::size_t idx = 0; idx < total_contours; ++idx)
+        {
+            std::size_t current_offset = mesh.add_vertices(*(contours[idx]->contour()));
+            lookup_table[idx] = current_offset;
+        }
+
+        // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
+        // keys into new <mesh_vertex_id> keys using lookup table.
+        BOOST_FOREACH (const typename TStrip::Face& face, joined_tstrips.get_faces())
+        {
+            std::size_t new_a = lookup_table[face.A().first] + face.A().second;
+            std::size_t new_b = lookup_table[face.B().first] + face.B().second;
+            std::size_t new_c = lookup_table[face.C().first] + face.C().second;
+            mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
+        }
+
+        return mesh;
     }
 
 private:

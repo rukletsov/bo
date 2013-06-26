@@ -133,10 +133,13 @@ void ChrisitiansenFemur()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    TriangAlgo triang(1, tiling_ptr1->contour(), !tiling_ptr1->has_hole(),
-                      2, tiling_ptr2->contour(), !tiling_ptr2->has_hole());
-    TriangAlgo::MeshPtr mesh_ptr = triang.christiansen();
-    mesh_to_ply(*mesh_ptr, paths.PlyFemurOutPath0102.string());
+    PropagAlgo::Ptrs props;
+    props.reserve(2);
+    props.push_back(tiling_ptr1);
+    props.push_back(tiling_ptr2);
+    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+
+    mesh_to_ply(result_mesh, paths.PlyFemurOutPath0102.string());
 }
 
 void ChrisitiansenClosed()
@@ -152,10 +155,13 @@ void ChrisitiansenClosed()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    TriangAlgo triang(1, tiling_ptr1->contour(), !tiling_ptr1->has_hole(),
-                      2, tiling_ptr2->contour(), !tiling_ptr2->has_hole());
-    TriangAlgo::MeshPtr mesh_ptr = triang.christiansen();
-    mesh_to_ply(*mesh_ptr, paths.PlyClosedOutMeshPath.string());
+    PropagAlgo::Ptrs props;
+    props.reserve(2);
+    props.push_back(tiling_ptr1);
+    props.push_back(tiling_ptr2);
+    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+
+    mesh_to_ply(result_mesh, paths.PlyClosedOutMeshPath.string());
 }
 
 void ChrisitiansenFemurFull()
@@ -165,7 +171,6 @@ void ChrisitiansenFemurFull()
 
     ContourData contour_data;
     PlaneData plane_data;
-    Mesh3D result_mesh;
 
     // Load planes paths.
     AssertPathExists(paths.FemurInDir);
@@ -201,15 +206,7 @@ void ChrisitiansenFemurFull()
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
-    std::size_t idx = 1;
-    for (PropagAlgo::Ptrs::const_iterator it = props.begin() + 1; it != props.end(); ++it)
-    {
-        TriangAlgo triang(idx - 1, (*(it - 1))->contour(), !((*(it - 1))->has_hole()),
-                          idx, (*it)->contour(), !((*it)->has_hole()));
-        TriangAlgo::MeshPtr mesh_ptr = triang.christiansen();
-        result_mesh.join(*mesh_ptr);
-        ++idx;
-    }
+    Mesh3D result_mesh = TriangAlgo::christiansen(props);
 
     mesh_to_ply(result_mesh, paths.PlyFemurOutMeshPath.string());
 }
@@ -221,7 +218,6 @@ void ChrisitiansenSheepFull()
 
     ContourData contour_data;
     PlaneData plane_data;
-    Mesh3D result_mesh;
 
     // Load planes paths.
     AssertPathExists(paths.SheepInDir);
@@ -254,22 +250,7 @@ void ChrisitiansenSheepFull()
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
-    std::size_t idx = 1;
-    for (PropagAlgo::Ptrs::const_iterator it = props.begin() + 1; it != props.end(); ++it)
-    {
-        PropagAlgo::Ptr cur_contour = *it;
-        PropagAlgo::Ptr prev_contour = *(it - 1);
-
-        TriangAlgo triang(idx - 1, prev_contour->contour(), !(prev_contour->has_hole()),
-                          idx, cur_contour->contour(), !(cur_contour->has_hole()));
-        Mesh3D mesh = *triang.christiansen();
-
-        // Join meshes avoiding duplicates of vertices. A k-d tree must be rebuilt
-        // before joining!
-        result_mesh.build_tree();
-        result_mesh.join_checked(mesh, 1e-5f);
-        ++idx;
-    }
+    Mesh3D result_mesh = TriangAlgo::christiansen(props);
 
     mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
 }
