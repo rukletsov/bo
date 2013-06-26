@@ -115,6 +115,10 @@ public:
     // of the closest vertex that already exists in the mesh.
     std::size_t add_vertex_checked(const Vertex& vertex, T search_radius);
 
+    // Adds several vertices to the mesh and returns the index of the first vertex.
+    // The indices of the other vertices can be easily calculated by adding 1 successively.
+    std::size_t add_vertices(const Vertices& vertices);
+
     // Adds a new face and returns its index. Updates dependent collections.
     std::size_t add_face(const Face& face);
 
@@ -339,8 +343,8 @@ std::size_t Mesh<T>::add_vertex(const Vertex& vertex)
     // and vertex container. If any of the condition is not satisfied consider
     // this as an internal bug. Therefore no need to throw.
     BOOST_ASSERT(((neighbours_.size() == vertices_.size()) ||
-                      (adjacent_faces_.size() == vertices_.size())) &&
-                     "Vertex connectivity structures are of different sizes.");
+                  (adjacent_faces_.size() == vertices_.size())) &&
+                  "Vertex connectivity structures are of different sizes.");
 
     return new_vertex_index;
 }
@@ -362,6 +366,27 @@ std::size_t Mesh<T>::add_vertex_checked(const Vertex& vertex, T search_radius)
                 add_vertex(vertex) : candidate->second;
 
     return vertex_id;
+}
+
+template <typename T>
+std::size_t Mesh<T>::add_vertices(const Vertices& vertices)
+{
+    // Calculate the index of the first inserted vertex.
+    std::size_t first_inserted_index = vertices_.size();
+
+    // Insert all vertices at once.
+    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+
+    // Add empty connectivity structures.
+    neighbours_.insert(neighbours_.end(), vertices.size(), AdjacentVerticesPerVertex());
+    adjacent_faces_.insert(adjacent_faces_.end(), vertices.size(), AdjacentFacesPerVertex());
+
+    // Check for post-conditions. See add_vertex() for more details.
+    BOOST_ASSERT(((neighbours_.size() == vertices_.size()) ||
+                  (adjacent_faces_.size() == vertices_.size())) &&
+                  "Vertex connectivity structures are of different sizes.");
+
+    return first_inserted_index;
 }
 
 template <typename T>
