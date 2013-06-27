@@ -114,7 +114,7 @@ public:
     //
     // If a contour has exactly one hole (i.e. opened), it is traversed once
     // from the start to the end (from one hole edge to the other).
-    IndexedTStrip christiansen()
+    IndexedTStrip run()
     {
         // Check contours' length.
         if ((contour_descr1_.Size < 2) && (contour_descr2_.Size < 2))
