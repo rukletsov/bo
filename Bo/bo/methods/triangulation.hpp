@@ -167,86 +167,8 @@ public:
         return tstrip;
     }
 
-    template <typename ContourTypePtr>
-    static Mesh3D christiansen(const ContourTypePtr& contour1, const ContourTypePtr& contour2)
-    {
-        IndexedTStrip tstrip = this_type(0, contour1->contour(), contour1->is_closed(),
-                                         1, contour2->contour(), contour2->is_closed())
-                .christiansen();
-
-        // Calculate the total number of vertices to create mesh efficiently.
-        std::size_t total_vertices = contour1->contour()->size() + contour2->contour()->size();
-
-        // Populate the result mesh with vertices and store vertices shift for the
-        // second contour (it should be 0 for the first).
-        Mesh3D mesh(total_vertices);
-        std::vector<std::size_t> lookup_table(2);
-        lookup_table[0] = mesh.add_vertices(*(contour1->contour()));
-        lookup_table[1] = mesh.add_vertices(*(contour2->contour()));
-
-        // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
-        // keys into new <mesh_vertex_id> keys using lookup table.
-        BOOST_FOREACH (const IndexedTStrip::Face& face, tstrip.get_faces())
-        {
-            std::size_t new_a = lookup_table[face.A().first] + face.A().second;
-            std::size_t new_b = lookup_table[face.B().first] + face.B().second;
-            std::size_t new_c = lookup_table[face.C().first] + face.C().second;
-            mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
-        }
-
-        return mesh;
-    }
-
-    template <typename ContourTypePtr>
-    static Mesh3D christiansen(const std::vector<ContourTypePtr>& contours)
-    {
-        std::size_t total_contours = contours.size();
-        IndexedTStrip::TStrips tstrips_;
-
-        for (std::size_t idx = 1; idx < total_contours; ++idx)
-        {
-            ContourTypePtr cur_contour = contours[idx];
-            ContourTypePtr prev_contour = contours[idx - 1];
-
-            this_type triang(idx - 1, prev_contour->contour(), prev_contour->is_closed(),
-                             idx, cur_contour->contour(), cur_contour->is_closed());
-
-            IndexedTStrip tstrip = triang.christiansen();
-            tstrips_.push_back(tstrip);
-        }
-
-        // Union all tstrips into one mesh.
-        IndexedTStrip joined_tstrips = IndexedTStrip::join(tstrips_);
-
-        // Calculate the total number of vertices to create mesh efficiently.
-        std::size_t total_vertices = 0;
-        BOOST_FOREACH (const ContourTypePtr& c, contours)
-        { total_vertices += c->contour()->size(); }
-
-        // Populate the result mesh with vertices and create lookup tables.
-        Mesh3D mesh(total_vertices);
-        std::vector<std::size_t> lookup_table(total_contours);
-        for (std::size_t idx = 0; idx < total_contours; ++idx)
-        {
-            std::size_t current_offset = mesh.add_vertices(*(contours[idx]->contour()));
-            lookup_table[idx] = current_offset;
-        }
-
-        // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
-        // keys into new <mesh_vertex_id> keys using lookup table.
-        BOOST_FOREACH (const IndexedTStrip::Face& face, joined_tstrips.get_faces())
-        {
-            std::size_t new_a = lookup_table[face.A().first] + face.A().second;
-            std::size_t new_b = lookup_table[face.B().first] + face.B().second;
-            std::size_t new_c = lookup_table[face.C().first] + face.C().second;
-            mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
-        }
-
-        return mesh;
-    }
-
 private:
-    // Creates an appropriate traverser for the first contour depending whether
+        // Creates an appropriate traverser for the first contour depending whether
     // it is closed or not.
     ContourTraverser create_traverser1_() const
     {
@@ -326,6 +248,91 @@ private:
 
     Metric metric_;
 };
+
+
+template <typename RealType, typename ContourTypePtr>
+bo::Mesh<RealType> christiansen(const ContourTypePtr& contour1, const ContourTypePtr& contour2)
+{
+    typedef bo::Mesh<RealType> Mesh3D;
+
+    IndexedTStrip tstrip = Triangulation<RealType>(
+            0, contour1->contour(), contour1->is_closed(),
+            1, contour2->contour(), contour2->is_closed())
+            .christiansen();
+
+    // Calculate the total number of vertices to create mesh efficiently.
+    std::size_t total_vertices = contour1->contour()->size() + contour2->contour()->size();
+
+    // Populate the result mesh with vertices and store vertices shift for the
+    // second contour (it should be 0 for the first).
+    Mesh3D mesh(total_vertices);
+    std::vector<std::size_t> lookup_table(2);
+    lookup_table[0] = mesh.add_vertices(*(contour1->contour()));
+    lookup_table[1] = mesh.add_vertices(*(contour2->contour()));
+
+    // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
+    // keys into new <mesh_vertex_id> keys using lookup table.
+    BOOST_FOREACH (const IndexedTStrip::Face& face, tstrip.get_faces())
+    {
+        std::size_t new_a = lookup_table[face.A().first] + face.A().second;
+        std::size_t new_b = lookup_table[face.B().first] + face.B().second;
+        std::size_t new_c = lookup_table[face.C().first] + face.C().second;
+        mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
+    }
+
+    return mesh;
+}
+
+template <typename RealType, typename ContourTypePtr>
+bo::Mesh<RealType> christiansen(const std::vector<ContourTypePtr>& contours)
+{
+    typedef bo::Mesh<RealType> Mesh3D;
+
+    std::size_t total_contours = contours.size();
+    IndexedTStrip::TStrips tstrips_;
+
+    for (std::size_t idx = 1; idx < total_contours; ++idx)
+    {
+        ContourTypePtr cur_contour = contours[idx];
+        ContourTypePtr prev_contour = contours[idx - 1];
+
+        Triangulation<RealType> triang(
+                idx - 1, prev_contour->contour(), prev_contour->is_closed(),
+                idx, cur_contour->contour(), cur_contour->is_closed());
+
+        IndexedTStrip tstrip = triang.christiansen();
+        tstrips_.push_back(tstrip);
+    }
+
+    // Union all tstrips into one mesh.
+    IndexedTStrip joined_tstrips = IndexedTStrip::join(tstrips_);
+
+    // Calculate the total number of vertices to create mesh efficiently.
+    std::size_t total_vertices = 0;
+    BOOST_FOREACH (const ContourTypePtr& c, contours)
+    { total_vertices += c->contour()->size(); }
+
+    // Populate the result mesh with vertices and create lookup tables.
+    Mesh3D mesh(total_vertices);
+    std::vector<std::size_t> lookup_table(total_contours);
+    for (std::size_t idx = 0; idx < total_contours; ++idx)
+    {
+        std::size_t current_offset = mesh.add_vertices(*(contours[idx]->contour()));
+        lookup_table[idx] = current_offset;
+    }
+
+    // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
+    // keys into new <mesh_vertex_id> keys using lookup table.
+    BOOST_FOREACH (const IndexedTStrip::Face& face, joined_tstrips.get_faces())
+    {
+        std::size_t new_a = lookup_table[face.A().first] + face.A().second;
+        std::size_t new_b = lookup_table[face.B().first] + face.B().second;
+        std::size_t new_c = lookup_table[face.C().first] + face.C().second;
+        mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
+    }
+
+    return mesh;
+}
 
 } // namespace surfaces
 } // namespace methods

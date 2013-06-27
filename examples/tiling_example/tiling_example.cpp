@@ -133,7 +133,7 @@ void ChrisitiansenFemur()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    Mesh3D result_mesh = TriangAlgo::christiansen(tiling_ptr1, tiling_ptr2);
+    Mesh3D result_mesh = christiansen<float, PropagAlgo::Ptr>(tiling_ptr1, tiling_ptr2);
 
     mesh_to_ply(result_mesh, paths.PlyFemurOutPath0102.string());
 }
@@ -151,7 +151,7 @@ void ChrisitiansenClosed()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    Mesh3D result_mesh = TriangAlgo::christiansen(tiling_ptr1, tiling_ptr2);
+    Mesh3D result_mesh = christiansen<float, PropagAlgo::Ptr>(tiling_ptr1, tiling_ptr2);
 
     mesh_to_ply(result_mesh, paths.PlyClosedOutMeshPath.string());
 }
@@ -198,7 +198,7 @@ void ChrisitiansenFemurFull()
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
-    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+    Mesh3D result_mesh = christiansen<float, PropagAlgo::Ptr>(props);
 
     mesh_to_ply(result_mesh, paths.PlyFemurOutMeshPath.string());
 }
@@ -242,7 +242,7 @@ void ChrisitiansenSheepFull()
     { propagator->propagate(); }
 
     // Tile pair of contours and join it with the result mesh.
-    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+    Mesh3D result_mesh = christiansen<float, PropagAlgo::Ptr>(props);
 
     mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
 }
