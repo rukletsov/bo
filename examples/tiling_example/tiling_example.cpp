@@ -22,7 +22,6 @@ using namespace bo::io;
 
 typedef bo::Mesh<float> Mesh3D;
 typedef ComplexPropagation<float> PropagAlgo;
-typedef Triangulation<float> TriangAlgo;
 
 // Directory where test data is stored.
 std::string DataDirectory;

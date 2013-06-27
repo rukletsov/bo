@@ -88,10 +88,10 @@ struct ContourDescriptor
 
 // A class performing different triangulations for two slices.
 template <typename RealType>
-class Triangulation: public boost::noncopyable
+class ChristiansenTiling: public boost::noncopyable
 {
 public:
-    typedef Triangulation<RealType> this_type;
+    typedef ChristiansenTiling<RealType> this_type;
 
     typedef Vector<RealType, 3> Point3D;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
@@ -104,7 +104,7 @@ public:
     typedef TraverseRuleFactory<Contour> TraverseFactory;
 
 public:
-    Triangulation(std::size_t id1, ContourPtr contour1, bool closed1,
+    ChristiansenTiling(std::size_t id1, ContourPtr contour1, bool closed1,
                   std::size_t id2, ContourPtr contour2, bool closed2)
         : contour_descr1_(id1, contour1, closed1), contour_descr2_(id2, contour2, closed2)
     {
@@ -255,7 +255,7 @@ bo::Mesh<RealType> christiansen(const ContourTypePtr& contour1, const ContourTyp
 {
     typedef bo::Mesh<RealType> Mesh3D;
 
-    IndexedTStrip tstrip = Triangulation<RealType>(
+    IndexedTStrip tstrip = ChristiansenTiling<RealType>(
             0, contour1->contour(), contour1->is_closed(),
             1, contour2->contour(), contour2->is_closed())
             .christiansen();
@@ -296,7 +296,7 @@ bo::Mesh<RealType> christiansen(const std::vector<ContourTypePtr>& contours)
         ContourTypePtr cur_contour = contours[idx];
         ContourTypePtr prev_contour = contours[idx - 1];
 
-        Triangulation<RealType> triang(
+        ChristiansenTiling<RealType> triang(
                 idx - 1, prev_contour->contour(), prev_contour->is_closed(),
                 idx, cur_contour->contour(), cur_contour->is_closed());
 
