@@ -91,10 +91,11 @@ void PropagateClosed()
     Propagator::Image2D test_image = load_raw_image_8bpps<float>(
                 paths.RawClosedPath.string(), 512, 512);
 
-    Propagator::Ptr tiling_ptr = Propagator::from_raw_image(test_image, 3.f, 10.f, 0.3f, 0.4f, 20.f);
+    Propagator::Ptr contour_descriptor_ptr = Propagator::from_raw_image(test_image,
+            3.f, 10.f, 0.3f, 0.4f, 20.f);
+    contour_descriptor_ptr->propagate();
 
-    tiling_ptr->propagate();
-    FloatMesh mesh = FloatMesh::from_vertices(tiling_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
 
@@ -102,10 +103,12 @@ void PropagateFemur01()
 {
     AssertPathExists(paths.PlyFemurPath01);
     FloatMesh test_mesh = mesh_from_ply(paths.PlyFemurPath01.string());
-    Propagator::Ptr tiling_ptr = Propagator::from_mesh(test_mesh, 3.f, 7.f, 0.3f, 0.4f, 20.f);
 
-    tiling_ptr->propagate();
-    FloatMesh mesh = FloatMesh::from_vertices(tiling_ptr->contour().get());
+    Propagator::Ptr contour_descriptor_ptr = Propagator::from_mesh(test_mesh,
+            3.f, 7.f, 0.3f, 0.4f, 20.f);
+    contour_descriptor_ptr->propagate();
+
+    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
 
@@ -113,10 +116,12 @@ void PropagateSheep()
 {
     AssertPathExists(paths.PlySheepPath);
     FloatMesh test_mesh = mesh_from_ply(paths.PlySheepPath.string());
-    Propagator::Ptr tiling_ptr = Propagator::from_mesh(test_mesh, 5.f, 10.f, 0.3f, 0.4f, 20.f);
 
-    tiling_ptr->propagate();
-    FloatMesh mesh = FloatMesh::from_vertices(tiling_ptr->contour().get());
+    Propagator::Ptr contour_descriptor_ptr = Propagator::from_mesh(test_mesh,
+            5.f, 10.f, 0.3f, 0.4f, 20.f);
+    contour_descriptor_ptr->propagate();
+
+    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
 
@@ -124,17 +129,19 @@ void ChrisitiansenFemur()
 {
     AssertPathExists(paths.PlyFemurPath01);
     FloatMesh test_mesh1 = mesh_from_ply(paths.PlyFemurPath01.string());
-    Propagator::Ptr tiling_ptr1 = Propagator::from_mesh(test_mesh1, 3.f, 7.f, 0.3f, 0.4f, 20.f);
+    Propagator::Ptr contour_descriptor_ptr1 = Propagator::from_mesh(test_mesh1,
+            3.f, 7.f, 0.3f, 0.4f, 20.f);
 
     AssertPathExists(paths.PlyFemurPath02);
     FloatMesh test_mesh2 = mesh_from_ply(paths.PlyFemurPath02.string());
-    Propagator::Ptr tiling_ptr2 = Propagator::from_mesh(test_mesh2, 3.f, 7.f, 0.3f, 0.4f, 20.f);
+    Propagator::Ptr contour_descriptor_ptr2 = Propagator::from_mesh(test_mesh2,
+            3.f, 7.f, 0.3f, 0.4f, 20.f);
 
-    tiling_ptr1->propagate();
-    tiling_ptr2->propagate();
+    contour_descriptor_ptr1->propagate();
+    contour_descriptor_ptr2->propagate();
 
-    FloatMesh result_mesh = Triangulator::christiansen(tiling_ptr1, tiling_ptr2);
-
+    FloatMesh result_mesh = Triangulator::christiansen(contour_descriptor_ptr1,
+                                                       contour_descriptor_ptr2);
     mesh_to_ply(result_mesh, paths.PlyFemurOutPath0102.string());
 }
 
@@ -142,27 +149,29 @@ void ChrisitiansenClosed()
 {
     AssertPathExists(paths.PlyClosedPath01);
     FloatMesh test_mesh1 = mesh_from_ply(paths.PlyClosedPath01.string());
-    Propagator::Ptr tiling_ptr1 = Propagator::from_mesh(test_mesh1, 3.f, 10.f, 0.3f, 0.4f, 20.f);
+    Propagator::Ptr contour_descriptor_ptr1 = Propagator::from_mesh(test_mesh1,
+            3.f, 10.f, 0.3f, 0.4f, 20.f);
 
     AssertPathExists(paths.PlyClosedPath02);
     FloatMesh test_mesh2 = mesh_from_ply(paths.PlyClosedPath02.string());
-    Propagator::Ptr tiling_ptr2 = Propagator::from_mesh(test_mesh2, 3.f, 10.f, 0.3f, 0.4f, 20.f);
+    Propagator::Ptr contour_descriptor_ptr2 = Propagator::from_mesh(test_mesh2,
+            3.f, 10.f, 0.3f, 0.4f, 20.f);
 
-    tiling_ptr1->propagate();
-    tiling_ptr2->propagate();
+    contour_descriptor_ptr1->propagate();
+    contour_descriptor_ptr2->propagate();
 
-    FloatMesh result_mesh = Triangulator::christiansen(tiling_ptr1, tiling_ptr2);
-
+    FloatMesh result_mesh = Triangulator::christiansen(contour_descriptor_ptr1,
+                                                       contour_descriptor_ptr2);
     mesh_to_ply(result_mesh, paths.PlyClosedOutMeshPath.string());
 }
 
 void ChrisitiansenFemurFull()
 {
-    typedef std::vector<path> ContourData;
-    typedef Propagator::Points3DConstPtrs PlaneData;
+    typedef std::vector<path> PlanesPaths;
+    typedef Propagator::Points3DConstPtrs PlanesData;
 
-    ContourData contour_data;
-    PlaneData plane_data;
+    PlanesPaths planes_paths;
+    PlanesData planes_data;
 
     // Load planes paths.
     AssertPathExists(paths.FemurInDir);
@@ -170,19 +179,19 @@ void ChrisitiansenFemurFull()
     {
         if ((is_regular_file(*it)) &&
             (it->path().filename().string().substr(0, 11) == "femur_plane"))
-            contour_data.push_back(it->path());
+            planes_paths.push_back(it->path());
     }
 
     // Sort paths in lexicographic order, since directory iteration is not ordered
     // on some file systems.
-    std::sort(contour_data.begin(), contour_data.end());
+    std::sort(planes_paths.begin(), planes_paths.end());
 
     // Extract contours from contour data.
-    BOOST_FOREACH (path contour_path, contour_data)
+    BOOST_FOREACH (path contour_path, planes_paths)
     {
         AssertPathExists(contour_path);
         FloatMesh mesh = mesh_from_ply(contour_path.string());
-        plane_data.push_back(boost::make_shared<Propagator::Points3D>(mesh.get_all_vertices()));
+        planes_data.push_back(boost::make_shared<Propagator::Points3D>(mesh.get_all_vertices()));
     }
 
     // Prepare weights for all slices.
@@ -193,42 +202,42 @@ void ChrisitiansenFemurFull()
     weights.push_back(0.1f);
 
     // Run propagation for every plane.
-    Propagator::Ptrs props = Propagator::create(plane_data, weights, 3.f, 7.f, 0.3f, 0.4f, 20.f);
-    BOOST_FOREACH (Propagator::Ptr propagator, props)
-    { propagator->propagate(); }
+    Propagator::Ptrs contour_descriptors = Propagator::create(planes_data, weights,
+            3.f, 7.f, 0.3f, 0.4f, 20.f);
+    BOOST_FOREACH (Propagator::Ptr contour_descriptor, contour_descriptors)
+    { contour_descriptor->propagate(); }
 
-    // Tile pair of contours and join it with the result mesh.
-    FloatMesh result_mesh = Triangulator::christiansen(props);
-
+    // Triangulate the contours and save the outpur mesh.
+    FloatMesh result_mesh = Triangulator::christiansen(contour_descriptors);
     mesh_to_ply(result_mesh, paths.PlyFemurOutMeshPath.string());
 }
 
 void ChrisitiansenSheepFull()
 {
-    typedef std::vector<path> ContourData;
-    typedef Propagator::Points3DConstPtrs PlaneData;
+    typedef std::vector<path> PlanesPaths;
+    typedef Propagator::Points3DConstPtrs PlanesData;
 
-    ContourData contour_data;
-    PlaneData plane_data;
+    PlanesPaths planes_paths;
+    PlanesData planes_data;
 
     // Load planes paths.
     AssertPathExists(paths.SheepInDir);
     for (directory_iterator it(paths.SheepInDir); it != directory_iterator(); ++it)
     {
         if (is_regular_file(*it) && (it->path().extension() == path(".ply")))
-            contour_data.push_back(it->path());
+            planes_paths.push_back(it->path());
     }
 
     // Sort paths in lsexicographic order, since directory iteration is not ordered
     // on some file systems.
-    std::sort(contour_data.begin(), contour_data.end());
+    std::sort(planes_paths.begin(), planes_paths.end());
 
     // Extract contours from contour data.
-    BOOST_FOREACH (path contour_path, contour_data)
+    BOOST_FOREACH (path contour_path, planes_paths)
     {
         AssertPathExists(contour_path);
         FloatMesh mesh = mesh_from_ply(contour_path.string());
-        plane_data.push_back(boost::make_shared<Propagator::Points3D>(mesh.get_all_vertices()));
+        planes_data.push_back(boost::make_shared<Propagator::Points3D>(mesh.get_all_vertices()));
     }
 
     // Prepare weights for all slices.
@@ -237,13 +246,13 @@ void ChrisitiansenSheepFull()
     weights.push_back(0.5f);
 
     // Run propagation for every plane.
-    Propagator::Ptrs props = Propagator::create(plane_data, weights, 2.f, 5.f, 0.3f, 0.4f, 15.f);
-    BOOST_FOREACH (Propagator::Ptr propagator, props)
-    { propagator->propagate(); }
+    Propagator::Ptrs contour_descriptors = Propagator::create(planes_data, weights,
+            2.f, 5.f, 0.3f, 0.4f, 15.f);
+    BOOST_FOREACH (Propagator::Ptr contour_descriptor, contour_descriptors)
+    { contour_descriptor->propagate(); }
 
-    // Tile pair of contours and join it with the result mesh.
-    FloatMesh result_mesh = Triangulator::christiansen(props);
-
+    // Triangulate the contours and save the outpur mesh.
+    FloatMesh result_mesh = Triangulator::christiansen(contour_descriptors);
     mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
 }
 
