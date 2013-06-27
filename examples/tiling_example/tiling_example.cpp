@@ -133,11 +133,7 @@ void ChrisitiansenFemur()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    PropagAlgo::Ptrs props;
-    props.reserve(2);
-    props.push_back(tiling_ptr1);
-    props.push_back(tiling_ptr2);
-    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+    Mesh3D result_mesh = TriangAlgo::christiansen(tiling_ptr1, tiling_ptr2);
 
     mesh_to_ply(result_mesh, paths.PlyFemurOutPath0102.string());
 }
@@ -155,11 +151,7 @@ void ChrisitiansenClosed()
     tiling_ptr1->propagate();
     tiling_ptr2->propagate();
 
-    PropagAlgo::Ptrs props;
-    props.reserve(2);
-    props.push_back(tiling_ptr1);
-    props.push_back(tiling_ptr2);
-    Mesh3D result_mesh = TriangAlgo::christiansen(props);
+    Mesh3D result_mesh = TriangAlgo::christiansen(tiling_ptr1, tiling_ptr2);
 
     mesh_to_ply(result_mesh, paths.PlyClosedOutMeshPath.string());
 }

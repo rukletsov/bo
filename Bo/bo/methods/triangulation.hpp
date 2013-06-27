@@ -218,6 +218,35 @@ public:
     }
 
     template <typename ContourTypePtr>
+    static Mesh3D christiansen(const ContourTypePtr& contour1, const ContourTypePtr& contour2)
+    {
+        TStrip tstrip = this_type(0, contour1->contour(), contour1->is_closed(),
+                                  1, contour2->contour(), contour2->is_closed()).christiansen();
+
+        // Calculate the total number of vertices to create mesh efficiently.
+        std::size_t total_vertices = contour1->contour()->size() + contour2->contour()->size();
+
+        // Populate the result mesh with vertices and store vertices shift for the
+        // second contour (it should be 0 for the first).
+        Mesh3D mesh(total_vertices);
+        std::vector<std::size_t> lookup_table(2);
+        lookup_table[0] = mesh.add_vertices(*(contour1->contour()));
+        lookup_table[1] = mesh.add_vertices(*(contour2->contour()));
+
+        // Populate the result mesh with faces. Transform old <contour_id, vertex_ix>
+        // keys into new <mesh_vertex_id> keys using lookup table.
+        BOOST_FOREACH (const typename TStrip::Face& face, tstrip.get_faces())
+        {
+            std::size_t new_a = lookup_table[face.A().first] + face.A().second;
+            std::size_t new_b = lookup_table[face.B().first] + face.B().second;
+            std::size_t new_c = lookup_table[face.C().first] + face.C().second;
+            mesh.add_face(typename Mesh3D::Face(new_a, new_b, new_c));
+        }
+
+        return mesh;
+    }
+
+    template <typename ContourTypePtr>
     static Mesh3D christiansen(const std::vector<ContourTypePtr>& contours)
     {
         std::size_t total_contours = contours.size();
@@ -245,7 +274,7 @@ public:
 
         // Populate the result mesh with vertices and create lookup tables.
         Mesh3D mesh(total_vertices);
-        std::vector<std::size_t> lookup_table(contours.size());
+        std::vector<std::size_t> lookup_table(total_contours);
         for (std::size_t idx = 0; idx < total_contours; ++idx)
         {
             std::size_t current_offset = mesh.add_vertices(*(contours[idx]->contour()));
