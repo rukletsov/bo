@@ -56,7 +56,6 @@ namespace detail {
 
 // A class representing a triangle strip from two contours. Only vertex indices and
 // contour ids are stored.
-template <typename RealType>
 class TStrip
 {
 public:
@@ -117,11 +116,39 @@ private:
 
 private:
     std::size_t id1_;
+    ContourNodeID current1_node_;
     std::size_t id2_;
+    ContourNodeID current2_node_;
 
     Faces faces_;
-    ContourNodeID current1_node_;
-    ContourNodeID current2_node_;
+};
+
+template <typename PointsCont>
+struct ContourDescriptor
+{
+    typedef boost::shared_ptr<PointsCont> PointsContPtr;
+
+    ContourDescriptor(std::size_t id, PointsContPtr points_ptr, bool is_closed)
+        : ID(id), PointsPtr(points_ptr), IsClosed(is_closed), Size(points_ptr->size())
+    { }
+
+    void swap(ContourDescriptor& other)
+    {
+        // Clone data before swapping in order not to spoil original contours.
+        PointsContPtr new_this(new PointsCont(*PointsPtr));
+        PointsContPtr new_other(new PointsCont(*other.PointsPtr));
+        PointsPtr = new_other;
+        other.PointsPtr = new_this;
+
+        std::swap(ID, other.ID);
+        std::swap(IsClosed, other.IsClosed);
+        std::swap(Size, other.Size);
+    }
+
+    std::size_t ID;
+    PointsContPtr PointsPtr;
+    bool IsClosed;
+    std::size_t Size;
 };
 
 } // namespace detail
@@ -139,16 +166,16 @@ public:
     typedef std::vector<Point3D> Contour;
     typedef boost::shared_ptr<Contour> ContourPtr;
     typedef bo::Mesh<RealType> Mesh3D;
+    typedef detail::ContourDescriptor<Contour> ContourDescriptor;
 
     typedef ContainerConstTraverser<Contour> ContourTraverser;
     typedef TraverseRuleFactory<Contour> TraverseFactory;
-    typedef detail::TStrip<RealType> TStrip;
+    typedef detail::TStrip TStrip;
 
 public:
     Triangulation(std::size_t id1, ContourPtr contour1, bool closed1,
-                  std::size_t id2, ContourPtr contour2, bool closed2):
-        id1_(id1), contour1_(contour1), closed1_(closed1),
-        id2_(id2), contour2_(contour2), closed2_(closed2)
+                  std::size_t id2, ContourPtr contour2, bool closed2)
+        : contour_descr1_(id1, contour1, closed1), contour_descr2_(id2, contour2, closed2)
     {
         metric_ = &euclidean_distance<RealType, 3>;
     }
@@ -163,23 +190,14 @@ public:
     TStrip christiansen()
     {
         // Check contours' length.
-        if ((contour1_->size() < 2) && (contour2_->size() < 2))
+        if ((contour_descr1_.Size < 2) && (contour_descr2_.Size < 2))
             throw std::logic_error("Cannot run Christiansen triangulation for contours "
                                    "consisting of less than 2 vertices.");
 
         // If the first contour is closed but the second is opened, traverse direction
         // for the second contour may be determined incorrectly.
-        if (closed1_ && !closed2_)
-        {
-            // Clone data before swapping in order not to spoil original contours.
-            ContourPtr new_contour2(new Contour(*contour1_));
-            ContourPtr new_contour1(new Contour(*contour2_));
-            contour1_ = new_contour1;
-            contour2_ = new_contour2;
-
-            std::swap(closed1_, closed2_);
-            std::swap(id1_, id2_);
-        }
+        if (contour_descr1_.IsClosed && !contour_descr2_.IsClosed)
+            contour_descr1_.swap(contour_descr2_);
 
         // Create traversers for contours.
         ContourTraverser current1 = create_traverser1_();
@@ -189,8 +207,8 @@ public:
         ContourTraverser candidate2 = current2 + 1;
 
         // Initialize output mesh.
-        TStrip tstrip(id1_, current1.index(), id2_, current2.index(),
-                      contour1_->size() + contour2_->size());
+        TStrip tstrip(contour_descr1_.ID, current1.index(), contour_descr2_.ID, current2.index(),
+                      contour_descr1_.Size + contour_descr2_.Size);
 
         // Iterate until both contours are exhausted.
         while (candidate1.is_valid() || candidate2.is_valid())
@@ -250,7 +268,7 @@ public:
     static Mesh3D christiansen(const std::vector<ContourTypePtr>& contours)
     {
         std::size_t total_contours = contours.size();
-        std::vector<TStrip> tstrips_;
+        TStrip::TStrips tstrips_;
 
         for (std::size_t idx = 1; idx < total_contours; ++idx)
         {
@@ -299,9 +317,9 @@ private:
     // it is closed or not.
     ContourTraverser create_traverser1_() const
     {
-        ContourTraverser retvalue = closed1_ ?
-            ContourTraverser(TraverseFactory::Create(contour1_, 0, true)) :
-            ContourTraverser(TraverseFactory::Create(contour1_, true));
+        ContourTraverser retvalue = contour_descr1_.IsClosed ?
+            ContourTraverser(TraverseFactory::Create(contour_descr1_.PointsPtr, 0, true)) :
+            ContourTraverser(TraverseFactory::Create(contour_descr1_.PointsPtr, true));
         return retvalue;
     }
 
@@ -311,16 +329,16 @@ private:
     {
         ContourTraverser retvalue;
 
-        if (closed2_)
+        if (contour_descr2_.IsClosed)
         {
             // Find closest vertex on the second contour and determine direction.
             // No need of using kd-tree here, since the operation is done once.
             std::size_t c2min_idx = 0;
             RealType c2min_dist = std::numeric_limits<RealType>::max();
 
-            for (std::size_t c2_idx = 0; c2_idx < contour2_->size(); ++c2_idx)
+            for (std::size_t c2_idx = 0; c2_idx < contour_descr2_.Size; ++c2_idx)
             {
-                RealType cur_dist = metric_(contour2_->at(c2_idx), *traverser1);
+                RealType cur_dist = metric_(contour_descr2_.PointsPtr->at(c2_idx), *traverser1);
                 if (cur_dist < c2min_dist)
                 {
                     c2min_idx = c2_idx;
@@ -330,24 +348,27 @@ private:
 
             // Create a default directed traverser. This is need to calculate the
             // direction if c2min_idx is the last element in the collection.
-            retvalue = ContourTraverser(TraverseFactory::Create(contour2_, c2min_idx, true));
+            retvalue = ContourTraverser(TraverseFactory::Create(contour_descr2_.PointsPtr,
+                                                                c2min_idx, true));
 
             // Contour2 traverse direction should be swapped in order to correspond
             // with the contour1 direction.
             Point3D direction1 = *(traverser1 + 1) - *traverser1;
             Point3D direction2 = *(retvalue + 1) - *retvalue;
             if (direction1 * direction2 < 0)
-                retvalue = ContourTraverser(TraverseFactory::Create(contour2_, c2min_idx, false));
+                retvalue = ContourTraverser(TraverseFactory::Create(
+                        contour_descr2_.PointsPtr, c2min_idx, false));
         }
         else
         {
             // Check if contour2_ traverse direction should be swapped in order to
             // correspond with the contour1_'s direction.
-            RealType dist_to_first = metric_(contour2_->front(), *traverser1);
-            RealType dist_to_last = metric_(contour2_->back(), *traverser1);
+            RealType dist_to_first = metric_(contour_descr2_.PointsPtr->front(), *traverser1);
+            RealType dist_to_last = metric_(contour_descr2_.PointsPtr->back(), *traverser1);
             bool is_forward2 = (dist_to_first < dist_to_last) ? true : false;
 
-            retvalue = ContourTraverser(TraverseFactory::Create(contour2_, is_forward2));
+            retvalue = ContourTraverser(TraverseFactory::Create(contour_descr2_.PointsPtr,
+                                                                is_forward2));
         }
 
         return retvalue;
@@ -367,13 +388,8 @@ private:
     }
 
 private:
-    std::size_t id1_;
-    ContourPtr contour1_;
-    bool closed1_;
-
-    std::size_t id2_;
-    ContourPtr contour2_;
-    bool closed2_;
+    ContourDescriptor contour_descr1_;
+    ContourDescriptor contour_descr2_;
 
     Metric metric_;
 };
