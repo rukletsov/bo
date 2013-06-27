@@ -1,8 +1,8 @@
 
 /******************************************************************************
 
-  Functor that detects whether a point lies inside an arched strip of a
-  certain form with additional conditions.
+  TStrip representation from two contours. Contains only indices to vertices
+  in original contours.
 
   Copyright (c) 2013
   Alexander Rukletsov <rukletsov@gmail.com>
