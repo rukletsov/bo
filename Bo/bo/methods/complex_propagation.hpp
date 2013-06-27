@@ -98,6 +98,9 @@ public:
     static Ptr create(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
+    static Ptrs create(const Points3DConstPtrs& planes, RealType delta_min, RealType delta_max,
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
+
     static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight,RealType tangential_radius);
 
@@ -232,8 +235,7 @@ ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
 
 // Factories.
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::Ptr
-ComplexPropagation<RealType>::create(
+typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         Points3DConstPtr plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -241,6 +243,28 @@ ComplexPropagation<RealType>::create(
     Ptr ptr(new this_type(plane, delta_min, delta_max, inertial_weight,
                           centrifugal_weight, tangential_radius));
     return ptr;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
+        const Points3DConstPtrs& planes, RealType delta_min, RealType delta_max,
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
+{
+    // Cache values and prepare output container.
+    std::size_t planes_count = planes.size();
+    Ptrs propagators;
+    propagators.reserve(planes_count);
+
+    // Create an instance for each plane
+    for (std::size_t idx = 0; idx < planes_count; ++idx)
+    {
+        // Create an instance, register neighbours and return.
+        Ptr propagator = create(planes[idx], delta_min, delta_max, inertial_weight,
+                                centrifugal_weight, tangential_radius);
+        propagators.push_back(propagator);
+    }
+
+    return propagators;
 }
 
 template <typename RealType>
@@ -332,7 +356,8 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
 // Public control functions.
 template <typename RealType>
-void ComplexPropagation<RealType>::add_neighbour_planes(const Points3DConstPtrs &neighbour_planes, const Weights& neighbour_weights)
+void ComplexPropagation<RealType>::add_neighbour_planes(
+        const Points3DConstPtrs &neighbour_planes, const Weights& neighbour_weights)
 {
     // Weights should correspond to plane number.
     if (neighbour_planes.size() != neighbour_weights.size())
