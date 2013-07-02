@@ -29,6 +29,7 @@ ELSE ()
                            bo
                            boost_system
                            boost_filesystem
+                           boost_chrono
     )
 ENDIF (MSVC)
 

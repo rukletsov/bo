@@ -7,14 +7,12 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
+#include <boost/chrono.hpp>
 
 #include "bo/methods/complex_propagation.hpp"
 #include "bo/methods/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
-
-#include "bo/extended_std.hpp"
-#include <boost/format.hpp>
 
 using namespace boost::filesystem;
 using namespace bo::methods::surfaces;
@@ -240,19 +238,44 @@ void ChrisitiansenSheepFull()
         planes_data.push_back(boost::make_shared<Propagator::Points3D>(mesh.get_all_vertices()));
     }
 
-    // Prepare weights for all slices.
+    typedef boost::chrono::steady_clock BoostTimer;
+    BoostTimer::time_point start = BoostTimer::now();
+
+    // 1. Prepare propagators for all slices. Use no neighbouring information.
+//    Propagator::Ptrs contour_descriptors = Propagator::create(planes_data,
+//            2.f, 5.f, 0.3f, 0.4f, 15.f);
+
+    // 2. Prepare weights and propagators for all slices.
     Propagator::Weights weights;
     weights.push_back(0.8f);
     weights.push_back(0.5f);
-
-    // Run propagation for every plane.
     Propagator::Ptrs contour_descriptors = Propagator::create(planes_data, weights,
             2.f, 5.f, 0.3f, 0.4f, 15.f);
+
+    BoostTimer::time_point after_construction = BoostTimer::now();
+
+    // Run propagation for every plane.
     BOOST_FOREACH (Propagator::Ptr contour_descriptor, contour_descriptors)
     { contour_descriptor->propagate(); }
+    BoostTimer::time_point after_propagation = BoostTimer::now();
 
     // Triangulate the contours and save the outpur mesh.
     FloatMesh result_mesh = Triangulator::christiansen(contour_descriptors);
+    BoostTimer::time_point after_triangulation = BoostTimer::now();
+
+    std::cout << "Sheep propagators construction time: "
+              << boost::chrono::duration<double>(after_construction - start).count()
+              << "s " << std::endl;
+    std::cout << "Sheep propagation time: "
+              << boost::chrono::duration<double>(after_propagation - after_construction).count()
+              << "s " << std::endl;
+    std::cout << "Sheep triangulation time: "
+              << boost::chrono::duration<double>(after_triangulation - after_propagation).count()
+              << "s " << std::endl;
+    std::cout << "Sheep total time: "
+              << boost::chrono::duration<double>(after_triangulation - start).count()
+              << "s " << std::endl;
+
     mesh_to_ply(result_mesh, paths.PlySheepOutPath.string());
 }
 
