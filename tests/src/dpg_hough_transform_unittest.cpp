@@ -1,15 +1,13 @@
-#include <gtest/gtest.h>
 
 #include <cstdlib>
 #include <ctime>
+#include <gtest/gtest.h>
 
-#include "bo/methods/dpg_hough_transform_2d.hpp"
+#include "bo/recognition/dpg_hough_transform_2d.hpp"
 
 using namespace bo;
-using namespace bo::methods::recognition;
-using namespace bo::methods::recognition::detail;
-
-
+using namespace bo::recognition;
+using namespace bo::recognition::detail;
 
 // "Test fixture" using base class form GTEST.
 class HoughTransformTest: public testing::Test

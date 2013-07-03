@@ -1,11 +1,11 @@
 
 #include <gtest/gtest.h>
 
-#include "bo/methods/distances_3d.hpp"
+#include "bo/distances/distances_3d.hpp"
 #include "debug_alloc.hpp"
 
 using namespace bo;
-using namespace bo::methods;
+using namespace bo::distances;
 
 // Create a so-called "text fixture".
 class GeometryTest: public testing::Test

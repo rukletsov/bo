@@ -9,13 +9,14 @@
 #include <boost/assert.hpp>
 #include <boost/chrono.hpp>
 
-#include "bo/methods/complex_propagation.hpp"
-#include "bo/methods/triangulation.hpp"
+#include "bo/config.hpp"
+#include "bo/surfaces/complex_propagation.hpp"
+#include "bo/surfaces/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
 
 using namespace boost::filesystem;
-using namespace bo::methods::surfaces;
+using namespace bo::surfaces;
 using namespace bo::io;
 
 typedef bo::Mesh<float> FloatMesh;

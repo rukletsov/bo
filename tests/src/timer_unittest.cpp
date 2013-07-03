@@ -6,12 +6,12 @@
 // This allows us to have (and to test) both timers under MSVC: boost::timer through
 // Timer class and a special high-resolution timer through detail::MSVCTimer.
 #define USE_BOOST_TIMER
-#include "bo/performance.hpp"
+#include "bo/utils/performance.hpp"
 
 #include "debug_alloc.hpp"
 
 using namespace bo;
-
+using namespace bo::utils;
 
 // Create a fixture class template for all timer classes.
 template <typename TimerType>

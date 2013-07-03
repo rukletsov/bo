@@ -1,6 +1,6 @@
 
-#ifndef PCH_H_
-#define PCH_H_
+#ifndef BO_PCH
+#define BO_PCH
 
 // MSVC-specific stuff.
 #ifdef _MSC_VER
@@ -48,4 +48,4 @@
 
 #endif // BO_USE_PCH
 
-#endif // PCH_H_
+#endif // BO_PCH

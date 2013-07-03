@@ -14,7 +14,6 @@ static const std::string ini_filename = "ini_reader_test.ini";
 
 using namespace bo::io;
 
-
 // Create a so-called "text fixture".
 // IniReaderTest requires an input ini file, if the file doesn't exist or a file path is
 // not defined, the first FileExists test fails and other tests are not run.

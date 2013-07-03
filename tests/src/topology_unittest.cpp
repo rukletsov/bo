@@ -1,24 +1,12 @@
+
 #include <gtest/gtest.h>
 
-#include "bo/topology.hpp"
+#include "bo/math/topology.hpp"
 
 using namespace bo;
-using namespace bo::topology;
+using namespace bo::math;
 
-// "Test fixture" using base class form GTEST.
-class TopologyTest: public testing::Test
-{
-protected:
-
-    TopologyTest()
-    { }
-
-    virtual void SetUp()
-    {
-    }
-};
-
-TEST_F(TopologyTest, OrthotopeEdgeCount)
+TEST(TopologyTest, OrthotopeEdgeCount)
 {
     EXPECT_EQ((OrthotopeTopology<float, 1>::edges().size()),
               (OrthotopeTopology<float, 1>::edge_count()));

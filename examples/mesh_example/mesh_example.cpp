@@ -5,12 +5,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 
-#include "bo/mesh.hpp"
+#include "bo/config.hpp"
+#include "bo/core/mesh.hpp"
 #include "bo/io/mesh_io.hpp"
 
 using namespace boost::filesystem;
 using namespace bo::io;
-
 
 // Directory where test data is stored.
 std::string DataDirectory;
@@ -77,5 +77,5 @@ int main(int argc, char* argv[])
 
     //bo::Mesh::Normal normal = mesh.get_vertex_normal(1);
 
-    ////mesh.to_ply(std::string("..\\debug\\pts2.ply"));
+    //mesh.to_ply(std::string("..\\debug\\pts2.ply"));
 }

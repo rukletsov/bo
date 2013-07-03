@@ -2,7 +2,7 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-#include "bo/mesh.hpp"
+#include "bo/core/mesh.hpp"
 #include "debug_alloc.hpp"
 
 using namespace bo;
@@ -11,7 +11,6 @@ using namespace bo;
 // of the test environment and should be used to determine where external data for
 // the tests is stored.
 extern std::string DataDirectory;
-
 
 typedef Mesh<double> MeshOfDoubles;
 

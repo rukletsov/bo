@@ -4,11 +4,10 @@
 #include <boost/cstdint.hpp>
 #include <gtest/gtest.h>
 
-#include "bo/raw_image_2d.hpp"
+#include "bo/core/raw_image_2d.hpp"
 #include "debug_alloc.hpp"
 
 using namespace bo;
-
 
 // Create a so-called "text fixture".
 class RawImage2DTest: public testing::Test

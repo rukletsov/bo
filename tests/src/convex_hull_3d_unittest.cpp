@@ -1,8 +1,9 @@
+
 #include <gtest/gtest.h>
 
-#include "bo/methods/convex_hull_3d.hpp"
+#include "bo/surfaces/convex_hull_3d.hpp"
 
-using namespace bo::methods::surfaces;
+using namespace bo::surfaces;
 
 // "Test fixture" using base class form GTEST.
 class ConvexHull3DTest: public testing::Test

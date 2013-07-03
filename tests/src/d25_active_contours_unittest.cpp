@@ -1,10 +1,11 @@
+
 #include <gtest/gtest.h>
 
-#include "bo/methods/d25_active_contours.hpp"
+#include "bo/surfaces/d25_active_contours.hpp"
 
 using namespace bo;
-using namespace bo::methods::surfaces;
-using namespace bo::methods::surfaces::detail;
+using namespace bo::surfaces;
+using namespace bo::surfaces::detail;
 
 // "Test fixture" using base class form GTEST.
 class D25ActiveContoursTest: public testing::Test

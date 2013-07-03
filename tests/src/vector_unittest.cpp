@@ -2,11 +2,10 @@
 #include <limits>
 #include <gtest/gtest.h>
 
-#include "bo/vector.hpp"
+#include "bo/core/vector.hpp"
 #include "debug_alloc.hpp"
 
 using namespace bo;
-
 
 // Create a so-called "text fixture".
 class VectorTest: public testing::Test

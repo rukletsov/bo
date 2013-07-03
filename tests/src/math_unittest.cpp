@@ -2,12 +2,13 @@
 #include <vector>
 #include <gtest/gtest.h>
 
-#include "bo/vector.hpp"
-#include "bo/extended_math.hpp"
-#include "bo/blas/pca.hpp"
+#include "bo/core/vector.hpp"
+#include "bo/math/extended_math.hpp"
+#include "bo/math/pca.hpp"
 #include "debug_alloc.hpp"
 
 using namespace bo;
+using namespace math;
 
 // Create a so-called "text fixture".
 class MathTest: public testing::Test
@@ -72,7 +73,7 @@ TEST_F(MathTest, Mean)
 
 TEST_F(MathTest, PCA)
 {
-    typedef blas::PCA<double, 2> PCAEngine;
+    typedef math::PCA<double, 2> PCAEngine;
     PCAEngine pca;
     PCAEngine::Result result = pca(data2d_);
 
