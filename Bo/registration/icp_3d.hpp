@@ -115,7 +115,7 @@ public:
     typedef std::vector<Point3D> PointCloud;
     typedef boost::shared_ptr<PointCloud> PointCloudPtr;
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
-    typedef Transformation3D<RealType> Transformation;
+    typedef math::Transformation3D<RealType> Transformation;
 
 public:
     ICP3D(const PointCloud& source, PointCloudPtr target, Metric dist_fun,
@@ -266,7 +266,7 @@ template <typename RealType>
 typename ICP3D<RealType>::Point3D ICP3D<RealType>::centroid_(PointCloud* cloud) const
 {
     BOOST_ASSERT(cloud->size() > 0);
-    Point3D mass_center = mean(*cloud);
+    Point3D mass_center = math::mean(*cloud);
 
     return mass_center;
 }
