@@ -30,8 +30,8 @@
 
 *******************************************************************************/
 
-#ifndef EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
-#define EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
+#ifndef FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C
+#define FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C
 
 #include <cmath>
 
@@ -69,4 +69,4 @@ RealType fi_gm(RealType value)
 } // namespace math
 } // namespace bo
 
-#endif // EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
+#endif // FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C

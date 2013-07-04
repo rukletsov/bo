@@ -33,7 +33,7 @@
 #ifndef LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679_
 #define LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679_
 
-#include "bo/math/extended_math.hpp"
+#include "bo/math/functions.hpp"
 
 namespace bo {
 namespace mrf {

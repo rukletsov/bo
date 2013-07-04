@@ -35,7 +35,6 @@
 #define DISTANCES_3D_HPP_B5895686_0C10_449A_9DB3_03BEDBE065FB_
 
 #include "bo/core/vector.hpp"
-#include "bo/math/extended_math.hpp"
 
 namespace bo {
 namespace distances {

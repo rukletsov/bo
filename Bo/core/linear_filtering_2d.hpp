@@ -36,7 +36,7 @@
 #include <cmath>
 
 #include "bo/core/raw_image_2d.hpp"
-#include "bo/math/extended_math.hpp"
+#include "bo/math/functions.hpp"
 
 namespace bo {
 

@@ -33,7 +33,7 @@
 #ifndef PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_
 #define PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_
 
-#include "bo/math/extended_math.hpp"
+#include "bo/math/functions.hpp"
 
 namespace bo {
 namespace mrf {

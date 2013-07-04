@@ -36,7 +36,6 @@
 #include <iostream>
 
 #include "bo/core/vector.hpp"
-#include "bo/math/extended_math.hpp"
 #include "bo/math/blas_extensions.hpp"
 #include "bo/math/blas_conversions.hpp"
 

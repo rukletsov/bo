@@ -52,7 +52,7 @@
 #   pragma warning(pop)
 #endif // _MSC_VER
 
-#include "bo/math/extended_math.hpp"
+#include "bo/math/functions.hpp"
 
 // Dirty hack: add stream operator for matrix<T> type into boost namespace.
 namespace boost {
