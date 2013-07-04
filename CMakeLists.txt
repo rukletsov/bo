@@ -169,6 +169,13 @@ IF (UsePch)
 
 ENDIF (UsePch)
 
+# Compile the library.
+ADD_LIBRARY (bo
+             ${BO_HDRS}
+             ${BO_SRCS}
+             ${BO_CSRCS}
+)
+
 # Gloabl dependencies (for all projects).
 INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT}
                      ${CMAKE_CURRENT_SOURCE_DIR}
@@ -177,19 +184,12 @@ INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT}
 LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib)
 
 # Let the sources know, that this is our own source.
-ADD_DEFINITIONS (-DBO_SOURCE)
+SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_DEFINITIONS BO_SOURCE)
 
 # Add shared library support if requested by a user.
 IF (BUILD_SHARED_LIBS)
-    ADD_DEFINITIONS (-DBO_SHARED_LIBRARY)
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_DEFINITIONS BO_SHARED_LIBRARY)
 ENDIF (BUILD_SHARED_LIBS)
-
-# Compile the library.
-ADD_LIBRARY (bo
-             ${BO_HDRS}
-             ${BO_SRCS}
-             ${BO_CSRCS}
-)
 
 # Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
 IF (NOT MSVC)
@@ -210,16 +210,16 @@ IF (MSVC)
     #     http://msdn.microsoft.com/en-us/library/aa383745%28v=vs.85%29.aspx
     IF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
         MESSAGE (STATUS "Targeting Windows 7 API: _WIN32_WINNT = 0x0601")
-        ADD_DEFINITIONS (-D_WIN32_WINNT=0x0601)
+        SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_DEFINITIONS _WIN32_WINNT=0x0601)
     ENDIF ((MSVC10) OR ((MSVC_VERSION) EQUAL 1600) OR ((MSVC_VERSION) GREATER 1600))
 
     # Disable C4512 warning. There are a some boost classes, for which assignment
     # operator cannot be generated. The warning seems not to be important.
-    ADD_DEFINITIONS ("/wd4512")
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS "/wd4512")
 
     # Disable C4127 warning. Constant conditional expressions should not always
     # trigger a warning (e.g. for while(1)). But MSVC does, which is annoying.
-    ADD_DEFINITIONS ("/wd4127")
+    SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS "/wd4127")
 
     # Supress secure warnings (C4996) for MSVC compiler.
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_FLAGS
