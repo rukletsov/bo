@@ -236,7 +236,15 @@ ENDIF (MSVC)
 # Add test project only if requested.
 IF (BuildTests)
     ENABLE_TESTING()
-    ADD_SUBDIRECTORY (${TESTS_PATH})
+    FIND_PACKAGE (GTest)
+
+    # Do not enable tests if GTest is not found.
+    IF (GTEST_FOUND)
+        ADD_SUBDIRECTORY (${TESTS_PATH})
+    ELSE ()
+        MESSAGE ("GTest not found, tests disabled.")
+    ENDIF (GTEST_FOUND)
+
 ENDIF (BuildTests)
 
 # Add examples if requested.

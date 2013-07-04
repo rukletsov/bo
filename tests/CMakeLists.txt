@@ -24,13 +24,12 @@ SET (BoTest_HDRS
 
 # For additional dependencies check the root CMakeLists.
 INCLUDE_DIRECTORIES (./include
-                     $ENV{GTEST_ROOT}/include
+                     ${GTEST_INCLUDE_DIRS}
                      ${BO_ROOT}
 )
      
 # For additional dependencies check the root CMakeLists.
-LINK_DIRECTORIES ($ENV{GTEST_ROOT}/stage/lib
-                  ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
+LINK_DIRECTORIES (${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
                   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
 )
 
@@ -46,12 +45,12 @@ ADD_EXECUTABLE (BoTest
 IF (MSVC)
     TARGET_LINK_LIBRARIES (BoTest
                            bo
-                           debug gtestd optimized gtest
+                           ${GTEST_LIBRARIES}
     )
 ELSE ()
     TARGET_LINK_LIBRARIES (BoTest
                            bo
-                           gtest
+                           ${GTEST_LIBRARIES}
                            boost_system
                            boost_filesystem
     )
