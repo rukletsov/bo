@@ -41,9 +41,12 @@ CMake is currently used to build Bö and its tests. If you use CMake from comman
 
 The code has been successfully built with, tested and run on:
 
- * Ubuntu 10.04 32bit with gcc 4.4.3; Fedora 17 32bit with gcc 4.7.0.
+ * Ubuntu 10.04 32bit with gcc 4.4.3.
+ * Fedora 17 32bit with gcc 4.7.0.
+ * openSUSE 12.2 64bit with gcc 4.6.2 and clang 3.1.
  * Mac OS X Lion (10.7.2) 64bit with gcc 4.2.1 and clang 3.0.
- * Windows XP 32bit with msvc2005 and msvc2008; Windows 7 64bit with msvc2010.
+ * Windows XP 32bit with msvc2005 and msvc2008.
+ * Windows 7 64bit with msvc2010.
 
 ## Using Bö
 Code samples and overview of some features are available on [project wiki](https://bitbucket.org/rukletsov/b/wiki/Home).
