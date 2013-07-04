@@ -32,6 +32,10 @@ ELSE ()
     MESSAGE ("Unsupported compiler used: ${CMAKE_CXX_COMPILER_ID}")
 ENDIF (MSVC)
 
+# Locate and enable Boost.
+FIND_PACKAGE (Boost COMPONENTS regex system filesystem chrono REQUIRED)
+INCLUDE_DIRECTORIES (${Boost_INCLUDE_DIRS})
+
 # Increase default warning level for sources in the current directory and below.
 # Supports MSVC, GCC and Clang compilers.
 IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -177,12 +181,7 @@ ADD_LIBRARY (bo
              ${BO_CSRCS}
 )
 
-# Gloabl dependencies (for all projects).
-INCLUDE_DIRECTORIES ($ENV{BOOST_ROOT}
-                     ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-LINK_DIRECTORIES ($ENV{BOOST_ROOT}/stage/lib)
+INCLUDE_DIRECTORIES (${BO_ROOT})
 
 # Let the sources know, that this is our own source.
 SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_DEFINITIONS BO_SOURCE)
@@ -192,12 +191,10 @@ IF (BUILD_SHARED_LIBS)
     SET_TARGET_PROPERTIES (bo PROPERTIES COMPILE_DEFINITIONS BO_SHARED_LIBRARY)
 ENDIF (BUILD_SHARED_LIBS)
 
-# Add boost dependencies if compiled not with msvc (boost has auto-link support for it).
-IF (NOT MSVC)
-    TARGET_LINK_LIBRARIES (bo
-                           boost_regex)
-ENDIF (NOT MSVC)
-
+# Add boost dependencies.
+TARGET_LINK_LIBRARIES (bo
+                       ${Boost_LIBRARIES}
+)
 
 # Specify the name suffix for debug build.
 SET_TARGET_PROPERTIES (bo PROPERTIES DEBUG_POSTFIX "d")

@@ -41,20 +41,12 @@ ADD_EXECUTABLE (BoTest
 
 # Add dependencies. MSVC distinguishes between debug and release runtime, therefore both
 # debug and release versions of gtest should be available when using MSVC compiler. Also
-# add boost dependencies if compiler is not MSVC (boost has auto-link support for it).
-IF (MSVC)
-    TARGET_LINK_LIBRARIES (BoTest
-                           bo
-                           ${GTEST_LIBRARIES}
-    )
-ELSE ()
-    TARGET_LINK_LIBRARIES (BoTest
-                           bo
-                           ${GTEST_LIBRARIES}
-                           boost_system
-                           boost_filesystem
-    )
-ENDIF (MSVC)
+# add boost dependencies.
+TARGET_LINK_LIBRARIES (BoTest
+                       ${Boost_LIBRARIES}
+                       ${GTEST_LIBRARIES}
+                       bo
+)
 
 ADD_CUSTOM_COMMAND(TARGET BoTest
     POST_BUILD

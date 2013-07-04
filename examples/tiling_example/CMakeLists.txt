@@ -19,19 +19,11 @@ ADD_EXECUTABLE (TilingExample
                 ${TilingExample_SRCS}
 )
 
-# Add boost dependencies if compiler is not MSVC (boost has auto-link support for it).
-IF (MSVC)
-    TARGET_LINK_LIBRARIES (TilingExample
-                           bo
-    )
-ELSE ()
-    TARGET_LINK_LIBRARIES (TilingExample
-                           bo
-                           boost_system
-                           boost_filesystem
-                           boost_chrono
-    )
-ENDIF (MSVC)
+# Add dependencies.
+TARGET_LINK_LIBRARIES (TilingExample
+                       ${Boost_LIBRARIES}
+                       bo
+)
 
 ADD_CUSTOM_COMMAND(TARGET TilingExample
     POST_BUILD

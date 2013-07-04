@@ -19,18 +19,11 @@ ADD_EXECUTABLE (MeshExample
                 ${MeshExample_SRCS}
 )
 
-# Add boost dependencies if compiler is not MSVC (boost has auto-link support for it).
-IF (MSVC)
-    TARGET_LINK_LIBRARIES (MeshExample
-                           bo
-    )
-ELSE ()
-    TARGET_LINK_LIBRARIES (MeshExample
-                           bo
-                           boost_system
-                           boost_filesystem
-    )
-ENDIF (MSVC)
+# Add dependencies.
+TARGET_LINK_LIBRARIES (MeshExample
+                       ${Boost_LIBRARIES}
+                       bo
+)
 
 ADD_CUSTOM_COMMAND(TARGET MeshExample
     POST_BUILD
