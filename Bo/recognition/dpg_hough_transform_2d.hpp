@@ -44,6 +44,7 @@
 #include <boost/assert.hpp>
 #include <boost/math/constants/constants.hpp>
 
+#include "bo/config.hpp"
 #include "bo/core/vector.hpp"
 #include "bo/math/blas_extensions.hpp"
 #include "bo/core/raw_image_2d.hpp"
@@ -566,6 +567,7 @@ public:
 
             // The vertex must lie in 3D!
             BOOST_ASSERT(std::abs(p[3]) < kEpsilon);
+            BO_UNUSED(kEpsilon);
 
             // Projection.
             typename Hull::Point3D pr(p[0], p[1], p[2]);
