@@ -4,6 +4,7 @@
 
 #include "bo/core/vector.hpp"
 #include "bo/math/extended_math.hpp"
+#include "Bo/math/mean.hpp"
 #include "bo/math/pca.hpp"
 #include "debug_alloc.hpp"
 

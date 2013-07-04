@@ -65,7 +65,7 @@ struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType
     RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
-            multiplier * square(configur_val - observ_val);
+            multiplier * math::square(configur_val - observ_val);
     }
 };
 

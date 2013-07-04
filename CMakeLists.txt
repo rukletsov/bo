@@ -95,6 +95,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/blas_extensions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/blas_conversions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/extended_math.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/mean.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/pca.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/topology.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/math/transformation_3d.hpp

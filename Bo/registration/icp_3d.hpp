@@ -45,7 +45,7 @@
 
 #include "bo/core/vector.hpp"
 #include "bo/core/kdtree.hpp"
-#include "bo/math/extended_math.hpp"
+#include "bo/math/mean.hpp"
 #include "bo/math/transformation_3d.hpp"
 #include "bo/math/blas_extensions.hpp"
 #include "bo/math/blas_conversions.hpp"

@@ -42,7 +42,7 @@
 #include <boost/assert.hpp>
 
 #include "bo/core/vector.hpp"
-#include "bo/math/extended_math.hpp"
+#include "bo/math/mean.hpp"
 #include "bo/math/blas_extensions.hpp"
 #include "bo/math/blas_conversions.hpp"
 

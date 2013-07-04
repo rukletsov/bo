@@ -1,9 +1,9 @@
 
 /******************************************************************************
 
-  Extension of the standard <cmath> header.
+  Implementation of mean.
 
-  Copyright (c) 2011 - 2013
+  Copyright (c) 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -30,43 +30,55 @@
 
 *******************************************************************************/
 
-#ifndef EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
-#define EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
+#ifndef MEAN_HPP_BB12C8E0_E48D_11E2_83DA_9FFD99890B3C
+#define MEAN_HPP_BB12C8E0_E48D_11E2_83DA_9FFD99890B3C
 
-#include <cmath>
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include <stdexcept>
+
+// Suppress annoying MSVC's C4244 conversion warnings popping out from boost::accumulators
+// library (boost::numeric::functional namespace) mainly due to division operation
+// in mean computation. Suppress MSVC's C4512 warning for boost auxiliary classes as well.
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4512)
+#endif // _MSC_VER
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif // _MSC_VER
 
 namespace bo {
 namespace math {
 
-template <typename T> inline
-T square(const T& arg)
+// Returns the mean of the given samples.
+template <typename SampleType>
+SampleType mean(const std::vector<SampleType>& data)
 {
-    return (arg * arg);
-}
+    // The mean of an empty set is meaningless.
+    if (data.size() == 0)
+        throw std::logic_error("The mean of an empty set is meaningless.");
 
-template <typename T> inline
-T cube(const T& arg)
-{
-    return (arg * arg * arg);
-}
+    // Initialize boost accumulator.
+    namespace accs = boost::accumulators;
+    typedef accs::accumulator_set<SampleType, accs::stats<accs::tag::mean> > Acc;
+    Acc acc;
 
-// Returns "2 ln(cosh(t))".
-template <typename RealType> inline
-RealType fi_gr(RealType value)
-{
-    return
-        RealType(2) * std::log(std::exp(value) + std::exp(RealType(0) - value) / RealType(2));
-}
+    // Fill accumulator with data.
+    acc = std::for_each(data.begin(), data.end(), acc);
 
-// Returns "(t^2) / (1+t^2)".
-template <typename RealType> inline
-RealType fi_gm(RealType value)
-{
-    return
-        (value * value) / (RealType(1) + value * value);
+    // Request and return mean.
+    return accs::mean(acc);
 }
 
 } // namespace math
 } // namespace bo
 
-#endif // EXTENDED_MATH_HPP_5E8C7161_2D47_4FF0_974A_19599004895C
+#endif // MEAN_HPP_BB12C8E0_E48D_11E2_83DA_9FFD99890B3C

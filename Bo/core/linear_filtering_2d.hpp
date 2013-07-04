@@ -151,8 +151,8 @@ bo::RawImage2D<ValType> sobel_3x3(const RawImage2D<ValType> image)
 
     for (std::size_t col = 0; col < image_width; ++col) {
         for (std::size_t row = 0; row < image.height(); ++row) {
-            filtered_image(col, row) = std::sqrt(square(sobel_col(col, row)) +
-                                                 square(sobel_row(col, row)));
+            filtered_image(col, row) = std::sqrt(math::square(sobel_col(col, row)) +
+                                                 math::square(sobel_row(col, row)));
     }   }
 
     return filtered_image;

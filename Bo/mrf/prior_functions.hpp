@@ -65,7 +65,7 @@ struct SmoothnessPrior: public GenericPrior<NodeType, RealType>
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return multiplier * square(arg1 - arg2) / RealType(2);
+        return multiplier * math::square(arg1 - arg2) / RealType(2);
     }
 
     virtual ~SmoothnessPrior()
@@ -109,7 +109,7 @@ struct MeanSmoothnessPrior: public GenericPrior<NodeType, RealType>
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return multiplier * square(arg1.mean() - arg2.mean()) / RealType(2);
+        return multiplier * math::square(arg1.mean() - arg2.mean()) / RealType(2);
     }
 
     virtual ~MeanSmoothnessPrior()

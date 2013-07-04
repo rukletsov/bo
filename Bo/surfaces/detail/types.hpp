@@ -37,7 +37,7 @@
 
 #include "bo/core/vector.hpp"
 #include "bo/math/pca.hpp"
-#include "bo/math/extended_math.hpp"
+#include "bo/math/mean.hpp"
 
 namespace bo {
 namespace surfaces {
