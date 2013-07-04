@@ -38,12 +38,20 @@
 #    include <string>
 #    include <vector>
 #    include <map>
+#    include <set>
+#    include <list>
 #    include <algorithm>
+#    include <limits>
 #    include <functional>
 #    include <boost/cstdint.hpp>
 #    include <boost/assert.hpp>
 #    include <boost/array.hpp>
 #    include <boost/format.hpp>
+#    include <boost/function.hpp>
+#    include <boost/scoped_ptr.hpp>
+#    include <boost/operators.hpp>
+#    include <boost/regex.hpp>
+#    include <boost/scope_exit.hpp>
 #  endif // __cplusplus
 
 #endif // BO_USE_PCH
