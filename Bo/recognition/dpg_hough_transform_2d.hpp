@@ -50,12 +50,12 @@
 #include "bo/core/raw_image_2d.hpp"
 #include "bo/math/topology.hpp"
 #include "bo/math/blas_extensions.hpp"
-#include "bo/surfaces//convex_hull_3d.hpp"
+#include "bo/surfaces/convex_hull_3d.hpp"
 
 namespace bo {
 namespace recognition {
 
-namespace detail{
+namespace detail {
 
 // A 4-dimensional hyperplane defined by a point located
 // on this plane and the plane's normal vector.
@@ -79,15 +79,13 @@ public:
         m_(3, 0) =  n[0]; m_(3, 1) =  n[1]; m_(3, 2) =  n[2]; m_(3, 3) =  n[3];
     }
 
-    inline const Point4D& point() const
-    {
-        return point_;
-    }
+    inline
+    const Point4D& point() const
+    { return point_; }
 
-    inline const Point4D& normal() const
-    {
-        return normal_;
-    }
+    inline
+    const Point4D& normal() const
+    { return normal_; }
 
     // Computes intersection of a line defined by two 4-dimensional points
     // with the hyperplane. Considers the intersection as a linear coordinate 't'
@@ -163,7 +161,6 @@ template <typename RealType>
 class Space
 {
 public:
-
     typedef Vector<RealType, 4> Point4D;
     typedef std::vector<Point4D> Points4D;
     typedef Vector<std::size_t, 4> Size4D;
@@ -186,8 +183,6 @@ public:
         Point4D point;
         Point4D direction;
     };
-
-
 
     typedef Vector<RealType, 2> SegmentCoordinates;
     typedef std::vector<Space> Spaces;
@@ -228,7 +223,8 @@ public:
             cell_size_[i] = (box_.second[i] - box_.first[i]) /  cells_in_dimension;
         }
 
-        min_cell_volume_ = std::pow((cell_size_[0] + cell_size_[1] + cell_size_[2] + cell_size_[3]) / 4, 3);
+        min_cell_volume_ = std::pow((cell_size_[0] + cell_size_[1] + cell_size_[2] +
+                cell_size_[3]) / 4, 3);
 
         // Compute the number of probabilistic elements used for the subdivision policy.
         prob_element_count_ = 1;
@@ -263,10 +259,11 @@ public:
                     for (std::size_t d3 = 0; d3 < divisions_per_dimension_[3]; ++d3)
                     {
                         // Create a subspace.
-                        Point4D translation(d0 * steps4d[0], d1 * steps4d[1], d2 * steps4d[2], d3 * steps4d[3]);
+                        Point4D translation(d0 * steps4d[0], d1 * steps4d[1], d2 * steps4d[2],
+                                d3 * steps4d[3]);
                         Box4D b(box_.first + translation, box_.first + translation + steps4d);
-                        Space s(b, divisions_per_dimension_, max_resolution_level_, cell_resolution_increment_,
-                                resolution_level_ + 1);
+                        Space s(b, divisions_per_dimension_, max_resolution_level_,
+                                cell_resolution_increment_, resolution_level_ + 1);
 
                         subspaces_.push_back(s);
                     }
@@ -614,7 +611,6 @@ public:
     }
 
 private:
-
     Spaces subspaces_;
     Box4D box_;
     Size4D divisions_per_dimension_;
@@ -697,17 +693,17 @@ private:
 };
 
 
-
 template <typename RealType>
 class SubdivisionPolicy
 {
 public:
     typedef Space<RealType> Space4D;
 
-    // Returns the minimal number of spaces (at the current resolution level) from the beginning of the given
-    // sorted collection such that occurrence of the subspaces (at the cell resolution level) with maximal
-    // number of votes is not less then the given probability p.
-    // Attention: the input collection of spaces must be sorted in descending order!
+    // Returns the minimal number of spaces (at the current resolution level) from
+    // the beginning of the given sorted collection such that occurrence of the
+    // subspaces (at the cell resolution level) with maximal number of votes is
+    // not less then the given probability p. Attention: the input collection of
+    // spaces must be sorted in descending order!
     static std::size_t probabilistic(const typename Space4D::Spaces &spaces, RealType p)
     {
         typename Space4D::Spaces subcollection1;
@@ -728,7 +724,6 @@ public:
 
         return n;
     }
-
 
     // Computes the probability of the event that the maximal value of subcollection1 is greater
     // than the maximal value from subcollection2.
@@ -817,7 +812,6 @@ public:
 };
 
 
-
 // Compares two spaces using an approximation of the Gumbold means.
 template <typename RealType>
 bool operator < (const Space<RealType> &s1, const Space<RealType> &s2)
@@ -829,8 +823,6 @@ bool operator < (const Space<RealType> &s1, const Space<RealType> &s2)
     return
         (mean1 < mean2) ? true : false;
 }
-
-
 
 } // namespace detail
 
@@ -876,12 +868,13 @@ public:
                 // Probable angle between the directional vector and the tangent.
                 RealType gamma = atable_gamma(index);
 
-                // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
-                // the current table row.
+                // Find all corresponding directional vectors v2 defined by the
+                // (alpha, beta) angles of the current table row.
                 for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                      abit !=  atable_.at(index).end(); ++abit)
                 {
-                    typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(*it, gamma, *abit);
+                    typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(
+                                *it, gamma, *abit);
 
                     // Create two segments on this line that correspond to the given scaling range.
                     Point2D v1(line4.direction[0], line4.direction[1]);
@@ -899,8 +892,8 @@ public:
         }
     }
 
-    void project_segment(const typename Space4D::Segment4D &segment, bo::RawImage2D<RealType> &image1,
-                         bo::RawImage2D<RealType> &image2)
+    void project_segment(const typename Space4D::Segment4D &segment,
+                         bo::RawImage2D<RealType> &image1, bo::RawImage2D<RealType> &image2)
     {
         const RealType delta_t = RealType(0.01);
 
@@ -1086,7 +1079,6 @@ public:
     }
 
 private:
-
     Reference model_reference_;
     RealType model_base_;
     RealType tangent_accuracy_;
@@ -1173,7 +1165,6 @@ private:
 
         return p1 + t * v1;
     }
-
 
     // Fills in the alpha-table using the given model features
     // and two reference points.
@@ -1279,14 +1270,15 @@ private:
     // number of the space votes.
     void feature_to_vote(Space4D &s, const Features &object_features, const Point2D &scaling_range)
     {
-        for (typename Features::const_iterator it = object_features.begin(); it != object_features.end(); ++it)
+        for (typename Features::const_iterator it = object_features.begin();
+             it != object_features.end(); ++it)
         {
             feature_to_vote2(s, *it, scaling_range);
         }
     }
 
-    // Intersects the given space with the line defined by the feature (position and tangent)
-    // and increase the number of the space votes.
+    // Intersects the given space with the line defined by the feature (position and
+    // tangent) and increase the number of the space votes.
     inline void feature_to_vote(Space4D &s, const Feature &f, const Point2D &scaling_range)
     {
         // Reconstruct all the 4D lines from the alpha-table relatively to the current feature.
@@ -1295,12 +1287,13 @@ private:
             // Probable angle between the directional vector and the tangent.
             RealType gamma = atable_gamma(index);
 
-            // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
-            // the current table row.
+            // Find all corresponding directional vectors v2 defined by the
+            // (alpha, beta) angles of the current table row.
             for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                  abit !=  atable_.at(index).end(); ++abit)
             {
-                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, *abit);
+                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f,
+                        gamma, *abit);
 
                 // Create two segments on this line that correspond to the given scaling range.
                 Point2D v1(line4.direction[0], line4.direction[1]);
@@ -1319,8 +1312,7 @@ private:
     }
 
     inline typename Space4D::Line4D line4_from_feature_and_atable_element(const Feature &f,
-                                                                          RealType gamma,
-                                                                          const ATableElement &e)
+            RealType gamma, const ATableElement &e)
     {
         Point2D c = f.first;
         Point2D tan = f.second;
@@ -1353,8 +1345,8 @@ private:
         return line4;
     }
 
-    // Intersects the given space with the hyperplane defined by the feature (position and tangent)
-    // and increase the number of the space votes.
+    // Intersects the given space with the hyperplane defined by the feature
+    // (position and tangent) and increase the number of the space votes.
     inline void feature_to_vote2(Space4D &s, const Feature &f, const Point2D &scaling_range)
     {
         // Reconstruct all the 4D hyperplanes from the alpha-table relatively to the current feature.
@@ -1363,13 +1355,14 @@ private:
             // Probable angle between the directional vector and the tangent.
             RealType gamma = atable_gamma(index);
 
-            // Find all corresponding directional vectors v2 defined by the (alpha, beta) angles of
-            // the current table row.
+            // Find all corresponding directional vectors v2 defined by the (alpha, beta)
+            // angles of the current table row.
             for (typename ATableRow::const_iterator abit = atable_.at(index).begin();
                  abit !=  atable_.at(index).end(); ++abit)
             {
                 // Reconstruct the 4D line.
-                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f, gamma, *abit);
+                typename Space4D::Line4D line4 = line4_from_feature_and_atable_element(f,
+                        gamma, *abit);
 
                 // Use the hyperplane paradigm.
                 typename Space4D::Point4D norm(line4.direction[3], line4.direction[2],
@@ -1512,7 +1505,8 @@ private:
         {
             const typename Space4D::Spaces subs = s.get_subspaces();
 
-            for (typename Space4D::Spaces::const_iterator it = subs.begin(); it != subs.end(); ++it)
+            for (typename Space4D::Spaces::const_iterator it = subs.begin();
+                 it != subs.end(); ++it)
             {
                 get_resolution_level(*it, container, resolution_level);
             }
