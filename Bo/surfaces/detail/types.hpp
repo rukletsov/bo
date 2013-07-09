@@ -291,6 +291,8 @@ public:
     typedef typename BaseTangential::Ptr BaseTangentialPtr;
 
     typedef Vector<RealType, 3> Point3D;
+    typedef std::vector<Tree> Trees;
+    typedef std::vector<RealType> Weights;
 
 public:
     PropagationDirection(InertialPtr inertial_ptr, BaseCentrifugalPtr centrifugal_ptr,
@@ -355,6 +357,26 @@ public:
         // Create an instance of tangential propagation.
         BaseTangentialPtr tangential = boost::make_shared<Tangential>(tree, tangential_radius,
                 RealType(1) - inertial_weight - centrifugal_weight);
+
+        SelfType retvalue(inertial, centrifugal, tangential);
+        return retvalue;
+    }
+
+    static SelfType create_with_neighbours(RealType inertial_weight, const Tree& tree,
+            RealType tangential_radius, const Trees& neighbour_trees,
+            const Weights& neighbour_weights)
+    {
+        // Create an instance of inertial propagation.
+        InertialPtr inertial = boost::make_shared<Inertial>(inertial_weight);
+
+        // Create an instance of centrifugal propagation.
+        // TODO: replace float comparison.
+        BaseCentrifugalPtr centrifugal =  boost::make_shared<EmptyCentrifugal>();
+
+        // Create an instance of tangential propagation.
+        BaseTangentialPtr tangential = boost::make_shared<NeighbourTangential>(tree,
+                tangential_radius, RealType(1) - inertial_weight, neighbour_trees,
+                neighbour_weights);
 
         SelfType retvalue(inertial, centrifugal, tangential);
         return retvalue;

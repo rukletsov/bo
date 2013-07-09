@@ -242,7 +242,7 @@ void ChrisitiansenSheepFull()
     typedef boost::chrono::steady_clock BoostTimer;
     BoostTimer::time_point start = BoostTimer::now();
 
-//     1. Prepare propagators for all slices. Use no neighbouring information.
+    // 1. Prepare propagators for all slices. Use no neighbouring information.
     Propagator::Ptrs contour_descriptors = Propagator::create(planes_data,
             2.f, 5.f, 0.3f, 0.4f, 15.f);
 
