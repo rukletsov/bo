@@ -73,11 +73,6 @@ public:
 
     typedef std::vector<RealType> Weights;
 
-//    // Internal types, representing plane in the more convenient way.
-//    typedef detail::PointsDisk3D<RealType> Plane;
-//    typedef boost::shared_ptr<Plane> PlanePtr;
-//    typedef boost::shared_ptr<const Plane> PlaneConstPtr;
-
     // Types for storing propagation result.
     typedef std::vector<Point3D> PropContour;
     typedef boost::shared_ptr<PropContour> PropContourPtr;
@@ -113,12 +108,6 @@ public:
         RealType delta_min, RealType delta_max, RealType inertial_weight,
         RealType centrifugal_weight, RealType tangential_radius);
 
-    // Adds neighbour planes with corresponding weights. These planes are used in
-    // the calculation of the tangential component of the propagation, making it
-    // dependent of the neighbour planes. This should lead to the desirable smoothing.
-//    void add_neighbour_planes(const Points3DConstPtrs& neighbour_planes,
-//                              const Weights& neighbour_weights);
-
     // Performs propagation in either one or two steps depending on whether the
     // contour has a hole.
     void propagate();
@@ -149,95 +138,60 @@ private:
     };
 
 protected:
-    ComplexPropagation(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
-                       /*RealType inertial_weight, RealType centrifugal_weight,
-                       RealType tangential_radius, */const Tree& tree, PropagationDirection direction);
+    ComplexPropagation(RealType delta_min, RealType delta_max, const Tree& tree,
+                       const PropagationDirection& direction, const Point3D& start_point);
 
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(Point3D pt, std::size_t k);
 
-//    // Computes the inertial propagation vector from current and previous mesh vertices.
-//    static Point3D inertial_propagation_norm_(Point3D current, Point3D previous);
-
-//    // Computes the centrifugal propagation vector pointing from the centre of mass to
-//    // the current point.
-//    static Point3D centrifugal_propagation_norm(Point3D current, Point3D center_of_mass);
-
-//    // Computes the tangential propagation vector for the given point and kd-tree.
-//    static Point3D tangential_propagation_(Point3D pt, const Tree& tree,
-//                                           RealType radius, Point3D inertial);
-
-//    // Computes the total tangential propagation vector from weighted tangential
-//    // propagations of the current plane and its neighbours.
-//    Point3D total_tangential_propagation_norm_(Point3D pt, Point3D inertial) const;
-
-//    // Computes the total propagation vector from tangential and inertial components.
-//    // Note that the sum of inertial and centrifugal weights should be not greater than 1.
-//    static Point3D total_propagation_(Point3D inertial, Point3D centrifugal, Point3D tangential,
-//                                      RealType inertial_weight, RealType centrifugal_weight);
-
     // Tries performing propagation from the start point to the end point.
     // Note that end point is not included in result, while start is always included.
     PropagationResult propagate_(const Point3D& start, const Point3D& end,
-                                       Point3D total_prop, std::size_t max_size);
+                                 Point3D total_prop, std::size_t max_size);
 
 private:
     // Parameters and options of the propagation algorithm.
     RealType delta_min_;
     RealType delta_max_;
-//    RealType inertial_weight_;      // The sum of inertial and centrifugal weights
-//    RealType centrifugal_weight_;   // should lie in [0; 1].
-//    RealType tangential_radius_;
     Metric metric_;
 
-    // Propagation data: main plane and neighbours with corresponding weights.
-    // Note that main plane has weight 1.
-//    Points3DConstPtr main_plane_;
+    // Algorithm data and helper obejcts.
+    Tree tree_;
+    PropagationDirection propagation_direction_;
     Point3D start_;
-    Tree main_tree_;
-//    Trees neighbour_trees_;
-//    Weights neighbour_weights_;
 
     // Markers and final contour.
     bool stopped_;
     bool has_hole_;
     PropContourPtr contour_;
-
-    PropagationDirection propagation_direction_;
 };
 
 
 // C-tor.
 template <typename RealType>
-ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
-                                                 RealType delta_min,
+ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
                                                  RealType delta_max,
-//                                                 RealType inertial_weight,
-//                                                 RealType centrifugal_weight,
-//                                                 RealType tangential_radius,
                                                  const Tree& tree,
-                                                 PropagationDirection direction):
+                                                 const PropagationDirection& direction,
+                                                 const Point3D& start_point):
     delta_min_(delta_min), delta_max_(delta_max),
-//    inertial_weight_(inertial_weight), centrifugal_weight_(centrifugal_weight),
-//    tangential_radius_(tangential_radius),
     metric_(&distances::euclidean_distance<RealType, 3>),
-//    main_plane_(boost::make_shared<Plane>(*plane)),
-    start_((*plane)[0]),
+    tree_(tree),
+    propagation_direction_(direction),
+    start_(start_point),
     stopped_(false), has_hole_(false),
-    main_tree_(tree),
-    contour_(boost::make_shared<PropContour>()),
-    propagation_direction_(direction)
+    contour_(boost::make_shared<PropContour>())
 {
     // If points number is less than 2, propagation cannot be initialized. And
     // because there is no sense in doing propagation for 0 or 1 points, we throw
     // an error instead of returning the plane unchanged.
-    if (plane->size() < 2)
+    if (tree.size() < 2)
         throw std::logic_error("Cannot run propagation for planes consisting of "
                                "less than 2 vertices.");
 }
 
 
-// Factories.
+// Factories. The sum of inertial and centrifugal weights should lie in [0; 1].
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         Points3DConstPtr plane, RealType delta_min, RealType delta_max,
@@ -261,7 +215,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
     }
 
     // C-tor is declared private, using boost::make_shared gets complicated.
-    Ptr ptr(new this_type(plane, delta_min, delta_max, tree, direction));
+    Ptr ptr(new this_type(delta_min, delta_max, tree, direction, plane->front()));
     return ptr;
 }
 
@@ -377,6 +331,10 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
         typename PCAEngine::Result result = pca(*plane);
         Point3D norm = result.template get<1>()[0];
 
+        // Adds neighbour planes with corresponding weights. These planes are used in
+        // the calculation of the tangential component of the propagation, making it
+        // dependent of the neighbour planes. This should lead to the desirable smoothing.
+
         // Project all neighbours to the current plane.
         // TODO: rewrite using transform?
         Points3DConstPtrs neighbour_projs;
@@ -425,7 +383,7 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
         }
 
         // C-tor is declared private, using boost::make_shared gets complicated.
-        Ptr ptr(new this_type(plane, delta_min, delta_max, tree, direction));
+        Ptr ptr(new this_type(delta_min, delta_max, tree, direction, plane->front()));
 
         propagators.push_back(ptr);
     }
@@ -434,58 +392,13 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 }
 
 
-//// Public control functions.
-//template <typename RealType>
-//void ComplexPropagation<RealType>::add_neighbour_planes(
-//        const Points3DConstPtrs &neighbour_planes, const Weights& neighbour_weights)
-//{
-//    // Cache main plane origin and normal.
-//    Point3D origin = main_plane_->origin();
-//    Point3D norm = main_plane_->normal();
-
-//    // Project all neighbours to the current plane.
-//    // TODO: rewrite using transform?
-//    Points3DConstPtrs neighbour_projs;
-//    neighbour_projs.reserve(neighbour_planes.size());
-//    for (typename Points3DConstPtrs::const_iterator plane_it =
-//         neighbour_planes.begin(); plane_it != neighbour_planes.end(); ++plane_it)
-//    {
-//        Points3DPtr plane_proj = boost::make_shared<Points3D>();
-//        plane_proj->reserve((*plane_it)->size());
-
-//        for (typename Points3D::const_iterator point_it = (*plane_it)->begin();
-//             point_it != (*plane_it)->end(); ++point_it)
-//        {
-//            plane_proj->push_back(distances::project_point_onto_plane(*point_it, origin, norm));
-//        }
-
-//        neighbour_projs.push_back(plane_proj);
-//    }
-
-//    // Compute kd-trees for projected neighbour planes.
-//    neighbour_trees_.reserve(neighbour_projs.size());
-//    for (typename Points3DConstPtrs::const_iterator plane_it =
-//         neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
-//    {
-//        Tree neighbour_tree((*plane_it)->begin(), (*plane_it)->end(),
-//                            std::ptr_fun(point3D_accessor_));
-//        neighbour_trees_.push_back(neighbour_tree);
-//    }
-
-//    // Store neighbour weights.
-//    neighbour_weights_ = neighbour_weights;
-//}
-
+// Public control functions.
 template <typename RealType>
 void ComplexPropagation<RealType>::propagate()
 {
     // Choose initial point and initial propagation. It solely consists of the
     // tangential component, since inertial cannot be defined.
-//    Point3D start = main_plane_->data()[0];
-    Point3D initial_prop =
-            propagation_direction_.initial(start_);
-//            this_type::tangential_propagation_(start, main_tree_,
-//        tangential_radius_, Point3D(RealType(0)));
+    Point3D initial_prop = propagation_direction_.initial(start_);
 
     // Run propagation. It may bump into a hole or return a circuit.
     PropagationResult attempt1 = propagate_(start_, start_, initial_prop, 1000);
@@ -541,119 +454,6 @@ RealType ComplexPropagation<RealType>::point3D_accessor_(Point3D pt, std::size_t
     return pt[k];
 }
 
-//template <typename RealType>
-//typename ComplexPropagation<RealType>::Point3D
-//ComplexPropagation<RealType>::inertial_propagation_norm_(Point3D current, Point3D previous)
-//{
-//    Point3D inertial = (current -= previous);
-
-//    // TODO: remove this by redesigning the algorithm and requiring inertial
-//    // vector to be non-zero.
-//    Point3D inertial_normalized(0);
-//    try
-//    {
-//        // TODO: remove this block by refactoring bo::Vector class.
-//        // Normalize vector.
-//        inertial_normalized.assign(inertial.normalized(), 3);
-//    }
-//    catch (...)
-//    { }
-
-//    return inertial_normalized;
-//}
-
-//template <typename RealType>
-//typename ComplexPropagation<RealType>::Point3D
-//ComplexPropagation<RealType>::centrifugal_propagation_norm(Point3D current,
-//                                                           Point3D center_of_mass)
-//{
-//    Point3D centrifugal = (current -= center_of_mass);
-
-//    // TODO: remove this by redesigning the algorithm and requiring inertial
-//    // vector to be non-zero.
-//    Point3D centrifugal_normalized(0);
-//    try
-//    {
-//        // TODO: remove this block by refactoring bo::Vector class.
-//        // Normalize vector.
-//        centrifugal_normalized.assign(centrifugal.normalized(), 3);
-//    }
-//    catch (...)
-//    { }
-
-//    return centrifugal_normalized;
-//}
-
-//template <typename RealType>
-//typename ComplexPropagation<RealType>::Point3D
-//ComplexPropagation<RealType>::tangential_propagation_(Point3D pt, const Tree& tree,
-//                                                      RealType radius, Point3D inertial)
-//{
-//    // Search for nearby points.
-//    Points3D neighbours;
-//    tree.find_within_range(pt, radius, std::back_inserter(neighbours));
-
-//    // Employ PCA to extract the tangential propagation vector from the set of
-//    // nearby points.
-//    typedef math::PCA<RealType, 3> PCAEngine;
-//    PCAEngine pca;
-//    typename PCAEngine::Result result = pca(neighbours);
-//    Point3D tangential = result.template get<1>()[2];
-
-//    // Ensure that tangential and inertial components are codirectional.
-//    if (tangential * inertial < 0)
-//        tangential = - tangential;
-
-//    return tangential;
-//}
-
-//template <typename RealType>
-//typename ComplexPropagation<RealType>::Point3D
-//ComplexPropagation<RealType>::total_tangential_propagation_norm_(Point3D pt,
-//                                                                 Point3D inertial) const
-//{
-//    // Get the tangential propagation for the main plane.
-//    Point3D total_tangential = this_type::tangential_propagation_(pt, main_tree_,
-//        tangential_radius_, inertial);
-
-//    // Make sure neighbour data is consistent.
-//    BOOST_ASSERT((neighbour_weights_.size() == neighbour_trees_.size()) &&
-//                 "Number of provided neighbour planes doesn't correspond to the "
-//                 "number of weights.");
-
-//    // Compute weighted tangential propagations for neighbours and add them  to the
-//    // total tangential propagation.
-//    for (std::size_t idx = 0; idx < neighbour_trees_.size(); ++idx)
-//    {
-//        Point3D cur_tang = this_type::tangential_propagation_(pt,
-//            neighbour_trees_[idx], tangential_radius_, inertial);
-//        RealType cur_weight = neighbour_weights_[idx];
-//        total_tangential += (cur_tang * cur_weight);
-//    }
-
-//    // TODO: remove this block by refactoring bo::Vector class.
-//    // Normalize vector.
-//    Point3D total_tangential_normalized(total_tangential.normalized(), 3);
-
-//    return total_tangential_normalized;
-//}
-
-//template <typename RealType>
-//typename ComplexPropagation<RealType>::Point3D
-//ComplexPropagation<RealType>::total_propagation_(Point3D inertial, Point3D centrifugal,
-//                                                 Point3D tangential, RealType inertial_weight,
-//                                                 RealType centrifugal_weight)
-//{
-//    Point3D total = inertial * inertial_weight + centrifugal * centrifugal_weight +
-//            tangential * (RealType(1) - inertial_weight - centrifugal_weight);
-
-//    // TODO: remove this block by refactoring bo::Vector class.
-//    // Normalize vector.
-//    Point3D total_normalized(total.normalized(), 3);
-
-//    return total_normalized;
-//}
-
 template <typename RealType>
 typename ComplexPropagation<RealType>::PropagationResult
 ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& end,
@@ -686,7 +486,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
 
         // TODO: get rid of max radius.
         std::pair<typename Tree::const_iterator, RealType> candidate_data =
-                main_tree_.find_nearest_if(phantom_candidate, delta_max_,
+                tree_.find_nearest_if(phantom_candidate, delta_max_,
                     ArchedStrip(current, delta_min_, delta_max_, total_prop, metric_));
         RealType candidate_distance = candidate_data.second;
         Point3D candidate = *(candidate_data.first);
@@ -730,18 +530,6 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         // Update algortihm's state.
         Point3D previous = current;
         current = candidate;
-
-//        // Compute inertial, centrifugal and tangential propagations.
-//        Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
-//        Point3D centrifugal_prop = this_type::centrifugal_propagation_norm(current,
-//            main_plane_->origin());
-//        Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
-//            inertial_prop);
-
-//        // Compute total propagation.
-//        total_prop = this_type::total_propagation_(inertial_prop, centrifugal_prop,
-//            total_tangential_prop, inertial_weight_, centrifugal_weight_);
-
         total_prop = propagation_direction_.next(current, previous);
 
     } while (current != end);
