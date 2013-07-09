@@ -219,8 +219,11 @@ public:
 
     virtual Point3D initial(const Point3D& start) const
     {
+        Point3D tangential = tangential_ptr_->get(start, Point3D(RealType(0)));
+        Point3D tangential_normalized(tangential.normalized(), 3);
+
         return
-            tangential_ptr_->get(start, Point3D(RealType(0)));
+            tangential_normalized;
     }
 
     virtual Point3D next(const Point3D& current, const Point3D& previous) const
@@ -228,9 +231,10 @@ public:
         Point3D inertial = inertial_ptr_->get(current, previous);
         Point3D centrifugal = centrifugal_ptr_->get(current);
         Point3D tangential = tangential_ptr_->get(current, inertial);
+        Point3D total = inertial + centrifugal + tangential;
+        Point3D total_normalized(total.normalized(), 3);
 
-        return
-            (inertial + centrifugal + tangential);
+        return total_normalized;
     }
 
 private:
