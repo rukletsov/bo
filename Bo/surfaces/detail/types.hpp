@@ -195,6 +195,67 @@ protected:
 
 //
 template <typename RealType, typename Tree>
+class NeighbourTangentialPropagation: public TangentialPropagation<RealType, Tree>
+{
+public:
+    typedef TangentialPropagation<RealType, Tree> Base;
+    typedef TangentialPropagation<RealType, Tree> SelfType;
+    typedef boost::shared_ptr<SelfType> Ptr;
+    typedef Vector<RealType, 3> Point3D;
+    typedef std::vector<Point3D> Points3D;
+
+    typedef std::vector<Tree> Trees;
+    typedef std::vector<RealType> Weights;
+    typedef std::vector<Base> TangentialPropagations;
+
+    NeighbourTangentialPropagation(const Tree& tree, RealType radius, RealType weight,
+            const Trees& neighbour_trees, const Weights& neighbour_weights):
+        Base(tree, radius, weight)
+    {
+        // Make sure neighbour data is consistent.
+        BOOST_ASSERT((neighbour_weights.size() == neighbour_trees.size()) &&
+                     "Number of provided neighbour planes doesn't correspond to the "
+                     "number of weights.");
+
+        //
+        std::size_t neighbour_size = neighbour_weights.size();
+        total_size_ = neighbour_size + 1;
+        tangentials_.reserve(total_size_);
+
+        //
+        tangentials_.push_back(Base(tree, radius, RealType(1)));
+
+        for (std::size_t idx = 0; idx < neighbour_size; ++idx)
+        {
+            tangentials_.push_back(Base(neighbour_trees[idx], radius, neighbour_weights[idx]));
+        }
+    }
+
+    virtual Point3D get(const Point3D& current, const Point3D& inertial) const
+    {
+        // Get the tangential propagation for the main plane.
+        // Compute weighted tangential propagations for neighbours and add them to the
+        // total tangential propagation.
+        Point3D total_tangential;
+        for (std::size_t idx = 0; idx < total_size_; ++idx)
+        {
+            total_tangential += tangentials_[idx].get(current, inertial);
+        }
+
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D total_tangential_normalized(total_tangential.normalized(), 3);
+
+        return total_tangential_normalized;
+    }
+
+protected:
+    TangentialPropagations tangentials_;
+    std::size_t total_size_;
+};
+
+//
+template <typename RealType, typename Tree>
 class PropagationDirection
 {
 public:
@@ -276,6 +337,9 @@ PropagationDirection<RealType, Tree> create_propagator(RealType inertial_weight,
     Propagation retvalue(inertial, centrifugal, tangential);
     return retvalue;
 }
+
+
+
 
 
 
