@@ -90,6 +90,7 @@ private:
     typedef boost::function<RealType (Point3D, Point3D)> Metric;
     typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
     typedef std::vector<Tree> Trees;
+    typedef detail::PropagationDirection<RealType, Tree> Propagator;
 
 public:
     // Factory functions. Create an instance of the class from either of the supported
@@ -149,8 +150,8 @@ private:
 
 protected:
     ComplexPropagation(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
-                       RealType inertial_weight, RealType centrifugal_weight,
-                       RealType tangential_radius);
+                       /*RealType inertial_weight, RealType centrifugal_weight,
+                       RealType tangential_radius, */const Tree& tree, Propagator propagator);
 
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(Point3D pt, std::size_t k);
@@ -184,9 +185,9 @@ private:
     // Parameters and options of the propagation algorithm.
     RealType delta_min_;
     RealType delta_max_;
-    RealType inertial_weight_;      // The sum of inertial and centrifugal weights
-    RealType centrifugal_weight_;   // should lie in [0; 1].
-    RealType tangential_radius_;
+//    RealType inertial_weight_;      // The sum of inertial and centrifugal weights
+//    RealType centrifugal_weight_;   // should lie in [0; 1].
+//    RealType tangential_radius_;
     Metric metric_;
 
     // Propagation data: main plane and neighbours with corresponding weights.
@@ -201,7 +202,7 @@ private:
     bool has_hole_;
     PropContourPtr contour_;
 
-    detail::PropagationDirection<RealType, Tree> propagator_;
+    Propagator propagator_;
 };
 
 
@@ -210,16 +211,20 @@ template <typename RealType>
 ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
                                                  RealType delta_min,
                                                  RealType delta_max,
-                                                 RealType inertial_weight,
-                                                 RealType centrifugal_weight,
-                                                 RealType tangential_radius):
+//                                                 RealType inertial_weight,
+//                                                 RealType centrifugal_weight,
+//                                                 RealType tangential_radius,
+                                                 const Tree& tree,
+                                                 Propagator propagator):
     delta_min_(delta_min), delta_max_(delta_max),
-    inertial_weight_(inertial_weight), centrifugal_weight_(centrifugal_weight),
-    tangential_radius_(tangential_radius),
+//    inertial_weight_(inertial_weight), centrifugal_weight_(centrifugal_weight),
+//    tangential_radius_(tangential_radius),
     metric_(&distances::euclidean_distance<RealType, 3>),
     main_plane_(boost::make_shared<Plane>(*plane)),
     stopped_(false), has_hole_(false),
-    contour_(boost::make_shared<PropContour>())
+    main_tree_(tree),
+    contour_(boost::make_shared<PropContour>()),
+    propagator_(propagator)
 {
     // If points number is less than 2, propagation cannot be initialized. And
     // because there is no sense in doing propagation for 0 or 1 points, we throw
@@ -227,26 +232,34 @@ ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
     if (plane->size() < 2)
         throw std::logic_error("Cannot run propagation for planes consisting of "
                                "less than 2 vertices.");
-
-    // Build kd-tree from the given points.
-    // TODO: provide kd-tree with current metric?
-    main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
-
-    // TODO: extract from the class and get it in the c-tor.
-    propagator_ = detail::create_propagator(inertial_weight, main_tree_, tangential_radius,
-                                            true, *plane, centrifugal_weight);
 }
 
 
 // Factories.
-template <typename RealType> inline
+template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         Points3DConstPtr plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
+    // Build kd-tree from the given points.
+    // TODO: provide kd-tree with current metric?
+    Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+
+    Propagator propagator;
+    // TODO: replace float comparison.
+    if (centrifugal_weight == RealType(0))
+    {
+        propagator = Propagator::create_simple(inertial_weight, tree, tangential_radius);
+    }
+    else
+    {
+        Point3D center_of_mass = bo::math::mean(*plane);
+        propagator = Propagator::create_with_centrifugal(inertial_weight, centrifugal_weight,
+                tree, tangential_radius, center_of_mass);
+    }
+
     // C-tor is declared private, using boost::make_shared gets complicated.
-    Ptr ptr(new this_type(plane, delta_min, delta_max, inertial_weight,
-                          centrifugal_weight, tangential_radius));
+    Ptr ptr(new this_type(plane, delta_min, delta_max, tree, propagator));
     return ptr;
 }
 
