@@ -412,17 +412,17 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
         PropagationDirection direction;
         // TODO: replace float comparison.
-//        if (centrifugal_weight == RealType(0))
-//        {
+        if (centrifugal_weight == RealType(0))
+        {
             direction = PropagationDirection::create_with_neighbours(inertial_weight,
                     tree, tangential_radius, neighbour_trees, weights);
-//        }
-//        else
-//        {
-//            Point3D center_of_mass = bo::math::mean(*plane);
-//            direction = PropagationDirection::create_with_centrifugal(inertial_weight, centrifugal_weight,
-//                    tree, tangential_radius, center_of_mass);
-//        }
+        }
+        else
+        {
+            direction = PropagationDirection::create_with_neighbours_and_centrifugal(
+                    inertial_weight, centrifugal_weight, tree, tangential_radius,
+                    center_of_mass, neighbour_trees, weights);
+        }
 
         // C-tor is declared private, using boost::make_shared gets complicated.
         Ptr ptr(new this_type(plane, delta_min, delta_max, tree, direction));

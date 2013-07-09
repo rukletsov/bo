@@ -350,7 +350,6 @@ public:
         InertialPtr inertial = boost::make_shared<Inertial>(inertial_weight);
 
         // Create an instance of centrifugal propagation.
-        // TODO: replace float comparison.
         BaseCentrifugalPtr centrifugal = boost::make_shared<Centrifugal>(center_of_mass,
                 centrifugal_weight);
 
@@ -382,6 +381,27 @@ public:
         return retvalue;
     }
 
+    static SelfType create_with_neighbours_and_centrifugal(RealType inertial_weight,
+            RealType centrifugal_weight, const Tree& tree, RealType tangential_radius,
+            const Point3D& center_of_mass, const Trees& neighbour_trees, const Weights& neighbour_weights)
+    {
+        // Create an instance of inertial propagation.
+        InertialPtr inertial = boost::make_shared<Inertial>(inertial_weight);
+
+        // Create an instance of centrifugal propagation.
+        // TODO: replace float comparison.
+        BaseCentrifugalPtr centrifugal = boost::make_shared<Centrifugal>(center_of_mass,
+                centrifugal_weight);
+
+        // Create an instance of tangential propagation.
+        BaseTangentialPtr tangential = boost::make_shared<NeighbourTangential>(tree,
+                tangential_radius, RealType(1) - inertial_weight - centrifugal_weight,
+                neighbour_trees, neighbour_weights);
+
+        SelfType retvalue(inertial, centrifugal, tangential);
+        return retvalue;
+    }
+
 private:
     InertialPtr inertial_ptr_;
     BaseCentrifugalPtr centrifugal_ptr_;
@@ -397,47 +417,47 @@ private:
 
 
 
-// Represents a point cloud located inside a thin disk. Though the disk can be
-// represented by a median plane, slight deviations from it may exist.
-template <typename RealType>
-class PointsDisk3D
-{
-public:
-    typedef Vector<RealType, 3> Point3D;
-    typedef std::vector<Point3D> PlaneData;
+//// Represents a point cloud located inside a thin disk. Though the disk can be
+//// represented by a median plane, slight deviations from it may exist.
+//template <typename RealType>
+//class PointsDisk3D
+//{
+//public:
+//    typedef Vector<RealType, 3> Point3D;
+//    typedef std::vector<Point3D> PlaneData;
 
-    PointsDisk3D(const PlaneData& data): data_(data)
-    {
-        // Compute plane origin.
-        origin_ = bo::math::mean(data_);
+//    PointsDisk3D(const PlaneData& data): data_(data)
+//    {
+//        // Compute plane origin.
+//        origin_ = bo::math::mean(data_);
 
-        // Employ PCA to estimate plane normal.
-        typedef math::PCA<RealType, 3> PCAEngine;
-        PCAEngine pca;
-        typename PCAEngine::Result result = pca(data_);
-        normal_ = result.template get<1>()[0];
-    }
+//        // Employ PCA to estimate plane normal.
+//        typedef math::PCA<RealType, 3> PCAEngine;
+//        PCAEngine pca;
+//        typename PCAEngine::Result result = pca(data_);
+//        normal_ = result.template get<1>()[0];
+//    }
 
-    const PlaneData& data() const
-    {
-        return data_;
-    }
+//    const PlaneData& data() const
+//    {
+//        return data_;
+//    }
 
-    Point3D origin() const
-    {
-        return origin_;
-    }
+//    Point3D origin() const
+//    {
+//        return origin_;
+//    }
 
-    Point3D normal() const
-    {
-        return normal_;
-    }
+//    Point3D normal() const
+//    {
+//        return normal_;
+//    }
 
-private:
-    PlaneData data_;
-    Point3D origin_;
-    Point3D normal_;
-};
+//private:
+//    PlaneData data_;
+//    Point3D origin_;
+//    Point3D normal_;
+//};
 
 } // namespace detail
 } // namespace surfaces
