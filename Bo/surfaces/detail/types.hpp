@@ -180,7 +180,11 @@ public:
         if (tangential * inertial < 0)
             tangential = - tangential;
 
-        return weight_ * tangential;
+        // TODO: remove this block by refactoring bo::Vector class.
+        // Normalize vector.
+        Point3D tangential_normalized(tangential.normalized(), 3);
+
+        return weight_ * tangential_normalized;
     }
 
 protected:
@@ -209,8 +213,15 @@ public:
         tangential_ptr_(tangential_ptr)
     { }
 
+    // TODO: remove this.
     PropagationDirection()
     { }
+
+    virtual Point3D initial(const Point3D& start) const
+    {
+        return
+            tangential_ptr_->get(start, Point3D(RealType(0)));
+    }
 
     virtual Point3D next(const Point3D& current, const Point3D& previous) const
     {
