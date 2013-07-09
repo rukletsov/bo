@@ -200,6 +200,8 @@ private:
     bool stopped_;
     bool has_hole_;
     PropContourPtr contour_;
+
+    detail::PropagationDirection<RealType, Tree> propagator_;
 };
 
 
@@ -227,8 +229,12 @@ ComplexPropagation<RealType>::ComplexPropagation(Points3DConstPtr plane,
                                "less than 2 vertices.");
 
     // Build kd-tree from the given points.
-    // TODO: provide kd-tree with current metric?.
+    // TODO: provide kd-tree with current metric?
     main_tree_ = Tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+
+    // TODO: extract from the class and get it in the c-tor.
+    propagator_ = detail::create_propagator(inertial_weight, main_tree_, tangential_radius,
+                                            true, *plane, centrifugal_weight);
 }
 
 
@@ -653,16 +659,18 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         Point3D previous = current;
         current = candidate;
 
-        // Compute inertial, centrifugal and tangential propagations.
-        Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
-        Point3D centrifugal_prop = this_type::centrifugal_propagation_norm(current,
-            main_plane_->origin());
-        Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
-            inertial_prop);
+//        // Compute inertial, centrifugal and tangential propagations.
+//        Point3D inertial_prop = this_type::inertial_propagation_norm_(current, previous);
+//        Point3D centrifugal_prop = this_type::centrifugal_propagation_norm(current,
+//            main_plane_->origin());
+//        Point3D total_tangential_prop = total_tangential_propagation_norm_(current,
+//            inertial_prop);
 
-        // Compute total propagation.
-        total_prop = this_type::total_propagation_(inertial_prop, centrifugal_prop,
-            total_tangential_prop, inertial_weight_, centrifugal_weight_);
+//        // Compute total propagation.
+//        total_prop = this_type::total_propagation_(inertial_prop, centrifugal_prop,
+//            total_tangential_prop, inertial_weight_, centrifugal_weight_);
+
+        total_prop = propagator_.next(current, previous);
 
     } while (current != end);
 

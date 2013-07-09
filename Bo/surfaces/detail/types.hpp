@@ -63,7 +63,7 @@ template <typename RealType>
 class InertialPropagation
 {
 public:
-    typedef BasePropagation<RealType> SelfType;
+    typedef InertialPropagation<RealType> SelfType;
     typedef boost::shared_ptr<SelfType> Ptr;
     typedef Vector<RealType, 3> Point3D;
 
@@ -95,7 +95,7 @@ protected:
 
 //
 template <typename RealType>
-class EmptyCentrifugalPropagation: BasePropagation<RealType>
+class EmptyCentrifugalPropagation: public BasePropagation<RealType>
 {
 public:
     typedef Vector<RealType, 3> Point3D;
@@ -115,7 +115,7 @@ protected:
 
 //
 template <typename RealType>
-class CentrifugalPropagation: BasePropagation<RealType>
+class CentrifugalPropagation: public BasePropagation<RealType>
 {
 public:
     typedef Vector<RealType, 3> Point3D;
@@ -209,6 +209,9 @@ public:
         tangential_ptr_(tangential_ptr)
     { }
 
+    PropagationDirection()
+    { }
+
     virtual Point3D next(const Point3D& current, const Point3D& previous) const
     {
         Point3D inertial = inertial_ptr_->get(current, previous);
@@ -227,8 +230,9 @@ private:
 
 
 template <typename RealType, typename Tree>
-PropagationDirection<RealType, Tree> create_simple_propagator(RealType inertial_weight,
-        const Tree& tree, RealType tangential_radius)
+PropagationDirection<RealType, Tree> create_propagator(RealType inertial_weight,
+        const Tree& tree, RealType tangential_radius, bool use_centrifugal,
+        const std::vector<Vector<RealType, 3> >& points, RealType centrifugal_weight)
 {
     typedef PropagationDirection<RealType, Tree> Propagation;
 
@@ -237,13 +241,22 @@ PropagationDirection<RealType, Tree> create_simple_propagator(RealType inertial_
             typename Propagation::Inertial>(inertial_weight);
 
     // Create an instance of centrifugal propagation
-    typename Propagation::CentrifugalPtr centrifugal = boost::make_shared<
-            EmptyCentrifugalPropagation<RealType> >();
+    typename Propagation::CentrifugalPtr centrifugal;
+    if (use_centrifugal)
+    {
+        Vector<RealType, 3> center_of_mass = math::mean(points);
+        centrifugal = boost::make_shared<CentrifugalPropagation<RealType> >(center_of_mass,
+                centrifugal_weight);
+    }
+    else
+    {
+        centrifugal = boost::make_shared<EmptyCentrifugalPropagation<RealType> >();
+    }
 
     // Create an instance of tangential propagation.
     typename Propagation::TangentialPtr tangential = boost::make_shared<
             TangentialPropagation<RealType, Tree> >(tree, tangential_radius,
-                                                    RealType(1) - inertial_weight);
+                                                    RealType(1) - inertial_weight - centrifugal_weight);
 
     Propagation retvalue(inertial, centrifugal, tangential);
     return retvalue;
