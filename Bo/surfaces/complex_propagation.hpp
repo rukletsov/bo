@@ -144,6 +144,13 @@ protected:
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(Point3D pt, std::size_t k);
 
+    // Adds neighbour planes with corresponding weights. These planes are used in
+    // the calculation of the tangential component of the propagation, making it
+    // dependent of the neighbour planes. This should lead to the desirable smoothing.
+    static void populate_neighbours_and_weights_(std::size_t plane_idx,
+            const Points3DConstPtrs& planes, const Weights& neighbour_weights,
+            Points3DConstPtrs& out_neighbours, Weights& out_weights);
+
     // Tries performing propagation from the start point to the end point.
     // Note that end point is not included in result, while start is always included.
     PropagationResult propagate_(const Point3D& start, const Point3D& end,
@@ -269,7 +276,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
-        const Points3DConstPtrs &planes, const Weights& neighbour_weights,
+        const Points3DConstPtrs& planes, const Weights& neighbour_weights,
         RealType delta_min, RealType delta_max, RealType inertial_weight,
         RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -288,36 +295,13 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
     for (std::size_t idx = 0; idx < planes_count; ++idx)
     {
         Points3DConstPtrs neighbours;
+        neighbours.reserve(2 * radius);
+
         Weights weights;
+        weights.reserve(2 * radius);
 
-        // Try add neighbours before the current idx. We add radius items at most,
-        // but less if no neighbours are available (close to container front).
-        std::size_t neighbour_idx = idx - 1;
-        std::size_t added_count = 0;
-        std::size_t maxval = std::size_t(-1); // dirty hack to workaround int behaviour for size_t.
-        while ((neighbour_idx < maxval) && (added_count < radius))
-        {
-            neighbours.push_back(planes[neighbour_idx]);
-            weights.push_back(neighbour_weights[added_count]);
-            ++added_count;
-            --neighbour_idx;
-        }
-
-        // Try add neighbours after the current idx. We add radius items at most,
-        // but less if no neighbours are available (close to container end).
-        neighbour_idx = idx + 1;
-        added_count = 0;
-        while ((neighbour_idx < planes_count) && (added_count < radius))
-        {
-            neighbours.push_back(planes[neighbour_idx]);
-            weights.push_back(neighbour_weights[added_count]);
-            ++added_count;
-            ++neighbour_idx;
-        }
-
-        // Weights should correspond to plane number.
-        if (neighbours.size() != weights.size())
-            throw std::logic_error("Weights quantity doesn't correspond to planes number");
+        //
+        populate_neighbours_and_weights_(idx, planes, neighbour_weights, neighbours, weights);
 
         Points3DConstPtr plane = planes[idx];
 
@@ -329,10 +313,6 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
         PCAEngine pca;
         typename PCAEngine::Result result = pca(*plane);
         Point3D norm = result.template get<1>()[0];
-
-        // Adds neighbour planes with corresponding weights. These planes are used in
-        // the calculation of the tangential component of the propagation, making it
-        // dependent of the neighbour planes. This should lead to the desirable smoothing.
 
         // Project all neighbours to the current plane.
         // TODO: rewrite using transform?
@@ -444,6 +424,43 @@ template <typename RealType> inline
 RealType ComplexPropagation<RealType>::point3D_accessor_(Point3D pt, std::size_t k)
 {
     return pt[k];
+}
+
+template <typename RealType>
+void ComplexPropagation<RealType>::populate_neighbours_and_weights_(std::size_t plane_idx,
+        const Points3DConstPtrs& planes, const Weights& neighbour_weights,
+        Points3DConstPtrs& out_neighbours, Weights& out_weights)
+{
+    std::size_t planes_count = planes.size();
+    std::size_t radius = neighbour_weights.size();
+
+    // Try add neighbours before the current idx. We add radius items at most,
+    // but less if no neighbours are available (close to container front).
+    std::size_t neighbour_idx = plane_idx - 1;
+    std::size_t added_count = 0;
+    std::size_t maxval = std::size_t(-1); // dirty hack to workaround int behaviour for size_t.
+    while ((neighbour_idx < maxval) && (added_count < radius))
+    {
+        out_neighbours.push_back(planes[neighbour_idx]);
+        out_weights.push_back(neighbour_weights[added_count]);
+        ++added_count;
+        --neighbour_idx;
+    }
+
+    // Try add neighbours after the current idx. We add radius items at most,
+    // but less if no neighbours are available (close to container end).
+    neighbour_idx = plane_idx + 1;
+    added_count = 0;
+    while ((neighbour_idx < planes_count) && (added_count < radius))
+    {
+        out_neighbours.push_back(planes[neighbour_idx]);
+        out_weights.push_back(neighbour_weights[added_count]);
+        ++added_count;
+        ++neighbour_idx;
+    }
+
+    BOOST_ASSERT((out_neighbours.size() == weights.size()) && "Weights quantity doesn't"
+                 "correspond to planes number.");
 }
 
 template <typename RealType>
