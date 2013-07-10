@@ -202,8 +202,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
     Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
     PropagationDirection direction;
-    // TODO: replace float comparison.
-    if (centrifugal_weight == RealType(0))
+    if (math::check_small(centrifugal_weight))
     {
         direction = PropagationDirection::create_simple(inertial_weight, tree, tangential_radius);
     }
@@ -368,19 +367,12 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
         Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
 
-        PropagationDirection direction;
-        // TODO: replace float comparison.
-        if (centrifugal_weight == RealType(0))
-        {
-            direction = PropagationDirection::create_with_neighbours(inertial_weight,
-                    tree, tangential_radius, neighbour_trees, weights);
-        }
-        else
-        {
-            direction = PropagationDirection::create_with_neighbours_and_centrifugal(
-                    inertial_weight, centrifugal_weight, tree, tangential_radius,
-                    center_of_mass, neighbour_trees, weights);
-        }
+        PropagationDirection direction = math::check_small(centrifugal_weight)
+                ? PropagationDirection::create_with_neighbours(inertial_weight,
+                        tree, tangential_radius, neighbour_trees, weights)
+                : PropagationDirection::create_with_neighbours_and_centrifugal(
+                        inertial_weight, centrifugal_weight, tree, tangential_radius,
+                        center_of_mass, neighbour_trees, weights);
 
         // C-tor is declared private, using boost::make_shared gets complicated.
         Ptr ptr(new this_type(delta_min, delta_max, tree, direction, plane->front()));
