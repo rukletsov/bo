@@ -144,12 +144,22 @@ protected:
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(Point3D pt, std::size_t k);
 
+    //
+    static Tree tree_from_plane_(const Points3DConstPtr& plane);
+
     // Adds neighbour planes with corresponding weights. These planes are used in
     // the calculation of the tangential component of the propagation, making it
     // dependent of the neighbour planes. This should lead to the desirable smoothing.
     static void populate_neighbours_and_weights_(std::size_t plane_idx,
             const Points3DConstPtrs& planes, const Weights& neighbour_weights,
             Points3DConstPtrs& out_neighbours, Weights& out_weights);
+
+    //
+    static Point3D get_plane_normal_(const Points3DConstPtr& plane);
+
+    //
+    static Points3DConstPtrs project_neighbour_onto_plane_(const Point3D& center_of_mass,
+            const Point3D& normal, const Points3DConstPtrs& neighbours);
 
     // Tries performing propagation from the start point to the end point.
     // Note that end point is not included in result, while start is always included.
@@ -205,8 +215,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Build kd-tree from the given points.
-    // TODO: provide kd-tree with current metric?
-    Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+    Tree tree = tree_from_plane_(plane);
 
     PropagationDirection direction;
     if (math::check_small(centrifugal_weight))
@@ -307,55 +316,31 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
         // Cache main plane origin and normal.
         Point3D center_of_mass = bo::math::mean(*plane);
-
-        // Employ PCA to estimate plane normal.
-        typedef math::PCA<RealType, 3> PCAEngine;
-        PCAEngine pca;
-        typename PCAEngine::Result result = pca(*plane);
-        Point3D norm = result.template get<1>()[0];
+        Point3D norm = get_plane_normal_(plane);
 
         // Project all neighbours to the current plane.
-        // TODO: rewrite using transform?
-        Points3DConstPtrs neighbour_projs;
+        Points3DConstPtrs neighbour_projs = project_neighbour_onto_plane_(center_of_mass,
+                norm, neighbours);
         neighbour_projs.reserve(neighbours.size());
-        for (typename Points3DConstPtrs::const_iterator plane_it =
-             neighbours.begin(); plane_it != neighbours.end(); ++plane_it)
-        {
-            Points3DPtr plane_proj = boost::make_shared<Points3D>();
-            plane_proj->reserve((*plane_it)->size());
 
-            for (typename Points3D::const_iterator point_it = (*plane_it)->begin();
-                 point_it != (*plane_it)->end(); ++point_it)
-            {
-                plane_proj->push_back(distances::project_point_onto_plane(*point_it,
-                        center_of_mass, norm));
-            }
-
-            neighbour_projs.push_back(plane_proj);
-        }
+        Tree main_tree = tree_from_plane_(plane);
 
         // Compute kd-trees for projected neighbour planes.
         Trees neighbour_trees;
         neighbour_trees.reserve(neighbour_projs.size());
         for (typename Points3DConstPtrs::const_iterator plane_it =
              neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
-        {
-            Tree neighbour_tree((*plane_it)->begin(), (*plane_it)->end(),
-                                std::ptr_fun(point3D_accessor_));
-            neighbour_trees.push_back(neighbour_tree);
-        }
-
-        Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+            neighbour_trees.push_back(tree_from_plane_(*plane_it));
 
         PropagationDirection direction = math::check_small(centrifugal_weight)
                 ? PropagationDirection::create_with_neighbours(inertial_weight,
-                        tree, tangential_radius, neighbour_trees, weights)
+                        main_tree, tangential_radius, neighbour_trees, weights)
                 : PropagationDirection::create_with_neighbours_and_centrifugal(
-                        inertial_weight, centrifugal_weight, tree, tangential_radius,
+                        inertial_weight, centrifugal_weight, main_tree, tangential_radius,
                         center_of_mass, neighbour_trees, weights);
 
         // C-tor is declared private, using boost::make_shared gets complicated.
-        Ptr ptr(new this_type(delta_min, delta_max, tree, direction, plane->front()));
+        Ptr ptr(new this_type(delta_min, delta_max, main_tree, direction, plane->front()));
 
         propagators.push_back(ptr);
     }
@@ -424,6 +409,59 @@ template <typename RealType> inline
 RealType ComplexPropagation<RealType>::point3D_accessor_(Point3D pt, std::size_t k)
 {
     return pt[k];
+}
+
+template <typename RealType> inline
+typename ComplexPropagation<RealType>::Tree
+ComplexPropagation<RealType>::tree_from_plane_(const Points3DConstPtr& plane)
+{
+    // Build kd-tree from the given points.
+    // TODO: provide kd-tree with current metric?
+    Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+    return tree;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Point3D
+ComplexPropagation<RealType>::get_plane_normal_(const Points3DConstPtr& plane)
+{
+    // Employ PCA to estimate plane normal.
+    typedef math::PCA<RealType, 3> PCAEngine;
+    typedef typename PCAEngine::Result PCAResult;
+    PCAEngine pca;
+    PCAResult result = pca(*plane);
+    Point3D normal = result.template get<1>()[0];
+
+    return normal;
+}
+
+template <typename RealType>
+typename ComplexPropagation<RealType>::Points3DConstPtrs
+ComplexPropagation<RealType>::project_neighbour_onto_plane_(const Point3D& center_of_mass,
+        const Point3D& normal, const Points3DConstPtrs& neighbours)
+{
+    // Project all neighbours to the current plane.
+    // TODO: rewrite using transform?
+    Points3DConstPtrs neighbour_projs;
+    neighbour_projs.reserve(neighbours.size());
+
+    for (typename Points3DConstPtrs::const_iterator neighbour =
+         neighbours.begin(); neighbour != neighbours.end(); ++neighbour)
+    {
+        Points3DPtr plane_proj = boost::make_shared<Points3D>();
+        plane_proj->reserve((*neighbour)->size());
+
+        for (typename Points3D::const_iterator point_it = (*neighbour)->begin();
+             point_it != (*neighbour)->end(); ++point_it)
+        {
+            plane_proj->push_back(distances::project_point_onto_plane(*point_it,
+                    center_of_mass, normal));
+        }
+
+        neighbour_projs.push_back(plane_proj);
+    }
+
+    return neighbour_projs;
 }
 
 template <typename RealType>
