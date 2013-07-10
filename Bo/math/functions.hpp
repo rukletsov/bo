@@ -50,6 +50,12 @@ T cube(const T& arg)
     return (arg * arg * arg);
 }
 
+template <typename RealType> inline
+bool check_small(const RealType& arg, const RealType& EPSILON = 1e-6f)
+{
+    return (arg < EPSILON) && (arg > -EPSILON);
+}
+
 // Returns "2 ln(cosh(t))".
 template <typename RealType> inline
 RealType fi_gr(RealType value)
