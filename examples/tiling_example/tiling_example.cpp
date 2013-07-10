@@ -94,7 +94,7 @@ void PropagateClosed()
             3.f, 10.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
 
@@ -107,7 +107,7 @@ void PropagateFemur01()
             3.f, 7.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
 
@@ -120,7 +120,7 @@ void PropagateSheep()
             5.f, 10.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
 

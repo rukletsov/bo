@@ -421,19 +421,17 @@ struct PropagationResult
 {
     typedef Vector<RealType, 3> Point3D;
     typedef std::vector<Point3D> PropagatedContour;
-    typedef boost::shared_ptr<PropagatedContour> PropagatedContourPtr;
 
-    PropagationResult(): stopped(false), has_hole(false),
-        points(boost::make_shared<PropagatedContour>())
+    PropagationResult(): stopped(false), has_hole(false)
     { }
 
-    PropagationResult(bool maxsize_reached, bool hole_encountered, PropagatedContourPtr pts):
+    PropagationResult(bool maxsize_reached, bool hole_encountered, PropagatedContour pts):
         stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
     { }
 
     bool stopped;
     bool has_hole;
-    PropagatedContourPtr points;
+    PropagatedContour points;
 };
 
 } // namespace detail

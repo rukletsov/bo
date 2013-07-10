@@ -73,10 +73,6 @@ public:
 
     typedef std::vector<RealType> Weights;
 
-    // Types for storing propagation result.
-    typedef std::vector<Point3D> PropContour;
-    typedef boost::shared_ptr<PropContour> PropContourPtr;
-
     // Used by factory functions.
     typedef RawImage2D<RealType> Image2D;
     typedef bo::Mesh<RealType> Mesh;
@@ -90,6 +86,8 @@ private:
 
     typedef detail::PropagationDirection<RealType, Tree> PropagationDirector;
     typedef detail::PropagationResult<RealType> PropagationResult;
+    typedef typename PropagationResult::PropagatedContour PropagatedContour;
+    typedef boost::shared_ptr<PropagatedContour> PropagatedContourPtr;
 
 public:
     // Factory functions. Create an instance of the class from either of the supported
@@ -123,7 +121,7 @@ public:
     bool has_stopped() const;
     bool has_hole() const;
     bool is_closed() const;
-    PropContourPtr contour() const;
+    PropagatedContourPtr contour() const;
 
 protected:
     ComplexPropagation(RealType delta_min, RealType delta_max, TreePtr tree_ptr,
@@ -168,7 +166,7 @@ private:
     // Markers and final contour.
     bool stopped_;
     bool has_hole_;
-    PropContourPtr contour_;
+    PropagatedContourPtr contour_;
 };
 
 
@@ -185,7 +183,7 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
     propagation_director_(director),
     start_(start_point),
     stopped_(false), has_hole_(false),
-    contour_(boost::make_shared<PropContour>())
+    contour_(boost::make_shared<PropagatedContour>())
 {
     // If points number is less than 2, propagation cannot be initialized. And
     // because there is no sense in doing propagation for 0 or 1 points, we throw
@@ -351,14 +349,15 @@ void ComplexPropagation<RealType>::propagate()
     // If the hole was detected, run propagation in a different direction.
     PropagationResult attempt2;
     if (attempt1.has_hole)
-        attempt2 = propagate_(start_, attempt1.points->back(), - initial_prop, 1000);
+        attempt2 = propagate_(start_, attempt1.points.back(), - initial_prop, 1000);
 
     // Glue propagation results together.
-    for (typename PropContour::const_reverse_iterator rit = attempt2.points->rbegin();
-         rit != attempt2.points->rend(); ++rit)
+    contour_->reserve(attempt1.points.size() + attempt2.points.size());
+    for (typename PropagatedContour::const_reverse_iterator rit = attempt2.points.rbegin();
+         rit != attempt2.points.rend(); ++rit)
         contour_->push_back(*rit);
-    for (typename PropContour::const_iterator it = attempt1.points->begin() + 1;
-         it != attempt1.points->end(); ++it)
+    for (typename PropagatedContour::const_iterator it = attempt1.points.begin() + 1;
+         it != attempt1.points.end(); ++it)
         contour_->push_back(*it);
 
     // Set markers.
@@ -385,7 +384,7 @@ bool ComplexPropagation<RealType>::is_closed() const
 }
 
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::PropContourPtr
+typename ComplexPropagation<RealType>::PropagatedContourPtr
 ComplexPropagation<RealType>::contour() const
 {
     return contour_;
@@ -498,7 +497,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
     typedef detail::ArchedStrip<RealType, 3> ArchedStrip;
 
     PropagationResult retvalue;
-    retvalue.points->push_back(start);
+    retvalue.points.push_back(start);
 
     // Flag for so-called "smooth-ending". It is necessary to keep the distance
     // between the points in the end phase as close to delta_min as possible,
@@ -509,7 +508,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
     do
     {
         // Restrict total length (to prevent looping).
-        if (retvalue.points->size() > max_size)
+        if (retvalue.points.size() > max_size)
         {
             retvalue.stopped = true;
             break;
@@ -537,25 +536,25 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         // Check if the candidate "sees" the end point "in front".
         if (!end_detected)
         {
-            retvalue.points->push_back(candidate);
+            retvalue.points.push_back(candidate);
             if ((delta_max_ >= metric_(end, candidate)) &&
                 (total_prop * (end - candidate)) > 0)
                 end_detected = true;
         }
         else
         {
-            RealType cur_dist = (end - retvalue.points->back()).euclidean_norm();
-            RealType candidate_dist1 = (candidate - retvalue.points->back()).euclidean_norm();
+            RealType cur_dist = (end - retvalue.points.back()).euclidean_norm();
+            RealType candidate_dist1 = (candidate - retvalue.points.back()).euclidean_norm();
             RealType candidate_dist2 = (end - candidate).euclidean_norm();
 
             if (delta_min_ > metric_(end, candidate))
             {
-                retvalue.points->push_back(candidate);
+                retvalue.points.push_back(candidate);
                 candidate = end;
             }
             else if ((cur_dist > candidate_dist1) && (cur_dist > candidate_dist2))
             {
-                retvalue.points->push_back(candidate);
+                retvalue.points.push_back(candidate);
             }
             else
             {

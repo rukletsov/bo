@@ -146,7 +146,7 @@ public:
     // to use existed vertices that are close to candidates for insertion.
     SelfType& join_checked(const SelfType& other, T search_radius);
 
-    static SelfType from_vertices(const Vertices* vertices);
+    static SelfType from_vertices(const Vertices& vertices);
 
     // Returns data from connectivity structures. Throws if face index is out of range.
     const AdjacentVerticesPerVertex& get_neighbouring_vertices(
@@ -523,10 +523,10 @@ Mesh<T>& Mesh<T>::join_checked(const Mesh<T>& other, T search_radius)
 }
 
 template <typename T>
-Mesh<T> Mesh<T>::from_vertices(const Vertices* vertices)
+Mesh<T> Mesh<T>::from_vertices(const Vertices& vertices)
 {
-    SelfType mesh(vertices->size());
-    for (typename Vertices::const_iterator it = vertices->begin(); it != vertices->end(); ++it)
+    SelfType mesh(vertices.size());
+    for (typename Vertices::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
         mesh.add_vertex(*it);
 
     return mesh;
