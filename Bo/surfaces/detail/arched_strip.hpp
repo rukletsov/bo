@@ -34,7 +34,7 @@
 #ifndef ARCHED_STRIP_HPP_729C21F2_5247_4198_A119_257F925B6BD2
 #define ARCHED_STRIP_HPP_729C21F2_5247_4198_A119_257F925B6BD2
 
-#include <boost/function.hpp>
+#include <functional>
 
 #include "bo/core/vector.hpp"
 
@@ -49,7 +49,7 @@ class ArchedStrip
 {
 public:
     typedef Vector<RealType, Dim> Point;
-    typedef boost::function<RealType (Point, Point)> Metric;
+    typedef std::pointer_to_binary_function<const Point&, const Point&, RealType> Metric;
 
 public:
     ArchedStrip(Point ref_pt): ref_pt_(ref_pt)

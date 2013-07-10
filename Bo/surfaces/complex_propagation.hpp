@@ -37,11 +37,11 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <functional>
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/function.hpp>
 
 #include "bo/core/raw_image_2d.hpp"
 #include "bo/core/mesh.hpp"
@@ -82,8 +82,8 @@ public:
     typedef bo::Mesh<RealType> Mesh;
 
 private:
-    typedef boost::function<RealType (Point3D, Point3D)> Metric;
-    typedef KDTree<3, Point3D, boost::function<RealType (Point3D, std::size_t)> > Tree;
+    typedef std::pointer_to_binary_function<const Point3D&, const Point3D&, RealType> Metric;
+    typedef KDTree<3, Point3D, std::pointer_to_binary_function<const Point3D&, std::size_t, RealType> > Tree;
     typedef std::vector<Tree> Trees;
     typedef detail::PropagationDirection<RealType, Tree> PropagationDirection;
 
@@ -97,10 +97,10 @@ public:
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
     static Ptr from_mesh(const Mesh& mesh, RealType delta_min, RealType delta_max,
-        RealType inertial_weight, RealType centrifugal_weight,RealType tangential_radius);
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
-    static Ptr from_raw_image(Image2D data, RealType delta_min, RealType delta_max,
-        RealType inertial_weight, RealType centrifugal_weight,RealType tangential_radius);
+    static Ptr from_raw_image(const Image2D& data, RealType delta_min, RealType delta_max,
+        RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
     // A special factory. Creates a set of instances one per given plane. Additionally
     // passes a set of neighbours with corresponding weights to each instance.
@@ -142,7 +142,7 @@ protected:
                        const PropagationDirection& direction, const Point3D& start_point);
 
     // Helper function for KDTree instance.
-    static RealType point3D_accessor_(Point3D pt, std::size_t k);
+    static RealType point3D_accessor_(const Point3D& pt, std::size_t k);
 
     //
     static Tree tree_from_plane_(const Points3DConstPtr& plane);
@@ -192,7 +192,7 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
                                                  const PropagationDirection& direction,
                                                  const Point3D& start_point):
     delta_min_(delta_min), delta_max_(delta_max),
-    metric_(&distances::euclidean_distance<RealType, 3>),
+    metric_(std::ptr_fun(distances::euclidean_distance<RealType, 3>)),
     tree_(tree),
     propagation_direction_(direction),
     start_(start_point),
@@ -268,7 +268,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_me
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_raw_image(
-        Image2D data, RealType delta_min, RealType delta_max,
+        const Image2D& data, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Load plane data from an istance of RawImage2D.
@@ -406,7 +406,7 @@ ComplexPropagation<RealType>::contour() const
 
 // Private static helper functions.
 template <typename RealType> inline
-RealType ComplexPropagation<RealType>::point3D_accessor_(Point3D pt, std::size_t k)
+RealType ComplexPropagation<RealType>::point3D_accessor_(const Point3D &pt, std::size_t k)
 {
     return pt[k];
 }
