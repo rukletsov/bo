@@ -500,7 +500,7 @@ void ComplexPropagation<RealType>::populate_neighbours_and_weights_(std::size_t 
         ++neighbour_idx;
     }
 
-    BOOST_ASSERT((out_neighbours.size() == weights.size()) && "Weights quantity doesn't"
+    BOOST_ASSERT((out_neighbours.size() == out_weights.size()) && "Weights quantity doesn't"
                  "correspond to planes number.");
 }
 
