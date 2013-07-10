@@ -35,7 +35,6 @@
 #define COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
 
 #include <vector>
-#include <iterator>
 #include <algorithm>
 #include <functional>
 #include <boost/assert.hpp>
@@ -46,8 +45,9 @@
 #include "bo/core/raw_image_2d.hpp"
 #include "bo/core/mesh.hpp"
 #include "bo/core/kdtree.hpp"
-#include "bo/math/blas_extensions.hpp"
+#include "bo/math/functions.hpp"
 #include "bo/math/pca.hpp"
+#include "bo/math/mean.hpp"
 #include "bo/distances/distances_3d.hpp"
 #include "bo/surfaces/detail/types.hpp"
 #include "bo/surfaces/detail/arched_strip.hpp"
@@ -83,7 +83,8 @@ public:
 
 private:
     typedef std::pointer_to_binary_function<const Point3D&, const Point3D&, RealType> Metric;
-    typedef KDTree<3, Point3D, std::pointer_to_binary_function<const Point3D&, std::size_t, RealType> > Tree;
+    typedef KDTree<3, Point3D, std::pointer_to_binary_function<const Point3D&,
+            std::size_t, RealType> > Tree;
     typedef std::vector<Tree> Trees;
     typedef detail::PropagationDirection<RealType, Tree> PropagationDirection;
 
@@ -145,7 +146,7 @@ protected:
     static RealType point3D_accessor_(const Point3D& pt, std::size_t k);
 
     //
-    static Tree tree_from_plane_(const Points3DConstPtr& plane);
+    static Tree tree_from_plane_(const Points3D& plane);
 
     // Adds neighbour planes with corresponding weights. These planes are used in
     // the calculation of the tangential component of the propagation, making it
@@ -155,7 +156,7 @@ protected:
             Points3DConstPtrs& out_neighbours, Weights& out_weights);
 
     //
-    static Point3D get_plane_normal_(const Points3DConstPtr& plane);
+    static Point3D get_plane_normal_(const Points3D& plane);
 
     //
     static Points3DConstPtrs project_neighbour_onto_plane_(const Point3D& center_of_mass,
@@ -215,7 +216,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Build kd-tree from the given points.
-    Tree tree = tree_from_plane_(plane);
+    Tree tree = tree_from_plane_(*plane);
 
     PropagationDirection direction;
     if (math::check_small(centrifugal_weight))
@@ -316,21 +317,21 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
         // Cache main plane origin and normal.
         Point3D center_of_mass = bo::math::mean(*plane);
-        Point3D norm = get_plane_normal_(plane);
+        Point3D norm = get_plane_normal_(*plane);
 
         // Project all neighbours to the current plane.
         Points3DConstPtrs neighbour_projs = project_neighbour_onto_plane_(center_of_mass,
                 norm, neighbours);
         neighbour_projs.reserve(neighbours.size());
 
-        Tree main_tree = tree_from_plane_(plane);
+        Tree main_tree = tree_from_plane_(*plane);
 
         // Compute kd-trees for projected neighbour planes.
         Trees neighbour_trees;
         neighbour_trees.reserve(neighbour_projs.size());
         for (typename Points3DConstPtrs::const_iterator plane_it =
              neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
-            neighbour_trees.push_back(tree_from_plane_(*plane_it));
+            neighbour_trees.push_back(tree_from_plane_(**plane_it));
 
         PropagationDirection direction = math::check_small(centrifugal_weight)
                 ? PropagationDirection::create_with_neighbours(inertial_weight,
@@ -413,23 +414,23 @@ RealType ComplexPropagation<RealType>::point3D_accessor_(const Point3D &pt, std:
 
 template <typename RealType> inline
 typename ComplexPropagation<RealType>::Tree
-ComplexPropagation<RealType>::tree_from_plane_(const Points3DConstPtr& plane)
+ComplexPropagation<RealType>::tree_from_plane_(const Points3D& plane)
 {
     // Build kd-tree from the given points.
     // TODO: provide kd-tree with current metric?
-    Tree tree(plane->begin(), plane->end(), std::ptr_fun(point3D_accessor_));
+    Tree tree(plane.begin(), plane.end(), std::ptr_fun(point3D_accessor_));
     return tree;
 }
 
 template <typename RealType>
 typename ComplexPropagation<RealType>::Point3D
-ComplexPropagation<RealType>::get_plane_normal_(const Points3DConstPtr& plane)
+ComplexPropagation<RealType>::get_plane_normal_(const Points3D& plane)
 {
     // Employ PCA to estimate plane normal.
     typedef math::PCA<RealType, 3> PCAEngine;
     typedef typename PCAEngine::Result PCAResult;
     PCAEngine pca;
-    PCAResult result = pca(*plane);
+    PCAResult result = pca(plane);
     Point3D normal = result.template get<1>()[0];
 
     return normal;

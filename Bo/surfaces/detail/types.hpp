@@ -36,11 +36,11 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/assert.hpp>
 
 #include "bo/config.hpp"
 #include "bo/core/vector.hpp"
 #include "bo/math/pca.hpp"
-#include "bo/math/mean.hpp"
 
 namespace bo {
 namespace surfaces {
@@ -244,7 +244,8 @@ public:
 
         for (std::size_t idx = 0; idx < neighbour_size; ++idx)
         {
-            tangentials_.push_back(Tangential(neighbour_trees[idx], radius, neighbour_weights[idx]));
+            tangentials_.push_back(Tangential(neighbour_trees[idx], radius,
+                                              neighbour_weights[idx]));
         }
     }
 
@@ -386,7 +387,8 @@ public:
     // The sum of inertial and centrifugal weights should lie in [0; 1].
     static SelfType create_with_neighbours_and_centrifugal(RealType inertial_weight,
             RealType centrifugal_weight, const Tree& tree, RealType tangential_radius,
-            const Point3D& center_of_mass, const Trees& neighbour_trees, const Weights& neighbour_weights)
+            const Point3D& center_of_mass, const Trees& neighbour_trees,
+            const Weights& neighbour_weights)
     {
         // Create an instance of inertial propagation.
         InertialPtr inertial = boost::make_shared<Inertial>(inertial_weight);

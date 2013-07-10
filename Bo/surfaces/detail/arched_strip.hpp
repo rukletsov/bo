@@ -55,10 +55,10 @@ public:
     ArchedStrip(Point ref_pt): ref_pt_(ref_pt)
     { }
 
-    ArchedStrip(Point ref_pt, RealType delta_min, RealType delta_max, Point prop,
-                Metric dist_fun):
-        ref_pt_(ref_pt), delta_min_(delta_min), delta_max_(delta_max), prop_(prop),
-        dist_fun_(dist_fun)
+    ArchedStrip(const Point& ref_pt, RealType delta_min, RealType delta_max,
+                const Point& propagation, const Metric& dist_fun):
+        ref_pt_(ref_pt), delta_min_(delta_min), delta_max_(delta_max),
+        propagation_(propagation), dist_fun_(dist_fun)
     { }
 
     bool operator()(const Point& pt)
@@ -74,7 +74,7 @@ public:
         bool cond2 = (dist <= delta_max_);
 
         // Dot product is positive if the angle between vectors < 90 deg.
-        bool cond3 = ((prop_ * (pt - ref_pt_)) > 0);
+        bool cond3 = ((propagation_ * (pt - ref_pt_)) > 0);
 
         return (cond1 && cond2 && cond3);
     }
@@ -83,7 +83,7 @@ private:
     Point ref_pt_;
     RealType delta_min_;
     RealType delta_max_;
-    Point prop_;
+    Point propagation_;
     Metric dist_fun_;
 };
 
