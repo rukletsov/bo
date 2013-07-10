@@ -59,8 +59,8 @@ template <typename RealType>
 class ComplexPropagation: public boost::noncopyable
 {
 public:
-    typedef ComplexPropagation<RealType> this_type;
-    typedef boost::shared_ptr<this_type> Ptr;
+    typedef ComplexPropagation<RealType> SelfType;
+    typedef boost::shared_ptr<SelfType> Ptr;
     typedef std::vector<Ptr> Ptrs;
 
     typedef Vector<RealType, 3> Point3D;
@@ -87,12 +87,14 @@ private:
             std::size_t, RealType> > Tree;
     typedef boost::shared_ptr<Tree> TreePtr;
     typedef std::vector<TreePtr> TreePtrs;
-    typedef detail::PropagationDirection<RealType, Tree> PropagationDirection;
+
+    typedef detail::PropagationDirection<RealType, Tree> PropagationDirector;
+    typedef detail::PropagationResult<RealType> PropagationResult;
 
 public:
     // Factory functions. Create an instance of the class from either of the supported
     // input with the provided parameters.
-    static Ptr create(Points3DConstPtr plane, RealType delta_min, RealType delta_max,
+    static Ptr create(const Points3D& plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
     static Ptrs create(const Points3DConstPtrs& planes, RealType delta_min, RealType delta_max,
@@ -123,25 +125,9 @@ public:
     bool is_closed() const;
     PropContourPtr contour() const;
 
-private:
-    struct PropagationResult
-    {
-        PropagationResult(): stopped(false), has_hole(false),
-            points(boost::make_shared<PropContour>())
-        { }
-
-        PropagationResult(bool maxsize_reached, bool hole_encountered, PropContourPtr pts):
-            stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
-        { }
-
-        bool stopped;
-        bool has_hole;
-        PropContourPtr points;
-    };
-
 protected:
     ComplexPropagation(RealType delta_min, RealType delta_max, TreePtr tree_ptr,
-                       const PropagationDirection& direction, const Point3D& start_point);
+                       const PropagationDirector& director, const Point3D& start_point);
 
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(const Point3D& pt, std::size_t k);
@@ -176,7 +162,7 @@ private:
 
     // Algorithm data and helper obejcts.
     TreePtr tree_ptr_;
-    PropagationDirection propagation_direction_;
+    PropagationDirector propagation_director_;
     Point3D start_;
 
     // Markers and final contour.
@@ -191,12 +177,12 @@ template <typename RealType>
 ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
                                                  RealType delta_max,
                                                  TreePtr tree_ptr,
-                                                 const PropagationDirection& direction,
+                                                 const PropagationDirector& director,
                                                  const Point3D& start_point):
     delta_min_(delta_min), delta_max_(delta_max),
     metric_(std::ptr_fun(distances::euclidean_distance<RealType, 3>)),
     tree_ptr_(tree_ptr),
-    propagation_direction_(direction),
+    propagation_director_(director),
     start_(start_point),
     stopped_(false), has_hole_(false),
     contour_(boost::make_shared<PropContour>())
@@ -213,26 +199,26 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
 // Factories. The sum of inertial and centrifugal weights should lie in [0; 1].
 template <typename RealType>
 typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
-        Points3DConstPtr plane, RealType delta_min, RealType delta_max,
+        const Points3D& plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Build kd-tree from the given points.
-    TreePtr tree_ptr = tree_from_plane_(*plane);
+    TreePtr tree_ptr = tree_from_plane_(plane);
 
-    PropagationDirection direction;
+    PropagationDirector direction;
     if (math::check_small(centrifugal_weight))
     {
-        direction = PropagationDirection::create_simple(inertial_weight, tree_ptr, tangential_radius);
+        direction = PropagationDirector::create_simple(inertial_weight, tree_ptr, tangential_radius);
     }
     else
     {
-        Point3D center_of_mass = bo::math::mean(*plane);
-        direction = PropagationDirection::create_with_centrifugal(inertial_weight, centrifugal_weight,
-                tree_ptr, tangential_radius, center_of_mass);
+        Point3D center_of_mass = bo::math::mean(plane);
+        direction = PropagationDirector::create_with_centrifugal(inertial_weight,
+                centrifugal_weight, tree_ptr, tangential_radius, center_of_mass);
     }
 
     // C-tor is declared private, using boost::make_shared gets complicated.
-    Ptr ptr(new this_type(delta_min, delta_max, tree_ptr, direction, plane->front()));
+    Ptr ptr(new SelfType(delta_min, delta_max, tree_ptr, direction, plane.front()));
     return ptr;
 }
 
@@ -250,7 +236,7 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
     for (std::size_t idx = 0; idx < planes_count; ++idx)
     {
         // Create an instance, register neighbours and return.
-        Ptr propagator = create(planes[idx], delta_min, delta_max, inertial_weight,
+        Ptr propagator = create(*(planes[idx]), delta_min, delta_max, inertial_weight,
                                 centrifugal_weight, tangential_radius);
         propagators.push_back(propagator);
     }
@@ -263,9 +249,9 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_me
         const Mesh& mesh, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
-    Points3DConstPtr plane = boost::make_shared<Points3D>(mesh.get_all_vertices());
     return
-        create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight, tangential_radius);
+        create(mesh.get_all_vertices(), delta_min, delta_max, inertial_weight,
+               centrifugal_weight, tangential_radius);
 }
 
 template <typename RealType>
@@ -274,12 +260,12 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Load plane data from an istance of RawImage2D.
-    Points3DPtr plane = boost::make_shared<Points3D>();
+    Points3D plane;
 
     for (std::size_t row = 0; row < data.height(); ++row)
         for (std::size_t col = 0; col < data.width(); ++col)
             if (data(col, row) > 0)
-                plane->push_back(Point3D(RealType(col), RealType(row), RealType(0)));
+                plane.push_back(Point3D(RealType(col), RealType(row), RealType(0)));
 
     return
         create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight, tangential_radius);
@@ -334,15 +320,15 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
              neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
             neighbour_trees.push_back(tree_from_plane_(**plane_it));
 
-        PropagationDirection direction = math::check_small(centrifugal_weight)
-                ? PropagationDirection::create_with_neighbours(inertial_weight,
+        PropagationDirector direction = math::check_small(centrifugal_weight)
+                ? PropagationDirector::create_with_neighbours(inertial_weight,
                         main_tree_ptr, tangential_radius, neighbour_trees, weights)
-                : PropagationDirection::create_with_neighbours_and_centrifugal(
+                : PropagationDirector::create_with_neighbours_and_centrifugal(
                         inertial_weight, centrifugal_weight, main_tree_ptr, tangential_radius,
                         center_of_mass, neighbour_trees, weights);
 
         // C-tor is declared private, using boost::make_shared gets complicated.
-        Ptr ptr(new this_type(delta_min, delta_max, main_tree_ptr, direction, plane->front()));
+        Ptr ptr(new SelfType(delta_min, delta_max, main_tree_ptr, direction, plane->front()));
 
         propagators.push_back(ptr);
     }
@@ -357,7 +343,7 @@ void ComplexPropagation<RealType>::propagate()
 {
     // Choose initial point and initial propagation. It solely consists of the
     // tangential component, since inertial cannot be defined.
-    Point3D initial_prop = propagation_direction_.initial(start_);
+    Point3D initial_prop = propagation_director_.initial(start_);
 
     // Run propagation. It may bump into a hole or return a circuit.
     PropagationResult attempt1 = propagate_(start_, start_, initial_prop, 1000);
@@ -580,7 +566,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         // Update algortihm's state.
         Point3D previous = current;
         current = candidate;
-        total_prop = propagation_direction_.next(current, previous);
+        total_prop = propagation_director_.next(current, previous);
 
     } while (current != end);
 
