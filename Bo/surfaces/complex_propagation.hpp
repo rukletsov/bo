@@ -85,7 +85,8 @@ private:
     typedef std::pointer_to_binary_function<const Point3D&, const Point3D&, RealType> Metric;
     typedef KDTree<3, Point3D, std::pointer_to_binary_function<const Point3D&,
             std::size_t, RealType> > Tree;
-    typedef std::vector<Tree> Trees;
+    typedef boost::shared_ptr<Tree> TreePtr;
+    typedef std::vector<TreePtr> TreePtrs;
     typedef detail::PropagationDirection<RealType, Tree> PropagationDirection;
 
 public:
@@ -139,14 +140,14 @@ private:
     };
 
 protected:
-    ComplexPropagation(RealType delta_min, RealType delta_max, const Tree& tree,
+    ComplexPropagation(RealType delta_min, RealType delta_max, TreePtr tree_ptr,
                        const PropagationDirection& direction, const Point3D& start_point);
 
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(const Point3D& pt, std::size_t k);
 
     //
-    static Tree tree_from_plane_(const Points3D& plane);
+    static TreePtr tree_from_plane_(const Points3D& plane);
 
     // Adds neighbour planes with corresponding weights. These planes are used in
     // the calculation of the tangential component of the propagation, making it
@@ -174,7 +175,7 @@ private:
     Metric metric_;
 
     // Algorithm data and helper obejcts.
-    Tree tree_;
+    TreePtr tree_ptr_;
     PropagationDirection propagation_direction_;
     Point3D start_;
 
@@ -189,12 +190,12 @@ private:
 template <typename RealType>
 ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
                                                  RealType delta_max,
-                                                 const Tree& tree,
+                                                 TreePtr tree_ptr,
                                                  const PropagationDirection& direction,
                                                  const Point3D& start_point):
     delta_min_(delta_min), delta_max_(delta_max),
     metric_(std::ptr_fun(distances::euclidean_distance<RealType, 3>)),
-    tree_(tree),
+    tree_ptr_(tree_ptr),
     propagation_direction_(direction),
     start_(start_point),
     stopped_(false), has_hole_(false),
@@ -203,7 +204,7 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
     // If points number is less than 2, propagation cannot be initialized. And
     // because there is no sense in doing propagation for 0 or 1 points, we throw
     // an error instead of returning the plane unchanged.
-    if (tree.size() < 2)
+    if (tree_ptr->size() < 2)
         throw std::logic_error("Cannot run propagation for planes consisting of "
                                "less than 2 vertices.");
 }
@@ -216,22 +217,22 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
     // Build kd-tree from the given points.
-    Tree tree = tree_from_plane_(*plane);
+    TreePtr tree_ptr = tree_from_plane_(*plane);
 
     PropagationDirection direction;
     if (math::check_small(centrifugal_weight))
     {
-        direction = PropagationDirection::create_simple(inertial_weight, tree, tangential_radius);
+        direction = PropagationDirection::create_simple(inertial_weight, tree_ptr, tangential_radius);
     }
     else
     {
         Point3D center_of_mass = bo::math::mean(*plane);
         direction = PropagationDirection::create_with_centrifugal(inertial_weight, centrifugal_weight,
-                tree, tangential_radius, center_of_mass);
+                tree_ptr, tangential_radius, center_of_mass);
     }
 
     // C-tor is declared private, using boost::make_shared gets complicated.
-    Ptr ptr(new this_type(delta_min, delta_max, tree, direction, plane->front()));
+    Ptr ptr(new this_type(delta_min, delta_max, tree_ptr, direction, plane->front()));
     return ptr;
 }
 
@@ -324,10 +325,10 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
                 norm, neighbours);
         neighbour_projs.reserve(neighbours.size());
 
-        Tree main_tree = tree_from_plane_(*plane);
+        TreePtr main_tree_ptr = tree_from_plane_(*plane);
 
         // Compute kd-trees for projected neighbour planes.
-        Trees neighbour_trees;
+        TreePtrs neighbour_trees;
         neighbour_trees.reserve(neighbour_projs.size());
         for (typename Points3DConstPtrs::const_iterator plane_it =
              neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
@@ -335,13 +336,13 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
         PropagationDirection direction = math::check_small(centrifugal_weight)
                 ? PropagationDirection::create_with_neighbours(inertial_weight,
-                        main_tree, tangential_radius, neighbour_trees, weights)
+                        main_tree_ptr, tangential_radius, neighbour_trees, weights)
                 : PropagationDirection::create_with_neighbours_and_centrifugal(
-                        inertial_weight, centrifugal_weight, main_tree, tangential_radius,
+                        inertial_weight, centrifugal_weight, main_tree_ptr, tangential_radius,
                         center_of_mass, neighbour_trees, weights);
 
         // C-tor is declared private, using boost::make_shared gets complicated.
-        Ptr ptr(new this_type(delta_min, delta_max, main_tree, direction, plane->front()));
+        Ptr ptr(new this_type(delta_min, delta_max, main_tree_ptr, direction, plane->front()));
 
         propagators.push_back(ptr);
     }
@@ -413,13 +414,14 @@ RealType ComplexPropagation<RealType>::point3D_accessor_(const Point3D &pt, std:
 }
 
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::Tree
+typename ComplexPropagation<RealType>::TreePtr
 ComplexPropagation<RealType>::tree_from_plane_(const Points3D& plane)
 {
     // Build kd-tree from the given points.
     // TODO: provide kd-tree with current metric?
-    Tree tree(plane.begin(), plane.end(), std::ptr_fun(point3D_accessor_));
-    return tree;
+    TreePtr tree_ptr = boost::make_shared<Tree>(plane.begin(), plane.end(),
+                                                std::ptr_fun(point3D_accessor_));
+    return tree_ptr;
 }
 
 template <typename RealType>
@@ -534,7 +536,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
 
         // TODO: get rid of max radius.
         std::pair<typename Tree::const_iterator, RealType> candidate_data =
-                tree_.find_nearest_if(phantom_candidate, delta_max_,
+                tree_ptr_->find_nearest_if(phantom_candidate, delta_max_,
                     ArchedStrip(current, delta_min_, delta_max_, total_prop, metric_));
         RealType candidate_distance = candidate_data.second;
         Point3D candidate = *(candidate_data.first);
