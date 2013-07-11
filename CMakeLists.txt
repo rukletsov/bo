@@ -127,6 +127,7 @@ SET (BO_HDRS
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/container_traversers.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/indexed_tstrip.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/propagation_result.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/inertial_propagation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/centrifugal_propagation.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/bo/surfaces/detail/tangential_propagation.hpp

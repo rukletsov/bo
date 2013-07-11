@@ -159,9 +159,7 @@ public:
         // and sum them up.
         Point3D total_tangential;
         for (std::size_t idx = 0; idx < total_size_; ++idx)
-        {
             total_tangential += tangentials_[idx].get(current, inertial);
-        }
 
         // TODO: remove this block by refactoring bo::Vector class.
         // Normalize vector.

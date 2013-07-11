@@ -188,24 +188,6 @@ private:
     BaseTangentialPtr tangential_ptr_;
 };
 
-template <typename RealType>
-struct PropagationResult
-{
-    typedef Vector<RealType, 3> Point3D;
-    typedef std::vector<Point3D> PropagatedContour;
-
-    PropagationResult(): stopped(false), has_hole(false)
-    { }
-
-    PropagationResult(bool maxsize_reached, bool hole_encountered, PropagatedContour pts):
-        stopped(maxsize_reached), has_hole(hole_encountered), points(pts)
-    { }
-
-    bool stopped;
-    bool has_hole;
-    PropagatedContour points;
-};
-
 } // namespace detail
 } // namespace surfaces
 } // namespace bo

@@ -50,6 +50,7 @@
 #include "bo/math/mean.hpp"
 #include "bo/distances/distances_3d.hpp"
 #include "bo/surfaces/detail/types.hpp"
+#include "bo/surfaces/detail/propagation_result.hpp"
 #include "bo/surfaces/detail/arched_strip.hpp"
 
 namespace bo {
@@ -115,10 +116,10 @@ public:
     void propagate();
 
     // Accessor functions to the final contour and algorithm markers. Calling these
-    // functions makes sense only after calling propagate(). If has_stopped() marker
-    // is set to false, the algortihm is most probably stuck (e.g. jumping between two
+    // functions makes sense only after calling propagate(). If is_aborted() marker
+    // is set to true, the algortihm is most probably stuck (e.g. jumping between two
     // adjacent points or traversing the cosed contour multiple times).
-    bool has_stopped() const;
+    bool is_aborted() const;
     bool has_hole() const;
     bool is_closed() const;
     PropagatedContourPtr contour() const;
@@ -164,7 +165,7 @@ private:
     const Point3D start_;
 
     // Markers and final contour.
-    bool stopped_;
+    bool aborted_;
     bool has_hole_;
     PropagatedContourPtr contour_;
 };
@@ -182,7 +183,7 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
     tree_ptr_(tree_ptr),
     propagation_director_(director),
     start_(start_point),
-    stopped_(false), has_hole_(false),
+    aborted_(false), has_hole_(false),
     contour_(boost::make_shared<PropagatedContour>())
 {
     // If points number is less than 2, propagation cannot be initialized. And
@@ -348,27 +349,27 @@ void ComplexPropagation<RealType>::propagate()
 
     // If the hole was detected, run propagation in a different direction.
     PropagationResult attempt2;
-    if (attempt1.has_hole)
-        attempt2 = propagate_(start_, attempt1.points.back(), - initial_prop, 1000);
+    if (attempt1.HasHole)
+        attempt2 = propagate_(start_, attempt1.Points.back(), - initial_prop, 1000);
 
     // Glue propagation results together.
-    contour_->reserve(attempt1.points.size() + attempt2.points.size());
-    for (typename PropagatedContour::const_reverse_iterator rit = attempt2.points.rbegin();
-         rit != attempt2.points.rend(); ++rit)
+    contour_->reserve(attempt1.Points.size() + attempt2.Points.size());
+    for (typename PropagatedContour::const_reverse_iterator rit = attempt2.Points.rbegin();
+         rit != attempt2.Points.rend(); ++rit)
         contour_->push_back(*rit);
-    for (typename PropagatedContour::const_iterator it = attempt1.points.begin() + 1;
-         it != attempt1.points.end(); ++it)
+    for (typename PropagatedContour::const_iterator it = attempt1.Points.begin() + 1;
+         it != attempt1.Points.end(); ++it)
         contour_->push_back(*it);
 
     // Set markers.
-    stopped_ = attempt1.stopped || attempt2.stopped;
-    has_hole_ = attempt1.has_hole;
+    aborted_ = attempt1.Aborted || attempt2.Aborted;
+    has_hole_ = attempt1.HasHole;
 }
 
 template <typename RealType> inline
-bool ComplexPropagation<RealType>::has_stopped() const
+bool ComplexPropagation<RealType>::is_aborted() const
 {
-    return stopped_;
+    return aborted_;
 }
 
 template <typename RealType> inline
@@ -497,7 +498,7 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
     typedef detail::ArchedStrip<RealType, 3> ArchedStrip;
 
     PropagationResult retvalue;
-    retvalue.points.push_back(start);
+    retvalue.Points.push_back(start);
 
     // Flag for so-called "smooth-ending". It is necessary to keep the distance
     // between the points in the end phase as close to delta_min as possible,
@@ -508,9 +509,9 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
     do
     {
         // Restrict total length (to prevent looping).
-        if (retvalue.points.size() > max_size)
+        if (retvalue.Points.size() > max_size)
         {
-            retvalue.stopped = true;
+            retvalue.Aborted = true;
             break;
         }
 
@@ -529,32 +530,32 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
         // Check if we bump into a hole.
         if (candidate_distance >= delta_max_)
         {
-            retvalue.has_hole = true;
+            retvalue.HasHole = true;
             break;
         }
 
         // Check if the candidate "sees" the end point "in front".
         if (!end_detected)
         {
-            retvalue.points.push_back(candidate);
+            retvalue.Points.push_back(candidate);
             if ((delta_max_ >= metric_(end, candidate)) &&
                 (total_prop * (end - candidate)) > 0)
                 end_detected = true;
         }
         else
         {
-            RealType cur_dist = (end - retvalue.points.back()).euclidean_norm();
-            RealType candidate_dist1 = (candidate - retvalue.points.back()).euclidean_norm();
+            RealType cur_dist = (end - retvalue.Points.back()).euclidean_norm();
+            RealType candidate_dist1 = (candidate - retvalue.Points.back()).euclidean_norm();
             RealType candidate_dist2 = (end - candidate).euclidean_norm();
 
             if (delta_min_ > metric_(end, candidate))
             {
-                retvalue.points.push_back(candidate);
+                retvalue.Points.push_back(candidate);
                 candidate = end;
             }
             else if ((cur_dist > candidate_dist1) && (cur_dist > candidate_dist2))
             {
-                retvalue.points.push_back(candidate);
+                retvalue.Points.push_back(candidate);
             }
             else
             {
