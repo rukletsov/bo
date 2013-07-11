@@ -90,7 +90,7 @@ public:
     }
 
 protected:
-    RealType weight_;
+    const RealType weight_;
 };
 
 //
@@ -110,7 +110,7 @@ public:
     }
 
 protected:
-    Point3D zero_vector_;
+    const Point3D zero_vector_;
 };
 
 //
@@ -145,8 +145,8 @@ public:
     }
 
 protected:
-    Point3D center_of_mass_;
-    RealType weight_;
+    const Point3D center_of_mass_;
+    const RealType weight_;
 };
 
 //
@@ -184,8 +184,12 @@ public:
 
     virtual Point3D get(const Point3D& current, const Point3D& inertial) const
     {
-        // Search for nearby points.
+        // Initialize collection for neigbours. Reserve gives slightly better performance,
+        // but uses more memory.
         Points3D neighbours;
+        neighbours.reserve(tree_ptr_->size());
+
+        // Search for nearby points.
         tree_ptr_->find_within_range(current, radius_, std::back_inserter(neighbours));
 
         // Employ PCA to extract the tangential propagation vector from the set of

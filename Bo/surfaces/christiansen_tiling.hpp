@@ -103,10 +103,9 @@ public:
 public:
     ChristiansenTiling(std::size_t id1, ContourPtr contour1, bool closed1,
                   std::size_t id2, ContourPtr contour2, bool closed2)
-        : contour_descr1_(id1, contour1, closed1), contour_descr2_(id2, contour2, closed2)
-    {
-        metric_ = &bo::distances::euclidean_distance<RealType, 3>;
-    }
+        : contour_descr1_(id1, contour1, closed1), contour_descr2_(id2, contour2, closed2),
+          metric_(&bo::distances::euclidean_distance<RealType, 3>)
+    { }
 
     // Implementation for Christiansen algorithm for closed and opened contours.
     //
@@ -242,8 +241,7 @@ private:
 private:
     ContourDescriptor contour_descr1_;
     ContourDescriptor contour_descr2_;
-
-    Metric metric_;
+    const Metric metric_;
 };
 
 } // namespace surfaces

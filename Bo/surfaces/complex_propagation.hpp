@@ -154,14 +154,14 @@ protected:
 
 private:
     // Parameters and options of the propagation algorithm.
-    RealType delta_min_;
-    RealType delta_max_;
-    Metric metric_;
+    const RealType delta_min_;
+    const RealType delta_max_;
+    const Metric metric_;
 
     // Algorithm data and helper obejcts.
-    TreePtr tree_ptr_;
-    PropagationDirector propagation_director_;
-    Point3D start_;
+    const TreePtr tree_ptr_;
+    const PropagationDirector propagation_director_;
+    const Point3D start_;
 
     // Markers and final contour.
     bool stopped_;
