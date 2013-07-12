@@ -10,7 +10,7 @@
 #include <boost/chrono.hpp>
 
 #include "bo/config.hpp"
-#include "bo/surfaces/complex_propagation.hpp"
+#include "bo/surfaces/complex_propagator.hpp"
 #include "bo/surfaces/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
@@ -20,7 +20,7 @@ using namespace bo::surfaces;
 using namespace bo::io;
 
 typedef bo::Mesh<float> FloatMesh;
-typedef ComplexPropagation<float> Propagator;
+typedef ComplexPropagator<float> Propagator;
 typedef Triangulation<float> Triangulator;
 
 // Directory where test data is stored.

@@ -31,8 +31,8 @@
 
 *******************************************************************************/
 
-#ifndef COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
-#define COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
+#ifndef COMPLEX_PROPAGATOR_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
+#define COMPLEX_PROPAGATOR_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
 
 #include <vector>
 #include <algorithm>
@@ -49,7 +49,7 @@
 #include "bo/math/pca.hpp"
 #include "bo/math/mean.hpp"
 #include "bo/distances/distances_3d.hpp"
-#include "bo/surfaces/detail/types.hpp"
+#include "bo/surfaces/detail/total_propagation.hpp"
 #include "bo/surfaces/detail/propagation_result.hpp"
 #include "bo/surfaces/detail/arched_strip.hpp"
 
@@ -57,10 +57,10 @@ namespace bo {
 namespace surfaces {
 
 template <typename RealType>
-class ComplexPropagation: public boost::noncopyable
+class ComplexPropagator: public boost::noncopyable
 {
 public:
-    typedef ComplexPropagation<RealType> SelfType;
+    typedef ComplexPropagator<RealType> SelfType;
     typedef boost::shared_ptr<SelfType> Ptr;
     typedef std::vector<Ptr> Ptrs;
 
@@ -85,7 +85,7 @@ private:
     typedef boost::shared_ptr<Tree> TreePtr;
     typedef std::vector<TreePtr> TreePtrs;
 
-    typedef detail::PropagationDirection<RealType, Tree> PropagationDirector;
+    typedef detail::TotalPropagation<RealType, Tree> PropagationDirector;
     typedef detail::PropagationResult<RealType> PropagationResult;
     typedef typename PropagationResult::PropagatedContour PropagatedContour;
     typedef boost::shared_ptr<PropagatedContour> PropagatedContourPtr;
@@ -125,7 +125,7 @@ public:
     PropagatedContourPtr contour() const;
 
 protected:
-    ComplexPropagation(RealType delta_min, RealType delta_max, TreePtr tree_ptr,
+    ComplexPropagator(RealType delta_min, RealType delta_max, TreePtr tree_ptr,
                        const PropagationDirector& director, const Point3D& start_point);
 
     // Helper function for KDTree instance.
@@ -173,7 +173,7 @@ private:
 
 // C-tor.
 template <typename RealType>
-ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
+ComplexPropagator<RealType>::ComplexPropagator(RealType delta_min,
                                                  RealType delta_max,
                                                  TreePtr tree_ptr,
                                                  const PropagationDirector& director,
@@ -197,7 +197,7 @@ ComplexPropagation<RealType>::ComplexPropagation(RealType delta_min,
 
 // Factories. The sum of inertial and centrifugal weights should lie in [0; 1].
 template <typename RealType>
-typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
+typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::create(
         const Points3D& plane, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -222,7 +222,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::create(
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
+typename ComplexPropagator<RealType>::Ptrs ComplexPropagator<RealType>::create(
         const Points3DConstPtrs& planes, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -244,7 +244,7 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_mesh(
+typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::from_mesh(
         const Mesh& mesh, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -254,7 +254,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_me
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_raw_image(
+typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::from_raw_image(
         const Image2D& data, RealType delta_min, RealType delta_max,
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius)
 {
@@ -271,7 +271,7 @@ typename ComplexPropagation<RealType>::Ptr ComplexPropagation<RealType>::from_ra
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create(
+typename ComplexPropagator<RealType>::Ptrs ComplexPropagator<RealType>::create(
         const Points3DConstPtrs& planes, const Weights& neighbour_weights,
         RealType delta_min, RealType delta_max, RealType inertial_weight,
         RealType centrifugal_weight, RealType tangential_radius)
@@ -338,7 +338,7 @@ typename ComplexPropagation<RealType>::Ptrs ComplexPropagation<RealType>::create
 
 // Public control functions.
 template <typename RealType>
-void ComplexPropagation<RealType>::propagate()
+void ComplexPropagator<RealType>::propagate()
 {
     // Choose initial point and initial propagation. It solely consists of the
     // tangential component, since inertial cannot be defined.
@@ -367,26 +367,26 @@ void ComplexPropagation<RealType>::propagate()
 }
 
 template <typename RealType> inline
-bool ComplexPropagation<RealType>::is_aborted() const
+bool ComplexPropagator<RealType>::is_aborted() const
 {
     return aborted_;
 }
 
 template <typename RealType> inline
-bool ComplexPropagation<RealType>::has_hole() const
+bool ComplexPropagator<RealType>::has_hole() const
 {
     return has_hole_;
 }
 
 template <typename RealType> inline
-bool ComplexPropagation<RealType>::is_closed() const
+bool ComplexPropagator<RealType>::is_closed() const
 {
     return !(this->has_hole());
 }
 
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::PropagatedContourPtr
-ComplexPropagation<RealType>::contour() const
+typename ComplexPropagator<RealType>::PropagatedContourPtr
+ComplexPropagator<RealType>::contour() const
 {
     return contour_;
 }
@@ -394,14 +394,14 @@ ComplexPropagation<RealType>::contour() const
 
 // Private static helper functions.
 template <typename RealType> inline
-RealType ComplexPropagation<RealType>::point3D_accessor_(const Point3D &pt, std::size_t k)
+RealType ComplexPropagator<RealType>::point3D_accessor_(const Point3D &pt, std::size_t k)
 {
     return pt[k];
 }
 
 template <typename RealType> inline
-typename ComplexPropagation<RealType>::TreePtr
-ComplexPropagation<RealType>::tree_from_plane_(const Points3D& plane)
+typename ComplexPropagator<RealType>::TreePtr
+ComplexPropagator<RealType>::tree_from_plane_(const Points3D& plane)
 {
     // Build kd-tree from the given points.
     // TODO: provide kd-tree with current metric?
@@ -411,8 +411,8 @@ ComplexPropagation<RealType>::tree_from_plane_(const Points3D& plane)
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Point3D
-ComplexPropagation<RealType>::get_plane_normal_(const Points3D& plane)
+typename ComplexPropagator<RealType>::Point3D
+ComplexPropagator<RealType>::get_plane_normal_(const Points3D& plane)
 {
     // Employ PCA to estimate plane normal.
     typedef math::PCA<RealType, 3> PCAEngine;
@@ -425,8 +425,8 @@ ComplexPropagation<RealType>::get_plane_normal_(const Points3D& plane)
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::Points3DConstPtrs
-ComplexPropagation<RealType>::project_neighbour_onto_plane_(const Point3D& center_of_mass,
+typename ComplexPropagator<RealType>::Points3DConstPtrs
+ComplexPropagator<RealType>::project_neighbour_onto_plane_(const Point3D& center_of_mass,
         const Point3D& normal, const Points3DConstPtrs& neighbours)
 {
     // Project all neighbours to the current plane.
@@ -454,7 +454,7 @@ ComplexPropagation<RealType>::project_neighbour_onto_plane_(const Point3D& cente
 }
 
 template <typename RealType>
-void ComplexPropagation<RealType>::populate_neighbours_and_weights_(std::size_t plane_idx,
+void ComplexPropagator<RealType>::populate_neighbours_and_weights_(std::size_t plane_idx,
         const Points3DConstPtrs& planes, const Weights& neighbour_weights,
         Points3DConstPtrs& out_neighbours, Weights& out_weights)
 {
@@ -491,8 +491,8 @@ void ComplexPropagation<RealType>::populate_neighbours_and_weights_(std::size_t 
 }
 
 template <typename RealType>
-typename ComplexPropagation<RealType>::PropagationResult
-ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& end,
+typename ComplexPropagator<RealType>::PropagationResult
+ComplexPropagator<RealType>::propagate_(const Point3D& start, const Point3D& end,
                                          Point3D total_prop, std::size_t max_size)
 {
     typedef detail::ArchedStrip<RealType, 3> ArchedStrip;
@@ -576,4 +576,4 @@ ComplexPropagation<RealType>::propagate_(const Point3D& start, const Point3D& en
 } // namespace surfaces
 } // namespace bo
 
-#endif // COMPLEX_PROPAGATION_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
+#endif // COMPLEX_PROPAGATOR_HPP_D90ED351_6A45_4523_85F3_DA99F52B87C2
