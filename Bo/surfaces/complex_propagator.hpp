@@ -106,7 +106,9 @@ public:
         RealType inertial_weight, RealType centrifugal_weight, RealType tangential_radius);
 
     // A special factory. Creates a set of instances one per given plane. Additionally
-    // passes a set of neighbours with corresponding weights to each instance.
+    // passes a set of neighbours with corresponding weights to each instance. These
+    // planes are used later in the calculation of the tangential component of the
+    // propagation, making it dependent of the neighbour planes. This may improve the result.
     static Ptrs create(const Points3DConstPtrs& planes, const Weights& neighbour_weights,
         RealType delta_min, RealType delta_max, RealType inertial_weight,
         RealType centrifugal_weight, RealType tangential_radius);
@@ -131,20 +133,23 @@ protected:
     // Helper function for KDTree instance.
     static RealType point3D_accessor_(const Point3D& pt, std::size_t k);
 
-    //
+    // Helper function creating k-d tree shared_ptr from the given container of points.
     static TreePtr tree_from_plane_(const Points3D& plane);
 
-    // Adds neighbour planes with corresponding weights. These planes are used in
-    // the calculation of the tangential component of the propagation, making it
-    // dependent of the neighbour planes. This should lead to the desirable smoothing.
+    // Calculates neighbours and corresponding weights for the given plane. Uses the
+    // size of the weights container to determine how many planes "before" and "after"
+    // the current should be considered neighbours.
     static void populate_neighbours_and_weights_(std::size_t plane_idx,
             const Points3DConstPtrs& planes, const Weights& neighbour_weights,
             Points3DConstPtrs& out_neighbours, Weights& out_weights);
 
-    //
+    // Calculates plane normal for the given container of samples. The samples are
+    // assumed to lie in a plane. PCA is used to estimate the vector purpendicular to
+    // plane represented by samples.
     static Point3D get_plane_normal_(const Points3D& plane);
 
-    //
+    // Projects each of the given points onto the plane represented by its normal and
+    // center of mass.
     static Points3DConstPtrs project_neighbour_onto_plane_(const Point3D& center_of_mass,
             const Point3D& normal, const Points3DConstPtrs& neighbours);
 
