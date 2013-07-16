@@ -200,7 +200,7 @@ ComplexPropagator<RealType>::ComplexPropagator(RealType delta_min,
 }
 
 
-// Factories. The sum of inertial and centrifugal weights should lie in [0; 1].
+// Factories. Note that the sum of inertial and centrifugal weights should be in [0; 1].
 template <typename RealType>
 typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::create(
         const Points3D& plane, RealType delta_min, RealType delta_max,
@@ -209,17 +209,13 @@ typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::create(
     // Build kd-tree from the given points.
     TreePtr tree_ptr = tree_from_plane_(plane);
 
-    PropagationDirector direction;
-    if (math::check_small(centrifugal_weight))
-    {
-        direction = PropagationDirector::create_simple(inertial_weight, tree_ptr, tangential_radius);
-    }
-    else
-    {
-        Point3D center_of_mass = bo::math::mean(plane);
-        direction = PropagationDirector::create_with_centrifugal(inertial_weight,
-                centrifugal_weight, tree_ptr, tangential_radius, center_of_mass);
-    }
+    // Create the appropriate propagation director either with or without centrifugal
+    // component.
+    PropagationDirector direction = math::check_small(centrifugal_weight)
+            ? PropagationDirector::create_simple(inertial_weight, tree_ptr,
+                    tangential_radius)
+            : PropagationDirector::create_with_centrifugal(inertial_weight,
+                    centrifugal_weight, tree_ptr, tangential_radius, bo::math::mean(plane));
 
     // C-tor is declared private, using boost::make_shared gets complicated.
     Ptr ptr(new SelfType(delta_min, delta_max, tree_ptr, direction, plane.front()));
@@ -236,7 +232,7 @@ typename ComplexPropagator<RealType>::Ptrs ComplexPropagator<RealType>::create(
     Ptrs propagators;
     propagators.reserve(planes_count);
 
-    // Create an instance for each plane
+    // Create an instance for each plane.
     for (std::size_t idx = 0; idx < planes_count; ++idx)
     {
         // Create an instance, register neighbours and return.
@@ -272,7 +268,8 @@ typename ComplexPropagator<RealType>::Ptr ComplexPropagator<RealType>::from_raw_
                 plane.push_back(Point3D(RealType(col), RealType(row), RealType(0)));
 
     return
-        create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight, tangential_radius);
+        create(plane, delta_min, delta_max, inertial_weight, centrifugal_weight,
+               tangential_radius);
 }
 
 template <typename RealType>
@@ -295,16 +292,17 @@ typename ComplexPropagator<RealType>::Ptrs ComplexPropagator<RealType>::create(
     // Compute neighbours for each plane and create an instance of the class for it.
     for (std::size_t idx = 0; idx < planes_count; ++idx)
     {
+        // Cache current plane and prepare output containers.
+        Points3DConstPtr plane = planes[idx];
+
         Points3DConstPtrs neighbours;
         neighbours.reserve(2 * radius);
 
         Weights weights;
         weights.reserve(2 * radius);
 
-        //
+        // Add neighbours and weights to the instantiated containers.
         populate_neighbours_and_weights_(idx, planes, neighbour_weights, neighbours, weights);
-
-        Points3DConstPtr plane = planes[idx];
 
         // Cache main plane origin and normal.
         Point3D center_of_mass = bo::math::mean(*plane);
@@ -315,15 +313,18 @@ typename ComplexPropagator<RealType>::Ptrs ComplexPropagator<RealType>::create(
                 norm, neighbours);
         neighbour_projs.reserve(neighbours.size());
 
+        // Compute k-d tree for the current plane.
         TreePtr main_tree_ptr = tree_from_plane_(*plane);
 
-        // Compute kd-trees for projected neighbour planes.
+        // Compute k-d trees for projected neighbour planes.
         TreePtrs neighbour_trees;
         neighbour_trees.reserve(neighbour_projs.size());
         for (typename Points3DConstPtrs::const_iterator plane_it =
              neighbour_projs.begin(); plane_it != neighbour_projs.end(); ++plane_it)
             neighbour_trees.push_back(tree_from_plane_(**plane_it));
 
+        // Create the appropriate propagation director with neighbour tangential
+        // componentseither and with or without centrifugal component.
         PropagationDirector direction = math::check_small(centrifugal_weight)
                 ? PropagationDirector::create_with_neighbours(inertial_weight,
                         main_tree_ptr, tangential_radius, neighbour_trees, weights)
@@ -409,7 +410,7 @@ typename ComplexPropagator<RealType>::TreePtr
 ComplexPropagator<RealType>::tree_from_plane_(const Points3D& plane)
 {
     // Build kd-tree from the given points.
-    // TODO: provide kd-tree with current metric?
+    // TODO: provide k-d tree with current metric?
     TreePtr tree_ptr = boost::make_shared<Tree>(plane.begin(), plane.end(),
                                                 std::ptr_fun(point3D_accessor_));
     return tree_ptr;
@@ -434,17 +435,19 @@ typename ComplexPropagator<RealType>::Points3DConstPtrs
 ComplexPropagator<RealType>::project_neighbour_onto_plane_(const Point3D& center_of_mass,
         const Point3D& normal, const Points3DConstPtrs& neighbours)
 {
-    // Project all neighbours to the current plane.
-    // TODO: rewrite using transform?
+    // Prepare output container.
     Points3DConstPtrs neighbour_projs;
     neighbour_projs.reserve(neighbours.size());
 
+    // Project all neighbours to the current plane.
     for (typename Points3DConstPtrs::const_iterator neighbour =
          neighbours.begin(); neighbour != neighbours.end(); ++neighbour)
     {
+        // Prepare container for the projected plane.
         Points3DPtr plane_proj = boost::make_shared<Points3D>();
         plane_proj->reserve((*neighbour)->size());
 
+        // Project all points from the neighbour to the current plane.
         for (typename Points3D::const_iterator point_it = (*neighbour)->begin();
              point_it != (*neighbour)->end(); ++point_it)
         {
