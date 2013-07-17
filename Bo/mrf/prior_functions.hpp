@@ -42,7 +42,7 @@ namespace mrf {
 template <typename NodeType, typename RealType>
 struct GenericPrior
 {
-    GenericPrior(RealType response_weight): multiplier(response_weight)
+    GenericPrior(RealType response_weight): multiplier_(response_weight)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const = 0;
@@ -52,7 +52,7 @@ struct GenericPrior
 
 protected:
     // Weighting coefficient for the function response.
-    RealType multiplier;
+    RealType multiplier_;
 };
 
 // Standard smoothness prior energy on two-node clique. Minus operator for NodeType
@@ -60,12 +60,14 @@ protected:
 template <typename NodeType, typename RealType>
 struct SmoothnessPrior: public GenericPrior<NodeType, RealType>
 {
-    SmoothnessPrior(RealType response_weight): GenericPrior(response_weight)
+    typedef GenericPrior<NodeType, RealType> BaseType;
+
+    SmoothnessPrior(RealType response_weight): BaseType(response_weight)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return multiplier * math::square(arg1 - arg2) / RealType(2);
+        return this->multiplier_ * math::square(arg1 - arg2) / RealType(2);
     }
 
     virtual ~SmoothnessPrior()
@@ -78,17 +80,18 @@ struct SmoothnessPrior: public GenericPrior<NodeType, RealType>
 template <typename NodeType, typename RealType>
 struct SmoothingWithEdgesPrior: public SmoothnessPrior<NodeType, RealType>
 {
-    SmoothingWithEdgesPrior(RealType response_weight, RealType edge_weight,
-        RealType tau): SmoothnessPrior(response_weight),
-        edge_coefficient(edge_weight), thres_border(tau)
+    typedef SmoothnessPrior<NodeType, RealType> BaseType;
+
+    SmoothingWithEdgesPrior(RealType response_weight, RealType edge_weight, RealType tau)
+        : BaseType(response_weight), edge_coefficient_(edge_weight), thres_border_(tau)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
         // Note that base class already multiplies in the response weight.
         return
-            (SmoothnessPrior::operator ()(arg1, arg2) +
-             multiplier * edge_coefficient * std::min(std::abs(arg1 - arg2), thres_border));
+            (BaseType::operator ()(arg1, arg2) +
+             this->multiplier_ * edge_coefficient_ * std::min(std::abs(arg1 - arg2), thres_border_));
     }
 
     virtual ~SmoothingWithEdgesPrior()
@@ -96,20 +99,22 @@ struct SmoothingWithEdgesPrior: public SmoothnessPrior<NodeType, RealType>
 
 protected:
     // Weighting coefficient for edge preserving functional.
-    RealType edge_coefficient;
-    RealType thres_border;
+    RealType edge_coefficient_;
+    RealType thres_border_;
 };
 
 // Smoothness prior energy on two-node clique for node types, supporting mean() method.
 template <typename NodeType, typename RealType>
 struct MeanSmoothnessPrior: public GenericPrior<NodeType, RealType>
 {
-    MeanSmoothnessPrior(RealType response_weight): GenericPrior(response_weight)
+    typedef GenericPrior<NodeType, RealType> BaseType;
+
+    MeanSmoothnessPrior(RealType response_weight): BaseType(response_weight)
     { }
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return multiplier * math::square(arg1.mean() - arg2.mean()) / RealType(2);
+        return this->multiplier_ * math::square(arg1.mean() - arg2.mean()) / RealType(2);
     }
 
     virtual ~MeanSmoothnessPrior()

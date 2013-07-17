@@ -105,7 +105,11 @@ template <typename NodeType, typename DataType, typename RealType>
 class ICM2D: public MRF2DOptimizer<NodeType, DataType, RealType>
 {
 public:
-    ICM2D(NodePossibleLabels* possible_values): MRF2DOptimizer(possible_values)
+    typedef MRF2DOptimizer<NodeType, DataType, RealType> BaseType;
+
+    typedef typename BaseType::NodePossibleLabels NodePossibleLabels;
+
+    ICM2D(NodePossibleLabels* possible_values): BaseType(possible_values)
     { }
 
     void next_iteration(MRF2D<NodeType, DataType, RealType>& mrf)
@@ -113,16 +117,16 @@ public:
         for (std::size_t col = 0; col < mrf.width(); ++col) {
             for (std::size_t row = 0; row < mrf.height(); ++row) {
                 RealType min_energy = std::numeric_limits<RealType>::max();
-                NodeType min_value = values_->next();
+                NodeType min_value = this->values_->next();
 
                 // Reset the possible labels so we can iterate through the whole
                 // variety only once.
-                values_->reset();
-                std::size_t count = values_->count();
+                this->values_->reset();
+                std::size_t count = this->values_->count();
 
                 while (count--)
                 {
-                    NodeType value = values_->next();
+                    NodeType value = this->values_->next();
                     RealType energy = mrf.compute_local_energy(value, col, row);
 
                     if (energy < min_energy)
@@ -146,12 +150,15 @@ template <typename NodeType, typename DataType, typename RealType>
 class MD2D: public MRF2DOptimizer<NodeType, DataType, RealType>
 {
 public:
+    typedef MRF2DOptimizer<NodeType, DataType, RealType> BaseType;
+
+    typedef typename BaseType::NodePossibleLabels NodePossibleLabels;
     typedef boost::uniform_real<RealType> RealDistribution;
     typedef boost::variate_generator<boost::mt19937, RealDistribution> Generator;
 
     MD2D(NodePossibleLabels* possible_values, RealType temp, RealType temp_delta,
-         bool is_modified, RealType mmd_probability):
-        MRF2DOptimizer(possible_values), t_(temp), t_delta_(temp_delta),
+         bool is_modified, RealType mmd_probability)
+        : BaseType(possible_values), t_(temp), t_delta_(temp_delta),
         is_modified_(is_modified), mmd_log_probab_(std::log(mmd_probability)),
         rng_(boost::mt19937(static_cast<boost::uint32_t>(std::time(NULL))), RealDistribution(0, 1))
     { }
@@ -170,7 +177,7 @@ public:
             for (std::size_t row = 0; row < mrf.height(); ++row) {
                 // Randomly generate a new state for the current pixel.
                 NodeType old_value = mrf(col, row);
-                NodeType new_value = values_->random();
+                NodeType new_value = this->values_->random();
 
                 // if classical version is used, generate the decision probability.
                 if (!is_modified_)
@@ -187,11 +194,11 @@ public:
     }
 
 private:
-    Generator rng_;
     RealType t_;
     RealType t_delta_;
     bool is_modified_;
     RealType mmd_log_probab_;
+    Generator rng_;
 };
 
 } // namespace mrf

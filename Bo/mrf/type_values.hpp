@@ -106,11 +106,11 @@ template <typename NodeType>
 struct RealFiniteSetValues: public FiniteSetValues<NodeType>
 {
     // Constructs a set of possible values.
-    RealFiniteSetValues(std::size_t classes_count): FiniteSetValues(classes_count)
+    RealFiniteSetValues(std::size_t classes_count): FiniteSetValues<NodeType>(classes_count)
     {
         NodeType maxval = static_cast<NodeType>(classes_count - 1);
         while (classes_count-- > 0)
-            values_.push_back(static_cast<NodeType>(classes_count) / maxval);
+            this->values_.push_back(static_cast<NodeType>(classes_count) / maxval);
     }
 
     virtual ~RealFiniteSetValues()
@@ -130,30 +130,29 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
     typedef typename std::vector<GammaParamsPair> GammaParams;
 
     // Constructs a set of possible values with default parameters.
-    GammaDistrClassesValues(std::size_t classes_count): FiniteSetValues(classes_count)
+    GammaDistrClassesValues(std::size_t classes_count): FiniteSetValues<NodeType>(classes_count)
     {
         while (classes_count-- > 0)
         {
             ClassParamsPtr class_params(new ClassParams(classes_count));
-            values_.push_back(NodeType(class_params));
+            this->values_.push_back(NodeType(class_params));
         }
-
     }
 
     // Constructs a set of possible values from a collection of Gamma distribution
     // parameters (k, theta).
-    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues(gamma_params.size())
+    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues<NodeType>(gamma_params.size())
     {
         std::size_t classes_count = gamma_params.size();
-        for (GammaParams::const_iterator it = gamma_params.begin();
+        for (typename GammaParams::const_iterator it = gamma_params.begin();
              it != gamma_params.end(); ++it)
         {
             --classes_count;
-            RealType k = it->get<0>();
-            RealType theta = it->get<1>();
+            RealType k = it->template get<0>();
+            RealType theta = it->template get<1>();
             RealType a = NodeType::compute_a(k, theta);
             ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
-            values_.push_back(NodeType(class_params));
+            this->values_.push_back(NodeType(class_params));
         }
     }
 
