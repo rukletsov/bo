@@ -47,7 +47,6 @@ template <typename P>
 class ParametricNodeType: boost::equality_comparable1<ParametricNodeType<P> >
 {
 public:
-    typedef P ClassParams;
     typedef boost::shared_ptr<P> ClassParamsPtr;
 
     ParametricNodeType(ClassParamsPtr class_params): class_params_(class_params)
@@ -71,30 +70,37 @@ protected:
 // class label and a set of Gamma distribution parameters (k, theta, a), where
 // a = ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
 template <typename RealType>
-class GammaDistrClasses: public ParametricNodeType<boost::tuples::tuple<int, RealType, RealType, RealType> >
+class GammaDistrClasses: public ParametricNodeType<boost::tuples::tuple<int, RealType,
+                                                   RealType, RealType> >
 {
 public:
+    typedef GammaDistrClasses<RealType> SelfType;
+
+    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
+    typedef ParametricNodeType<ClassParams>BaseType;
+
+    typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
     typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
 
 public:
-    GammaDistrClasses(ClassParamsPtr class_params): ParametricNodeType(class_params)
+    GammaDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
     { }
 
     static GammaDistrClasses CreateInstance(int idx, RealType k, RealType theta)
-    { return (GammaDistrClasses(ClassParamsPtr(new ClassParams(idx, k, theta, compute_a(k, theta))))); }
+    { return (SelfType(ClassParamsPtr(new ClassParams(idx, k, theta, compute_a(k, theta))))); }
 
     // Accessors for class label and class parameters.
     int label() const
-    { return class_params_->get<0>(); }
+    { return this->class_params_->template get<0>(); }
 
     RealType k() const
-    { return class_params_->get<1>(); }
+    { return this->class_params_->template get<1>(); }
 
     RealType theta() const
-    { return class_params_->get<2>(); }
+    { return this->class_params_->template get<2>(); }
 
     RealType a() const
-    { return class_params_->get<3>(); }
+    { return this->class_params_->template get<3>(); }
 
     RealType mean() const
     { return (k() * theta()); }

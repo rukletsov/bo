@@ -1,7 +1,7 @@
 
 /******************************************************************************
 
-  Helper types used in surface reconstruction routines.
+  Helper types related to the inertial component of the complex propagation.
 
   Copyright (c) 2013
   Alexander Rukletsov <rukletsov@gmail.com>
@@ -30,63 +30,54 @@
 
 *******************************************************************************/
 
-#ifndef TYPES_HPP_5156559C_A5CD_11E2_B215_221212C84021
-#define TYPES_HPP_5156559C_A5CD_11E2_B215_221212C84021
+#ifndef INERTIAL_PROPAGATION_HPP_FEAC7E0E_EA26_11E2_94AD_DD539A890B3C
+#define INERTIAL_PROPAGATION_HPP_FEAC7E0E_EA26_11E2_94AD_DD539A890B3C
 
-#include <vector>
+#include <boost/shared_ptr.hpp>
 
 #include "bo/core/vector.hpp"
-#include "bo/math/pca.hpp"
-#include "bo/math/mean.hpp"
 
 namespace bo {
 namespace surfaces {
 namespace detail {
 
-// Represents a point cloud located inside a thin disk. Though the disk can be
-// represented by a median plane, slight deviations from it may exist.
+// Standard inertial propagation that uses provided point as a previous one.
 template <typename RealType>
-class PointsDisk3D
+class InertialPropagation
 {
 public:
+    typedef InertialPropagation<RealType> SelfType;
+    typedef boost::shared_ptr<SelfType> Ptr;
     typedef Vector<RealType, 3> Point3D;
-    typedef std::vector<Point3D> PlaneData;
 
-    PointsDisk3D(const PlaneData& data): data_(data)
+    InertialPropagation(RealType weight): weight_(weight)
+    { }
+
+    virtual Point3D get(const Point3D& current, const Point3D& previous) const
     {
-        // Compute plane origin.
-        origin_ = bo::math::mean(data_);
+        Point3D inertial = current - previous;
 
-        // Employ PCA to estimate plane normal.
-        typedef math::PCA<RealType, 3> PCAEngine;
-        PCAEngine pca;
-        typename PCAEngine::Result result = pca(data_);
-        normal_ = result.template get<1>()[0];
+        // TODO: remove this by redesigning the algorithm and requiring inertial
+        // vector to be non-zero.
+        Point3D inertial_normalized(0);
+        try
+        {
+            // TODO: remove this block by refactoring bo::Vector class.
+            // Normalize vector.
+            inertial_normalized.assign(inertial.normalized(), 3);
+        }
+        catch (...)
+        { }
+
+        return weight_ * inertial_normalized;
     }
 
-    const PlaneData& data() const
-    {
-        return data_;
-    }
-
-    Point3D origin() const
-    {
-        return origin_;
-    }
-
-    Point3D normal() const
-    {
-        return normal_;
-    }
-
-private:
-    PlaneData data_;
-    Point3D origin_;
-    Point3D normal_;
+protected:
+    RealType weight_;
 };
 
 } // namespace detail
 } // namespace surfaces
 } // namespace bo
 
-#endif // TYPES_HPP_5156559C_A5CD_11E2_B215_221212C84021
+#endif // INERTIAL_PROPAGATION_HPP_FEAC7E0E_EA26_11E2_94AD_DD539A890B3C

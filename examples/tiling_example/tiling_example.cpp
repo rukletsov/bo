@@ -10,7 +10,7 @@
 #include <boost/chrono.hpp>
 
 #include "bo/config.hpp"
-#include "bo/surfaces/complex_propagation.hpp"
+#include "bo/surfaces/complex_propagator.hpp"
 #include "bo/surfaces/triangulation.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
@@ -20,7 +20,7 @@ using namespace bo::surfaces;
 using namespace bo::io;
 
 typedef bo::Mesh<float> FloatMesh;
-typedef ComplexPropagation<float> Propagator;
+typedef ComplexPropagator<float> Propagator;
 typedef Triangulation<float> Triangulator;
 
 // Directory where test data is stored.
@@ -94,7 +94,7 @@ void PropagateClosed()
             3.f, 10.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlyClosedOutPath.string());
 }
 
@@ -107,7 +107,7 @@ void PropagateFemur01()
             3.f, 7.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlyFemurOutPath01.string());
 }
 
@@ -120,7 +120,7 @@ void PropagateSheep()
             5.f, 10.f, 0.3f, 0.4f, 20.f);
     contour_descriptor_ptr->propagate();
 
-    FloatMesh mesh = FloatMesh::from_vertices(contour_descriptor_ptr->contour().get());
+    FloatMesh mesh = FloatMesh::from_vertices(*(contour_descriptor_ptr->contour()));
     mesh_to_ply(mesh, paths.PlySheepOutPath.string());
 }
 
@@ -242,7 +242,7 @@ void ChrisitiansenSheepFull()
     typedef boost::chrono::steady_clock BoostTimer;
     BoostTimer::time_point start = BoostTimer::now();
 
-    // 1. Prepare propagators for all slices. Use no neighbouring information.
+//    // 1. Prepare propagators for all slices. Use no neighbouring information.
 //    Propagator::Ptrs contour_descriptors = Propagator::create(planes_data,
 //            2.f, 5.f, 0.3f, 0.4f, 15.f);
 

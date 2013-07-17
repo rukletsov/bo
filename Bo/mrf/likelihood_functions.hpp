@@ -42,7 +42,7 @@ namespace mrf {
 template <typename NodeType, typename DataType, typename RealType>
 struct GenericLikelihood
 {
-    GenericLikelihood(RealType response_weight): multiplier(response_weight)
+    GenericLikelihood(RealType response_weight): multiplier_(response_weight)
     { }
 
     virtual RealType operator()(DataType observ_val, NodeType configur_val) const = 0;
@@ -52,20 +52,22 @@ struct GenericLikelihood
 
 protected:
     // Weighting coefficient for the function response.
-    RealType multiplier;
+    RealType multiplier_;
 };
 
 // Minus operator for NodeType should accept DataType as a parameter and return RealType.
 template <typename NodeType, typename DataType, typename RealType>
 struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 {
-    GaussianLikelihood(RealType response_weight): GenericLikelihood(response_weight)
+    typedef GenericLikelihood<NodeType, DataType, RealType> BaseType;
+
+    GaussianLikelihood(RealType response_weight): BaseType(response_weight)
     { }
 
     RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
-            multiplier * math::square(configur_val - observ_val);
+            this->multiplier_ * math::square(configur_val - observ_val);
     }
 };
 
@@ -76,13 +78,15 @@ struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType
 template <typename NodeType, typename DataType, typename RealType>
 struct GammaLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 {
-    GammaLikelihood(RealType response_weight): GenericLikelihood(response_weight)
+    typedef GenericLikelihood<NodeType, DataType, RealType> BaseType;
+
+    GammaLikelihood(RealType response_weight): BaseType(response_weight)
     { }
 
     RealType operator()(DataType observ_val, NodeType configur_val) const
     {
         return
-            multiplier * ((1 - configur_val.k()) * std::log(observ_val) +
+            this->multiplier_ * ((1 - configur_val.k()) * std::log(observ_val) +
                           observ_val / configur_val.theta() + configur_val.a());
     }
 };

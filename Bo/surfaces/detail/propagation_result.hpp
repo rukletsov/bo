@@ -1,9 +1,9 @@
 
 /******************************************************************************
 
-  Extension of the standard <cmath> header.
+  Helper intermediate type used for storing propagated contours.
 
-  Copyright (c) 2011 - 2013
+  Copyright (c) 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -30,49 +30,38 @@
 
 *******************************************************************************/
 
-#ifndef FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C
-#define FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C
+#ifndef PROPAGATION_RESULT_HPP_44E2EB0A_EA2D_11E2_9542_AB62D8EF6274
+#define PROPAGATION_RESULT_HPP_44E2EB0A_EA2D_11E2_9542_AB62D8EF6274
 
-#include <cmath>
+#include <vector>
+
+#include "bo/core/vector.hpp"
 
 namespace bo {
-namespace math {
+namespace surfaces {
+namespace detail {
 
-template <typename T> inline
-T square(const T& arg)
+template <typename RealType>
+struct PropagationResult
 {
-    return (arg * arg);
-}
+    typedef Vector<RealType, 3> Point3D;
+    typedef std::vector<Point3D> PropagatedContour;
 
-template <typename T> inline
-T cube(const T& arg)
-{
-    return (arg * arg * arg);
-}
+    PropagationResult(): Aborted(false), HasHole(false)
+    { }
 
-template <typename RealType> inline
-bool check_small(const RealType& arg, const RealType& EPSILON = 1e-6f)
-{
-    return (arg < EPSILON) && (arg > -EPSILON);
-}
+    PropagationResult(bool maxsize_reached, bool hole_encountered, PropagatedContour pts):
+        Aborted(maxsize_reached), HasHole(hole_encountered), Points(pts)
+    { }
 
-// Returns "2 ln(cosh(t))".
-template <typename RealType> inline
-RealType fi_gr(RealType value)
-{
-    return
-        RealType(2) * std::log(std::exp(value) + std::exp(RealType(0) - value) / RealType(2));
-}
+    bool Aborted;
+    bool HasHole;
+    PropagatedContour Points;
+};
 
-// Returns "(t^2) / (1+t^2)".
-template <typename RealType> inline
-RealType fi_gm(RealType value)
-{
-    return
-        (value * value) / (RealType(1) + value * value);
-}
-
-} // namespace math
+} // namespace detail
+} // namespace surfaces
 } // namespace bo
 
-#endif // FUNCTIONS_HPP_AE638ADC_E4B3_11E2_9372_D8129A890B3C
+#endif // PROPAGATION_RESULT_HPP_44E2EB0A_EA2D_11E2_9542_AB62D8EF6274
+
