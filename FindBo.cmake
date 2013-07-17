@@ -14,7 +14,10 @@
 # Example Usage:
 #
 #    # Don't forget to provide CMake with the path to this file.
+#    # For example, if you put this file into <your_project_root>/cmake-modules,
+#    # the following command will make it visible to CMake.
 #    SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
+#
 #    FIND_PACKAGE (Bo REQUIRED)
 #    INCLUDE_DIRECTORIES (${Bo_INCLUDE_DIRS})
 #
