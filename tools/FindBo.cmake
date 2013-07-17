@@ -30,7 +30,7 @@
 FUNCTION (FindBoLibrary libvar libname)
     FIND_LIBRARY (${libvar}
         NAMES ${libname} 
-        HINTS $ENV{BO_ROOT}
+        HINTS $ENV{BO_ROOT} ${Bo_INCLUDE_DIR}
         PATH_SUFFIXES lib bin
     )
 
