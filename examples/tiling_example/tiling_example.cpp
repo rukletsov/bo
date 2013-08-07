@@ -87,7 +87,7 @@ void AssertPathExists(const path& filepath)
 void PropagateClosed()
 {
     AssertPathExists(paths.RawClosedPath);
-    Propagator::Image2D test_image = load_raw_image_8bpps<float>(
+    Propagator::Image2D test_image = load_raw_image_8bpp<float>(
                 paths.RawClosedPath.string(), 512, 512);
 
     Propagator::Ptr contour_descriptor_ptr = Propagator::from_raw_image(test_image,

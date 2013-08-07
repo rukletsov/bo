@@ -85,9 +85,9 @@ void save_raw_image_to_8bpps(bo::RawImage2D<RealType> image,
 
 // Loads normalized RawImage2D<RealType> from a raw file (8 bytes per pixel, row by row).
 template <typename RealType>
-bo::RawImage2D<RealType> load_raw_image_8bpps(const std::string& filename,
-                                              std::size_t width,
-                                              std::size_t height)
+bo::RawImage2D<RealType> load_raw_image_8bpp(const std::string& filename,
+                                             std::size_t width,
+                                             std::size_t height)
 {
     // Allocate empty image of requested size.
     bo::RawImage2D<RealType> image(width, height);
