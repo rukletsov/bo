@@ -47,6 +47,7 @@
 #include <limits>
 #include <string>
 #include <fstream>
+#include <utility>
 #include <boost/cstdint.hpp>
 
 #include "bo/core/raw_image_2d.hpp"
@@ -94,8 +95,43 @@ bo::RawImage2D<RealType> load_raw_image_8bpps(const std::string& filename,
     std::ifstream fs(filename.c_str(), std::fstream::in | std::fstream::binary);
     for (std::size_t row = 0; row < height; ++row)
         for (std::size_t col = 0; col < width; ++col)
-            image(col, row) = RealType(boost::uint8_t(fs.get() /
-                                       std::numeric_limits<boost::uint8_t>::max()));
+            image(col, row) = RealType(fs.get()) /
+                    std::numeric_limits<boost::uint8_t>::max();
+
+    return image;
+}
+
+// Loads RawImage2D<RealType> from a 16-bit raw file row by row.
+template <typename RealType>
+bo::RawImage2D<RealType> load_raw_image_16bpp(const std::string& filename,
+                                              std::size_t width,
+                                              std::size_t height,
+                                              bool little_endian)
+{
+    // Allocate empty image of requested size.
+    bo::RawImage2D<RealType> image(width, height);
+
+    // Open raw image as a binary stream.
+    std::ifstream fs(filename.c_str(), std::fstream::in | std::fstream::binary);
+
+    // Perform stream read and conversions.
+    for (std::size_t row = 0; row < height; ++row)
+    {
+        for (std::size_t col = 0; col < width; ++col)
+        {
+            boost::uint16_t first_byte = fs.get();
+            boost::uint16_t second_byte = fs.get();
+
+            // If data is little-endian, bytes should be swapped.
+            if (little_endian)
+                std::swap(first_byte, second_byte);
+
+            boost::uint16_t pixel_value = (first_byte << 8) | second_byte;
+            RealType pixel_value_converted = RealType(pixel_value) /
+                    std::numeric_limits<boost::uint16_t>::max();
+            image(col, row) = pixel_value_converted;
+        }
+    }
 
     return image;
 }
