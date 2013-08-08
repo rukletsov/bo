@@ -38,9 +38,12 @@
 #include <algorithm>
 #include <stdexcept>
 #include <utility>
+#include <functional>
 #include <boost/shared_ptr.hpp>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+
+#include "bo/math/functions.hpp"
 
 namespace bo {
 
@@ -97,6 +100,13 @@ public:
     // Safer, but less efficient alternative of opeartor().
     const_reference at(std::size_t col, std::size_t row) const;
     reference at(std::size_t col, std::size_t row);
+
+    // Simple aggregation functions.
+    ValType min_element() const;
+    ValType max_element() const;
+
+    // Normalizes image to [0..1] through dividing every element by the maximum value.
+    void normalize();
 
     // Returns raw pointer for direct access to image data. However is_null() method
     // should be used for checking if image's pixel data is accessible.
@@ -213,6 +223,36 @@ typename RawImage2D<ValType>::reference RawImage2D<ValType>::at(
 {
     check_range(col, row);
     return (*image_)[col + width_ * row];
+}
+
+template <typename ValType>
+ValType RawImage2D<ValType>::min_element() const
+{
+    return (*std::min_element(image_->begin(), image_->end()));
+}
+
+template <typename ValType>
+ValType RawImage2D<ValType>::max_element() const
+{
+    return (*std::max_element(image_->begin(), image_->end()));
+}
+
+template <typename ValType>
+void RawImage2D<ValType>::normalize()
+{
+    ValType max_val = max_element();
+
+    if (false == bo::math::check_small(max_val))
+    {
+        // Multiplication should be faster than division.
+        ValType norm_factor = ValType(1) / max_val;
+        std::transform(image_->begin(), image_->end(), image_->begin(),
+                std::bind2nd(std::multiplies<ValType>(), norm_factor));
+    }
+    else
+    {
+        throw std::logic_error("Normalization of the reset image is meaningless.");
+    }
 }
 
 template <typename ValType> inline

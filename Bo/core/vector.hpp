@@ -145,7 +145,7 @@ public:
     // See below for operator* (dot product), defined outside the class.
     // See below for operator<<, defined outside the class.
 
-    // Simple aggregation functions. 
+    // Simple aggregation functions.
     T min_element() const;
     T max_element() const;
     T sum() const;
