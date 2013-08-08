@@ -35,10 +35,12 @@
 
 #include <algorithm>
 #include <limits>
+#include <functional>
 #include <boost/cstdint.hpp>
 #include <boost/function.hpp>
 
 #include "bo/core/raw_image_2d.hpp"
+#include "bo/math/functions.hpp"
 
 namespace bo {
 
@@ -140,6 +142,38 @@ RawImage2D<T> threshold(const RawImage2D<T>& image, const T& threshold,
                    detail::threshold_value<T>(threshold, substitution, comp));
 
     return thresholded;
+}
+
+// Simple aggregation functions.
+template <typename T>
+T min_element(const RawImage2D<T>& image)
+{
+    return (*std::min_element(image.data(), image.data() + image.size()));
+}
+
+template <typename T>
+T max_element(const RawImage2D<T>& image)
+{
+    return (*std::max_element(image.data(), image.data() + image.size()));
+}
+
+// Normalizes image to [0..1] through dividing every element by the maximum value.
+template <typename T>
+void normalize(RawImage2D<T>& image)
+{
+    T max_val = max_element(image);
+
+    if (false == bo::math::check_small(max_val))
+    {
+        // Multiplication should be faster than division.
+        T norm_factor = T(1) / max_val;
+        std::transform(image.data(), image.data() + image.size(), image.data(),
+                std::bind2nd(std::multiplies<T>(), norm_factor));
+    }
+    else
+    {
+        throw std::logic_error("Normalization of the reset image is meaningless.");
+    }
 }
 
 } // namespace bo
