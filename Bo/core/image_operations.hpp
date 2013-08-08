@@ -93,6 +93,26 @@ struct threshold_value: public std::unary_function<ValType, ValType>
     ComparisonOperation comp_;
 };
 
+// Helpers for normalization. By default all possible values of T are used. For real
+// images (float, double) normalization is done in [0..1]
+template <typename T> inline
+T get_normalization_multiple(T max_val)
+{
+    return (std::numeric_limits<T>::max() / max_val);
+}
+
+template <> inline
+float get_normalization_multiple<float>(float max_val)
+{
+    return (1.f / max_val);
+}
+
+template <> inline
+double get_normalization_multiple<double>(double max_val)
+{
+    return (1. / max_val);
+}
+
 } // namespace detail
 
 
@@ -157,7 +177,7 @@ T max_element(const RawImage2D<T>& image)
     return (*std::max_element(image.data(), image.data() + image.size()));
 }
 
-// Normalizes image to [0..1] through dividing every element by the maximum value.
+// Normalizes image to [0..max{T}] or to [0..1] depending on type of T.
 template <typename T>
 void normalize(RawImage2D<T>& image)
 {
@@ -166,7 +186,7 @@ void normalize(RawImage2D<T>& image)
     if (false == bo::math::check_small(max_val))
     {
         // Multiplication should be faster than division.
-        T norm_factor = T(1) / max_val;
+        T norm_factor = detail::get_normalization_multiple(max_val);
         std::transform(image.data(), image.data() + image.size(), image.data(),
                 std::bind2nd(std::multiplies<T>(), norm_factor));
     }
