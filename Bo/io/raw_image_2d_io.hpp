@@ -83,33 +83,30 @@ void save_raw_image_to_8bpps(bo::RawImage2D<RealType> image,
                                  std::numeric_limits<boost::uint8_t>::max());
 }
 
-// Loads normalized RawImage2D<RealType> from a raw file (8 bytes per pixel, row by row).
-template <typename RealType>
-bo::RawImage2D<RealType> load_raw_image_8bpp(const std::string& filename,
-                                             std::size_t width,
-                                             std::size_t height)
+// Loads an image from a raw file (8 bytes per pixel, row by row).
+bo::RawImage2D<boost::uint8_t> load_raw_image_8bpp(const std::string& filename,
+                                                   std::size_t width,
+                                                   std::size_t height)
 {
     // Allocate empty image of requested size.
-    bo::RawImage2D<RealType> image(width, height);
+    bo::RawImage2D<boost::uint8_t> image(width, height);
 
     std::ifstream fs(filename.c_str(), std::fstream::in | std::fstream::binary);
     for (std::size_t row = 0; row < height; ++row)
         for (std::size_t col = 0; col < width; ++col)
-            image(col, row) = RealType(fs.get()) /
-                    std::numeric_limits<boost::uint8_t>::max();
+            image(col, row) = static_cast<boost::uint8_t>(fs.get());
 
     return image;
 }
 
-// Loads RawImage2D<RealType> from a 16-bit raw file row by row.
-template <typename RealType>
-bo::RawImage2D<RealType> load_raw_image_16bpp(const std::string& filename,
-                                              std::size_t width,
-                                              std::size_t height,
-                                              bool little_endian)
+// Loads an image from a 16-bit raw file row by row.
+bo::RawImage2D<boost::uint16_t> load_raw_image_16bpp(const std::string& filename,
+                                                     std::size_t width,
+                                                     std::size_t height,
+                                                     bool little_endian)
 {
     // Allocate empty image of requested size.
-    bo::RawImage2D<RealType> image(width, height);
+    bo::RawImage2D<boost::uint16_t> image(width, height);
 
     // Open raw image as a binary stream.
     std::ifstream fs(filename.c_str(), std::fstream::in | std::fstream::binary);
@@ -126,10 +123,7 @@ bo::RawImage2D<RealType> load_raw_image_16bpp(const std::string& filename,
             if (little_endian)
                 std::swap(first_byte, second_byte);
 
-            boost::uint16_t pixel_value = (first_byte << 8) | second_byte;
-            RealType pixel_value_converted = RealType(pixel_value) /
-                    std::numeric_limits<boost::uint16_t>::max();
-            image(col, row) = pixel_value_converted;
+            image(col, row) = (first_byte << 8) | second_byte;
         }
     }
 

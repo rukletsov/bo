@@ -12,6 +12,7 @@
 #include "bo/config.hpp"
 #include "bo/surfaces/complex_propagator.hpp"
 #include "bo/surfaces/triangulation.hpp"
+#include "bo/core/image_operations.hpp"
 #include "bo/io/raw_image_2d_io.hpp"
 #include "bo/io/mesh_io.hpp"
 
@@ -87,8 +88,8 @@ void AssertPathExists(const path& filepath)
 void PropagateClosed()
 {
     AssertPathExists(paths.RawClosedPath);
-    Propagator::Image2D test_image = load_raw_image_8bpp<float>(
-                paths.RawClosedPath.string(), 512, 512);
+    Propagator::Image2D test_image = bo::convert_image<boost::uint8_t, float>(
+            load_raw_image_8bpp(paths.RawClosedPath.string(), 512, 512));
 
     Propagator::Ptr contour_descriptor_ptr = Propagator::from_raw_image(test_image,
             3.f, 10.f, 0.3f, 0.4f, 20.f);
