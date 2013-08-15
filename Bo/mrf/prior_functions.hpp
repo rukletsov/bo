@@ -3,7 +3,7 @@
 
   Various prior energy functions for MRF models.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -30,8 +30,8 @@
 
 *******************************************************************************/
 
-#ifndef PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_
-#define PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_
+#ifndef PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299
+#define PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299
 
 #include "bo/math/functions.hpp"
 
@@ -67,7 +67,7 @@ struct SmoothnessPrior: public GenericPrior<NodeType, RealType>
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return this->multiplier_ * math::square(arg1 - arg2) / RealType(2);
+        return this->multiplier_ * math::square(arg1 - arg2) * RealType(0.5);
     }
 
     virtual ~SmoothnessPrior()
@@ -114,7 +114,7 @@ struct MeanSmoothnessPrior: public GenericPrior<NodeType, RealType>
 
     virtual RealType operator()(NodeType arg1, NodeType arg2) const
     {
-        return this->multiplier_ * math::square(arg1.mean() - arg2.mean()) / RealType(2);
+        return this->multiplier_ * math::square(arg1.mean() - arg2.mean()) * RealType(0.5);
     }
 
     virtual ~MeanSmoothnessPrior()
@@ -124,4 +124,4 @@ struct MeanSmoothnessPrior: public GenericPrior<NodeType, RealType>
 } // namespace mrf
 } // namespace bo
 
-#endif // PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299_
+#endif // PRIOR_FUNCTIONS_HPP_9920258C_F29D_4179_93C1_49ED114BC299
