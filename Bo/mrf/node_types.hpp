@@ -144,6 +144,13 @@ public:
 };
 
 template <typename T>
+std::ostream& operator<<(std::ostream& os, const GaussDistrClasses<T>& obj)
+{
+    os << obj.label() << " (mu: " << obj.mu() << ", sigma: " << obj.sigma() << ")";
+    return os;
+}
+
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const GammaDistrClasses<T>& obj)
 {
     os << obj.label() << " (k: " << obj.k() << ", theta: " << obj.theta() << ")";
