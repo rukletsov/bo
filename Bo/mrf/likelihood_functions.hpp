@@ -71,9 +71,29 @@ struct GaussSimpleLikelihood: public GenericLikelihood<NodeType, DataType, RealT
     }
 };
 
+// NodeType should provide accessors to the parameters of Gauss distribution for the
+// corresponding configuration value (class label). This includes .mu() and .sigma()
+// for mean and standard deviation respectively and .a() for an additional precomputed
+// item, depending only on sigma: ln(sigma sqrt(2 pi)).
+template <typename NodeType, typename DataType, typename RealType>
+struct GaussLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
+{
+    typedef GenericLikelihood<NodeType, DataType, RealType> BaseType;
+
+    GaussLikelihood(RealType response_weight): BaseType(response_weight)
+    { }
+
+    RealType operator()(DataType observ_val, NodeType configur_val) const
+    {
+        return
+            this->multiplier_ * (RealType(0.5) * math::square(configur_val.mean() - observ_val)
+                    / configur_val.sigma() + configur_val.a());
+    }
+};
+
 // NodeType should provide accessors to the parameters of Gamma distribution for the
 // corresponding configuration value (class label). This includes .k() and .theta()
-// for shape and scale respectively and .a() for the additional item, depending
+// for shape and scale respectively and .a() for an additional item, depending
 // only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
 template <typename NodeType, typename DataType, typename RealType>
 struct GammaLikelihood: public GenericLikelihood<NodeType, DataType, RealType>

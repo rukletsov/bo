@@ -66,8 +66,8 @@ protected:
 };
 
 // A class representing a value (class label) with associated Gauss distribution
-// parameters. Parameters structure is represented as a tuple with 3 elements:
-// class label, mean, and standard deviation.
+// parameters. Parameters structure is represented as a tuple with 4 elements:
+// class label, mean, standard deviation, and additional item a = ln(sigma * sqrt(2 pi)).
 template <typename RealType>
 class GaussDistrClasses: public ParametricNodeType<
         boost::tuples::tuple<int, RealType, RealType> >
@@ -75,7 +75,7 @@ class GaussDistrClasses: public ParametricNodeType<
 public:
     typedef GaussDistrClasses<RealType> SelfType;
 
-    typedef boost::tuples::tuple<int, RealType, RealType> ClassParams;
+    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
     typedef ParametricNodeType<ClassParams> BaseType;
 
     typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
@@ -86,7 +86,7 @@ public:
     { }
 
     static GaussDistrClasses CreateInstance(int idx, RealType mu, RealType sigma)
-    { return (SelfType(ClassParamsPtr(new ClassParams(idx, mu, sigma)))); }
+    { return (SelfType(ClassParamsPtr(new ClassParams(idx, mu, sigma, compute_a(sigma))))); }
 
     // Accessors for class label and class parameters.
     int label() const
@@ -97,6 +97,12 @@ public:
 
     RealType sigma() const
     { return this->class_params_->template get<2>(); }
+
+    RealType a() const
+    { return this->class_params_->template get<3>(); }
+
+    static RealType compute_a(RealType sigma)
+    { return (std::log(sigma * RealType(2.5))); }
 };
 
 // A class representing a value (class label) with associated Gamma distribution

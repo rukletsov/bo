@@ -137,7 +137,7 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
         while (classes_count-- > 0)
         {
             ClassParamsPtr class_params(new ClassParams(classes_count,
-                    RealType(classes_count) / maxval, RealType(1)));
+                    RealType(classes_count) / maxval, RealType(1), NodeType::compute_a(1)));
             this->values_.push_back(NodeType(class_params));
         }
     }
@@ -153,7 +153,8 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
             --classes_count;
             RealType mu = it->template get<0>();
             RealType sigma = it->template get<1>();
-            ClassParamsPtr class_params(new ClassParams(classes_count, mu, sigma));
+            RealType a = NodeType::compute_a(sigma);
+            ClassParamsPtr class_params(new ClassParams(classes_count, mu, sigma, a));
             this->values_.push_back(NodeType(class_params));
         }
     }
