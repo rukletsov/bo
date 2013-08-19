@@ -158,7 +158,7 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
         }
     }
 
-    virtual ~GammaDistrClassesValues()
+    virtual ~GaussDistrClassesValues()
     { }
 };
 
