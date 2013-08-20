@@ -72,7 +72,7 @@ struct GaussSimpleLikelihood: public GenericLikelihood<NodeType, DataType, RealT
 };
 
 // NodeType should provide accessors to the parameters of Gauss distribution for the
-// corresponding configuration value (class label). This includes .mu() and .sigma()
+// corresponding configuration value (class label). This includes .mean() and .sigma()
 // for mean and standard deviation respectively and .a() for an additional precomputed
 // item, depending only on sigma: ln(sigma sqrt(2 pi)).
 template <typename NodeType, typename DataType, typename RealType>

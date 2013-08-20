@@ -84,14 +84,14 @@ public:
     GaussDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
     { }
 
-    static GaussDistrClasses CreateInstance(int idx, RealType mu, RealType sigma)
-    { return (SelfType(boost::make_shared<ClassParams>(idx, mu, sigma, compute_a(sigma)))); }
+    static GaussDistrClasses CreateInstance(int idx, RealType mean, RealType sigma)
+    { return (SelfType(boost::make_shared<ClassParams>(idx, mean, sigma, compute_a(sigma)))); }
 
     // Accessors for class label and class parameters.
     int label() const
     { return this->class_params_->template get<0>(); }
 
-    RealType mu() const
+    RealType mean() const
     { return this->class_params_->template get<1>(); }
 
     RealType sigma() const
@@ -150,7 +150,7 @@ public:
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const GaussDistrClasses<T>& obj)
 {
-    os << obj.label() << " (mu: " << obj.mu() << ", sigma: " << obj.sigma() << ")";
+    os << obj.label() << " (mean: " << obj.mean() << ", sigma: " << obj.sigma() << ")";
     return os;
 }
 

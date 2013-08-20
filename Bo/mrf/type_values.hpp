@@ -137,15 +137,15 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
         std::size_t maxval = classes_count - 1;
         while (classes_count-- > 0)
         {
-            RealType mu = RealType(classes_count) / maxval;
+            RealType mean = RealType(classes_count) / maxval;
             RealType sigma = RealType(1);
-            NodeType instance = NodeType::CreateInstance(classes_count, mu, sigma);
+            NodeType instance = NodeType::CreateInstance(classes_count, mean, sigma);
             this->values_.push_back(instance);
         }
     }
 
     // Constructs a set of possible values from a collection of Gauss distribution
-    // parameters (mu, sigma).
+    // parameters (mean, sigma).
     GaussDistrClassesValues(const GaussParams& gauss_params):
             FiniteSetValues<NodeType>(gauss_params.size())
     {
@@ -154,9 +154,9 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
              it != gauss_params.end(); ++it)
         {
             --classes_count;
-            RealType mu = it->template get<0>();
+            RealType mean = it->template get<0>();
             RealType sigma = it->template get<1>();
-            NodeType instance = NodeType::CreateInstance(classes_count, mu, sigma);
+            NodeType instance = NodeType::CreateInstance(classes_count, mean, sigma);
             this->values_.push_back(instance);
         }
     }
