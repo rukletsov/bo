@@ -136,9 +136,10 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
         std::size_t maxval = classes_count - 1;
         while (classes_count-- > 0)
         {
-            ClassParamsPtr class_params(new ClassParams(classes_count,
-                    RealType(classes_count) / maxval, RealType(1), NodeType::compute_a(1)));
-            this->values_.push_back(NodeType(class_params));
+            RealType mu = RealType(classes_count) / maxval;
+            RealType sigma = RealType(1);
+            NodeType instance = NodeType::CreateInstance(classes_count, mu, sigma);
+            this->values_.push_back(instance);
         }
     }
 
@@ -153,9 +154,8 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
             --classes_count;
             RealType mu = it->template get<0>();
             RealType sigma = it->template get<1>();
-            RealType a = NodeType::compute_a(sigma);
-            ClassParamsPtr class_params(new ClassParams(classes_count, mu, sigma, a));
-            this->values_.push_back(NodeType(class_params));
+            NodeType instance = NodeType::CreateInstance(classes_count, mu, sigma);
+            this->values_.push_back(instance);
         }
     }
 
@@ -175,16 +175,6 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
     typedef typename NodeType::GammaParamsPair GammaParamsPair;
     typedef typename std::vector<GammaParamsPair> GammaParams;
 
-    // Constructs a set of possible values with default parameters.
-    GammaDistrClassesValues(std::size_t classes_count): FiniteSetValues<NodeType>(classes_count)
-    {
-        while (classes_count-- > 0)
-        {
-            ClassParamsPtr class_params(new ClassParams(classes_count));
-            this->values_.push_back(NodeType(class_params));
-        }
-    }
-
     // Constructs a set of possible values from a collection of Gamma distribution
     // parameters (k, theta).
     GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues<NodeType>(gamma_params.size())
@@ -196,9 +186,8 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
             --classes_count;
             RealType k = it->template get<0>();
             RealType theta = it->template get<1>();
-            RealType a = NodeType::compute_a(k, theta);
-            ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
-            this->values_.push_back(NodeType(class_params));
+            NodeType instance = NodeType::CreateInstance(classes_count, k, theta);
+            this->values_.push_back(instance);
         }
     }
 
