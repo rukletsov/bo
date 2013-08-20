@@ -38,6 +38,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/operators.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
 namespace bo {
@@ -86,7 +87,7 @@ public:
     { }
 
     static GaussDistrClasses CreateInstance(int idx, RealType mu, RealType sigma)
-    { return (SelfType(ClassParamsPtr(new ClassParams(idx, mu, sigma, compute_a(sigma))))); }
+    { return (SelfType(boost::make_shared<ClassParams>(idx, mu, sigma, compute_a(sigma)))); }
 
     // Accessors for class label and class parameters.
     int label() const
@@ -127,7 +128,7 @@ public:
     { }
 
     static GammaDistrClasses CreateInstance(int idx, RealType k, RealType theta)
-    { return (SelfType(ClassParamsPtr(new ClassParams(idx, k, theta, compute_a(k, theta))))); }
+    { return (SelfType(boost::make_shared<ClassParams>(idx, k, theta, compute_a(k, theta)))); }
 
     // Accessors for class label and class parameters.
     int label() const
