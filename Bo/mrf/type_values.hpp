@@ -126,7 +126,8 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
     typedef GaussDistrClasses<RealType> NodeType;
     typedef typename NodeType::ClassParams ClassParams;
     typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
-    typedef typename NodeType::GaussParamsPair GaussParamsPair;
+
+    typedef boost::tuples::tuple<RealType, RealType> GaussParamsPair;
     typedef typename std::vector<GaussParamsPair> GaussParams;
 
     // Constructs a set of possible values with default parameters. Mean parameter is
@@ -145,7 +146,8 @@ struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealTyp
 
     // Constructs a set of possible values from a collection of Gauss distribution
     // parameters (mu, sigma).
-    GaussDistrClassesValues(GaussParams gauss_params): FiniteSetValues<NodeType>(gauss_params.size())
+    GaussDistrClassesValues(const GaussParams& gauss_params):
+            FiniteSetValues<NodeType>(gauss_params.size())
     {
         std::size_t classes_count = gauss_params.size();
         for (typename GaussParams::const_iterator it = gauss_params.begin();
@@ -172,12 +174,14 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
     typedef GammaDistrClasses<RealType> NodeType;
     typedef typename NodeType::ClassParams ClassParams;
     typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
-    typedef typename NodeType::GammaParamsPair GammaParamsPair;
+
+    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
     typedef typename std::vector<GammaParamsPair> GammaParams;
 
     // Constructs a set of possible values from a collection of Gamma distribution
     // parameters (k, theta).
-    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues<NodeType>(gamma_params.size())
+    GammaDistrClassesValues(const GammaParams& gamma_params):
+            FiniteSetValues<NodeType>(gamma_params.size())
     {
         std::size_t classes_count = gamma_params.size();
         for (typename GammaParams::const_iterator it = gamma_params.begin();

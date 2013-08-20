@@ -71,16 +71,14 @@ protected:
 // class label, mean, standard deviation, and additional item a = ln(sigma * sqrt(2 pi)).
 template <typename RealType>
 class GaussDistrClasses: public ParametricNodeType<
-        boost::tuples::tuple<int, RealType, RealType> >
+        boost::tuples::tuple<int, RealType, RealType, RealType> >
 {
 public:
     typedef GaussDistrClasses<RealType> SelfType;
 
     typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
     typedef ParametricNodeType<ClassParams> BaseType;
-
     typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
-    typedef boost::tuples::tuple<RealType, RealType> GaussParamsPair;
 
 public:
     GaussDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
@@ -102,6 +100,7 @@ public:
     RealType a() const
     { return this->class_params_->template get<3>(); }
 
+    // 2.5 is precomputed sqrt(2 pi).
     static RealType compute_a(RealType sigma)
     { return (std::log(sigma * RealType(2.5))); }
 };
@@ -111,17 +110,15 @@ public:
 // class label and a set of Gamma distribution parameters (k, theta, a), where
 // a = ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
 template <typename RealType>
-class GammaDistrClasses: public ParametricNodeType<boost::tuples::tuple<int, RealType,
-                                                   RealType, RealType> >
+class GammaDistrClasses: public ParametricNodeType<
+        boost::tuples::tuple<int, RealType, RealType, RealType> >
 {
 public:
     typedef GammaDistrClasses<RealType> SelfType;
 
     typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
     typedef ParametricNodeType<ClassParams> BaseType;
-
     typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
-    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
 
 public:
     GammaDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
