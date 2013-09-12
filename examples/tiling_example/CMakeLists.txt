@@ -27,7 +27,7 @@ TARGET_LINK_LIBRARIES (TilingExample
 
 ADD_CUSTOM_COMMAND(TARGET TilingExample
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${BOEXAMPLES_ROOT}/data/tiling"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${EXAMPLES_PATH}/data/tiling"
         "$<TARGET_FILE_DIR:TilingExample>/data/tiling"
         COMMENT "Copying Tiling's data to the runtime directory."
 )
