@@ -27,7 +27,7 @@ TARGET_LINK_LIBRARIES (MeshExample
 
 ADD_CUSTOM_COMMAND(TARGET MeshExample
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${BOEXAMPLES_ROOT}/data/mesh"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${EXAMPLES_PATH}/data/mesh"
         "$<TARGET_FILE_DIR:MeshExample>/data/mesh"
         COMMENT "Copying Tiling's data to the runtime directory."
 )
