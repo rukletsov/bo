@@ -5,6 +5,7 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.8.4)
 OPTION (BuildTests "Build all of Bo's tests" OFF)
 OPTION (BuildExamples "Build all of Bo's examples" ON)
 OPTION (BUILD_SHARED_LIBS "Build shared libraries (DLLs)" OFF)
+OPTION (BoostIsStatic "Links static versions of Boost libraries" OFF)
 
 IF (MSVC)
     OPTION (UsePch "Enable use of precompiled headers" OFF)
@@ -33,6 +34,10 @@ ELSE ()
 ENDIF (MSVC)
 
 # Locate and enable Boost.
+IF (BoostIsStatic)
+    SET (Boost_USE_STATIC_LIBS ON)
+ENDIF (BoostIsStatic)
+
 FIND_PACKAGE (Boost COMPONENTS regex system filesystem chrono REQUIRED)
 INCLUDE_DIRECTORIES (${Boost_INCLUDE_DIRS})
 
