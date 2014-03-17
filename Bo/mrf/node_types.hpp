@@ -3,7 +3,7 @@
 
   Non-trivial node types (class lables) for MRF models.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -30,14 +30,15 @@
 
 *******************************************************************************/
 
-#ifndef NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
-#define NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
+#ifndef NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976
+#define NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976
 
 #include <cmath>
 #include <iostream>
 #include <boost/tuple/tuple.hpp>
 #include <boost/operators.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
 namespace bo {
@@ -65,29 +66,66 @@ protected:
     ClassParamsPtr class_params_;
 };
 
+// A class representing a value (class label) with associated Gauss distribution
+// parameters. Parameters structure is represented as a tuple with 4 elements:
+// class label, mean, standard deviation, and additional item a = ln(sigma * sqrt(2 pi)).
+template <typename RealType>
+class GaussDistrClasses: public ParametricNodeType<
+        boost::tuples::tuple<int, RealType, RealType, RealType> >
+{
+public:
+    typedef GaussDistrClasses<RealType> SelfType;
+
+    typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
+    typedef ParametricNodeType<ClassParams> BaseType;
+    typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
+
+public:
+    GaussDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
+    { }
+
+    static GaussDistrClasses CreateInstance(int idx, RealType mean, RealType sigma)
+    { return (SelfType(boost::make_shared<ClassParams>(idx, mean, sigma, compute_a(sigma)))); }
+
+    // Accessors for class label and class parameters.
+    int label() const
+    { return this->class_params_->template get<0>(); }
+
+    RealType mean() const
+    { return this->class_params_->template get<1>(); }
+
+    RealType sigma() const
+    { return this->class_params_->template get<2>(); }
+
+    RealType a() const
+    { return this->class_params_->template get<3>(); }
+
+    // 2.5 is precomputed sqrt(2 pi).
+    static RealType compute_a(RealType sigma)
+    { return (std::log(sigma * RealType(2.5))); }
+};
+
 // A class representing a value (class label) with associated Gamma distribution
 // parameters. Parameters structure is represented as a tuple with 4 elements:
 // class label and a set of Gamma distribution parameters (k, theta, a), where
 // a = ln(G(k)) + k ln(theta) and G(t) is the Gamma function.
 template <typename RealType>
-class GammaDistrClasses: public ParametricNodeType<boost::tuples::tuple<int, RealType,
-                                                   RealType, RealType> >
+class GammaDistrClasses: public ParametricNodeType<
+        boost::tuples::tuple<int, RealType, RealType, RealType> >
 {
 public:
     typedef GammaDistrClasses<RealType> SelfType;
 
     typedef boost::tuples::tuple<int, RealType, RealType, RealType> ClassParams;
-    typedef ParametricNodeType<ClassParams>BaseType;
-
+    typedef ParametricNodeType<ClassParams> BaseType;
     typedef typename BaseType::ClassParamsPtr ClassParamsPtr;
-    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
 
 public:
     GammaDistrClasses(ClassParamsPtr class_params): BaseType(class_params)
     { }
 
     static GammaDistrClasses CreateInstance(int idx, RealType k, RealType theta)
-    { return (SelfType(ClassParamsPtr(new ClassParams(idx, k, theta, compute_a(k, theta))))); }
+    { return (SelfType(boost::make_shared<ClassParams>(idx, k, theta, compute_a(k, theta)))); }
 
     // Accessors for class label and class parameters.
     int label() const
@@ -110,6 +148,13 @@ public:
 };
 
 template <typename T>
+std::ostream& operator<<(std::ostream& os, const GaussDistrClasses<T>& obj)
+{
+    os << obj.label() << " (mean: " << obj.mean() << ", sigma: " << obj.sigma() << ")";
+    return os;
+}
+
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const GammaDistrClasses<T>& obj)
 {
     os << obj.label() << " (k: " << obj.k() << ", theta: " << obj.theta() << ")";
@@ -119,4 +164,4 @@ std::ostream& operator<<(std::ostream& os, const GammaDistrClasses<T>& obj)
 } // namespace mrf
 } // namespace bo
 
-#endif // NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976_
+#endif // NODE_TYPES_HPP_6CF0A0E1_8AE9_4951_A785_9339B90FB976

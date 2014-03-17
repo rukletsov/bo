@@ -3,7 +3,7 @@
 
   Various likelihood energy functions for MRF models.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -30,8 +30,8 @@
 
 *******************************************************************************/
 
-#ifndef LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679_
-#define LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679_
+#ifndef LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679
+#define LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679
 
 #include "bo/math/functions.hpp"
 
@@ -57,11 +57,11 @@ protected:
 
 // Minus operator for NodeType should accept DataType as a parameter and return RealType.
 template <typename NodeType, typename DataType, typename RealType>
-struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
+struct GaussSimpleLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 {
     typedef GenericLikelihood<NodeType, DataType, RealType> BaseType;
 
-    GaussianLikelihood(RealType response_weight): BaseType(response_weight)
+    GaussSimpleLikelihood(RealType response_weight): BaseType(response_weight)
     { }
 
     RealType operator()(DataType observ_val, NodeType configur_val) const
@@ -71,9 +71,29 @@ struct GaussianLikelihood: public GenericLikelihood<NodeType, DataType, RealType
     }
 };
 
+// NodeType should provide accessors to the parameters of Gauss distribution for the
+// corresponding configuration value (class label). This includes .mean() and .sigma()
+// for mean and standard deviation respectively and .a() for an additional precomputed
+// item, depending only on sigma: ln(sigma sqrt(2 pi)).
+template <typename NodeType, typename DataType, typename RealType>
+struct GaussLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
+{
+    typedef GenericLikelihood<NodeType, DataType, RealType> BaseType;
+
+    GaussLikelihood(RealType response_weight): BaseType(response_weight)
+    { }
+
+    RealType operator()(DataType observ_val, NodeType configur_val) const
+    {
+        return
+            this->multiplier_ * (RealType(0.5) * math::square(configur_val.mean() - observ_val)
+                    / configur_val.sigma() + configur_val.a());
+    }
+};
+
 // NodeType should provide accessors to the parameters of Gamma distribution for the
 // corresponding configuration value (class label). This includes .k() and .theta()
-// for shape and scale respectively and .a() for the additional item, depending
+// for shape and scale respectively and .a() for an additional item, depending
 // only on k and theta (and therefore precomputed): ln(G(k)) + k ln(theta).
 template <typename NodeType, typename DataType, typename RealType>
 struct GammaLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
@@ -94,4 +114,4 @@ struct GammaLikelihood: public GenericLikelihood<NodeType, DataType, RealType>
 } // namespace mrf
 } // namespace bo
 
-#endif // LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679_
+#endif // LIKELIHOOD_FUNCTIONS_HPP_BD4FA567_7D8B_4357_A2AC_89BEFE621679

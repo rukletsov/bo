@@ -4,7 +4,7 @@
   Collection of classes specifying and providing access to possible values for
   types used as MRF nodes.
 
-  Copyright (c) 2012
+  Copyright (c) 2012, 2013
   Alexander Rukletsov <rukletsov@gmail.com>
   All rights reserved.
 
@@ -31,8 +31,8 @@
 
 *******************************************************************************/
 
-#ifndef TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
-#define TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#ifndef TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E
+#define TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E
 
 #include <ctime>
 #include <vector>
@@ -117,6 +117,54 @@ struct RealFiniteSetValues: public FiniteSetValues<NodeType>
     { }
 };
 
+// A class representing a finite set of GaussDistrClasses values. Each value gets
+// a class label from [0, classes_count-1] and a corresponding set of class
+// parameters (see GaussDistrClasses for more information).
+template <typename RealType>
+struct GaussDistrClassesValues: public FiniteSetValues<GaussDistrClasses<RealType> >
+{
+    typedef GaussDistrClasses<RealType> NodeType;
+    typedef typename NodeType::ClassParams ClassParams;
+    typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
+
+    typedef boost::tuples::tuple<RealType, RealType> GaussParamsPair;
+    typedef typename std::vector<GaussParamsPair> GaussParams;
+
+    // Constructs a set of possible values with default parameters. Mean parameter is
+    // obtained from even subdiviosn of [0, classes_count-1], standard deviation is 1.
+    GaussDistrClassesValues(std::size_t classes_count): FiniteSetValues<NodeType>(classes_count)
+    {
+        std::size_t maxval = classes_count - 1;
+        while (classes_count-- > 0)
+        {
+            RealType mean = RealType(classes_count) / maxval;
+            RealType sigma = RealType(1);
+            NodeType instance = NodeType::CreateInstance(classes_count, mean, sigma);
+            this->values_.push_back(instance);
+        }
+    }
+
+    // Constructs a set of possible values from a collection of Gauss distribution
+    // parameters (mean, sigma).
+    GaussDistrClassesValues(const GaussParams& gauss_params):
+            FiniteSetValues<NodeType>(gauss_params.size())
+    {
+        std::size_t classes_count = gauss_params.size();
+        for (typename GaussParams::const_iterator it = gauss_params.begin();
+             it != gauss_params.end(); ++it)
+        {
+            --classes_count;
+            RealType mean = it->template get<0>();
+            RealType sigma = it->template get<1>();
+            NodeType instance = NodeType::CreateInstance(classes_count, mean, sigma);
+            this->values_.push_back(instance);
+        }
+    }
+
+    virtual ~GaussDistrClassesValues()
+    { }
+};
+
 // A class representing a finite set of GammaDistrClasses values. Each value gets
 // a class label from [0, classes_count-1] and a corresponding set of class
 // parameters (see GammaDistrClasses for more information).
@@ -126,22 +174,14 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
     typedef GammaDistrClasses<RealType> NodeType;
     typedef typename NodeType::ClassParams ClassParams;
     typedef typename NodeType::ClassParamsPtr ClassParamsPtr;
-    typedef typename NodeType::GammaParamsPair GammaParamsPair;
-    typedef typename std::vector<GammaParamsPair> GammaParams;
 
-    // Constructs a set of possible values with default parameters.
-    GammaDistrClassesValues(std::size_t classes_count): FiniteSetValues<NodeType>(classes_count)
-    {
-        while (classes_count-- > 0)
-        {
-            ClassParamsPtr class_params(new ClassParams(classes_count));
-            this->values_.push_back(NodeType(class_params));
-        }
-    }
+    typedef boost::tuples::tuple<RealType, RealType> GammaParamsPair;
+    typedef typename std::vector<GammaParamsPair> GammaParams;
 
     // Constructs a set of possible values from a collection of Gamma distribution
     // parameters (k, theta).
-    GammaDistrClassesValues(GammaParams gamma_params): FiniteSetValues<NodeType>(gamma_params.size())
+    GammaDistrClassesValues(const GammaParams& gamma_params):
+            FiniteSetValues<NodeType>(gamma_params.size())
     {
         std::size_t classes_count = gamma_params.size();
         for (typename GammaParams::const_iterator it = gamma_params.begin();
@@ -150,9 +190,8 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
             --classes_count;
             RealType k = it->template get<0>();
             RealType theta = it->template get<1>();
-            RealType a = NodeType::compute_a(k, theta);
-            ClassParamsPtr class_params(new ClassParams(classes_count, k, theta, a));
-            this->values_.push_back(NodeType(class_params));
+            NodeType instance = NodeType::CreateInstance(classes_count, k, theta);
+            this->values_.push_back(instance);
         }
     }
 
@@ -163,4 +202,4 @@ struct GammaDistrClassesValues: public FiniteSetValues<GammaDistrClasses<RealTyp
 } // namespace mrf
 } // namespace bo
 
-#endif // TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E_
+#endif // TYPE_VALUES_HPP_79AFECA6_E8DF_47FE_952F_9EFE4097369E
